@@ -48,10 +48,7 @@ npm install -g @anthropic-ai/claude-code
 gh auth login
 
 # Optional: cursor-cli
-brew install --cask cursor
-# Add Cursor CLI to PATH
-echo 'export PATH="/Applications/Cursor.app/Contents/Resources/app/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
+npm install -g cursor-cli
 
 # Optional: opencode
 brew install go && go install github.com/opencode-ai/opencode@latest
