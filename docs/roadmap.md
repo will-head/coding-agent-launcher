@@ -1,0 +1,47 @@
+# Roadmap
+
+> Extracted from [ADR-001](adr/ADR-001-cal-isolation.md) for quick reference.
+
+## Phase 0: Bootstrap ✅
+Manual Tart setup for immediate safe agent use.
+- [x] Research Tart
+- [x] Document manual process
+- [ ] Set up base VM
+- [ ] Install agents, create snapshot
+
+## Phase 1: CLI Foundation
+Basic CLI wrapper around Tart.
+- [ ] Project structure (Go monorepo)
+- [ ] `cal isolation init/start/stop/ssh`
+- [ ] Config management (`~/.cal/`)
+- [ ] Snapshot management
+
+## Phase 2: Agent Integration
+Seamless agent launching with safety UX.
+- [ ] Launch confirmation screen
+- [ ] Status banner (green = safe)
+- [ ] SSH tunnel with overlay
+- [ ] Claude Code / opencode / Cursor integration
+
+## Phase 3: GitHub Workflow
+Complete git workflow from VM.
+- [ ] `clone` with branch creation
+- [ ] `commit`, `push`, `pr`
+- [ ] Status display, exit prompts
+
+## Phase 4: Environment Plugins
+Pluggable dev environments.
+- [ ] Plugin manifest schema
+- [ ] Core plugins: ios, android, node, python, go, rust
+- [ ] VM templates
+
+## Phase 5: TUI & Polish
+Full terminal UI experience.
+- [ ] Workspace selector
+- [ ] Real-time status
+- [ ] Log streaming
+- [ ] Multiple VMs
+
+## Future
+- Native macOS GUI (SwiftUI)
+- Menu bar integration
