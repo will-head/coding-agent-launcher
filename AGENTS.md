@@ -102,15 +102,20 @@ If changes are **ONLY** to documentation files (.md files, code comments), you m
 
 **Documentation-Only Workflow:**
 1. Update documentation files
-2. Commit with descriptive message
-3. Push to remote
+2. **ASK USER FOR APPROVAL** - Present changes and ask if they want to commit
+3. Commit with descriptive message (only after user approval)
+4. Push to remote
 
 **Skip these steps for documentation-only changes:**
 - ❌ Step 2: Run All Tests
-- ❌ Step 3: Build the Project  
-- ❌ Step 4: Code Review
-- ❌ Step 5: Ask for User Approval
-- ❌ Step 6: Present Code Review
+- ❌ Step 3: Build the Project
+- ❌ Step 4: Conduct Code Review
+- ❌ Step 6: Present Code Review (unless user requests it)
+
+**Still REQUIRED for documentation-only changes:**
+- ✅ Step 5: Ask for User Approval - **ALWAYS REQUIRED**
+- ✅ Step 7: Update ALL Documentation
+- ✅ Step 8: Commit and Push (only after approval)
 
 **Qualifying documentation files:**
 - `*.md` files (README.md, AGENTS.md/CLAUDE.md, docs/*)
@@ -198,7 +203,8 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 **NEVER, UNDER ANY CIRCUMSTANCES:**
 
-- ❌ Commit without user approval of code review
+- ❌ **Commit without asking user first** - NO EXCEPTIONS, not even for documentation
+- ❌ Commit without user approval of code review (for code/script changes)
 - ❌ Commit without updating documentation
 - ❌ Commit with failing tests
 - ❌ Commit with build failures
