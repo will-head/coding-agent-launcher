@@ -1,51 +1,116 @@
 #!/bin/bash
-set -e
 
 echo "🚀 CAL VM Setup Script"
 echo "======================"
 echo ""
 
-# Update homebrew and install dependencies
-echo "📦 Installing dependencies via Homebrew..."
-brew update
-brew install node gh ripgrep fzf
+# Helper function to check if a brew package is installed
+brew_installed() {
+    brew list "$1" &>/dev/null
+}
+
+# Helper function to check if a command exists
+command_exists() {
+    command -v "$1" &>/dev/null
+}
+
+# Update homebrew
+echo "📦 Updating Homebrew..."
+if brew update &>/dev/null; then
+    echo "  ✓ Homebrew updated"
+else
+    echo "  ⚠ Homebrew update skipped (may already be running)"
+fi
+
+# Install Homebrew dependencies
+echo ""
+echo "📦 Installing Homebrew packages..."
+for pkg in node gh ripgrep fzf go; do
+    if brew_installed "$pkg"; then
+        echo "  ✓ $pkg already installed"
+    else
+        echo "  → Installing $pkg..."
+        if brew install "$pkg"; then
+            echo "  ✓ $pkg installed"
+        else
+            echo "  ✗ Failed to install $pkg"
+        fi
+    fi
+done
 
 # Install Claude Code
+echo ""
 echo "🤖 Installing Claude Code..."
-npm install -g @anthropic-ai/claude-code
+if command_exists claude; then
+    echo "  ✓ Claude Code already installed"
+else
+    if npm install -g @anthropic-ai/claude-code; then
+        echo "  ✓ Claude Code installed"
+    else
+        echo "  ✗ Failed to install Claude Code"
+    fi
+fi
 
 # Install Cursor CLI
+echo ""
 echo "🖱️  Installing Cursor CLI..."
-curl -fsSL https://cursor.com/install | bash
+if command_exists cursor-agent; then
+    echo "  ✓ Cursor CLI already installed"
+else
+    if curl -fsSL https://cursor.com/install | bash; then
+        echo "  ✓ Cursor CLI installed"
+    else
+        echo "  ✗ Failed to install Cursor CLI"
+    fi
+fi
 
-# Install Go and opencode
-echo "🐹 Installing Go and opencode..."
-brew install go
-go install github.com/opencode-ai/opencode@latest
+# Install opencode
+echo ""
+echo "🐹 Installing opencode..."
+if command_exists opencode; then
+    echo "  ✓ opencode already installed"
+else
+    if go install github.com/opencode-ai/opencode@latest; then
+        echo "  ✓ opencode installed"
+    else
+        echo "  ✗ Failed to install opencode"
+    fi
+fi
 
 # Configure shell environment
+echo ""
 echo "⚙️  Configuring shell environment..."
 
 # Add go/bin to PATH if not already present
 if ! grep -q 'export PATH="$HOME/go/bin:$PATH"' ~/.zshrc; then
     echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.zshrc
     echo "  ✓ Added go/bin to PATH"
+else
+    echo "  ✓ go/bin already in PATH"
 fi
 
 # Fix terminal TERM setting
 if ! grep -q 'export TERM=xterm-256color' ~/.zshrc; then
     echo 'export TERM=xterm-256color' >> ~/.zshrc
     echo "  ✓ Fixed TERM setting for delete key"
+else
+    echo "  ✓ TERM setting already configured"
 fi
 
 # Fix up arrow history keybinding
 if ! grep -q 'bindkey "\^\[\[A" up-line-or-history' ~/.zshrc; then
     echo 'bindkey "^[[A" up-line-or-history' >> ~/.zshrc
     echo "  ✓ Fixed up arrow history keybinding"
+else
+    echo "  ✓ History keybinding already configured"
 fi
 
 # Source the updated config
-source ~/.zshrc
+if source ~/.zshrc 2>/dev/null; then
+    echo "  ✓ Shell configuration reloaded"
+else
+    echo "  ⚠ Could not reload shell config (restart shell manually)"
+fi
 
 echo ""
 echo "✅ Setup complete!"
