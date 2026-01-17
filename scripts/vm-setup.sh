@@ -81,6 +81,14 @@ fi
 echo ""
 echo "⚙️  Configuring shell environment..."
 
+# Add .local/bin to PATH if not already present (for Cursor CLI)
+if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' ~/.zshrc; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+    echo "  ✓ Added .local/bin to PATH"
+else
+    echo "  ✓ .local/bin already in PATH"
+fi
+
 # Add go/bin to PATH if not already present
 if ! grep -q 'export PATH="$HOME/go/bin:$PATH"' ~/.zshrc; then
     echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.zshrc

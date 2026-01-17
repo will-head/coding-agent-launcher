@@ -72,6 +72,8 @@ gh auth login
 
 # Optional: cursor-cli (command: agent)
 curl -fsSL https://cursor.com/install | bash
+# Add to PATH
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 
 # Optional: opencode (requires ripgrep and fzf)
 brew install go && go install github.com/opencode-ai/opencode@latest
