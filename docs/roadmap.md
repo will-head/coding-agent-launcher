@@ -1,6 +1,8 @@
 # Roadmap
 
 > Extracted from [ADR-001](adr/ADR-001-cal-isolation.md) for quick reference.
+>
+> See also: [SPEC](SPEC.md) (technical requirements) | [PLAN](PLAN.md) (implementation steps)
 
 ## Phase 0: Bootstrap ✅
 Manual Tart setup for immediate safe agent use.

@@ -25,13 +25,20 @@ At the start of EVERY new session, the agent MUST:
    - Check for TODO files or task tracking
    - Review `docs/roadmap.md` for current phase
 
-4. **Report Status to User**
+4. **Read SPEC and PLAN for Next Steps**
+   - Read `docs/SPEC.md` for technical requirements
+   - Read `docs/PLAN.md` for implementation details
+   - Identify current phase and pending tasks
+   - Use PLAN.md as the guide for what to implement next
+
+5. **Report Status to User**
    - Git status (branch, uncommitted changes, sync status)
    - TODO/task status
    - Current roadmap phase and completion
+   - Next recommended tasks from PLAN.md
 
-5. **Suggest Next Stages**
-   - Based on roadmap, suggest logical next steps
+6. **Suggest Next Stages**
+   - Based on PLAN.md, suggest logical next steps
    - Offer specific options for what to work on
    - Wait for user direction
 
@@ -79,9 +86,14 @@ golangci-lint run
 
 ## Docs
 
-Source of truth: [docs/adr/ADR-001-cal-isolation.md](docs/adr/ADR-001-cal-isolation.md)
+**Source of truth (NEVER MODIFY):**
+- [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Complete design decisions
 
-Quick reference (extracted from ADR):
+**Planning documents (read these for next steps):**
+- [SPEC](docs/SPEC.md) - Technical specification
+- [PLAN](docs/PLAN.md) - Implementation plan with tasks
+
+**Quick reference (extracted from ADR):**
 - [Architecture](docs/architecture.md) - system design, UX, config
 - [CLI](docs/cli.md) - command reference
 - [Bootstrap](docs/bootstrap.md) - manual Tart setup
@@ -172,7 +184,8 @@ Each step is a **BLOCKING CHECKPOINT**. You MUST complete each step fully before
 Update these files if affected by changes:
 - ☐ `README.md` - Project overview
 - ☐ `AGENTS.md` - Agent context and guidelines (CLAUDE.md symlinks here)
-- ☐ `docs/adr/ADR-001-cal-isolation.md` - Source of truth
+- ☐ `docs/SPEC.md` - Technical specification
+- ☐ `docs/PLAN.md` - Implementation plan
 - ☐ `docs/architecture.md` - System design
 - ☐ `docs/cli.md` - Command reference
 - ☐ `docs/bootstrap.md` - Setup instructions
@@ -180,6 +193,8 @@ Update these files if affected by changes:
 - ☐ `docs/roadmap.md` - Implementation phases
 - ☐ Inline code comments and doc comments
 - ☐ Script comments in `scripts/`
+
+**⚠️ NEVER update `docs/adr/*` - ADRs are immutable (see ADR Protection Rules)**
 
 **VERIFY:** All documentation accurately reflects the changes
 
@@ -214,6 +229,38 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 - ❌ Proceed past a STOP checkpoint without user input
 - ❌ Commit before documentation is updated
 - ❌ Push before commit message is reviewed
+
+---
+
+## ADR Protection Rules
+
+🚨 **ADRs ARE IMMUTABLE - NEVER MODIFY** 🚨
+
+**Architecture Decision Records (ADRs) in `docs/adr/` are the source of truth for this project.**
+
+**ABSOLUTE RULES:**
+
+- ❌ **NEVER edit, modify, or delete any ADR file** - even if asked to "refactor documentation"
+- ❌ **NEVER change content in ADRs** - not even typos, formatting, or "improvements"
+- ❌ **NEVER move or rename ADR files**
+- ❌ **NEVER add new content to existing ADRs**
+
+**When refactoring documentation:**
+- Update SPEC.md, PLAN.md, and other docs freely
+- Extract information FROM ADRs into other docs
+- Reference ADRs, don't modify them
+- ADRs capture decisions at a point in time - they are historical records
+
+**If ADR content seems wrong or outdated:**
+- Create a NEW ADR (e.g., ADR-002) that supersedes the old one
+- The new ADR should reference the old one and explain what changed
+- NEVER modify the original ADR
+
+**Why this matters:**
+- ADRs document WHY decisions were made
+- They provide historical context for future developers
+- Modifying them destroys the decision history
+- Other documents (SPEC, PLAN) can evolve; ADRs are frozen records
 
 ---
 

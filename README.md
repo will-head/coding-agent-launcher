@@ -34,11 +34,13 @@ This repo works with multiple AI coding agents. Context is in `AGENTS.md` with s
 
 ## Documentation
 
+- [SPEC](docs/SPEC.md) - Technical specification
+- [PLAN](docs/PLAN.md) - Implementation plan
+- [Roadmap](docs/roadmap.md) - Phase overview
 - [Architecture](docs/architecture.md) - System design, UX, config
 - [CLI](docs/cli.md) - Command reference
 - [Bootstrap](docs/bootstrap.md) - Manual Tart setup
 - [Plugins](docs/plugins.md) - Environment system
-- [Roadmap](docs/roadmap.md) - Implementation phases
 - [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Complete design (source of truth)
 
 ## License
