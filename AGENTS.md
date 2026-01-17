@@ -2,6 +2,47 @@
 
 Project context for AI coding agents (Claude Code, Cursor, opencode).
 
+---
+
+## Session Startup Procedure
+
+🚨 **MANDATORY - EVERY NEW SESSION** 🚨
+
+At the start of EVERY new session, the agent MUST:
+
+1. **Read and Understand Workflow**
+   - Read this entire CLAUDE.md file
+   - Understand the mandatory Git workflow
+   - Internalize all absolute prohibitions
+
+2. **Present Workflow Summary**
+   - Present the 8-step workflow to user
+   - Highlight documentation-only exception
+   - Confirm understanding of checkpoints
+
+3. **Check Project Status**
+   - Run `git status` and `git fetch` to verify repo state
+   - Check for TODO files or task tracking
+   - Review `docs/roadmap.md` for current phase
+
+4. **Report Status to User**
+   - Git status (branch, uncommitted changes, sync status)
+   - TODO/task status
+   - Current roadmap phase and completion
+
+5. **Suggest Next Stages**
+   - Based on roadmap, suggest logical next steps
+   - Offer specific options for what to work on
+   - Wait for user direction
+
+**This procedure ensures:**
+- Agent understands project workflow
+- User has visibility into project state
+- Session starts with clear context and direction
+- No workflow violations from lack of awareness
+
+---
+
 ## Project
 
 CAL (Coding Agent Loader) - VM-based sandbox for running AI coding agents safely in Tart macOS VMs.
