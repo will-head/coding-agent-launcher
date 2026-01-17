@@ -1,11 +1,11 @@
-# Phase 0 Completion Summary
+# Phase 0 Status Summary
 
 **Date:** January 17, 2026  
-**Status:** ✅ COMPLETE
+**Status:** 🔄 MOSTLY COMPLETE (6 TODOs Remaining)
 
 ## Overview
 
-Phase 0 (Bootstrap) is now complete. The manual Tart VM setup process is fully documented and automated, providing immediate safe agent use with excellent terminal behavior.
+Phase 0 (Bootstrap) is mostly complete. The manual Tart VM setup process is fully documented and automated, providing immediate safe agent use with excellent terminal behavior. However, there are 6 remaining improvements to the `reset-vm.sh` script identified during code review that need to be completed before Phase 0 can be considered fully done.
 
 ## Completed Tasks
 
@@ -22,11 +22,17 @@ Phase 0 (Bootstrap) is now complete. The manual Tart VM setup process is fully d
   - Verifies all installations
   - Idempotent (can be run multiple times safely)
 
-- ✅ **`scripts/reset-vm.sh`** - Automated VM reset workflow
-  - Interactive confirmation prompt
-  - Automatic VM state detection and cleanup
-  - Waits for VM boot and SSH availability
-  - Copies vm-setup.sh to freshly reset VM
+- 🔄 **`scripts/reset-vm.sh`** - Automated VM reset workflow (6 TODOs remaining)
+  - ✅ Interactive confirmation prompt
+  - ✅ Automatic VM state detection and cleanup
+  - ✅ Waits for VM boot and SSH availability
+  - ✅ Copies vm-setup.sh to freshly reset VM
+  - ❌ TODO: Add cleanup trap for background VM process
+  - ❌ TODO: Automate SSH/SCP password authentication
+  - ❌ TODO: Make VM credentials configurable
+  - ❌ TODO: Add --yes flag for non-interactive mode
+  - ❌ TODO: Run shellcheck and address warnings
+  - ❌ TODO: Fully automate post-reset setup steps
 
 ### 3. Terminal Environment
 - ✅ Fixed delete key behavior (`TERM=xterm-256color`)
@@ -151,18 +157,31 @@ scripts/reset-vm.sh cal-dev cal-dev-pristine
 tart stop cal-dev && tart delete cal-dev && tart clone cal-dev-pristine cal-dev
 ```
 
-## Success Criteria - ALL MET ✅
+## Success Criteria
 
 - ✅ **Isolation verified** - VM provides complete filesystem isolation
 - ✅ **Agent parity** - All three agents work identically to local
 - ✅ **Terminal UX** - All keybindings work correctly (tested comprehensively)
 - ✅ **Recovery** - Snapshot rollback works (<2 minutes with automated script)
-- ✅ **Automation** - Setup and reset are fully scripted
+- 🔄 **Automation** - Setup and reset are scripted (reset-vm.sh needs 6 improvements)
 - ✅ **Documentation** - Complete guides for setup, testing, and usage
+
+## Remaining Work for Phase 0
+
+Before moving to Phase 1, complete the 6 TODOs in `reset-vm.sh`:
+
+1. **Add cleanup trap** - Kill background VM process on script exit
+2. **Password-less SSH** - Set up ssh-copy-id or use sshpass
+3. **Configurable credentials** - Support VM_USER/VM_PASSWORD env vars
+4. **--yes flag** - Enable non-interactive mode for automation
+5. **Shellcheck validation** - Run shellcheck and fix warnings
+6. **Full automation** - Automatically run vm-setup.sh and handle gh auth
+
+These improvements will make the reset workflow truly zero-touch.
 
 ## Next Phase
 
-**Phase 1: CLI Foundation** is ready to begin.
+Once Phase 0 is complete, **Phase 1: CLI Foundation** can begin.
 
 Goals:
 - Replace manual Tart commands with `cal isolation` CLI
@@ -175,8 +194,8 @@ See `docs/PLAN.md` for Phase 1 implementation details.
 
 ## Conclusion
 
-Phase 0 has exceeded expectations. The manual VM setup is fully automated, the terminal environment is excellent (no broken keybindings), and the workflow is production-ready for immediate use.
+Phase 0 is very close to completion. The manual VM setup is well-automated, the terminal environment is excellent (no broken keybindings), and the workflow is functional for immediate use.
 
-**Users can safely run AI coding agents in isolated VMs TODAY** with a fully functional terminal experience and rapid rollback capability.
+**Users can safely run AI coding agents in isolated VMs TODAY** with a fully functional terminal experience and rapid rollback capability. The remaining work is polish to make the reset workflow fully automated.
 
-🎉 **Phase 0 Complete!**
+🔄 **Phase 0: 6 TODOs remaining before complete**

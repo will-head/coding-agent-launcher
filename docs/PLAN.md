@@ -4,7 +4,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Complete ✅
+**Phase 0 (Bootstrap):** Mostly complete (6 TODOs remaining in reset-vm.sh)
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -12,7 +12,13 @@
 - [x] Create clean snapshot for rollback (documented)
 - [x] Create automated reset-vm script for quick VM reset
 - [x] Investigate and test terminal keybindings (all working correctly)
-- [x] Automate post-reset setup steps (vm-setup.sh handles configuration)
+- [ ] **Complete reset-vm.sh improvements** (see section 0.6 below)
+  - [ ] Add cleanup trap for background VM process
+  - [ ] Automate SSH/SCP password authentication
+  - [ ] Make VM credentials configurable
+  - [ ] Add --yes flag for non-interactive mode
+  - [ ] Run shellcheck and address warnings
+  - [ ] Fully automate post-reset setup (chmod, run script, gh auth)
 
 **All subsequent phases:** Not started
 
@@ -109,21 +115,51 @@ tart run cal-dev
   - **Conclusion:** No additional fixes needed beyond existing TERM and bindkey settings
 
 #### 0.6 Automated VM Reset Script
+
+**Completed:**
 - [x] Create `scripts/reset-vm.sh` for automated VM reset workflow
 - [x] Delete confirmation prompt to prevent accidental data loss
 - [x] Automatic VM state detection and cleanup
 - [x] Wait for VM boot and SSH availability
 - [x] Copy vm-setup.sh to freshly reset VM
-- [ ] **TODO: Automate post-reset setup** (chmod, run script, gh auth)
-  - Requires password-less SSH (ssh-copy-id or sshpass)
-  - See TODOs in reset-vm.sh header
+
+**Remaining TODOs (from code review):**
+- [ ] **Add cleanup trap for background VM process**
+  - Kill tart process if script exits early (error or Ctrl+C)
+  - Prevents orphaned VM processes
+  
+- [ ] **Automate SSH/SCP password authentication**
+  - Option 1: Use ssh-copy-id to set up key-based auth
+  - Option 2: Use sshpass for password automation (less secure)
+  - Enables fully automated post-reset setup
+  
+- [ ] **Make VM credentials configurable**
+  - Support VM_USER and VM_PASSWORD environment variables
+  - Default to admin/admin if not set
+  - Better security for custom VM configurations
+  
+- [ ] **Add --yes flag for non-interactive mode**
+  - Skip confirmation prompt when --yes is provided
+  - Enable scripted/automated workflows
+  - Still require explicit flag for safety
+  
+- [ ] **Run shellcheck and address warnings**
+  - Validate script with shellcheck
+  - Fix any warnings or issues found
+  - Ensure best practices for shell scripting
+  
+- [ ] **Fully automate post-reset setup**
+  - Run chmod +x ~/vm-setup.sh via SSH
+  - Run ~/vm-setup.sh via SSH (handle long-running process)
+  - Handle gh auth login (may require manual step or token-based auth)
+  - Requires password-less SSH from above
 
 **Usage:**
 ```bash
 scripts/reset-vm.sh cal-dev cal-dev-pristine
 ```
 
-**Deliverable:** Automated setup script, working VM environment, and quick VM reset capability. Can use agents safely with proper terminal behavior and rapid rollback.
+**Deliverable:** Fully automated VM reset with zero manual steps. Currently functional but requires manual post-reset setup inside VM.
 
 ---
 

@@ -4,7 +4,7 @@
 >
 > See also: [SPEC](SPEC.md) (technical requirements) | [PLAN](PLAN.md) (implementation steps)
 
-## Phase 0: Bootstrap ✅
+## Phase 0: Bootstrap 🔄 (Mostly Complete)
 Manual Tart setup for immediate safe agent use.
 - [x] Research Tart
 - [x] Document manual process
@@ -13,6 +13,10 @@ Manual Tart setup for immediate safe agent use.
 - [x] Install agents, create snapshot
 - [x] Create keybinding test plan
 - [x] Execute keybinding tests (all working correctly)
+- [x] Create automated reset-vm script
+- [ ] **Complete reset-vm.sh improvements** (6 TODOs remaining)
+  - Cleanup trap, password-less SSH, configurable credentials
+  - --yes flag, shellcheck validation, full automation
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.
