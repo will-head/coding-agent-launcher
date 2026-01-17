@@ -41,6 +41,26 @@ tart run cal-dev --no-graphics --vnc &
 open vnc://$(tart ip cal-dev)
 ```
 
+## VM Setup
+
+Once inside the VM, you can set up all agents and tools automatically or manually.
+
+**Automated Setup (Recommended):**
+```bash
+# Copy setup script to VM (run from host)
+scp scripts/vm-setup.sh admin@$(tart ip cal-dev):~/
+
+# Inside VM, run the setup script
+ssh admin@$(tart ip cal-dev)
+chmod +x ~/vm-setup.sh
+./vm-setup.sh
+
+# Authenticate with GitHub
+gh auth login
+```
+
+**Manual Setup:**
+
 Inside VM:
 ```bash
 brew update && brew install node gh
