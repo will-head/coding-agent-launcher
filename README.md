@@ -1,5 +1,7 @@
 # CAL - Coding Agent Loader
 
+> **Status:** Phase 0 (Bootstrap) Complete ✅ | Phase 1 (CLI Foundation) Not Started
+
 VM-based sandbox for running AI coding agents (Claude Code, Cursor, opencode) safely in isolated Tart macOS VMs.
 
 ## Features
@@ -17,11 +19,38 @@ VM-based sandbox for running AI coding agents (Claude Code, Cursor, opencode) sa
 
 ## Quick Start
 
+**Phase 0 is complete!** Use automated scripts for VM setup:
+
 ```bash
+# Install Tart
 brew install cirruslabs/cli/tart
+
+# Clone base image
 tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest cal-dev
+
+# Configure VM
 tart set cal-dev --cpu 4 --memory 8192 --disk-size 80
+
+# Start VM
 tart run cal-dev  # login: admin/admin
+
+# Inside VM, copy and run setup script (from host)
+# See docs/bootstrap.md for detailed instructions
+```
+
+### Automated VM Reset
+
+After initial setup, use the reset script for quick VM resets:
+
+```bash
+# One-time: Set up SSH keys (see docs/ssh-key-setup.md)
+ssh-copy-id admin@<vm-ip>
+
+# Reset VM to pristine state
+scripts/reset-vm.sh cal-dev cal-dev-pristine
+
+# Non-interactive mode
+scripts/reset-vm.sh --yes cal-dev cal-dev-pristine
 ```
 
 See [Bootstrap Guide](docs/bootstrap.md) for full setup instructions.
@@ -37,12 +66,15 @@ This repo works with multiple AI coding agents. Context is in `AGENTS.md` with s
 **Status & Planning:**
 - [PLAN](docs/PLAN.md) - Implementation plan & TODOs **(single source of truth for status)**
 - [Roadmap](docs/roadmap.md) - Phase overview (derived from PLAN.md)
+- [Phase 0 Completion](docs/phase0-completion-notes.md) - Bootstrap phase summary
 - [SPEC](docs/SPEC.md) - Technical specification
 
 **Reference:**
 - [Architecture](docs/architecture.md) - System design, UX, config
 - [CLI](docs/cli.md) - Command reference
 - [Bootstrap](docs/bootstrap.md) - Manual Tart setup
+- [SSH Key Setup](docs/ssh-key-setup.md) - Password-less VM access
+- [Reset VM Testing](docs/reset-vm-testing.md) - Testing guide for reset script
 - [Terminal Keybindings Test](docs/terminal-keybindings-test.md) - VM terminal testing
 - [Plugins](docs/plugins.md) - Environment system
 - [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Complete design (immutable)

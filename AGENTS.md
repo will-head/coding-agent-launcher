@@ -226,6 +226,7 @@ Each step is a **BLOCKING CHECKPOINT**. You MUST complete each step fully before
 - **Execute:** `go test ./...`
 - **VERIFY:** All tests pass
 - **IF TESTS FAIL:** Fix issues, do NOT proceed
+- **FOR SCRIPTS:** Provide manual test instructions with clean, copy-pasteable commands (no line numbers)
 - 🛑 **STOP HERE if tests fail**
 
 ### Step 3: Build the Project
@@ -242,13 +243,8 @@ Each step is a **BLOCKING CHECKPOINT**. You MUST complete each step fully before
 - **Check TODOs:** Verify any new TODOs in code are also in PLAN.md
 - **Verify status:** If TODOs added, phase cannot be marked complete
 
-### Step 5: Ask for User Approval
-- **MANDATORY:** Ask user: *"Would you like to see the code review before committing?"*
-- 🛑 **STOP HERE** 🛑
-- **DO NOT ASSUME** user wants to proceed
-- **WAIT** for user response
-
-### Step 6: Present Code Review
+### Step 5: Present Code Review (ALWAYS)
+- **ALWAYS present the code review** - no exceptions, do not ask first
 - **Present:** findings clearly and completely
 - **Include:** all issues, improvements, and assessment
 - 🛑 **STOP HERE** 🛑
@@ -301,12 +297,14 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 **NEVER, UNDER ANY CIRCUMSTANCES:**
 
+- ❌ **Install software on the host machine without explicit user approval** - Check first, then ask permission
+- ❌ **Provide test instructions with line numbers or decoration** - Always use clean, copy-pasteable commands
 - ❌ **Commit without asking user first** - NO EXCEPTIONS, not even for documentation
 - ❌ Commit without user approval of code review (for code/script changes)
 - ❌ Commit without updating documentation
 - ❌ Commit with failing tests
 - ❌ Commit with build failures
-- ❌ Skip asking user if they want to see the review
+- ❌ Skip presenting the code review (always show it)
 - ❌ Assume user approval without explicit confirmation
 - ❌ Skip any step "to save time"
 - ❌ Proceed past a STOP checkpoint without user input
@@ -372,8 +370,7 @@ Before every git commit, verify:
 
 - ☐ All tests pass (`go test ./...`)
 - ☐ Build succeeds with no errors (`go build -o cal ./cmd/cal`)
-- ☐ Code review conducted
-- ☐ Asked user: "Would you like to see the code review?"
+- ☐ Code review conducted and presented to user (always show it)
 - ☐ User explicitly approved proceeding
 - ☐ ALL documentation updated
 - ☐ **TODOs synchronized:** Code TODOs are in PLAN.md, phase status is accurate
