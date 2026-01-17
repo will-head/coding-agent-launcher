@@ -34,15 +34,18 @@ This repo works with multiple AI coding agents. Context is in `AGENTS.md` with s
 
 ## Documentation
 
+**Status & Planning:**
+- [PLAN](docs/PLAN.md) - Implementation plan & TODOs **(single source of truth for status)**
+- [Roadmap](docs/roadmap.md) - Phase overview (derived from PLAN.md)
 - [SPEC](docs/SPEC.md) - Technical specification
-- [PLAN](docs/PLAN.md) - Implementation plan
-- [Roadmap](docs/roadmap.md) - Phase overview
+
+**Reference:**
 - [Architecture](docs/architecture.md) - System design, UX, config
 - [CLI](docs/cli.md) - Command reference
 - [Bootstrap](docs/bootstrap.md) - Manual Tart setup
 - [Terminal Keybindings Test](docs/terminal-keybindings-test.md) - VM terminal testing
 - [Plugins](docs/plugins.md) - Environment system
-- [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Complete design (source of truth)
+- [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Complete design (immutable)
 
 ## License
 

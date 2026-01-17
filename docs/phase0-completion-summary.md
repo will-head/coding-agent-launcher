@@ -1,7 +1,10 @@
-# Phase 0 Status Summary
+# Phase 0 Reference Document
 
-**Date:** January 17, 2026  
-**Status:** 🔄 MOSTLY COMPLETE (6 TODOs Remaining)
+> ⚠️ **NOTE:** This is a reference snapshot documenting Phase 0 work.
+> **For current status and TODOs, see [PLAN.md](PLAN.md)** - the single source of truth.
+
+**Snapshot Date:** January 17, 2026  
+**Current Status:** See [PLAN.md Current Status section](PLAN.md#current-status)
 
 ## Overview
 

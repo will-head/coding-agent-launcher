@@ -6,11 +6,13 @@ set -e
 # Usage: ./reset-vm.sh <vm-name> <pristine-name>
 # Optional: Set TART_PATH environment variable to specify tart location
 #
-# TODO: Add cleanup trap for background VM process
-# TODO: Automate SSH/SCP password authentication (use ssh-copy-id or sshpass)
-# TODO: Make VM credentials configurable via environment variable
-# TODO: Add --yes flag to skip confirmation prompt for automation
-# TODO: Run shellcheck and address warnings
+# TODOs tracked in docs/PLAN.md section 0.6:
+# TODO: Add cleanup trap for background VM process (see PLAN.md 0.6)
+# TODO: Automate SSH/SCP password authentication (see PLAN.md 0.6)
+# TODO: Make VM credentials configurable via environment variable (see PLAN.md 0.6)
+# TODO: Add --yes flag to skip confirmation prompt for automation (see PLAN.md 0.6)
+# TODO: Run shellcheck and address warnings (see PLAN.md 0.6)
+# TODO: Fully automate post-reset setup (see PLAN.md 0.6)
 
 if [ $# -ne 2 ]; then
     echo "Usage: $0 <vm-name> <pristine-name>"

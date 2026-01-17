@@ -22,8 +22,8 @@ At the start of EVERY new session, the agent MUST:
 
 3. **Check Project Status**
    - Run `git status` and `git fetch` to verify repo state
-   - Check for TODO files or task tracking
-   - Review `docs/roadmap.md` for current phase
+   - **Check PLAN.md for unchecked TODOs** (authoritative source)
+   - Review `docs/roadmap.md` for current phase (should match PLAN.md)
 
 4. **Read SPEC and PLAN for Next Steps**
    - Read `docs/SPEC.md` for technical requirements
@@ -91,14 +91,89 @@ golangci-lint run
 
 **Planning documents (read these for next steps):**
 - [SPEC](docs/SPEC.md) - Technical specification
-- [PLAN](docs/PLAN.md) - Implementation plan with tasks
+- [PLAN](docs/PLAN.md) - Implementation plan with tasks **(SINGLE SOURCE OF TRUTH FOR TODOS)**
 
 **Quick reference (extracted from ADR):**
 - [Architecture](docs/architecture.md) - system design, UX, config
 - [CLI](docs/cli.md) - command reference
 - [Bootstrap](docs/bootstrap.md) - manual Tart setup
 - [Plugins](docs/plugins.md) - environment system
-- [Roadmap](docs/roadmap.md) - implementation phases
+- [Roadmap](docs/roadmap.md) - implementation phases (derived from PLAN.md)
+
+---
+
+# TODO Tracking Policy
+
+🚨 **CRITICAL: PLAN.md IS THE SINGLE SOURCE OF TRUTH FOR ALL TODOS** 🚨
+
+This policy prevents confusion about project status and ensures no work items are lost.
+
+## Rules
+
+### 1. PLAN.md is Authoritative
+- **ALL TODOs affecting phase completion MUST be in `docs/PLAN.md`**
+- Phase status is determined ONLY by checking PLAN.md checkboxes
+- A phase is NOT complete until ALL checkboxes in that phase are checked `[x]`
+- If a checkbox is unchecked `[ ]`, the phase is NOT complete
+
+### 2. TODOs in Code Comments
+TODOs in code (e.g., `# TODO: ...` in scripts) are allowed but:
+- They are **implementation notes only**
+- They **DO NOT** replace PLAN.md entries
+- When adding a TODO to code, you **MUST ALSO** add it to PLAN.md
+- Format in code: `# TODO: Brief description (see PLAN.md section X.X)`
+
+### 3. Code Review TODOs
+When code review identifies improvements or issues deferred for later:
+- **MUST** add them to PLAN.md under the appropriate phase/section
+- **MUST** mark them as unchecked `[ ]`
+- **MUST** update the phase status if this changes completion
+- **MUST NOT** mark a phase complete if new TODOs were added
+
+### 4. Roadmap.md is Derived
+- `docs/roadmap.md` is a **summary view** of PLAN.md
+- It should reflect PLAN.md status, not have independent checkboxes
+- When updating PLAN.md, also update roadmap.md to match
+- If they disagree, PLAN.md is correct
+
+### 5. No Orphan Status Documents
+- Do not create "completion summary" documents that duplicate PLAN.md
+- Phase status lives in PLAN.md "Current Status" section
+- Remove or clearly mark as "snapshot" any status summary documents
+
+## Verification Before Commit
+
+Before marking any phase complete or committing:
+1. **Grep for TODOs:** `grep -r "TODO" scripts/ --include="*.sh"`
+2. **Check PLAN.md:** Every TODO in code has a corresponding unchecked item
+3. **Verify status:** Phase marked complete only if ALL items are `[x]`
+
+## Example
+
+**Wrong:**
+```bash
+# In script header
+# TODO: Add --yes flag
+# TODO: Run shellcheck
+```
+```markdown
+# In PLAN.md
+**Phase 0:** Complete ✅   # WRONG - TODOs exist!
+```
+
+**Correct:**
+```bash
+# In script header  
+# TODO: Add --yes flag (see PLAN.md section 0.6)
+# TODO: Run shellcheck (see PLAN.md section 0.6)
+```
+```markdown
+# In PLAN.md
+**Phase 0:** Mostly complete (2 TODOs remaining)
+- [x] Create script
+- [ ] Add --yes flag
+- [ ] Run shellcheck
+```
 
 ---
 
@@ -164,6 +239,8 @@ Each step is a **BLOCKING CHECKPOINT**. You MUST complete each step fully before
 - **Analyze:** ALL changed files (Go code, shell scripts, configs)
 - **Prepare:** findings in structured format
 - **Identify:** potential issues or improvements
+- **Check TODOs:** Verify any new TODOs in code are also in PLAN.md
+- **Verify status:** If TODOs added, phase cannot be marked complete
 
 ### Step 5: Ask for User Approval
 - **MANDATORY:** Ask user: *"Would you like to see the code review before committing?"*
@@ -185,16 +262,22 @@ Update these files if affected by changes:
 - ☐ `README.md` - Project overview
 - ☐ `AGENTS.md` - Agent context and guidelines (CLAUDE.md symlinks here)
 - ☐ `docs/SPEC.md` - Technical specification
-- ☐ `docs/PLAN.md` - Implementation plan
+- ☐ `docs/PLAN.md` - Implementation plan **(MUST include any new TODOs)**
 - ☐ `docs/architecture.md` - System design
 - ☐ `docs/cli.md` - Command reference
 - ☐ `docs/bootstrap.md` - Setup instructions
 - ☐ `docs/plugins.md` - Environment system
-- ☐ `docs/roadmap.md` - Implementation phases
+- ☐ `docs/roadmap.md` - Implementation phases **(MUST match PLAN.md status)**
 - ☐ Inline code comments and doc comments
 - ☐ Script comments in `scripts/`
 
 **⚠️ NEVER update `docs/adr/*` - ADRs are immutable (see ADR Protection Rules)**
+
+**TODO Synchronization Checklist:**
+- ☐ Grep for TODOs in changed files: `grep -r "TODO" <files>`
+- ☐ Every code TODO has corresponding PLAN.md entry
+- ☐ PLAN.md phase status reflects actual completion (no unchecked items = complete)
+- ☐ roadmap.md status matches PLAN.md
 
 **VERIFY:** All documentation accurately reflects the changes
 
@@ -293,6 +376,7 @@ Before every git commit, verify:
 - ☐ Asked user: "Would you like to see the code review?"
 - ☐ User explicitly approved proceeding
 - ☐ ALL documentation updated
+- ☐ **TODOs synchronized:** Code TODOs are in PLAN.md, phase status is accurate
 - ☐ Commit message is clear and complete
 
 **If ANY checkbox is unchecked: DO NOT COMMIT**

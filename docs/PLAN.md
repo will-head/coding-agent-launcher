@@ -1,6 +1,10 @@
 # CAL Implementation Plan
 
-> Implementation roadmap derived from [ADR-001](adr/ADR-001-cal-isolation.md). The ADR is the source of truth for design decisions.
+> 🎯 **THIS IS THE SINGLE SOURCE OF TRUTH FOR PROJECT STATUS AND TODOS**
+>
+> - Phase completion is determined by checkboxes below
+> - All TODOs must be tracked here (code TODOs should reference this file)
+> - Design decisions are in [ADR-001](adr/ADR-001-cal-isolation.md) (immutable)
 
 ## Current Status
 
