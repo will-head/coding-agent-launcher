@@ -4,11 +4,13 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Partially complete
+**Phase 0 (Bootstrap):** Complete
 - [x] Research Tart capabilities
 - [x] Document manual setup process
-- [ ] Set up base VM with agents
-- [ ] Create clean snapshot for rollback
+- [x] Create automated vm-setup script
+- [x] Set up base VM with agents (automated via script)
+- [x] Create clean snapshot for rollback (documented)
+- [ ] Investigate additional terminal keybindings for VM environment
 
 **All subsequent phases:** Not started
 
@@ -30,24 +32,48 @@ tart run cal-dev
 ```
 
 #### 0.2 VM Agent Installation
+
+**Automated (Recommended):**
+Transfer and run the vm-setup script from the host:
+```bash
+# On host machine
+scp scripts/vm-setup.sh admin@<vm-ip>:~/
+
+# In VM
+chmod +x ~/vm-setup.sh
+~/vm-setup.sh
+source ~/.zshrc
+gh auth login
+```
+
+**Manual (if needed):**
 Inside VM (admin/admin):
 ```bash
 # Core tools
 brew update && brew upgrade
-brew install node gh go ripgrep fzf
+brew install node gh
 
 # Claude Code
 npm install -g @anthropic-ai/claude-code
-claude --version
-
-# opencode
-go install github.com/opencode-ai/opencode@latest
-echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
 
 # Cursor CLI
 curl -fsSL https://cursor.com/install | bash
+
+# opencode
+curl -fsSL https://opencode.ai/install | bash
+
+# Configure PATH
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+echo 'export PATH="$HOME/.opencode/bin:$PATH"' >> ~/.zshrc
+echo 'export TERM=xterm-256color' >> ~/.zshrc
+echo 'bindkey "^[[A" up-line-or-history' >> ~/.zshrc
+source ~/.zshrc
+
+# Verify installations
+claude --version
+agent --version
+opencode --version
+gh --version
 
 # GitHub CLI auth
 gh auth login
@@ -62,13 +88,23 @@ tart run cal-dev
 ```
 
 #### 0.4 Verification
-- [ ] `claude --version` works in VM
-- [ ] `opencode --version` works in VM
-- [ ] `agent --version` works in VM (Cursor CLI)
-- [ ] `gh auth status` shows authenticated
-- [ ] Rollback works: `tart delete cal-dev && tart clone cal-dev-clean cal-dev`
+- [x] `claude --version` works in VM
+- [x] `opencode --version` works in VM
+- [x] `agent --version` works in VM (Cursor CLI)
+- [x] `gh auth status` shows authenticated
+- [x] Rollback works: `tart delete cal-dev && tart clone cal-dev-clean cal-dev`
 
-**Deliverable:** Manual process documented and working. Can use agents safely.
+#### 0.5 Terminal Environment Improvements
+- [x] Fix TERM setting for delete key (`xterm-256color`)
+- [x] Fix up arrow history navigation
+- [ ] **TODO: Investigate additional keybindings**
+  - Test common navigation keys: down arrow, Home, End, Page Up/Down
+  - Test editing keys: Ctrl+A (home), Ctrl+E (end), Ctrl+K (kill line)
+  - Test word navigation: Alt+Left/Right, Alt+Backspace
+  - Document any broken keybindings in SSH/VM environment
+  - Add fixes to vm-setup.sh if needed
+
+**Deliverable:** Automated setup script and working VM environment. Can use agents safely with proper terminal behavior.
 
 ---
 

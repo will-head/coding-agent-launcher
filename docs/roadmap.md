@@ -8,8 +8,10 @@
 Manual Tart setup for immediate safe agent use.
 - [x] Research Tart
 - [x] Document manual process
-- [ ] Set up base VM
-- [ ] Install agents, create snapshot
+- [x] Create automated vm-setup script
+- [x] Set up base VM
+- [x] Install agents, create snapshot
+- [ ] Investigate additional terminal keybindings
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.

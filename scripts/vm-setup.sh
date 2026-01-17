@@ -25,7 +25,7 @@ fi
 # Install Homebrew dependencies
 echo ""
 echo "📦 Installing Homebrew packages..."
-for pkg in node gh ripgrep fzf go; do
+for pkg in node gh; do
     if brew_installed "$pkg"; then
         echo "  ✓ $pkg already installed"
     else
@@ -70,7 +70,7 @@ echo "🐹 Installing opencode..."
 if command_exists opencode; then
     echo "  ✓ opencode already installed"
 else
-    if go install github.com/opencode-ai/opencode@latest; then
+    if curl -fsSL https://opencode.ai/install | bash; then
         echo "  ✓ opencode installed"
     else
         echo "  ✗ Failed to install opencode"
@@ -89,12 +89,12 @@ else
     echo "  ✓ .local/bin already in PATH"
 fi
 
-# Add go/bin to PATH if not already present
-if ! grep -q 'export PATH="$HOME/go/bin:$PATH"' ~/.zshrc; then
-    echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.zshrc
-    echo "  ✓ Added go/bin to PATH"
+# Add .opencode/bin to PATH if not already present (for opencode)
+if ! grep -q 'export PATH="$HOME/.opencode/bin:$PATH"' ~/.zshrc; then
+    echo 'export PATH="$HOME/.opencode/bin:$PATH"' >> ~/.zshrc
+    echo "  ✓ Added .opencode/bin to PATH"
 else
-    echo "  ✓ go/bin already in PATH"
+    echo "  ✓ .opencode/bin already in PATH"
 fi
 
 # Fix terminal TERM setting
@@ -125,7 +125,7 @@ echo ""
 echo "🔍 Verifying installations..."
 
 # Reload PATH for verification
-export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
+export PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"
 
 if command_exists claude; then
     CLAUDE_VERSION=$(claude --version 2>/dev/null | head -n1)
@@ -148,11 +148,18 @@ else
     echo "  ✗ opencode: not found (may need to restart shell)"
 fi
 
+if command_exists gh; then
+    GH_VERSION=$(gh --version 2>/dev/null | head -n1)
+    echo "  ✓ gh: $GH_VERSION"
+else
+    echo "  ✗ gh: not found"
+fi
+
 echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "📋 Next steps:"
-echo "  1. Authenticate with GitHub: gh auth login"
-echo "  2. Configure opencode: opencode init"
+echo "  1. Reload shell configuration: source ~/.zshrc"
+echo "  2. Authenticate with GitHub: gh auth login"
 echo ""
 echo "💡 If any commands show 'not found', restart your shell with: exec zsh"
