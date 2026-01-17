@@ -167,3 +167,19 @@ tart clone <src> <dst>       # Clone/snapshot
 - **VNC needed**: `tart run cal-dev --vnc` then connect via Screen Sharing app
 - **Delete key not working**: Add to `~/.zshrc` in VM: `export TERM=xterm-256color` then `source ~/.zshrc`
 - **Up arrow history broken**: SSH with proper terminal allocation: `ssh -t admin@$(tart ip cal-dev)` or add `bindkey "^[[A" up-line-or-history` to `~/.zshrc`
+
+## Terminal Keybinding Testing
+
+To test and verify terminal keybindings in the VM:
+
+```bash
+# Copy test script to VM
+scp scripts/test-keybindings.sh admin@$(tart ip cal-dev):~/
+
+# Run interactive test
+ssh admin@$(tart ip cal-dev)
+chmod +x ~/test-keybindings.sh
+./test-keybindings.sh
+```
+
+See [Terminal Keybindings Test Plan](terminal-keybindings-test.md) for detailed test procedures and results.

@@ -11,7 +11,8 @@ Manual Tart setup for immediate safe agent use.
 - [x] Create automated vm-setup script
 - [x] Set up base VM
 - [x] Install agents, create snapshot
-- [ ] Investigate additional terminal keybindings
+- [x] Create keybinding test plan
+- [x] Execute keybinding tests (all working correctly)
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.

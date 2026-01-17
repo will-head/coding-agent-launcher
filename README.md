@@ -40,6 +40,7 @@ This repo works with multiple AI coding agents. Context is in `AGENTS.md` with s
 - [Architecture](docs/architecture.md) - System design, UX, config
 - [CLI](docs/cli.md) - Command reference
 - [Bootstrap](docs/bootstrap.md) - Manual Tart setup
+- [Terminal Keybindings Test](docs/terminal-keybindings-test.md) - VM terminal testing
 - [Plugins](docs/plugins.md) - Environment system
 - [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Complete design (source of truth)
 

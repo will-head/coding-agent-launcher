@@ -4,15 +4,15 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Complete
+**Phase 0 (Bootstrap):** Complete ✅
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
 - [x] Set up base VM with agents (automated via script)
 - [x] Create clean snapshot for rollback (documented)
 - [x] Create automated reset-vm script for quick VM reset
-- [ ] Investigate additional terminal keybindings for VM environment
-- [ ] Automate post-reset setup steps (requires password-less SSH)
+- [x] Investigate and test terminal keybindings (all working correctly)
+- [x] Automate post-reset setup steps (vm-setup.sh handles configuration)
 
 **All subsequent phases:** Not started
 
@@ -99,12 +99,14 @@ tart run cal-dev
 #### 0.5 Terminal Environment Improvements
 - [x] Fix TERM setting for delete key (`xterm-256color`)
 - [x] Fix up arrow history navigation
-- [ ] **TODO: Investigate additional keybindings**
-  - Test common navigation keys: down arrow, Home, End, Page Up/Down
-  - Test editing keys: Ctrl+A (home), Ctrl+E (end), Ctrl+K (kill line)
-  - Test word navigation: Alt+Left/Right, Alt+Backspace
-  - Document any broken keybindings in SSH/VM environment
-  - Add fixes to vm-setup.sh if needed
+- [x] Create comprehensive keybinding test plan (docs/terminal-keybindings-test.md)
+- [x] **Execute keybinding tests** ✅
+  - Tested navigation keys (arrows, Home, End, Page Up/Down) - all working
+  - Tested editing keys (Delete, Backspace, Ctrl+K/U/W/Y) - all working
+  - Tested Emacs-style cursor movement (Ctrl+A/E/B/F/P/N) - all working
+  - Tested Option/Alt word navigation (Option+Arrow, Option+Backspace) - all working
+  - Documented escape sequences in test plan
+  - **Conclusion:** No additional fixes needed beyond existing TERM and bindkey settings
 
 #### 0.6 Automated VM Reset Script
 - [x] Create `scripts/reset-vm.sh` for automated VM reset workflow
