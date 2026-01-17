@@ -54,7 +54,7 @@ fi
 # Install Cursor CLI
 echo ""
 echo "🖱️  Installing Cursor CLI..."
-if command_exists cursor-agent; then
+if command_exists agent; then
     echo "  ✓ Cursor CLI already installed"
 else
     if curl -fsSL https://cursor.com/install | bash; then
@@ -122,7 +122,7 @@ echo "     - Run 'opencode init' to set up your agent and API keys"
 echo "     - Follow the prompts to select your preferred AI agent"
 echo "  3. Verify installations:"
 echo "     - claude --version"
-echo "     - cursor-agent --version"
+echo "     - agent --version"
 echo "     - opencode version"
 echo ""
 echo "💡 You may need to restart your shell or run: source ~/.zshrc"

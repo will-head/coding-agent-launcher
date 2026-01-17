@@ -70,7 +70,7 @@ brew update && brew install node gh ripgrep fzf
 npm install -g @anthropic-ai/claude-code
 gh auth login
 
-# Optional: cursor-cli (command: cursor-agent)
+# Optional: cursor-cli (command: agent)
 curl -fsSL https://cursor.com/install | bash
 
 # Optional: opencode (requires ripgrep and fzf)
@@ -88,7 +88,7 @@ Once installed, use these commands to launch each agent:
 claude
 
 # Cursor CLI
-cursor-agent
+agent
 
 # opencode
 opencode
