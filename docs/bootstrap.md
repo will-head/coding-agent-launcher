@@ -109,3 +109,5 @@ tart clone <src> <dst>       # Clone/snapshot
 - **Agent not found**: Check PATH includes `~/go/bin`
 - **Disk full**: `rm -rf ~/Library/Caches/* ~/.npm/_cacache && go clean -cache`
 - **VNC needed**: `tart run cal-dev --vnc` then connect via Screen Sharing app
+- **Delete key not working**: Add to `~/.zshrc` in VM: `export TERM=xterm-256color` then `source ~/.zshrc`
+- **Up arrow history broken**: SSH with proper terminal allocation: `ssh -t admin@$(tart ip cal-dev)` or add `bindkey "^[[A" up-line-or-history` to `~/.zshrc`
