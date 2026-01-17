@@ -16,11 +16,42 @@ tart set cal-dev --cpu 4 --memory 8192 --disk-size 80
 tart run cal-dev  # login: admin/admin
 ```
 
+## Accessing the VM
+
+Once the VM is running, you can access it in several ways:
+
+**Option 1: SSH (Recommended)**
+```bash
+# Get the VM's IP address
+tart ip cal-dev
+
+# SSH into the VM (password: admin)
+ssh admin@$(tart ip cal-dev)
+```
+
+**Option 2: GUI**
+The `tart run cal-dev` command opens a window with the VM's display. You can interact with it directly through that window (login: admin/admin).
+
+**Option 3: Headless with VNC**
+```bash
+# Start VM headless with VNC available
+tart run cal-dev --no-graphics --vnc &
+
+# Connect via VNC (password: admin)
+open vnc://$(tart ip cal-dev)
+```
+
 Inside VM:
 ```bash
 brew update && brew install node gh
 npm install -g @anthropic-ai/claude-code
 gh auth login
+
+# Optional: cursor-cli
+brew install --cask cursor
+# Add Cursor CLI to PATH
+echo 'export PATH="/Applications/Cursor.app/Contents/Resources/app/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 
 # Optional: opencode
 brew install go && go install github.com/opencode-ai/opencode@latest
