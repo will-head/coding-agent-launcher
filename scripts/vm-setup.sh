@@ -16,7 +16,7 @@ npm install -g @anthropic-ai/claude-code
 
 # Install Cursor CLI
 echo "🖱️  Installing Cursor CLI..."
-npm install -g cursor-cli
+curl -fsSL https://cursor.com/install | bash
 
 # Install Go and opencode
 echo "🐹 Installing Go and opencode..."
@@ -57,7 +57,7 @@ echo "     - Run 'opencode init' to set up your agent and API keys"
 echo "     - Follow the prompts to select your preferred AI agent"
 echo "  3. Verify installations:"
 echo "     - claude --version"
-echo "     - cursor-cli --version"
+echo "     - cursor-agent --version"
 echo "     - opencode version"
 echo ""
 echo "💡 You may need to restart your shell or run: source ~/.zshrc"

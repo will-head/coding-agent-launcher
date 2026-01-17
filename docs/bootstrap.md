@@ -70,13 +70,28 @@ brew update && brew install node gh ripgrep fzf
 npm install -g @anthropic-ai/claude-code
 gh auth login
 
-# Optional: cursor-cli
-npm install -g cursor-cli
+# Optional: cursor-cli (command: cursor-agent)
+curl -fsSL https://cursor.com/install | bash
 
 # Optional: opencode (requires ripgrep and fzf)
 brew install go && go install github.com/opencode-ai/opencode@latest
 echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.zshrc
 opencode init  # Configure agent and API keys
+```
+
+## Using the Agents
+
+Once installed, use these commands to launch each agent:
+
+```bash
+# Claude Code
+claude
+
+# Cursor CLI
+cursor-agent
+
+# opencode
+opencode
 ```
 
 ## Safety Snapshot (Critical)
