@@ -26,6 +26,12 @@ tart run cal-dev  # login: admin/admin
 
 See [Bootstrap Guide](docs/bootstrap.md) for full setup instructions.
 
+## Agent Support
+
+This repo works with multiple AI coding agents. Context is in `AGENTS.md` with symlinks:
+- `CLAUDE.md` → Claude Code
+- `.cursorrules` → Cursor
+
 ## Documentation
 
 - [Architecture](docs/architecture.md) - System design, UX, config
