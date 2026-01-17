@@ -119,6 +119,20 @@ tart run cal-dev --no-graphics --dir=output:~/cal-output &
 
 ## Rollback
 
+**Automated (Recommended):**
+```bash
+# Reset VM from pristine snapshot (interactive)
+scripts/reset-vm.sh cal-dev cal-dev-pristine
+
+# The script will:
+# 1. Prompt for confirmation before deleting
+# 2. Clone from pristine snapshot
+# 3. Start VM in background
+# 4. Wait for SSH availability
+# 5. Copy vm-setup.sh to VM
+```
+
+**Manual:**
 ```bash
 tart stop cal-dev && tart delete cal-dev && tart clone cal-dev-clean cal-dev
 ```
@@ -130,6 +144,7 @@ alias cal-start='tart run cal-dev --no-graphics & sleep 30 && ssh admin@$(tart i
 alias cal-stop='tart stop cal-dev'
 alias cal-ssh='ssh admin@$(tart ip cal-dev)'
 alias cal-rollback='tart stop cal-dev && tart delete cal-dev && tart clone cal-dev-clean cal-dev'
+alias cal-reset='scripts/reset-vm.sh cal-dev cal-dev-pristine'  # Automated reset
 alias cal-vnc='open vnc://$(tart ip cal-dev)'  # password: admin
 ```
 

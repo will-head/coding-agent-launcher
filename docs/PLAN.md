@@ -10,7 +10,9 @@
 - [x] Create automated vm-setup script
 - [x] Set up base VM with agents (automated via script)
 - [x] Create clean snapshot for rollback (documented)
+- [x] Create automated reset-vm script for quick VM reset
 - [ ] Investigate additional terminal keybindings for VM environment
+- [ ] Automate post-reset setup steps (requires password-less SSH)
 
 **All subsequent phases:** Not started
 
@@ -104,7 +106,22 @@ tart run cal-dev
   - Document any broken keybindings in SSH/VM environment
   - Add fixes to vm-setup.sh if needed
 
-**Deliverable:** Automated setup script and working VM environment. Can use agents safely with proper terminal behavior.
+#### 0.6 Automated VM Reset Script
+- [x] Create `scripts/reset-vm.sh` for automated VM reset workflow
+- [x] Delete confirmation prompt to prevent accidental data loss
+- [x] Automatic VM state detection and cleanup
+- [x] Wait for VM boot and SSH availability
+- [x] Copy vm-setup.sh to freshly reset VM
+- [ ] **TODO: Automate post-reset setup** (chmod, run script, gh auth)
+  - Requires password-less SSH (ssh-copy-id or sshpass)
+  - See TODOs in reset-vm.sh header
+
+**Usage:**
+```bash
+scripts/reset-vm.sh cal-dev cal-dev-pristine
+```
+
+**Deliverable:** Automated setup script, working VM environment, and quick VM reset capability. Can use agents safely with proper terminal behavior and rapid rollback.
 
 ---
 
