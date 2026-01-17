@@ -57,22 +57,26 @@ chmod +x ~/vm-setup.sh
 
 # Authenticate with GitHub
 gh auth login
+
+# Configure opencode
+opencode init
 ```
 
 **Manual Setup:**
 
 Inside VM:
 ```bash
-brew update && brew install node gh
+brew update && brew install node gh ripgrep fzf
 npm install -g @anthropic-ai/claude-code
 gh auth login
 
 # Optional: cursor-cli
 npm install -g cursor-cli
 
-# Optional: opencode
+# Optional: opencode (requires ripgrep and fzf)
 brew install go && go install github.com/opencode-ai/opencode@latest
 echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.zshrc
+opencode init  # Configure agent and API keys
 ```
 
 ## Safety Snapshot (Critical)

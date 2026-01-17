@@ -8,7 +8,7 @@ echo ""
 # Update homebrew and install dependencies
 echo "📦 Installing dependencies via Homebrew..."
 brew update
-brew install node gh
+brew install node gh ripgrep fzf
 
 # Install Claude Code
 echo "🤖 Installing Claude Code..."
@@ -52,7 +52,10 @@ echo "✅ Setup complete!"
 echo ""
 echo "📋 Next steps:"
 echo "  1. Authenticate with GitHub: gh auth login"
-echo "  2. Verify installations:"
+echo "  2. Configure opencode:"
+echo "     - Run 'opencode init' to set up your agent and API keys"
+echo "     - Follow the prompts to select your preferred AI agent"
+echo "  3. Verify installations:"
 echo "     - claude --version"
 echo "     - cursor-cli --version"
 echo "     - opencode version"
