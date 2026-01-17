@@ -120,17 +120,39 @@ else
     echo "  ⚠ Could not reload shell config (restart shell manually)"
 fi
 
+# Verify installations
+echo ""
+echo "🔍 Verifying installations..."
+
+# Reload PATH for verification
+export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
+
+if command_exists claude; then
+    CLAUDE_VERSION=$(claude --version 2>/dev/null | head -n1)
+    echo "  ✓ claude: $CLAUDE_VERSION"
+else
+    echo "  ✗ claude: not found"
+fi
+
+if command_exists agent; then
+    AGENT_VERSION=$(agent --version 2>/dev/null | head -n1)
+    echo "  ✓ agent: $AGENT_VERSION"
+else
+    echo "  ✗ agent: not found (may need to restart shell)"
+fi
+
+if command_exists opencode; then
+    OPENCODE_VERSION=$(opencode --version 2>/dev/null | head -n1)
+    echo "  ✓ opencode: $OPENCODE_VERSION"
+else
+    echo "  ✗ opencode: not found (may need to restart shell)"
+fi
+
 echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "📋 Next steps:"
 echo "  1. Authenticate with GitHub: gh auth login"
-echo "  2. Configure opencode:"
-echo "     - Run 'opencode init' to set up your agent and API keys"
-echo "     - Follow the prompts to select your preferred AI agent"
-echo "  3. Verify installations:"
-echo "     - claude --version"
-echo "     - agent --version"
-echo "     - opencode version"
+echo "  2. Configure opencode: opencode init"
 echo ""
-echo "💡 You may need to restart your shell or run: source ~/.zshrc"
+echo "💡 If any commands show 'not found', restart your shell with: exec zsh"
