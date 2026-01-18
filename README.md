@@ -1,6 +1,6 @@
 # CAL - Coding Agent Loader
 
-> **Status:** Phase 0 (Bootstrap) Complete ✅ | Phase 1 (CLI Foundation) Not Started
+> **Status:** Phase 0 (Bootstrap) Mostly Complete - Testing Pending | Phase 1 (CLI Foundation) Not Started
 
 VM-based sandbox for running AI coding agents (Claude Code, Cursor, opencode) safely in isolated Tart macOS VMs.
 
@@ -73,9 +73,11 @@ This repo works with multiple AI coding agents. Context is in `AGENTS.md` with s
 - [Architecture](docs/architecture.md) - System design, UX, config
 - [CLI](docs/cli.md) - Command reference
 - [Bootstrap](docs/bootstrap.md) - Manual Tart setup
+- [Cursor Login Fix](docs/cursor-login-fix.md) - Keychain solution for agent authentication
 - [SSH Key Setup](docs/ssh-key-setup.md) - Password-less VM access
 - [Reset VM Testing](docs/reset-vm-testing.md) - Testing guide for reset script
 - [Terminal Keybindings Test](docs/terminal-keybindings-test.md) - VM terminal testing
+- [Testing Guide](TESTING.md) - Phase 0.8 testing checklist
 - [Plugins](docs/plugins.md) - Environment system
 - [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Complete design (immutable)
 

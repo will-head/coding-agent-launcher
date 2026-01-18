@@ -154,7 +154,7 @@ tart clone <src> <dst>       # Clone/snapshot
 - **Disk full**: `rm -rf ~/Library/Caches/* ~/.npm/_cacache`
 - **Delete key not working**: Already fixed in vm-setup.sh (TERM=xterm-256color)
 - **Up arrow history broken**: Already fixed in vm-setup.sh (bindkey)
-- **Cursor Agent login fails**: Known issue - run `agent login` and complete browser OAuth flow
+- **Cursor Agent login fails**: Fixed via keychain unlock (see [cursor-login-fix.md](cursor-login-fix.md)). Use Screen Sharing to complete initial login: `open vnc://$(tart ip cal-dev)` then run `agent` in Terminal.
 - **Screen Sharing shows lock screen**: Auto-login is configured by vm-setup.sh but requires VM reboot to activate. Stop and restart the VM, then Screen Sharing will show the desktop.
 
 ## Terminal Keybinding Testing

@@ -141,6 +141,16 @@ else
     echo "  ✗ Failed to enable auto-login"
 fi
 
+# Configure keychain for SSH/headless access
+echo ""
+echo "🔐 Configuring keychain for SSH access..."
+# Unlock the login keychain (default password is 'admin' for Tart VMs)
+if security unlock-keychain -p "${VM_PASSWORD:-admin}" login.keychain 2>/dev/null; then
+    echo "  ✓ Login keychain unlocked"
+else
+    echo "  ⚠ Could not unlock keychain (may need manual unlock)"
+fi
+
 # Verify installations
 echo ""
 echo "🔍 Verifying installations..."
@@ -182,8 +192,10 @@ echo ""
 echo "📋 Next steps:"
 echo "  1. Reload shell configuration: source ~/.zshrc"
 echo "  2. Authenticate with GitHub: gh auth login"
+echo "  3. Authenticate agents: claude, opencode auth login, agent"
 echo ""
 echo "💡 Notes:"
 echo "  • Auto-login is enabled - VM will boot to desktop for Screen Sharing"
+echo "  • Login keychain is unlocked - enables agent authentication via SSH"
 echo "  • If any commands show 'not found', restart your shell with: exec zsh"
 echo "  • Auto-login takes effect on next VM reboot"

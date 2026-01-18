@@ -4,7 +4,7 @@
 >
 > See also: [SPEC](SPEC.md) (technical requirements) | [ADR-001](adr/ADR-001-cal-isolation.md) (design decisions)
 
-## Phase 0: Bootstrap ✅ (Complete)
+## Phase 0: Bootstrap (Mostly Complete - Testing Pending)
 Automated Tart setup for immediate safe agent use.
 - [x] Research Tart
 - [x] Document manual process
@@ -20,6 +20,12 @@ Automated Tart setup for immediate safe agent use.
   - `--run`: Start VM and SSH in
   - `--stop`: Stop VM
   - `--snapshot`: List, create, restore, delete snapshots
+- [x] **macOS Auto-Login for Screen Sharing** - Fixed lock screen issue
+- [x] **Keychain Access for Cursor Agent** - Implementation complete
+  - [x] Implement keychain unlock in vm-setup.sh
+  - [x] Implement keychain unlock in cal-bootstrap
+  - [x] Create test script and documentation
+  - [ ] **USER TODO: Complete testing** (see TESTING.md)
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.

@@ -200,6 +200,22 @@ run_vm_setup() {
         "${VM_USER}@${vm_ip}" "chmod +x ~/vm-setup.sh && ~/vm-setup.sh"
 }
 
+# Unlock keychain for SSH sessions (enables agent authentication)
+# Returns 0 even on failure to avoid blocking SSH connection
+unlock_keychain() {
+    local vm_ip="$1"
+    
+    echo "  Unlocking keychain for SSH access..."
+    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${vm_ip}" "security unlock-keychain -p '${VM_PASSWORD}' login.keychain 2>/dev/null"; then
+        echo "  ✓ Keychain unlocked"
+        return 0
+    else
+        echo "  ⚠ Could not unlock keychain (may already be unlocked)"
+        return 0
+    fi
+}
+
 # === INIT MODE ===
 do_init() {
     echo ""
@@ -336,6 +352,8 @@ do_run() {
         VM_IP=$("$TART" ip "$vm_to_run" 2>/dev/null || echo "")
         if [ -n "$VM_IP" ]; then
             echo ""
+            unlock_keychain "$VM_IP"
+            echo ""
             echo "Connecting via SSH..."
             echo ""
             ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${VM_IP}"
@@ -357,6 +375,10 @@ do_run() {
     
     echo ""
     echo "$vm_to_run is running (PID: $TART_PID)"
+    
+    # Unlock keychain for SSH access
+    unlock_keychain "$VM_IP"
+    
     echo ""
     echo "VNC:   open vnc://${VM_IP}"
     echo "Stop:  $TART stop $vm_to_run"

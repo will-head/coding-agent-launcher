@@ -8,7 +8,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** ✅ Complete
+**Phase 0 (Bootstrap):** Mostly complete (4 testing TODOs in 0.8)
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -31,11 +31,24 @@
   - [x] Auto-detect mode based on VM state
   - [x] SSH key setup automation
   - [x] Cleanup traps for background processes
+- [x] **macOS Auto-Login for Screen Sharing** (Phase 0.7)
+  - [x] Enable auto-login in vm-setup.sh
+  - [x] Configure macOS to auto-login admin user
+  - [x] Fix Screen Sharing lock screen issue
+- [x] **Keychain Access for Cursor Agent** (Phase 0.8 - Implementation Complete)
+  - [x] Research keychain issue from Tart FAQ
+  - [x] Implement keychain unlock in vm-setup.sh
+  - [x] Implement keychain unlock in cal-bootstrap
+  - [x] Create test script and documentation
+  - [ ] Test agent login via Screen Sharing
+  - [ ] Verify credential persistence
+  - [ ] Test across VM reboots
+  - [ ] Verify auto-unlock on connection
 
 **All subsequent phases:** Not started
 
 ### Known Issues
-- [ ] **Cursor Agent login fails in VM** - `agent` command fails with "Security command failed" (exit code 36). Keychain access issue in VM environment. Workaround: Run `agent login` and complete browser-based OAuth flow manually. See: https://cursor.com/loginDeepControl
+- [ ] **Cursor Agent login keychain fix** - Implemented keychain unlock solution based on [Tart FAQ](https://tart.run/faq/). The `vm-setup.sh` and `cal-bootstrap` scripts now automatically unlock the login keychain to enable agent authentication via SSH. First-time login still requires browser-based OAuth (use Screen Sharing: `open vnc://$(tart ip cal-dev)` and run `agent` in VM Terminal). After initial auth, credentials persist. See [docs/cursor-login-fix.md](cursor-login-fix.md) for details.
 
 ---
 
@@ -189,6 +202,24 @@ VM_USER=myuser VM_PASSWORD=mypass scripts/reset-vm.sh cal-dev cal-dev-pristine
 **Deliverable:** ✅ Fully automated VM reset with minimal manual steps (only gh auth login remains manual due to interactive OAuth requirement).
 
 **Deliverable for 0.7:** ✅ Auto-login configured - Screen Sharing now shows desktop instead of lock screen after VM reboot.
+
+#### 0.8 Keychain Access for Cursor Agent
+
+**Completed:**
+- [x] Research keychain issue from Tart FAQ
+- [x] Implement keychain unlock in vm-setup.sh
+- [x] Implement keychain unlock in cal-bootstrap (--run mode)
+- [x] Create test script (test-cursor-login.sh)
+- [x] Document solution in cursor-login-fix.md
+
+**Testing Required:**
+- [ ] **USER TODO: Complete Phase 0.8 testing** - Follow TESTING.md checklist to verify keychain solution
+  - [ ] Test agent login via Screen Sharing after keychain unlock
+  - [ ] Verify credentials persist after successful login
+  - [ ] Test credential persistence across VM reboots
+  - [ ] Verify keychain auto-unlock on cal-bootstrap --run
+
+**Deliverable for 0.8:** Keychain automatically unlocked when connecting to VM, enabling Cursor agent authentication via SSH sessions.
 
 ---
 
