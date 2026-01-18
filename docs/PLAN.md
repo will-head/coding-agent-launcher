@@ -14,15 +14,7 @@
 - [x] Create automated vm-setup script
 - [x] Set up base VM with agents (automated via script)
 - [x] Create clean snapshot for rollback (documented)
-- [x] Create automated reset-vm script for quick VM reset
 - [x] Investigate and test terminal keybindings (all working correctly)
-- [x] **Complete reset-vm.sh improvements** (all 6 TODOs completed)
-  - [x] Add cleanup trap for background VM process
-  - [x] Automate SSH/SCP password authentication
-  - [x] Make VM credentials configurable
-  - [x] Add --yes flag for non-interactive mode
-  - [x] Run shellcheck and address warnings
-  - [x] Fully automate post-reset setup (chmod, run script, gh auth note)
 - [x] **Create cal-bootstrap script** - unified VM management
   - [x] `--init`: Create cal-clean, cal-dev, cal-initialised VMs
   - [x] `--run`: Start VM and SSH in automatically
@@ -45,7 +37,7 @@
   - [x] Test across VM reboots (credentials persist with keychain unlock + .zshrc)
   - [x] Verify auto-unlock on connection
   - [ ] **TODO: Fix Cursor agent login reliability** - Sometimes fails to authenticate even with keychain unlocked. Needs investigation of Cursor credential storage mechanism.
-- [ ] **VM Management Improvements** (Phase 0.9 - 9 TODOs pending)
+- [ ] **VM Management Improvements** (Phase 0.8 - 9 TODOs pending)
   - [ ] Add --restart/-r option to cal-bootstrap
   - [ ] Check VM keyboard layout matches host
   - [ ] Add Screen Sharing instructions for agent login failures
@@ -153,40 +145,7 @@ tart run cal-dev
   - Documented escape sequences in test plan
   - **Conclusion:** No additional fixes needed beyond existing TERM and bindkey settings
 
-#### 0.6 Automated VM Reset Script
-
-**Completed:**
-- [x] Create `scripts/reset-vm.sh` for automated VM reset workflow
-- [x] Delete confirmation prompt to prevent accidental data loss
-- [x] Automatic VM state detection and cleanup
-- [x] Wait for VM boot and SSH availability
-- [x] Copy vm-setup.sh to freshly reset VM
-- [x] **Add cleanup trap for background VM process**
-  - Kills tart process if script exits early (error or Ctrl+C)
-  - Prevents orphaned VM processes
-- [x] **Automate SSH/SCP operations**
-  - Uses SSH key authentication (requires one-time setup via ssh-copy-id)
-  - See docs/ssh-key-setup.md for setup instructions
-  - No password prompts after SSH keys are configured in pristine VM
-- [x] **Make VM credentials configurable**
-  - Supports VM_USER and VM_PASSWORD environment variables
-  - Defaults to admin/admin if not set
-  - Better security for custom VM configurations
-- [x] **Add --yes flag for non-interactive mode**
-  - Skips confirmation prompt when --yes is provided
-  - Enables scripted/automated workflows
-  - Explicit flag required for safety
-- [x] **Shellcheck validation**
-  - Fixed `$*` to `"$@"` for proper argument handling
-  - Proper quoting throughout script
-  - Follows shell script best practices
-- [x] **Fully automate post-reset setup**
-  - Runs chmod +x ~/vm-setup.sh via SSH
-  - Runs ~/vm-setup.sh via SSH with output streaming
-  - Documents manual gh auth login step (requires interactive auth)
-  - Configurable via SKIP_POST_SETUP environment variable
-
-#### 0.7 macOS Auto-Login for Screen Sharing
+#### 0.6 macOS Auto-Login for Screen Sharing
 
 **Completed:**
 - [x] Enable auto-login in vm-setup.sh
@@ -195,26 +154,9 @@ tart run cal-dev
 - [x] Add user notification about auto-login being enabled
 - [x] Document that auto-login takes effect on next VM reboot
 
-**Usage:**
-```bash
-# Interactive mode (default)
-scripts/reset-vm.sh cal-dev cal-dev-pristine
+**Deliverable:** ✅ Auto-login configured - Screen Sharing now shows desktop instead of lock screen after VM reboot.
 
-# Non-interactive mode
-scripts/reset-vm.sh --yes cal-dev cal-dev-pristine
-
-# Skip automated setup
-SKIP_POST_SETUP=true scripts/reset-vm.sh cal-dev cal-dev-pristine
-
-# Custom credentials
-VM_USER=myuser VM_PASSWORD=mypass scripts/reset-vm.sh cal-dev cal-dev-pristine
-```
-
-**Deliverable:** ✅ Fully automated VM reset with minimal manual steps (only gh auth login remains manual due to interactive OAuth requirement).
-
-**Deliverable for 0.7:** ✅ Auto-login configured - Screen Sharing now shows desktop instead of lock screen after VM reboot.
-
-#### 0.8 Keychain Access for Cursor Agent
+#### 0.7 Keychain Access for Cursor Agent
 
 **Completed:**
 - [x] Research keychain issue from Tart FAQ
@@ -224,15 +166,15 @@ VM_USER=myuser VM_PASSWORD=mypass scripts/reset-vm.sh cal-dev cal-dev-pristine
 - [x] Document solution in cursor-login-fix.md
 
 **Testing Required:**
-- [ ] **USER TODO: Complete Phase 0.8 testing** - Follow TESTING.md checklist to verify keychain solution
+- [ ] **USER TODO: Complete Phase 0.7 testing** - Follow TESTING.md checklist to verify keychain solution
   - [ ] Test agent login via Screen Sharing after keychain unlock
   - [ ] Verify credentials persist after successful login
   - [ ] Test credential persistence across VM reboots
   - [ ] Verify keychain auto-unlock on cal-bootstrap --run
 
-**Deliverable for 0.8:** Keychain automatically unlocked when connecting to VM, enabling Cursor agent authentication via SSH sessions.
+**Deliverable:** Keychain automatically unlocked when connecting to VM, enabling Cursor agent authentication via SSH sessions.
 
-#### 0.9 VM Management Improvements
+#### 0.8 VM Management Improvements
 
 **Pending TODOs:**
 - [ ] Add `--restart` / `-r` option to cal-bootstrap for quick VM restart
@@ -245,7 +187,7 @@ VM_USER=myuser VM_PASSWORD=mypass scripts/reset-vm.sh cal-dev cal-dev-pristine
 - [ ] Remove distinction between clones and snapshots in `--snapshot list` (they're functionally the same for our purposes)
 - [ ] Create method for coding agent to detect if it's running in a VM and add this capability to coding agent's config
 
-**Deliverable for 0.9:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection.
+**Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection.
 
 ---
 

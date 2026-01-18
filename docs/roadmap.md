@@ -13,8 +13,6 @@ Automated Tart setup for immediate safe agent use.
 - [x] Install agents, create snapshot
 - [x] Create keybinding test plan
 - [x] Execute keybinding tests (all working correctly)
-- [x] Create automated reset-vm script
-- [x] **Complete reset-vm.sh improvements** (all 6 TODOs completed)
 - [x] **Create cal-bootstrap script** - unified VM management
   - `--init`: Create VMs, install tools, setup SSH keys
   - `--run`: Start VM and SSH in

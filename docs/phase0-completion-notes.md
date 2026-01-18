@@ -1,10 +1,14 @@
-# Phase 0 Completion Notes
+# Phase 0 Reference Document
 
-**Completion Date:** January 17, 2026
+> ⚠️ **NOTE:** This is a historical reference snapshot documenting Phase 0 work.
+> **For current status and TODOs, see [PLAN.md](PLAN.md)** - the single source of truth.
+
+**Snapshot Date:** January 17, 2026  
+**Current Status:** See [PLAN.md Current Status section](PLAN.md#current-status)
 
 ## Summary
 
-Phase 0 (Bootstrap) is now complete. All objectives have been achieved, providing a fully functional manual VM setup process with automated tooling for quick VM reset and agent installation.
+This document captures the state of Phase 0 (Bootstrap) at a point in time. All objectives were achieved, providing a fully functional manual VM setup process with the cal-bootstrap script for VM management.
 
 ## Completed Deliverables
 
@@ -14,15 +18,13 @@ Phase 0 (Bootstrap) is now complete. All objectives have been achieved, providin
 - ✅ Configures GitHub CLI
 - ✅ Sets up proper terminal environment (TERM, keybindings, PATH)
 
-### 2. Automated VM Reset
-- ✅ Production-ready reset script (`scripts/reset-vm.sh`)
-- ✅ All 6 improvement TODOs completed:
-  1. Cleanup trap for background VM process
-  2. SSH key authentication (no password required)
-  3. Configurable VM credentials via environment variables
-  4. `--yes` flag for non-interactive mode
-  5. Shellcheck validation and fixes
-  6. Fully automated post-reset setup
+### 2. VM Management
+- ✅ cal-bootstrap script (`scripts/cal-bootstrap`)
+  - Unified VM management CLI
+  - `--init`: Create and configure VMs
+  - `--run`: Start VM and SSH in
+  - `--stop`: Stop VM
+  - `--snapshot`: Snapshot management
 
 ### 3. Terminal Environment
 - ✅ Comprehensive keybinding test plan
@@ -38,76 +40,41 @@ Phase 0 (Bootstrap) is now complete. All objectives have been achieved, providin
 
 ## Key Features
 
-### reset-vm.sh Capabilities
+### cal-bootstrap Capabilities
 
-**Interactive Mode (Default):**
-```bash
-scripts/reset-vm.sh cal-dev cal-dev-pristine
-```
-- Prompts for confirmation before deleting VM
-- Shows progress for each step
-- Automatically runs vm-setup.sh in VM
-- Streams setup output to console
+The cal-bootstrap script provides unified VM management:
 
-**Non-Interactive Mode:**
-```bash
-scripts/reset-vm.sh --yes cal-dev cal-dev-pristine
-```
-- Skips confirmation prompt
-- Ideal for automation and scripting
+- `--init`: Initialize VMs with tools and SSH keys
+- `--run`: Start VM and automatically SSH in
+- `--stop`: Stop the VM
+- `--snapshot list/create/restore/delete`: Snapshot management
+- Keychain unlock automation for agent authentication
+- Background process cleanup on exit
 
-**Skip Post-Setup:**
-```bash
-SKIP_POST_SETUP=true scripts/reset-vm.sh cal-dev cal-dev-pristine
-```
-- Copies vm-setup.sh but doesn't run it
-- For manual control of setup process
+## Manual Steps
 
-**Custom Credentials:**
-```bash
-VM_USER=myuser VM_PASSWORD=mypass scripts/reset-vm.sh cal-dev cal-dev-pristine
-```
-- Supports custom VM usernames/passwords
-- Falls back to admin/admin if not specified
-
-### Error Handling
-
-- ✅ Cleanup trap kills background VM on script exit/error
-- ✅ Prevents orphaned tart processes
-- ✅ Graceful handling of missing pristine VM
-- ✅ Timeout handling for VM boot and SSH availability
-- ✅ Clear error messages with troubleshooting hints
-
-## Remaining Manual Steps
-
-Only **one** manual step remains:
+GitHub CLI authentication is a one-time manual step:
 
 ```bash
-# After reset-vm.sh completes
+# After VM setup
 ssh admin@<vm-ip>
 gh auth login  # Interactive OAuth flow
 ```
 
-GitHub CLI authentication requires interactive OAuth, which cannot be automated without storing tokens. This is by design for security.
+This requires interactive OAuth, which cannot be automated without storing tokens. This is by design for security.
 
 ## Testing Status
 
-- ✅ VM reset tested successfully
 - ✅ Agent installation verified
 - ✅ Keybindings tested comprehensively
-- ✅ Rollback to pristine snapshot tested
-- ✅ Background VM cleanup tested (Ctrl+C during reset)
+- ✅ Rollback to snapshots tested
+- ✅ Background VM cleanup tested
+- ✅ Keychain unlock automation tested
 
-## Next Steps
+## Historical Context
 
-Phase 0 is complete. Ready to proceed to **Phase 1: CLI Foundation**.
+This snapshot documents the completion of Phase 0 at a point in time. The project has since evolved with the cal-bootstrap script providing comprehensive VM management capabilities.
 
-Phase 1 will build the `cal` CLI tool to wrap these manual processes:
-- `cal isolation init` - Initialize new VM
-- `cal isolation start` - Start VM
-- `cal isolation stop` - Stop VM
-- `cal isolation ssh` - SSH into VM
-- `cal isolation snapshot` - Manage snapshots
-- Configuration management in `~/.cal/`
-
-See [PLAN.md](PLAN.md) for Phase 1 implementation details.
+For current project status, see:
+- [PLAN.md](PLAN.md) - Current status and TODOs
+- [roadmap.md](roadmap.md) - Phase overview

@@ -38,21 +38,6 @@ tart run cal-dev  # login: admin/admin
 # See docs/bootstrap.md for detailed instructions
 ```
 
-### Automated VM Reset
-
-After initial setup, use the reset script for quick VM resets:
-
-```bash
-# One-time: Set up SSH keys (see docs/ssh-key-setup.md)
-ssh-copy-id admin@<vm-ip>
-
-# Reset VM to pristine state
-scripts/reset-vm.sh cal-dev cal-dev-pristine
-
-# Non-interactive mode
-scripts/reset-vm.sh --yes cal-dev cal-dev-pristine
-```
-
 See [Bootstrap Guide](docs/bootstrap.md) for full setup instructions.
 
 ## Agent Support
@@ -78,8 +63,6 @@ This repo works with multiple AI coding agents. Context is in `AGENTS.md` with s
 - [CLI](docs/cli.md) - Command reference
 - [Bootstrap](docs/bootstrap.md) - Manual Tart setup
 - [Cursor Login Fix](docs/cursor-login-fix.md) - Keychain solution for agent authentication
-- [SSH Key Setup](docs/ssh-key-setup.md) - Password-less VM access
-- [Reset VM Testing](docs/reset-vm-testing.md) - Testing guide for reset script
 - [Terminal Keybindings Test](docs/terminal-keybindings-test.md) - VM terminal testing
 - [Plugins](docs/plugins.md) - Environment system
 - [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Complete design (immutable)

@@ -8,7 +8,7 @@
 
 ## Overview
 
-Phase 0 (Bootstrap) is mostly complete. The manual Tart VM setup process is fully documented and automated, providing immediate safe agent use with excellent terminal behavior. However, there are 6 remaining improvements to the `reset-vm.sh` script identified during code review that need to be completed before Phase 0 can be considered fully done.
+Phase 0 (Bootstrap) is mostly complete. The manual Tart VM setup process is fully documented and automated with the cal-bootstrap script, providing immediate safe agent use with excellent terminal behavior.
 
 ## Completed Tasks
 
@@ -25,17 +25,12 @@ Phase 0 (Bootstrap) is mostly complete. The manual Tart VM setup process is full
   - Verifies all installations
   - Idempotent (can be run multiple times safely)
 
-- 🔄 **`scripts/reset-vm.sh`** - Automated VM reset workflow (6 TODOs remaining)
-  - ✅ Interactive confirmation prompt
-  - ✅ Automatic VM state detection and cleanup
-  - ✅ Waits for VM boot and SSH availability
-  - ✅ Copies vm-setup.sh to freshly reset VM
-  - ❌ TODO: Add cleanup trap for background VM process
-  - ❌ TODO: Automate SSH/SCP password authentication
-  - ❌ TODO: Make VM credentials configurable
-  - ❌ TODO: Add --yes flag for non-interactive mode
-  - ❌ TODO: Run shellcheck and address warnings
-  - ❌ TODO: Fully automate post-reset setup steps
+- ✅ **`scripts/cal-bootstrap`** - Unified VM management
+  - `--init`: Create and configure VMs
+  - `--run`: Start VM and SSH in
+  - `--stop`: Stop VM
+  - `--snapshot`: Snapshot management
+  - Keychain unlock automation
 
 ### 3. Terminal Environment
 - ✅ Fixed delete key behavior (`TERM=xterm-256color`)
@@ -95,9 +90,9 @@ These match standard Emacs/readline conventions and work natively in ZSH.
 ## Key Deliverables
 
 ### Scripts
-1. `scripts/vm-setup.sh` - Automated VM provisioning (166 lines)
-2. `scripts/reset-vm.sh` - Automated VM reset (existing)
-3. `scripts/test-keybindings.sh` - Interactive keybinding tester (new)
+1. `scripts/vm-setup.sh` - Automated VM provisioning
+2. `scripts/cal-bootstrap` - Unified VM management
+3. `scripts/test-keybindings.sh` - Interactive keybinding tester
 
 ### Documentation
 1. `docs/bootstrap.md` - Manual setup guide
@@ -151,13 +146,16 @@ agent       # Cursor CLI
 opencode    # opencode
 ```
 
-### Reset VM
+### Snapshot Management
 ```bash
-# Automated reset (recommended)
-scripts/reset-vm.sh cal-dev cal-dev-pristine
+# List snapshots
+scripts/cal-bootstrap --snapshot list
 
-# Manual reset
-tart stop cal-dev && tart delete cal-dev && tart clone cal-dev-pristine cal-dev
+# Create snapshot
+scripts/cal-bootstrap --snapshot create my-snapshot
+
+# Restore snapshot
+scripts/cal-bootstrap --snapshot restore my-snapshot
 ```
 
 ## Success Criteria
@@ -165,22 +163,9 @@ tart stop cal-dev && tart delete cal-dev && tart clone cal-dev-pristine cal-dev
 - ✅ **Isolation verified** - VM provides complete filesystem isolation
 - ✅ **Agent parity** - All three agents work identically to local
 - ✅ **Terminal UX** - All keybindings work correctly (tested comprehensively)
-- ✅ **Recovery** - Snapshot rollback works (<2 minutes with automated script)
-- 🔄 **Automation** - Setup and reset are scripted (reset-vm.sh needs 6 improvements)
+- ✅ **Recovery** - Snapshot management via cal-bootstrap
+- ✅ **Automation** - Setup and VM management are scripted
 - ✅ **Documentation** - Complete guides for setup, testing, and usage
-
-## Remaining Work for Phase 0
-
-Before moving to Phase 1, complete the 6 TODOs in `reset-vm.sh`:
-
-1. **Add cleanup trap** - Kill background VM process on script exit
-2. **Password-less SSH** - Set up ssh-copy-id or use sshpass
-3. **Configurable credentials** - Support VM_USER/VM_PASSWORD env vars
-4. **--yes flag** - Enable non-interactive mode for automation
-5. **Shellcheck validation** - Run shellcheck and fix warnings
-6. **Full automation** - Automatically run vm-setup.sh and handle gh auth
-
-These improvements will make the reset workflow truly zero-touch.
 
 ## Next Phase
 
@@ -195,10 +180,8 @@ Goals:
 
 See `docs/PLAN.md` for Phase 1 implementation details.
 
-## Conclusion
+## Historical Context
 
-Phase 0 is very close to completion. The manual VM setup is well-automated, the terminal environment is excellent (no broken keybindings), and the workflow is functional for immediate use.
+This snapshot documents Phase 0 at a point in time. The project evolved with cal-bootstrap providing comprehensive VM management.
 
-**Users can safely run AI coding agents in isolated VMs TODAY** with a fully functional terminal experience and rapid rollback capability. The remaining work is polish to make the reset workflow fully automated.
-
-🔄 **Phase 0: 6 TODOs remaining before complete**
+**For current status, see [PLAN.md](PLAN.md)**
