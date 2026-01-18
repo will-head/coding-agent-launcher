@@ -4,16 +4,33 @@
 
 Manual Tart setup until CAL CLI is implemented.
 
-## Setup
+## Initial Setup
 
 ```bash
-# Install Tart
+# 1. Install Tart
 brew install cirruslabs/cli/tart
 
-# Create VM (~25GB download)
-tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest cal-dev
-tart set cal-dev --cpu 4 --memory 8192 --disk-size 80
-tart run cal-dev  # login: admin/admin
+# 2. Create clean VM (~25GB download)
+tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest cal-clean
+
+# 3. Set VM resources
+tart set cal-clean --cpu 4 --memory 8192 --disk-size 80
+
+# 4. Snapshot to cal-dev
+tart clone cal-clean cal-dev
+
+# 5. Create output directory (for file sharing)
+mkdir -p ~/cal-output
+
+# 6. Start VM with SSH access
+tart run cal-dev --no-graphics --vnc &
+sleep 30 && ssh admin@$(tart ip cal-dev)  # password: admin
+
+# 7. In VM: Install agents (copy setup script first)
+# From host:
+scp scripts/vm-setup.sh admin@$(tart ip cal-dev):~/
+# Then in VM:
+chmod +x ~/vm-setup.sh && ./vm-setup.sh && gh auth login
 ```
 
 ## Accessing the VM
