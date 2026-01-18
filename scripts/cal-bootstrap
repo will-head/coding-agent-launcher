@@ -11,6 +11,7 @@ SCRIPT_DIR="${0:A:h}"
 # Options:
 #   --init, -i      Initialize VM environment (create cal-clean, cal-dev, cal-initialised)
 #   --run, -r       Run cal-dev and SSH in with tmux (default if VMs exist)
+#   --restart       Restart cal-dev and SSH in with tmux
 #   --stop, -s      Stop cal-dev
 #   --snapshot, -S  Manage snapshots (list, create, restore, delete)
 #   --yes, -y       Skip confirmation prompts
@@ -75,7 +76,7 @@ find_tart() {
 
 # Check if VM exists
 vm_exists() {
-    "$TART" list 2>/dev/null | grep -qw "$1"
+    "$TART" list 2>/dev/null | awk -v vm="$1" 'NR>1 { if ($2 == vm) exit 0 } END { exit 1 }'
 }
 
 # Resolve VM name (short name to full name if needed)
@@ -398,7 +399,7 @@ do_init() {
 
 # Initialize environment with all paths
 eval "$(/opt/homebrew/bin/brew shellenv)"
-export PATH="/Users/admin/.local/bin:/Users/admin/.opencode/bin:/opt/homebrew/bin:$PATH"
+export PATH="/Users/admin/.local/bin:/Users/admin/.opencode/bin:/Users/admin/go/bin:/opt/homebrew/bin:$PATH"
 
 clear
 echo ""
@@ -472,11 +473,11 @@ echo "Press Ctrl+C or type exit to continue."
 echo ""
 WELCOME
 chmod +x ~/.cal-welcome.sh'
-    
+
     # Automatically SSH into the VM with tmux and show welcome message
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
         "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s setup 'zsh ~/.cal-welcome.sh'"
-    
+
     echo ""
     echo "Continuing with setup..."
     
@@ -573,13 +574,16 @@ do_run() {
     
     echo ""
     echo "$vm_to_run is running (PID: $TART_PID)"
-    
+
     # Unlock keychain for SSH access
     unlock_keychain "$VM_IP"
-    
+
     echo ""
     echo "VNC:   open vnc://${VM_IP}"
     echo "Stop:  $TART stop $vm_to_run"
+    echo ""
+    echo "💡 If agent login fails, use Screen Sharing (standard mode, not High Performance):"
+    echo "   open vnc://${VM_IP} → Authenticate agent → Return to terminal"
     echo ""
     echo "Connecting via SSH with tmux..."
     echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
@@ -596,21 +600,71 @@ do_stop() {
     echo "CAL Bootstrap - Stop"
     echo "===================="
     echo ""
-    
+
     if ! vm_exists "$VM_DEV"; then
         echo "$VM_DEV does not exist."
         exit 1
     fi
-    
+
     if ! vm_running "$VM_DEV"; then
         echo "$VM_DEV is not running."
         exit 0
     fi
-    
+
     echo "Stopping $VM_DEV..."
     "$TART" stop "$VM_DEV"
     echo ""
     echo "$VM_DEV stopped."
+}
+
+# === RESTART MODE ===
+do_restart() {
+    echo ""
+    echo "CAL Bootstrap - Restart"
+    echo "========================="
+    echo ""
+
+    if ! vm_exists "$VM_DEV"; then
+        echo "$VM_DEV does not exist."
+        echo ""
+        echo "Run './cal-bootstrap --init' to set up the environment."
+        exit 1
+    fi
+
+    # Stop if running
+    if vm_running "$VM_DEV"; then
+        echo "Stopping $VM_DEV..."
+        "$TART" stop "$VM_DEV"
+        sleep 2
+        echo ""
+    fi
+
+    # Start VM
+    if ! start_vm_background "$VM_DEV"; then
+        echo "Failed to start VM"
+        exit 1
+    fi
+
+    # Don't cleanup on success
+    CLEANUP_VM=false
+
+    echo ""
+    echo "$VM_DEV is running (PID: $TART_PID)"
+
+    # Unlock keychain for SSH access
+    unlock_keychain "$VM_IP"
+
+    echo ""
+    echo "VNC:   open vnc://${VM_IP}"
+    echo "Stop:  $TART stop $vm_to_run"
+    echo ""
+    echo "Connecting via SSH with tmux..."
+    echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
+    echo ""
+
+    # SSH into the VM with tmux (always)
+    ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s cal"
 }
 
 # === SNAPSHOT MODE ===
@@ -666,30 +720,182 @@ do_snapshot() {
                 do_snapshot list
                 exit 1
             fi
-            
+
             # Resolve short name to full name
             local restore_from
             restore_from=$(resolve_vm_name "$name")
-            
+
             if [ -z "$restore_from" ]; then
                 # Try with prefix
                 restore_from=$(resolve_vm_name "${VM_DEV}-${name}")
             fi
-            
+
             if [ -z "$restore_from" ]; then
                 echo "VM '$name' not found"
                 echo ""
                 do_snapshot list
                 exit 1
             fi
-            
+
             # Can't restore from cal-dev to cal-dev
             if [ "$restore_from" = "$VM_DEV" ]; then
                 echo "Cannot restore $VM_DEV from itself"
                 exit 1
             fi
-            
-            # Confirm
+
+            # Check if cal-dev exists (early exit if missing)
+            if ! vm_exists "$VM_DEV"; then
+                echo "⚠️  $VM_DEV does not exist."
+                echo ""
+                echo "Cannot restore to a non-existent VM."
+                echo ""
+                echo "You can:"
+                echo "  1. Re-run: ./scripts/cal-bootstrap --init"
+                echo "  2. Or create manually: tart clone cal-clean $VM_DEV"
+                echo ""
+                exit 1
+            fi
+
+            # Check for git changes if VM is running (don't start VM if it's stopped)
+            if vm_running "$VM_DEV"; then
+                echo "Checking for git changes in $VM_DEV..."
+                local vm_ip
+                vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
+
+                if [ -n "$vm_ip" ]; then
+                    local has_uncommitted=false
+                    local has_unpushed=false
+
+                    # Check for uncommitted changes
+                    local uncommitted_check
+                    uncommitted_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); done' 2>/dev/null || echo "")
+
+                    if [ -n "$uncommitted_check" ]; then
+                        has_uncommitted=true
+                    fi
+
+                    # Check for unpushed commits (requires upstream tracking to be set)
+                    local unpushed_check
+                    unpushed_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); done' 2>/dev/null || echo "")
+
+                    if [ -n "$unpushed_check" ]; then
+                        has_unpushed=true
+                    fi
+
+                    # Show warnings
+                    if [ "$has_uncommitted" = true ] || [ "$has_unpushed" = true ]; then
+                        echo ""
+                        echo "⚠️  WARNING: Found git changes that will be lost!"
+                        echo ""
+
+                        if [ "$has_uncommitted" = true ]; then
+                            echo "Uncommitted changes in:"
+                            echo "$uncommitted_check" | while read -r repo; do
+                                [ -n "$repo" ] && echo "  - $repo"
+                            done
+                            echo ""
+                        fi
+
+                        if [ "$has_unpushed" = true ]; then
+                            echo "Unpushed commits in:"
+                            echo "$unpushed_check" | while read -r repo; do
+                                [ -n "$repo" ] && echo "  - $repo"
+                            done
+                            echo ""
+                        fi
+
+                        echo "These changes will be lost if you restore from snapshot."
+                    else
+                        echo "  ✓ No uncommitted or unpushed changes found"
+                    fi
+                fi
+            fi
+
+            # Confirm (after git check, once)
+            if [ "$SKIP_CONFIRM" = false ]; then
+                echo ""
+                echo "This will replace $VM_DEV with $restore_from"
+                echo "All changes in $VM_DEV will be lost!"
+                echo ""
+                echo "Continue? (y/N)"
+                read -r -k 1 reply
+                echo ""
+                if [[ ! $reply =~ ^[Yy]$ ]]; then
+                    echo "Aborted"
+                    exit 1
+                fi
+            fi
+
+            # Check for git changes if VM is running
+            if vm_running "$VM_DEV"; then
+                echo "Checking for git changes in $VM_DEV..."
+                local vm_ip
+                vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
+
+                if [ -n "$vm_ip" ]; then
+                    local has_uncommitted=false
+                    local has_unpushed=false
+
+                    # Check for uncommitted changes (more reliable approach)
+                    local uncommitted_check
+                    uncommitted_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); done' 2>/dev/null || echo "")
+
+                    if [ -n "$uncommitted_check" ]; then
+                        has_uncommitted=true
+                    fi
+
+                    # Check for unpushed commits (requires upstream tracking to be set)
+                    local unpushed_check
+                    unpushed_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); done' 2>/dev/null || echo "")
+
+                    if [ -n "$unpushed_check" ]; then
+                        has_unpushed=true
+                    fi
+
+                    # Show warnings
+                    if [ "$has_uncommitted" = true ] || [ "$has_unpushed" = true ]; then
+                        echo ""
+                        echo "⚠️  WARNING: Found git changes that will be lost!"
+                        echo ""
+
+                        if [ "$has_uncommitted" = true ]; then
+                            echo "Uncommitted changes in:"
+                            echo "$uncommitted_check" | while read -r repo; do
+                                [ -n "$repo" ] && echo "  - $repo"
+                            done
+                            echo ""
+                        fi
+
+                        if [ "$has_unpushed" = true ]; then
+                            echo "Unpushed commits in:"
+                            echo "$unpushed_check" | while read -r repo; do
+                                [ -n "$repo" ] && echo "  - $repo"
+                            done
+                            echo ""
+                        fi
+
+                        echo "These changes will be lost if you restore from snapshot."
+                        echo ""
+                        if [ "$SKIP_CONFIRM" = false ]; then
+                            echo "Continue anyway? (y/N)"
+                            read -r -k 1 reply
+                            echo ""
+                            if [[ ! $reply =~ ^[Yy]$ ]]; then
+                                echo "Aborted"
+                                exit 1
+                            fi
+                        fi
+                    else
+                        echo "  ✓ No uncommitted or unpushed changes found"
+                    fi
+                fi
+            fi
+
+            # Confirm (before git check so we don't start VM unnecessarily)
             if [ "$SKIP_CONFIRM" = false ]; then
                 echo "This will replace $VM_DEV with $restore_from"
                 echo "All changes in $VM_DEV will be lost!"
@@ -702,14 +908,119 @@ do_snapshot() {
                     exit 1
                 fi
             fi
+
+            # Check for git changes (start VM briefly if stopped)
+            local vm_was_running=false
+            if vm_running "$VM_DEV"; then
+                vm_was_running=true
+            else
+                # Start VM briefly to check git changes
+                echo "Checking for git changes in $VM_DEV..."
+                if ! start_vm_background "$VM_DEV"; then
+                    echo "  ⚠ Could not start VM to check for git changes"
+                    echo "  Proceeding with restore without git check..."
+                else
+                    vm_was_running=false  # Wasn't running, we started it
+                fi
+            fi
+
+            # Now check for git changes (VM is running)
+            if vm_running "$VM_DEV"; then
+                local vm_ip
+                vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
+
+                if [ -n "$vm_ip" ]; then
+                    local has_uncommitted=false
+                    local has_unpushed=false
+
+                    # Check for uncommitted changes
+                    local uncommitted_check
+                    uncommitted_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); done' 2>/dev/null || echo "")
+
+                    if [ -n "$uncommitted_check" ]; then
+                        has_uncommitted=true
+                    fi
+
+                    # Check for unpushed commits (requires upstream tracking to be set)
+                    local unpushed_check
+                    unpushed_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); done' 2>/dev/null || echo "")
+
+                    if [ -n "$unpushed_check" ]; then
+                        has_unpushed=true
+                    fi
+
+                    # Show warnings
+                    if [ "$has_uncommitted" = true ] || [ "$has_unpushed" = true ]; then
+                        echo ""
+                        echo "⚠️  WARNING: Found git changes that will be lost!"
+                        echo ""
+
+                        if [ "$has_uncommitted" = true ]; then
+                            echo "Uncommitted changes in:"
+                            echo "$uncommitted_check" | while read -r repo; do
+                                [ -n "$repo" ] && echo "  - $repo"
+                            done
+                            echo ""
+                        fi
+
+                        if [ "$has_unpushed" = true ]; then
+                            echo "Unpushed commits in:"
+                            echo "$unpushed_check" | while read -r repo; do
+                                [ -n "$repo" ] && echo "  - $repo"
+                            done
+                            echo ""
+                        fi
+
+                        echo "These changes will be lost if you restore from snapshot."
+                        echo ""
+                        if [ "$SKIP_CONFIRM" = false ]; then
+                            echo "Continue anyway? (y/N)"
+                            read -r -k 1 reply
+                            echo ""
+                            if [[ ! $reply =~ ^[Yy]$ ]]; then
+                                echo "Aborted"
+                                exit 1
+                            fi
+                        fi
+                    else
+                        echo "  ✓ No uncommitted or unpushed changes found"
+                    fi
+                fi
+
+                # Stop VM if we started it for git check
+                if [ "$vm_was_running" = false ]; then
+                    echo ""
+                    stop_vm "$VM_DEV"
+                fi
+            fi
             
             # Stop and delete current VM
             stop_vm "$VM_DEV"
+
+            # Delete VM
             if vm_exists "$VM_DEV"; then
                 echo "Deleting $VM_DEV..."
-                "$TART" delete "$VM_DEV"
+                if ! "$TART" delete "$VM_DEV"; then
+                    echo ""
+                    echo "⚠️  Failed to delete $VM_DEV"
+                    echo ""
+                    echo "This can happen if:"
+                    echo "  • VM is in an inconsistent state"
+                    echo "  • Tart is holding a lock on the VM"
+                    echo "  • Another process is using the VM"
+                    echo ""
+                    echo "You may need to delete it manually:"
+                    echo "  tart delete $VM_DEV"
+                    echo ""
+                    echo "Or restart your machine if Tart is locked."
+                    echo ""
+                    echo "Aborting restore."
+                    exit 1
+                fi
             fi
-            
+
             # Restore from snapshot
             echo "Restoring from $restore_from..."
             "$TART" clone "$restore_from" "$VM_DEV"
@@ -734,7 +1045,7 @@ do_snapshot() {
             collision_check=$("$TART" list | awk 'NR==1 {next} {
                 full_name = $2
                 source = $1
-                
+
                 # Create short name
                 short_name = full_name
                 if (source == "OCI") {
@@ -743,17 +1054,17 @@ do_snapshot() {
                         short_name = substr(short_name, 1, RSTART-1) "-digest"
                     }
                 }
-                
+
                 print short_name
             }' | sort | uniq -d)
-            
+
             if [ -n "$collision_check" ]; then
                 echo "⚠️  WARNING: Short name collisions detected!"
                 echo "   Use full names for these VMs:"
                 echo ""
             fi
-            
-            # List VMs (show full names if collision)
+
+            # List VMs (simplified output - show all VMs/snapshots together)
             "$TART" list | awk -v collisions="$collision_check" '
                 BEGIN {
                     # Build collision map
@@ -767,7 +1078,7 @@ do_snapshot() {
                     full_name = $2
                     source = $1
                     state = $NF
-                    
+
                     # Create short name for display
                     short_name = full_name
                     if (source == "OCI") {
@@ -776,14 +1087,16 @@ do_snapshot() {
                             short_name = substr(short_name, 1, RSTART-1) "-digest"
                         }
                     }
-                    
+
                     # Show full name if collision
                     if (short_name in collision_map) {
-                        printf "  %s (%s) [use full name: %s]\n", short_name, state, full_name
+                        printf "  %s (%s)\n", full_name, state
                     } else {
                         printf "  %s (%s)\n", short_name, state
                     }
                 }'
+            echo ""
+            echo "💡 All VMs and snapshots are listed. Use short names unless collision detected."
             echo ""
             exit 0
             ;;
@@ -868,8 +1181,12 @@ while [[ $# -gt 0 ]]; do
             MODE="init"
             shift
             ;;
-        --run|-r)
+        --run)
             MODE="run"
+            shift
+            ;;
+        --restart)
+            MODE="restart"
             shift
             ;;
         --stop|-s)
@@ -895,7 +1212,8 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --init, -i                    Initialize VM environment"
-            echo "  --run, -r                     Run cal-dev with tmux (default if VMs exist)"
+            echo "  --run                         Run cal-dev with tmux (default if VMs exist)"
+            echo "  --restart                     Restart cal-dev and connect with tmux"
             echo "  --stop, -s                    Stop cal-dev"
             echo "  --snapshot, -S list           List available snapshots"
             echo "  --snapshot, -S create <name>  Create a named snapshot"
@@ -907,6 +1225,7 @@ while [[ $# -gt 0 ]]; do
             echo "Examples:"
             echo "  ./cal-bootstrap --init              # First-time setup"
             echo "  ./cal-bootstrap                     # Start cal-dev (auto-detects mode)"
+            echo "  ./cal-bootstrap --restart           # Restart cal-dev and connect"
             echo "  ./cal-bootstrap --snapshot create pre-experiment"
             echo "  ./cal-bootstrap --snapshot restore pre-experiment"
             echo "  ./cal-bootstrap --snapshot delete pre-experiment"
@@ -951,6 +1270,9 @@ case "$MODE" in
         ;;
     run)
         do_run
+        ;;
+    restart)
+        do_restart
         ;;
     stop)
         do_stop

@@ -13,6 +13,9 @@ brew install cirruslabs/cli/tart
 
 # 3. After manual login setup, start developing
 ./scripts/cal-bootstrap --run
+
+# OR: Restart VM and reconnect (quick refresh)
+./scripts/cal-bootstrap --restart
 ```
 
 ## cal-bootstrap Script
@@ -28,8 +31,10 @@ The `cal-bootstrap` script automates VM setup and management.
 
 # Start cal-dev and SSH in (default if VMs exist)
 ./scripts/cal-bootstrap --run
-./scripts/cal-bootstrap -r
 ./scripts/cal-bootstrap          # Auto-detects mode
+
+# Restart cal-dev and SSH in (quick refresh)
+./scripts/cal-bootstrap --restart
 
 # Stop cal-dev
 ./scripts/cal-bootstrap --stop
@@ -56,7 +61,7 @@ The `--init` command performs these steps:
 3. Starts VM and waits for SSH
 4. Sets up SSH keys (generates if needed)
 5. Runs `vm-setup.sh` to install tools
-6. Prompts for manual login setup (gh, claude, opencode, agent)
+6. Opens tmux session with interactive authentication prompts (gh, claude, opencode, agent)
 7. Creates `cal-initialised` snapshot
 
 ### VMs Created
@@ -188,6 +193,7 @@ gh          # GitHub CLI
 ```bash
 alias cal='./scripts/cal-bootstrap'
 alias cal-start='./scripts/cal-bootstrap --run'
+alias cal-restart='./scripts/cal-bootstrap --restart'
 alias cal-stop='./scripts/cal-bootstrap --stop'
 alias cal-snap='./scripts/cal-bootstrap --snapshot'
 ```
@@ -211,7 +217,9 @@ tart clone <src> <dst>       # Clone/snapshot
 - **Delete key not working**: Already fixed in vm-setup.sh (TERM=xterm-256color)
 - **Up arrow history broken**: Already fixed in vm-setup.sh (bindkey)
 - **Cursor Agent login fails**: Fixed via keychain unlock (see [cursor-login-fix.md](cursor-login-fix.md)). Use Screen Sharing to complete initial login: `open vnc://$(tart ip cal-dev)` then run `agent` in Terminal.
+- **Agent login fails**: If SSH agent login fails, use Screen Sharing (standard mode, not High Performance) to authenticate: `open vnc://$(tart ip cal-dev)` → authenticate agent → return to terminal
 - **Screen Sharing shows lock screen**: Auto-login is configured by vm-setup.sh but requires VM reboot to activate. Stop and restart the VM, then Screen Sharing will show the desktop.
+- **opencode not found**: Try `export PATH="$HOME/.opencode/bin:$PATH"` or `export PATH="$HOME/go/bin:$PATH"` - opencode may have installed to a different location. Use Go install if shell script fails.
 
 ## Terminal Keybinding Testing
 

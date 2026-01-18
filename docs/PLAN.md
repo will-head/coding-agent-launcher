@@ -8,7 +8,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Mostly complete (4 testing TODOs in 0.7, 9 enhancement TODOs in 0.8)
+**Phase 0 (Bootstrap):** Mostly complete (4 testing TODOs in 0.7, 4 enhancement TODOs remaining in 0.8)
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -42,168 +42,25 @@
   - [x] Performance testing and comparison
   - [x] **Conclusion:** SSH is optimal for local VM (excellent performance)
   - [x] **Enhancement:** Added tmux support for session persistence
-- [ ] **VM Management Improvements** (Phase 0.8 - 8 TODOs pending)
-  - [ ] Add --restart/-r option to cal-bootstrap
-  - [ ] Check VM keyboard layout matches host
-  - [ ] Add Screen Sharing instructions for agent login failures
-  - [ ] Investigate High Performance mode issues
-  - [ ] Add git status warning on restore
-  - [ ] Check for uncommitted/unpushed changes before restore
-  - [ ] Simplify snapshot list output
-  - [ ] Add VM detection capability for agents
-
-**All subsequent phases:** Not started
-
-### Known Issues
-- [ ] **Cursor Agent login keychain fix** - Implemented keychain unlock solution based on [Tart FAQ](https://tart.run/faq/). The `vm-setup.sh` and `cal-bootstrap` scripts now automatically unlock the login keychain to enable agent authentication via SSH. First-time login still requires browser-based OAuth (use Screen Sharing: `open vnc://$(tart ip cal-dev)` and run `agent` in VM Terminal). After initial auth, credentials persist. See [docs/cursor-login-fix.md](cursor-login-fix.md) for details.
-
----
-
-## Phase 0: Bootstrap (Immediate Priority)
-
-**Goal:** Run AI coding agents safely in a VM TODAY using manual process.
-
-### Tasks
-
-#### 0.1 Base VM Setup
-```bash
-# On host machine
-brew install cirruslabs/cli/tart
-tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest cal-dev
-tart set cal-dev --cpu 4 --memory 8192 --disk-size 80
-tart run cal-dev
-```
-
-#### 0.2 VM Agent Installation
-
-**Automated (Recommended):**
-Transfer and run the vm-setup script from the host:
-```bash
-# On host machine
-scp scripts/vm-setup.sh admin@<vm-ip>:~/
-
-# In VM
-chmod +x ~/vm-setup.sh
-~/vm-setup.sh
-source ~/.zshrc
-gh auth login
-```
-
-**Manual (if needed):**
-Inside VM (admin/admin):
-```bash
-# Core tools
-brew update && brew upgrade
-brew install node gh
-
-# Claude Code
-npm install -g @anthropic-ai/claude-code
-
-# Cursor CLI
-curl -fsSL https://cursor.com/install | bash
-
-# opencode
-curl -fsSL https://opencode.ai/install | bash
-
-# Configure PATH
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-echo 'export PATH="$HOME/.opencode/bin:$PATH"' >> ~/.zshrc
-echo 'export TERM=xterm-256color' >> ~/.zshrc
-echo 'bindkey "^[[A" up-line-or-history' >> ~/.zshrc
-source ~/.zshrc
-
-# Verify installations
-claude --version
-agent --version
-opencode --version
-gh --version
-
-# GitHub CLI auth
-gh auth login
-```
-
-#### 0.3 Safety Snapshot
-```bash
-# On host
-tart stop cal-dev
-tart clone cal-dev cal-dev-clean
-tart run cal-dev
-```
-
-#### 0.4 Verification
-- [x] `claude --version` works in VM
-- [x] `opencode --version` works in VM
-- [x] `agent --version` works in VM (Cursor CLI)
-- [x] `gh auth status` shows authenticated
-- [x] Rollback works: `tart delete cal-dev && tart clone cal-dev-clean cal-dev`
-
-#### 0.5 Terminal Environment Improvements
-- [x] Fix TERM setting for delete key (`xterm-256color`)
-- [x] Fix up arrow history navigation
-- [x] Create comprehensive keybinding test plan (docs/terminal-keybindings-test.md)
-- [x] **Execute keybinding tests** ✅
-  - Tested navigation keys (arrows, Home, End, Page Up/Down) - all working
-  - Tested editing keys (Delete, Backspace, Ctrl+K/U/W/Y) - all working
-  - Tested Emacs-style cursor movement (Ctrl+A/E/B/F/P/N) - all working
-  - Tested Option/Alt word navigation (Option+Arrow, Option+Backspace) - all working
-  - Documented escape sequences in test plan
-  - **Conclusion:** No additional fixes needed beyond existing TERM and bindkey settings
-
-#### 0.6 macOS Auto-Login for Screen Sharing
-
-**Completed:**
-- [x] Enable auto-login in vm-setup.sh
-- [x] Configure macOS to automatically log in admin user on boot
-- [x] Fix Screen Sharing showing lock screen instead of desktop
-- [x] Add user notification about auto-login being enabled
-- [x] Document that auto-login takes effect on next VM reboot
-
-**Deliverable:** ✅ Auto-login configured - Screen Sharing now shows desktop instead of lock screen after VM reboot.
-
-#### 0.7 Keychain Access for Cursor Agent
-
-**Completed:**
-- [x] Research keychain issue from Tart FAQ
-- [x] Implement keychain unlock in vm-setup.sh
-- [x] Implement keychain unlock in cal-bootstrap (--run mode)
-- [x] Create test script (test-cursor-login.sh)
-- [x] Document solution in cursor-login-fix.md
-
-**Testing Required:**
-- [ ] **USER TODO: Complete Phase 0.7 testing** - Follow TESTING.md checklist to verify keychain solution
-  - [ ] Test agent login via Screen Sharing after keychain unlock
-  - [ ] Verify credentials persist after successful login
-  - [ ] Test credential persistence across VM reboots
-  - [ ] Verify keychain auto-unlock on cal-bootstrap --run
-
-**Deliverable:** Keychain automatically unlocked when connecting to VM, enabling Cursor agent authentication via SSH sessions.
-
-#### 0.8 VM Management Improvements
-
-**Completed:**
-- [x] **Investigate SSH alternatives for shell access** - Comprehensive investigation complete (see `docs/ssh-alternatives-investigation.md`)
-  - Researched: Tart console, Virtualization.framework, Mosh, Eternal Terminal, tmux, virtio-vsock
-  - **Conclusion:** SSH is optimal for local VM access (excellent performance, negligible latency)
-  - **Enhancement:** Added tmux support for session persistence and multiple panes
-- [x] **Add tmux support** - Provides session persistence, multiple panes, better terminal handling
-  - Installed via vm-setup.sh with sensible default config
-  - tmux is now default for all connections
-  - Documentation in bootstrap.md
-  - Testing guide created (docs/tmux-agent-testing.md)
-
-**Pending TODOs:**
-- [ ] Fix opencode installation in `--init` script (currently not installing correctly)
-- [ ] Add auth verification and retry to `--init` (check gh/claude/opencode/agent auth status after manual setup, offer retry if failed)
-- [ ] Add `--restart` / `-r` option to cal-bootstrap for quick VM restart
-- [ ] Check VM keyboard layout matches host keyboard layout
-- [ ] Add instructions to use Screen Sharing (standard mode, not High Performance) if login fails for Claude Agent, Cursor Agent, or opencode
-- [ ] Investigate why High Performance Screen Sharing mode doesn't work properly
-- [ ] Add warning on snapshot restore to check that git is updated in VM (uncommitted changes will be lost)
-- [ ] Investigate if uncommitted or unpushed git changes can be automatically checked if they exist in VM before restore
-- [ ] Remove distinction between clones and snapshots in `--snapshot list` (they're functionally the same for our purposes)
-- [ ] Create method for coding agent to detect if it's running in a VM and add this capability to coding agent's config
+ - [x] **VM Management Improvements** (Phase 0.8 - 6/10 complete)
+   - [x] Fix opencode installation in `--init` script (added Go install fallback, improved PATH setup)
+   - [x] Simplify `--init` auth flow (removed verification prompt since opencode now works reliably)
+   - [x] Add `--restart` option to cal-bootstrap for quick VM restart
+   - [ ] Check VM keyboard layout matches host keyboard layout
+   - [x] Add Screen Sharing instructions for agent login failures (displayed on --run)
+   - [ ] Investigate High Performance mode issues
+   - [x] Add warning on snapshot restore to check that git is updated in VM (uncommitted/unpushed changes checked)
+   - [x] Investigate if uncommitted or unpushed git changes can be automatically checked if they exist in VM before restore (implemented)
+   - [x] Remove distinction between clones and snapshots in `--snapshot list` (they're functionally same for our purposes)
+   - [ ] Create method for coding agent to detect if it's running in a VM and add this capability to coding agent's config
 
 **Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection.
+
+**Testing Issues Found & Fixed:**
+- [x] vm_exists() initially used grep -qw which didn't work reliably - fixed with awk column match
+- [x] Double confirmation prompt on restore - fixed by consolidating to single prompt after git check
+- [x] Git check timing issue - initially ran before confirmation and tried to start deleted VM - fixed to check only if VM already running
+- [x] Unpushed commits detection requires proper git upstream tracking to be set - working as designed (has prerequisites)
 
 ---
 

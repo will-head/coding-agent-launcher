@@ -4,7 +4,7 @@
 >
 > See also: [SPEC](SPEC.md) (technical requirements) | [ADR-001](adr/ADR-001-cal-isolation.md) (design decisions)
 
-## Phase 0: Bootstrap (Mostly Complete - Testing Pending)
+## Phase 0: Bootstrap (Mostly Complete - 4 testing + 6 enhancement TODOs remaining)
 Automated Tart setup for immediate safe agent use.
 - [x] Research Tart
 - [x] Document manual process
@@ -16,6 +16,7 @@ Automated Tart setup for immediate safe agent use.
 - [x] **Create cal-bootstrap script** - unified VM management
   - `--init`: Create VMs, install tools, setup SSH keys
   - `--run`: Start VM and SSH in
+  - `--restart`: Restart VM and SSH in
   - `--stop`: Stop VM
   - `--snapshot`: List, create, restore, delete snapshots
 - [x] **macOS Auto-Login for Screen Sharing** - Fixed lock screen issue
@@ -24,6 +25,16 @@ Automated Tart setup for immediate safe agent use.
   - [x] Implement keychain unlock in cal-bootstrap
   - [x] Create test script and documentation
   - [ ] **USER TODO: Complete testing** (see TESTING.md)
+- [x] **VM Management Improvements** (6/10 complete)
+  - [x] Fix opencode installation (added Go fallback)
+  - [x] Simplify --init auth flow (removed verification prompt)
+  - [x] Add --restart option
+  - [x] Add Screen Sharing instructions for login failures
+  - [x] Add git status warning on restore
+  - [x] Simplify snapshot list output
+  - [ ] Check VM keyboard layout
+  - [ ] Investigate High Performance Screen Sharing issues
+  - [ ] Create VM detection capability for agents
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.

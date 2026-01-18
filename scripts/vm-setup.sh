@@ -77,13 +77,42 @@ else
 fi
 
 # Install opencode
+# TODO: Investigate if opencode install location has changed (see PLAN.md section 0.8)
 echo ""
 echo "🐹 Installing opencode..."
 if command_exists opencode; then
     echo "  ✓ opencode already installed"
 else
+    # Ensure Go is available for installation
+    if ! command_exists go; then
+        echo "  → Installing Go first..."
+        if brew install go; then
+            echo "  ✓ Go installed"
+        else
+            echo "  ✗ Failed to install Go"
+        fi
+    fi
+
+    # Try shell script install first
     if curl -fsSL https://opencode.ai/install | bash; then
-        echo "  ✓ opencode installed"
+        # Add to PATH immediately for verification
+        export PATH="$HOME/.opencode/bin:$PATH"
+        if command_exists opencode; then
+            echo "  ✓ opencode installed"
+        else
+            # Fallback: try Go install
+            echo "  → Shell install failed, trying Go install..."
+            if go install github.com/opencode-ai/opencode@latest; then
+                export PATH="$HOME/go/bin:$PATH"
+                if command_exists opencode; then
+                    echo "  ✓ opencode installed via Go"
+                else
+                    echo "  ✗ Failed to install opencode"
+                fi
+            else
+                echo "  ✗ Failed to install opencode"
+            fi
+        fi
     else
         echo "  ✗ Failed to install opencode"
     fi
@@ -101,12 +130,19 @@ else
     echo "  ✓ .local/bin already in PATH"
 fi
 
-# Add .opencode/bin to PATH if not already present (for opencode)
+# Add .opencode/bin and go/bin to PATH if not already present (for opencode)
 if ! grep -q 'export PATH="$HOME/.opencode/bin:$PATH"' ~/.zshrc; then
     echo 'export PATH="$HOME/.opencode/bin:$PATH"' >> ~/.zshrc
     echo "  ✓ Added .opencode/bin to PATH"
 else
     echo "  ✓ .opencode/bin already in PATH"
+fi
+
+if ! grep -q 'export PATH="$HOME/go/bin:$PATH"' ~/.zshrc; then
+    echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.zshrc
+    echo "  ✓ Added go/bin to PATH"
+else
+    echo "  ✓ go/bin already in PATH"
 fi
 
 # Fix terminal TERM setting
@@ -226,7 +262,7 @@ echo ""
 echo "🔍 Verifying installations..."
 
 # Reload PATH for verification
-export PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"
+export PATH="$HOME/.opencode/bin:$HOME/go/bin:$HOME/.local/bin:$PATH"
 
 if command_exists claude; then
     CLAUDE_VERSION=$(claude --version 2>/dev/null | head -n1)
@@ -247,6 +283,7 @@ if command_exists opencode; then
     echo "  ✓ opencode: $OPENCODE_VERSION"
 else
     echo "  ✗ opencode: not found (may need to restart shell)"
+    echo "    Try: export PATH=\"$HOME/.opencode/bin:$PATH\" or opencode may not be installed correctly"
 fi
 
 if command_exists gh; then
