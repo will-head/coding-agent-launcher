@@ -162,6 +162,15 @@ tart run cal-dev
   - Documents manual gh auth login step (requires interactive auth)
   - Configurable via SKIP_POST_SETUP environment variable
 
+#### 0.7 macOS Auto-Login for Screen Sharing
+
+**Completed:**
+- [x] Enable auto-login in vm-setup.sh
+- [x] Configure macOS to automatically log in admin user on boot
+- [x] Fix Screen Sharing showing lock screen instead of desktop
+- [x] Add user notification about auto-login being enabled
+- [x] Document that auto-login takes effect on next VM reboot
+
 **Usage:**
 ```bash
 # Interactive mode (default)
@@ -178,6 +187,8 @@ VM_USER=myuser VM_PASSWORD=mypass scripts/reset-vm.sh cal-dev cal-dev-pristine
 ```
 
 **Deliverable:** ✅ Fully automated VM reset with minimal manual steps (only gh auth login remains manual due to interactive OAuth requirement).
+
+**Deliverable for 0.7:** ✅ Auto-login configured - Screen Sharing now shows desktop instead of lock screen after VM reboot.
 
 ---
 

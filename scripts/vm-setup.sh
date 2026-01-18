@@ -132,6 +132,15 @@ else
     echo "  ⚠ Could not reload shell config (restart shell manually)"
 fi
 
+# Enable auto-login for Screen Sharing
+echo ""
+echo "🔓 Enabling auto-login..."
+if sudo defaults write /Library/Preferences/com.apple.loginwindow autoLoginUser admin; then
+    echo "  ✓ Auto-login enabled for admin user"
+else
+    echo "  ✗ Failed to enable auto-login"
+fi
+
 # Verify installations
 echo ""
 echo "🔍 Verifying installations..."
@@ -174,4 +183,7 @@ echo "📋 Next steps:"
 echo "  1. Reload shell configuration: source ~/.zshrc"
 echo "  2. Authenticate with GitHub: gh auth login"
 echo ""
-echo "💡 If any commands show 'not found', restart your shell with: exec zsh"
+echo "💡 Notes:"
+echo "  • Auto-login is enabled - VM will boot to desktop for Screen Sharing"
+echo "  • If any commands show 'not found', restart your shell with: exec zsh"
+echo "  • Auto-login takes effect on next VM reboot"

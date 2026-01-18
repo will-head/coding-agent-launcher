@@ -21,7 +21,8 @@ At the start of EVERY new session, the agent MUST:
    - Confirm understanding of checkpoints
 
 3. **Check Project Status**
-   - Run `git status` and `git fetch` to verify repo state
+   - **ASK USER FOR APPROVAL** before running any commands (git status, git fetch, etc.)
+   - Run `git status` and `git fetch` to verify repo state (only after approval)
    - **Check PLAN.md for unchecked TODOs** (authoritative source)
    - Review `docs/roadmap.md` for current phase (should match PLAN.md)
 
@@ -99,6 +100,62 @@ golangci-lint run
 - [Bootstrap](docs/bootstrap.md) - manual Tart setup
 - [Plugins](docs/plugins.md) - environment system
 - [Roadmap](docs/roadmap.md) - implementation phases (derived from PLAN.md)
+
+---
+
+## Command Execution Policy
+
+🚨 **CRITICAL: NEVER RUN COMMANDS WITHOUT USER APPROVAL** 🚨
+
+**Before executing ANY command:**
+1. **Explain what the command does** and why it's needed
+2. **Show the exact command** that will be executed
+3. **Wait for explicit user approval** (e.g., "yes", "approved", "go ahead")
+4. **Only then execute** the command
+
+**This applies to ALL commands:**
+- ✅ Git commands (status, fetch, commit, push, etc.)
+- ✅ Build commands (go build, go test, etc.)
+- ✅ Shell scripts (./scripts/*, etc.)
+- ✅ File operations via command line
+- ✅ Package installations
+- ✅ System commands
+
+**Exception:** Reading files and searching code with Read, Grep, Glob tools is allowed without approval.
+
+**Why this matters:**
+- User maintains full control over their system
+- Prevents unexpected or destructive operations
+- Ensures user understands what's happening
+- Builds trust through transparency
+
+---
+
+## Command Execution Policy
+
+🚨 **CRITICAL: NEVER RUN COMMANDS WITHOUT USER APPROVAL** 🚨
+
+**Before executing ANY command:**
+1. **Explain what the command does** and why it's needed
+2. **Show the exact command** that will be executed
+3. **Wait for explicit user approval** (e.g., "yes", "approved", "go ahead")
+4. **Only then execute** the command
+
+**This applies to ALL commands:**
+- ✅ Git commands (status, fetch, commit, push, etc.)
+- ✅ Build commands (go build, go test, etc.)
+- ✅ Shell scripts (./scripts/*, etc.)
+- ✅ File operations via command line
+- ✅ Package installations
+- ✅ System commands
+
+**Exception:** Reading files and searching code with Read, Grep, Glob tools is allowed without approval.
+
+**Why this matters:**
+- User maintains full control over their system
+- Prevents unexpected or destructive operations
+- Ensures user understands what's happening
+- Builds trust through transparency
 
 ---
 
@@ -223,14 +280,16 @@ Each step is a **BLOCKING CHECKPOINT**. You MUST complete each step fully before
 - Follow shell script best practices for `scripts/`
 
 ### Step 2: Run All Tests
-- **Execute:** `go test ./...`
+- **ASK USER FOR APPROVAL** before running tests
+- **Execute:** `go test ./...` (only after approval)
 - **VERIFY:** All tests pass
 - **IF TESTS FAIL:** Fix issues, do NOT proceed
 - **FOR SCRIPTS:** Provide manual test instructions with clean, copy-pasteable commands (no line numbers)
 - 🛑 **STOP HERE if tests fail**
 
 ### Step 3: Build the Project
-- **Execute:** `go build -o cal ./cmd/cal`
+- **ASK USER FOR APPROVAL** before building
+- **Execute:** `go build -o cal ./cmd/cal` (only after approval)
 - **VERIFY:** Build succeeds with no errors
 - **IF BUILD FAILS:** Fix issues, do NOT proceed
 - 🛑 **STOP HERE if build fails**
@@ -287,7 +346,9 @@ Detailed description of what changed and why.
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
-**Execute:** `git add <files> && git commit -m "message" && git push`
+**ASK USER FOR APPROVAL** before executing git commands
+
+**Execute:** `git add <files> && git commit -m "message" && git push` (only after approval)
 
 **ONLY AFTER:** All above steps are complete
 
@@ -297,6 +358,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 **NEVER, UNDER ANY CIRCUMSTANCES:**
 
+- ❌ **Run ANY command without explicit user approval first** - ALWAYS ask permission before executing commands
 - ❌ **Install software on the host machine without explicit user approval** - Check first, then ask permission
 - ❌ **Provide test instructions with line numbers or decoration** - Always use clean, copy-pasteable commands
 - ❌ **Commit without asking user first** - NO EXCEPTIONS, not even for documentation
