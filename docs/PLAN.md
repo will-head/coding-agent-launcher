@@ -8,7 +8,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Mostly complete (4 testing TODOs in 0.8, 8 enhancement TODOs in 0.9)
+**Phase 0 (Bootstrap):** Mostly complete (4 testing TODOs in 0.7, 9 enhancement TODOs in 0.8)
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -192,6 +192,7 @@ tart run cal-dev
   - Testing guide created (docs/tmux-agent-testing.md)
 
 **Pending TODOs:**
+- [ ] Fix opencode installation in `--init` script (currently not installing correctly)
 - [ ] Add auth verification and retry to `--init` (check gh/claude/opencode/agent auth status after manual setup, offer retry if failed)
 - [ ] Add `--restart` / `-r` option to cal-bootstrap for quick VM restart
 - [ ] Check VM keyboard layout matches host keyboard layout
