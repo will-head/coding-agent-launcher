@@ -8,7 +8,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Mostly complete (4 testing TODOs in 0.8)
+**Phase 0 (Bootstrap):** Mostly complete (4 testing TODOs in 0.8, 9 enhancement TODOs in 0.9)
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -44,6 +44,16 @@
   - [ ] Verify credential persistence
   - [ ] Test across VM reboots
   - [ ] Verify auto-unlock on connection
+- [ ] **VM Management Improvements** (Phase 0.9 - 9 TODOs pending)
+  - [ ] Add --restart/-r option to cal-bootstrap
+  - [ ] Check VM keyboard layout matches host
+  - [ ] Add Screen Sharing instructions for agent login failures
+  - [ ] Investigate High Performance mode issues
+  - [ ] Investigate SSH alternatives for shell access
+  - [ ] Add git status warning on restore
+  - [ ] Check for uncommitted/unpushed changes before restore
+  - [ ] Simplify snapshot list output
+  - [ ] Add VM detection capability for agents
 
 **All subsequent phases:** Not started
 
@@ -220,6 +230,21 @@ VM_USER=myuser VM_PASSWORD=mypass scripts/reset-vm.sh cal-dev cal-dev-pristine
   - [ ] Verify keychain auto-unlock on cal-bootstrap --run
 
 **Deliverable for 0.8:** Keychain automatically unlocked when connecting to VM, enabling Cursor agent authentication via SSH sessions.
+
+#### 0.9 VM Management Improvements
+
+**Pending TODOs:**
+- [ ] Add `--restart` / `-r` option to cal-bootstrap for quick VM restart
+- [ ] Check VM keyboard layout matches host keyboard layout
+- [ ] Add instructions to use Screen Sharing (standard mode, not High Performance) if login fails for Claude Agent, Cursor Agent, or opencode
+- [ ] Investigate why High Performance Screen Sharing mode doesn't work properly
+- [ ] Investigate if there's a better option than SSH for true shell access
+- [ ] Add warning on snapshot restore to check that git is updated in VM (uncommitted changes will be lost)
+- [ ] Investigate if uncommitted or unpushed git changes can be automatically checked if they exist in VM before restore
+- [ ] Remove distinction between clones and snapshots in `--snapshot list` (they're functionally the same for our purposes)
+- [ ] Create method for coding agent to detect if it's running in a VM and add this capability to coding agent's config
+
+**Deliverable for 0.9:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection.
 
 ---
 
