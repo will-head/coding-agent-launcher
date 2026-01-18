@@ -210,6 +210,9 @@ tart run cal-dev
 
 **Goal:** Replace manual Tart commands with `cal isolation` CLI.
 
+**Pending TODOs:**
+- [ ] Make cached macos-sequoia-base:latest available inside cal-dev to avoid duplicate downloading
+
 ### 1.1 Project Scaffolding
 
 **Tasks:**
