@@ -128,7 +128,9 @@ User interaction is not allowed
 
 ## Testing
 
-Use the test script to verify the solution:
+**Complete Testing Checklist:** See [TESTING.md](TESTING.md) for comprehensive step-by-step testing guide.
+
+**Quick Test Script:** Use the test script to verify basic functionality:
 
 ```bash
 ./scripts/test-cursor-login.sh [vm-ip] [vm-user]
@@ -219,8 +221,13 @@ ssh admin@$(tart ip cal-dev) "security unlock-keychain -p admin login.keychain"
 
 ## Next Steps
 
+**User Testing Required:** Complete Phase 0.8 testing checklist in [TESTING.md](TESTING.md):
 - [ ] Test agent login after keychain unlock via Screen Sharing
+- [ ] Verify credentials persist across SSH reconnects
 - [ ] Verify credentials persist after VM reboot
+- [ ] Verify auto-unlock works consistently
+
+**Future Enhancements:**
 - [ ] Document credential storage location
 - [ ] Consider implementing API key auth as alternative
-- [ ] Add keychain unlock to SSH wrapper script
+- [ ] Investigate if keychain timeout can be extended

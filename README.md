@@ -69,6 +69,10 @@ This repo works with multiple AI coding agents. Context is in `AGENTS.md` with s
 - [Phase 0 Completion](docs/phase0-completion-notes.md) - Bootstrap phase summary
 - [SPEC](docs/SPEC.md) - Technical specification
 
+**Testing:**
+- [Testing Quick Start](docs/TESTING-QUICKSTART.md) - 15-minute Phase 0.8 test
+- [Testing Guide](docs/TESTING.md) - Phase 0.8 testing checklist
+
 **Reference:**
 - [Architecture](docs/architecture.md) - System design, UX, config
 - [CLI](docs/cli.md) - Command reference
@@ -77,7 +81,6 @@ This repo works with multiple AI coding agents. Context is in `AGENTS.md` with s
 - [SSH Key Setup](docs/ssh-key-setup.md) - Password-less VM access
 - [Reset VM Testing](docs/reset-vm-testing.md) - Testing guide for reset script
 - [Terminal Keybindings Test](docs/terminal-keybindings-test.md) - VM terminal testing
-- [Testing Guide](TESTING.md) - Phase 0.8 testing checklist
 - [Plugins](docs/plugins.md) - Environment system
 - [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Complete design (immutable)
 

@@ -75,6 +75,59 @@ vm_exists() {
     "$TART" list 2>/dev/null | grep -qw "$1"
 }
 
+# Resolve VM name (short name to full name if needed)
+resolve_vm_name() {
+    local input_name="$1"
+    
+    # If VM exists with exact name, use it
+    if vm_exists "$input_name"; then
+        echo "$input_name"
+        return 0
+    fi
+    
+    # Try to find by short name pattern
+    local matches
+    matches=$("$TART" list 2>/dev/null | awk -v short="$input_name" '
+        NR==1 {next}
+        {
+            full_name = $2
+            source = $1
+            
+            # Create short name
+            short_name = full_name
+            if (source == "OCI") {
+                gsub(/ghcr.io\/cirruslabs\/macos-/, "", short_name)
+                if (match(short_name, /@sha256:/)) {
+                    short_name = substr(short_name, 1, RSTART-1) "-digest"
+                }
+            }
+            
+            # Match short name
+            if (short_name == short) {
+                print full_name
+            }
+        }
+    ')
+    
+    # Check for multiple matches (collision)
+    local match_count
+    match_count=$(echo "$matches" | grep -c '^' 2>/dev/null || echo 0)
+    
+    if [ "$match_count" -gt 1 ]; then
+        echo "Error: Short name '$input_name' matches multiple VMs:" >&2
+        echo "$matches" | sed 's/^/  - /' >&2
+        echo "" >&2
+        echo "Use full name instead." >&2
+        return 2
+    elif [ "$match_count" -eq 1 ]; then
+        echo "$matches"
+        return 0
+    fi
+    
+    # Not found
+    return 1
+}
+
 # Check if VM is running
 vm_running() {
     "$TART" list 2>/dev/null | grep -w "$1" | grep -q "running"
@@ -467,13 +520,16 @@ do_snapshot() {
                 exit 1
             fi
             
-            # Check for exact match first, then prefixed snapshot
-            local restore_from=""
-            if vm_exists "$name"; then
-                restore_from="$name"
-            elif vm_exists "${VM_DEV}-${name}"; then
-                restore_from="${VM_DEV}-${name}"
-            else
+            # Resolve short name to full name
+            local restore_from
+            restore_from=$(resolve_vm_name "$name")
+            
+            if [ -z "$restore_from" ]; then
+                # Try with prefix
+                restore_from=$(resolve_vm_name "${VM_DEV}-${name}")
+            fi
+            
+            if [ -z "$restore_from" ]; then
                 echo "VM '$name' not found"
                 echo ""
                 do_snapshot list
@@ -518,19 +574,62 @@ do_snapshot() {
             ;;
             
         list)
-            echo "Base VMs:"
-            for vm in "$VM_CLEAN" "$VM_DEV" "$VM_INIT"; do
-                if vm_exists "$vm"; then
-                    echo "  $vm"
-                fi
-            done
-            echo ""
-            echo "Snapshots:"
-            if "$TART" list | grep -q "^${VM_DEV}-"; then
-                "$TART" list | grep "^${VM_DEV}-" | awk '{print "  " $1}'
-            else
-                echo "  (none)"
+            # Check for short name collisions
+            local collision_check
+            collision_check=$("$TART" list | awk 'NR==1 {next} {
+                full_name = $2
+                source = $1
+                
+                # Create short name
+                short_name = full_name
+                if (source == "OCI") {
+                    gsub(/ghcr.io\/cirruslabs\/macos-/, "", short_name)
+                    if (match(short_name, /@sha256:/)) {
+                        short_name = substr(short_name, 1, RSTART-1) "-digest"
+                    }
+                }
+                
+                print short_name
+            }' | sort | uniq -d)
+            
+            if [ -n "$collision_check" ]; then
+                echo "⚠️  WARNING: Short name collisions detected!"
+                echo "   Use full names for these VMs:"
+                echo ""
             fi
+            
+            # List VMs (show full names if collision)
+            "$TART" list | awk -v collisions="$collision_check" '
+                BEGIN {
+                    # Build collision map
+                    split(collisions, coll_array, "\n")
+                    for (i in coll_array) {
+                        collision_map[coll_array[i]] = 1
+                    }
+                }
+                NR==1 {next}
+                {
+                    full_name = $2
+                    source = $1
+                    state = $NF
+                    
+                    # Create short name for display
+                    short_name = full_name
+                    if (source == "OCI") {
+                        gsub(/ghcr.io\/cirruslabs\/macos-/, "", short_name)
+                        if (match(short_name, /@sha256:/)) {
+                            short_name = substr(short_name, 1, RSTART-1) "-digest"
+                        }
+                    }
+                    
+                    # Show full name if collision
+                    if (short_name in collision_map) {
+                        printf "  %s (%s) [use full name: %s]\n", short_name, state, full_name
+                    } else {
+                        printf "  %s (%s)\n", short_name, state
+                    }
+                }'
+            echo ""
             exit 0
             ;;
             
@@ -542,13 +641,16 @@ do_snapshot() {
                 exit 1
             fi
             
-            # Check for exact match first, then prefixed snapshot
-            local vm_to_delete=""
-            if vm_exists "$name"; then
-                vm_to_delete="$name"
-            elif vm_exists "${VM_DEV}-${name}"; then
-                vm_to_delete="${VM_DEV}-${name}"
-            else
+            # Resolve short name to full name
+            local vm_to_delete
+            vm_to_delete=$(resolve_vm_name "$name")
+            
+            if [ -z "$vm_to_delete" ]; then
+                # Try with prefix
+                vm_to_delete=$(resolve_vm_name "${VM_DEV}-${name}")
+            fi
+            
+            if [ -z "$vm_to_delete" ]; then
                 echo "VM '$name' not found"
                 echo ""
                 do_snapshot list
@@ -558,8 +660,15 @@ do_snapshot() {
             # Stop if running
             stop_vm "$vm_to_delete"
             
-            # Confirm
+            # Confirm (with extra warning for cal-dev)
             if [ "$SKIP_CONFIRM" = false ]; then
+                if [ "$vm_to_delete" = "$VM_DEV" ]; then
+                    echo "⚠️  WARNING: Deleting your working VM!"
+                    echo ""
+                    echo "This will delete $vm_to_delete permanently."
+                    echo "You may want to use restore instead to reset state."
+                    echo ""
+                fi
                 echo "Delete $vm_to_delete?"
                 echo ""
                 echo "Continue? (y/N)"

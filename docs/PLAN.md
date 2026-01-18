@@ -35,15 +35,16 @@
   - [x] Enable auto-login in vm-setup.sh
   - [x] Configure macOS to auto-login admin user
   - [x] Fix Screen Sharing lock screen issue
-- [x] **Keychain Access for Cursor Agent** (Phase 0.8 - Implementation Complete)
+- [x] **Keychain Access for Cursor Agent** (Phase 0.8 - Complete with known issues)
   - [x] Research keychain issue from Tart FAQ
   - [x] Implement keychain unlock in vm-setup.sh
   - [x] Implement keychain unlock in cal-bootstrap
   - [x] Create test script and documentation
-  - [ ] Test agent login via Screen Sharing
-  - [ ] Verify credential persistence
-  - [ ] Test across VM reboots
-  - [ ] Verify auto-unlock on connection
+  - [x] Test agent login via Screen Sharing
+  - [x] Verify credential persistence (works after SSH reconnect)
+  - [x] Test across VM reboots (credentials persist with keychain unlock + .zshrc)
+  - [x] Verify auto-unlock on connection
+  - [ ] **TODO: Fix Cursor agent login reliability** - Sometimes fails to authenticate even with keychain unlocked. Needs investigation of Cursor credential storage mechanism.
 - [ ] **VM Management Improvements** (Phase 0.9 - 9 TODOs pending)
   - [ ] Add --restart/-r option to cal-bootstrap
   - [ ] Check VM keyboard layout matches host
