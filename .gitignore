@@ -71,6 +71,9 @@ tmp/
 temp/
 *.tmp
 
+# VM output directory
+cal-output/
+
 # Debug files
 debug
 debug.test
