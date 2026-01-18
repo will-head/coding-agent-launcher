@@ -8,7 +8,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Mostly complete (4 testing TODOs in 0.8, 9 enhancement TODOs in 0.9)
+**Phase 0 (Bootstrap):** Mostly complete (4 testing TODOs in 0.8, 8 enhancement TODOs in 0.9)
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -37,12 +37,16 @@
   - [x] Test across VM reboots (credentials persist with keychain unlock + .zshrc)
   - [x] Verify auto-unlock on connection
   - [ ] **TODO: Fix Cursor agent login reliability** - Sometimes fails to authenticate even with keychain unlocked. Needs investigation of Cursor credential storage mechanism.
-- [ ] **VM Management Improvements** (Phase 0.8 - 9 TODOs pending)
+- [x] **SSH Alternatives Investigation** (Phase 0.8 - Complete)
+  - [x] Research alternatives (Mosh, Eternal Terminal, console access, tmux)
+  - [x] Performance testing and comparison
+  - [x] **Conclusion:** SSH is optimal for local VM (excellent performance)
+  - [x] **Enhancement:** Added tmux support for session persistence
+- [ ] **VM Management Improvements** (Phase 0.8 - 8 TODOs pending)
   - [ ] Add --restart/-r option to cal-bootstrap
   - [ ] Check VM keyboard layout matches host
   - [ ] Add Screen Sharing instructions for agent login failures
   - [ ] Investigate High Performance mode issues
-  - [ ] Investigate SSH alternatives for shell access
   - [ ] Add git status warning on restore
   - [ ] Check for uncommitted/unpushed changes before restore
   - [ ] Simplify snapshot list output
@@ -176,12 +180,23 @@ tart run cal-dev
 
 #### 0.8 VM Management Improvements
 
+**Completed:**
+- [x] **Investigate SSH alternatives for shell access** - Comprehensive investigation complete (see `docs/ssh-alternatives-investigation.md`)
+  - Researched: Tart console, Virtualization.framework, Mosh, Eternal Terminal, tmux, virtio-vsock
+  - **Conclusion:** SSH is optimal for local VM access (excellent performance, negligible latency)
+  - **Enhancement:** Added tmux support for session persistence and multiple panes
+- [x] **Add tmux support** - Provides session persistence, multiple panes, better terminal handling
+  - Installed via vm-setup.sh with sensible default config
+  - tmux is now default for all connections
+  - Documentation in bootstrap.md
+  - Testing guide created (docs/tmux-agent-testing.md)
+
 **Pending TODOs:**
+- [ ] Add auth verification and retry to `--init` (check gh/claude/opencode/agent auth status after manual setup, offer retry if failed)
 - [ ] Add `--restart` / `-r` option to cal-bootstrap for quick VM restart
 - [ ] Check VM keyboard layout matches host keyboard layout
 - [ ] Add instructions to use Screen Sharing (standard mode, not High Performance) if login fails for Claude Agent, Cursor Agent, or opencode
 - [ ] Investigate why High Performance Screen Sharing mode doesn't work properly
-- [ ] Investigate if there's a better option than SSH for true shell access
 - [ ] Add warning on snapshot restore to check that git is updated in VM (uncommitted changes will be lost)
 - [ ] Investigate if uncommitted or unpushed git changes can be automatically checked if they exist in VM before restore
 - [ ] Remove distinction between clones and snapshots in `--snapshot list` (they're functionally the same for our purposes)

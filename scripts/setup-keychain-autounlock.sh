@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # Solution: Auto-unlock keychain on login using LaunchAgent
 # This creates a LaunchAgent that unlocks the keychain when the user logs in
@@ -21,7 +21,7 @@ echo ""
 
 # Create the unlock script in VM
 cat <<'UNLOCK_SCRIPT' | ssh "${VM_USER}@${VM_IP}" 'cat > /tmp/unlock-keychain.sh && chmod +x /tmp/unlock-keychain.sh'
-#!/bin/bash
+#!/bin/zsh
 # Unlock keychain on login
 security unlock-keychain -p "admin" login.keychain
 UNLOCK_SCRIPT

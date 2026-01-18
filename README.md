@@ -64,6 +64,8 @@ This repo works with multiple AI coding agents. Context is in `AGENTS.md` with s
 - [Bootstrap](docs/bootstrap.md) - Manual Tart setup
 - [Cursor Login Fix](docs/cursor-login-fix.md) - Keychain solution for agent authentication
 - [Terminal Keybindings Test](docs/terminal-keybindings-test.md) - VM terminal testing
+- [SSH Alternatives Investigation](docs/ssh-alternatives-investigation.md) - Research on terminal access options
+- [tmux Agent Testing](docs/tmux-agent-testing.md) - Testing guide for tmux with agents
 - [Plugins](docs/plugins.md) - Environment system
 - [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Complete design (immutable)
 

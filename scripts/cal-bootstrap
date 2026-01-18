@@ -1,13 +1,16 @@
-#!/bin/bash
+#!/bin/zsh
 
 set -e
+
+# Get script directory (works in zsh)
+SCRIPT_DIR="${0:A:h}"
 
 # CAL Bootstrap Script
 # Usage: ./cal-bootstrap [--init|-i] [--run|-r] [--stop] [--snapshot <action> <name>]
 #
 # Options:
 #   --init, -i      Initialize VM environment (create cal-clean, cal-dev, cal-initialised)
-#   --run, -r       Run cal-dev and SSH in (default if VMs exist)
+#   --run, -r       Run cal-dev and SSH in with tmux (default if VMs exist)
 #   --stop, -s      Stop cal-dev
 #   --snapshot, -S  Manage snapshots (list, create, restore, delete)
 #   --yes, -y       Skip confirmation prompts
@@ -178,13 +181,54 @@ start_vm_background() {
     
     # Wait for SSH
     echo "  Waiting for SSH..."
+    
+    # Ensure sshpass is available for automated setup (install quietly if needed)
+    if ! command -v sshpass &>/dev/null; then
+        # Try to install sshpass silently
+        brew install esolitos/ipa/sshpass &>/dev/null 2>&1 || \
+        brew install hudochenkov/sshpass/sshpass &>/dev/null 2>&1 || true
+    fi
+    
+    local has_sshpass=false
+    local has_expect=false
+    if command -v sshpass &>/dev/null; then
+        has_sshpass=true
+    elif command -v expect &>/dev/null; then
+        has_expect=true
+    fi
+    
     count=0
     
     while [ $count -lt $max_wait ]; do
-        if ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-               "${VM_USER}@${VM_IP}" "echo ok" &>/dev/null; then
-            echo "  SSH is ready"
-            return 0
+        if [ "$has_sshpass" = true ]; then
+            # With sshpass: try automated password auth
+            if SSHPASS="${VM_PASSWORD}" sshpass -e ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
+                   -o UserKnownHostsFile=/dev/null -o PreferredAuthentications=password \
+                   "${VM_USER}@${VM_IP}" "echo ok" &>/dev/null 2>&1; then
+                echo "  SSH is ready"
+                return 0
+            fi
+        elif [ "$has_expect" = true ]; then
+            # With expect: try automated password auth
+            if expect -c "
+                set timeout 5
+                spawn ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VM_USER}@${VM_IP} echo ok
+                expect {
+                    \"*assword*\" { send \"${VM_PASSWORD}\r\"; exp_continue }
+                    \"ok\" { exit 0 }
+                    timeout { exit 1 }
+                    eof { exit 1 }
+                }
+            " &>/dev/null 2>&1; then
+                echo "  SSH is ready"
+                return 0
+            fi
+        else
+            # Without sshpass or expect: check if SSH port is open
+            if nc -z -w 2 "$VM_IP" 22 &>/dev/null; then
+                echo "  SSH is ready"
+                return 0
+            fi
         fi
         sleep 2
         count=$((count + 2))
@@ -215,18 +259,40 @@ setup_ssh_keys() {
         return 0
     fi
     
-    # Copy SSH key
-    echo "  Copying SSH key to VM (password required once)..."
-    if command -v ssh-copy-id &>/dev/null; then
-        ssh-copy-id -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${vm_ip}"
+    # Copy SSH key using sshpass for automation (silently)
+    echo "  Copying SSH key to VM..."
+    
+    # Ensure sshpass or expect is available
+    if ! command -v sshpass &>/dev/null; then
+        brew install esolitos/ipa/sshpass &>/dev/null 2>&1 || \
+        brew install hudochenkov/sshpass/sshpass &>/dev/null 2>&1 || true
+    fi
+    
+    # Get public key
+    local pubkey
+    if [ -f ~/.ssh/id_ed25519.pub ]; then
+        pubkey=$(cat ~/.ssh/id_ed25519.pub)
     else
-        # Manual copy if ssh-copy-id not available
-        local pubkey
-        if [ -f ~/.ssh/id_ed25519.pub ]; then
-            pubkey=$(cat ~/.ssh/id_ed25519.pub)
-        else
-            pubkey=$(cat ~/.ssh/id_rsa.pub)
-        fi
+        pubkey=$(cat ~/.ssh/id_rsa.pub)
+    fi
+    
+    if command -v sshpass &>/dev/null; then
+        # Use sshpass for automated key copy
+        SSHPASS="${VM_PASSWORD}" sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${vm_ip}" \
+            "mkdir -p ~/.ssh && echo '$pubkey' >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys" &>/dev/null
+    elif command -v expect &>/dev/null; then
+        # Use expect as fallback (usually pre-installed on macOS)
+        expect -c "
+            set timeout 30
+            spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VM_USER}@${vm_ip} {mkdir -p ~/.ssh && echo '$pubkey' >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys}
+            expect {
+                \"*assword*\" { send \"${VM_PASSWORD}\r\"; exp_continue }
+                eof
+            }
+        " &>/dev/null
+    else
+        # Last resort: manual password entry
+        echo "  ⚠️  Automated setup unavailable - password: ${VM_PASSWORD}"
         ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${vm_ip}" \
             "mkdir -p ~/.ssh && echo '$pubkey' >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
     fi
@@ -237,16 +303,15 @@ setup_ssh_keys() {
 # Copy and run vm-setup script
 run_vm_setup() {
     local vm_ip="$1"
-    local script_dir="$(cd "$(dirname "$0")" && pwd)"
     
-    if [ ! -f "$script_dir/vm-setup.sh" ]; then
-        echo "  vm-setup.sh not found at $script_dir/vm-setup.sh"
+    if [ ! -f "$SCRIPT_DIR/vm-setup.sh" ]; then
+        echo "  vm-setup.sh not found at $SCRIPT_DIR/vm-setup.sh"
         return 1
     fi
     
     echo "  Copying vm-setup.sh to VM..."
     scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "$script_dir/vm-setup.sh" "${VM_USER}@${vm_ip}":~/ &>/dev/null
+        "$SCRIPT_DIR/vm-setup.sh" "${VM_USER}@${vm_ip}":~/ &>/dev/null
     
     echo "  Running vm-setup.sh..."
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -324,18 +389,96 @@ do_init() {
     echo "Manual setup required in VM"
     echo "============================================"
     echo ""
-    echo "SSH into the VM and complete these steps:"
+    echo "Opening tmux session in VM..."
     echo ""
-    echo "  ssh ${VM_USER}@${VM_IP}"
+    
+    # Create an interactive authentication script on the VM
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${VM_IP}" 'cat > ~/.cal-welcome.sh << '\''WELCOME'\''
+#!/bin/zsh
+
+# Initialize environment with all paths
+eval "$(/opt/homebrew/bin/brew shellenv)"
+export PATH="/Users/admin/.local/bin:/Users/admin/.opencode/bin:/opt/homebrew/bin:$PATH"
+
+clear
+echo ""
+echo "============================================"
+echo "  CAL VM Setup - Authenticate Agents"
+echo "============================================"
+echo ""
+echo "💡 tmux: Ctrl+b d to detach if needed"
+echo ""
+
+# GitHub CLI
+echo ""
+echo -n "Authenticate GitHub CLI? [Y/n] "
+read -r -k 1 reply
+echo ""
+if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+    echo "Starting GitHub CLI authentication..."
+    echo "----------------------------------------"
+    gh auth login
+    echo "----------------------------------------"
+    echo "✓ GitHub CLI complete"
+fi
+
+# Opencode
+echo ""
+echo -n "Authenticate Opencode? [Y/n] "
+read -r -k 1 reply
+echo ""
+if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+    echo "Starting Opencode authentication..."
+    echo "----------------------------------------"
+    opencode auth login
+    echo "----------------------------------------"
+    echo "✓ Opencode complete"
+fi
+
+# Cursor Agent
+echo ""
+echo -n "Authenticate Cursor Agent? [Y/n] "
+read -r -k 1 reply
+echo ""
+if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+    echo "Starting Cursor Agent authentication..."
+    echo "----------------------------------------"
+    agent
+    echo "----------------------------------------"
+    echo "✓ Cursor Agent complete"
+fi
+
+# Claude Code (last)
+echo ""
+echo -n "Authenticate Claude Code? [Y/n] "
+read -r -k 1 reply
+echo ""
+if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+    echo "Starting Claude Code..."
+    echo "Press Ctrl+C to exit when done."
+    echo "----------------------------------------"
+    claude
+    echo "----------------------------------------"
+    echo "✓ Claude Code complete"
+fi
+
+echo ""
+echo "============================================"
+echo "  ✅ Setup Complete!"
+echo "============================================"
+echo ""
+echo "All authentications done."
+echo "Press Ctrl+C or type exit to continue."
+echo ""
+WELCOME
+chmod +x ~/.cal-welcome.sh'
+    
+    # Automatically SSH into the VM with tmux and show welcome message
+    ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s setup 'zsh ~/.cal-welcome.sh'"
+    
     echo ""
-    echo "Then run and login to:"
-    echo "  gh auth login"
-    echo "  claude"
-    echo "  opencode auth login"
-    echo "  agent"
-    echo ""
-    echo "Press Enter when you have completed the setup..."
-    read -r
+    echo "Continuing with setup..."
     
     # Step 7: Create cal-initialised
     echo ""
@@ -354,7 +497,7 @@ do_init() {
             "$TART" delete "$VM_INIT"
         else
             echo "  $VM_INIT already exists. Replace it? (y/N)"
-            read -r -n 1 reply
+            read -r -k 1 reply
             echo ""
             if [[ $reply =~ ^[Yy]$ ]]; then
                 "$TART" delete "$VM_INIT"
@@ -407,9 +550,11 @@ do_run() {
             echo ""
             unlock_keychain "$VM_IP"
             echo ""
-            echo "Connecting via SSH..."
+            echo "Connecting via SSH with tmux..."
+            echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
             echo ""
-            ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${VM_IP}"
+            ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s cal"
         else
             echo "Could not get VM IP address."
             exit 1
@@ -436,11 +581,13 @@ do_run() {
     echo "VNC:   open vnc://${VM_IP}"
     echo "Stop:  $TART stop $vm_to_run"
     echo ""
-    echo "Connecting via SSH..."
+    echo "Connecting via SSH with tmux..."
+    echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
     echo ""
     
-    # SSH into the VM
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${VM_IP}"
+    # SSH into the VM with tmux (always)
+    ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s cal"
 }
 
 # === STOP MODE ===
@@ -493,7 +640,7 @@ do_snapshot() {
                     "$TART" delete "$snapshot_name"
                 else
                     echo "Snapshot $snapshot_name already exists. Replace? (y/N)"
-                    read -r -n 1 reply
+                    read -r -k 1 reply
                     echo ""
                     if [[ $reply =~ ^[Yy]$ ]]; then
                         "$TART" delete "$snapshot_name"
@@ -548,7 +695,7 @@ do_snapshot() {
                 echo "All changes in $VM_DEV will be lost!"
                 echo ""
                 echo "Continue? (y/N)"
-                read -r -n 1 reply
+                read -r -k 1 reply
                 echo ""
                 if [[ ! $reply =~ ^[Yy]$ ]]; then
                     echo "Aborted"
@@ -570,7 +717,15 @@ do_snapshot() {
             echo ""
             echo "Restored $VM_DEV from $restore_from"
             echo ""
-            echo "Run './cal-bootstrap --run' to start the VM"
+            
+            # Give different instructions based on what was restored
+            if [ "$restore_from" = "$VM_CLEAN" ]; then
+                echo "⚠️  Restored from clean base image (no tools installed)"
+                echo ""
+                echo "Run './cal-bootstrap --init' to set up tools and agents"
+            else
+                echo "Run './cal-bootstrap --run' to start the VM"
+            fi
             ;;
             
         list)
@@ -672,7 +827,7 @@ do_snapshot() {
                 echo "Delete $vm_to_delete?"
                 echo ""
                 echo "Continue? (y/N)"
-                read -r -n 1 reply
+                read -r -k 1 reply
                 echo ""
                 if [[ ! $reply =~ ^[Yy]$ ]]; then
                     echo "Aborted"
@@ -740,7 +895,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --init, -i                    Initialize VM environment"
-            echo "  --run, -r                     Run cal-dev (default if VMs exist)"
+            echo "  --run, -r                     Run cal-dev with tmux (default if VMs exist)"
             echo "  --stop, -s                    Stop cal-dev"
             echo "  --snapshot, -S list           List available snapshots"
             echo "  --snapshot, -S create <name>  Create a named snapshot"
@@ -755,6 +910,9 @@ while [[ $# -gt 0 ]]; do
             echo "  ./cal-bootstrap --snapshot create pre-experiment"
             echo "  ./cal-bootstrap --snapshot restore pre-experiment"
             echo "  ./cal-bootstrap --snapshot delete pre-experiment"
+            echo ""
+            echo "Note: tmux is always used for persistent sessions."
+            echo "      Ctrl+b d to detach, Ctrl+b ? for help"
             exit 0
             ;;
         *)

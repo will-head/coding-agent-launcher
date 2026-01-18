@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # Test Cursor Agent Login with Keychain Fix
 # This script verifies the keychain unlock solution for Cursor agent authentication

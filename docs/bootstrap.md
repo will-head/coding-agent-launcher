@@ -88,17 +88,73 @@ chmod +x ~/vm-setup.sh && ./vm-setup.sh
 
 ## Accessing the VM
 
-**SSH (Recommended):**
+**SSH with tmux (Default):**
 ```bash
-./scripts/cal-bootstrap --run   # Starts VM and SSHs in
+./scripts/cal-bootstrap --run   # Starts VM and connects with tmux
 # Or manually:
-ssh admin@$(tart ip cal-dev)
+ssh -t admin@$(tart ip cal-dev) "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s cal"
 ```
 
-**VNC:**
+tmux is now the default for all connections, providing:
+- **Session persistence** - Sessions survive SSH disconnects
+- **Multiple panes** - Split screen for side-by-side work
+- **Scrollback buffer** - Independent of terminal emulator
+- **Better terminal handling** - Enhanced features
+
+**VNC (for GUI access):**
 ```bash
 open vnc://$(tart ip cal-dev)   # password: admin
 ```
+
+### About tmux
+
+tmux is enabled by default for all SSH connections, providing advanced terminal features:
+
+**Benefits:**
+- Sessions survive SSH disconnects (agents keep running)
+- Multiple panes for side-by-side work
+- Scrollback buffer independent of terminal
+- Copy/paste mode for text selection
+
+**Basic Commands:**
+```bash
+# Session control
+Ctrl+b d        # Detach from session (VM keeps running)
+Ctrl+b ?        # Show all key bindings
+
+# Panes (split windows)
+Ctrl+b |        # Split vertically
+Ctrl+b -        # Split horizontally
+Ctrl+b arrow    # Navigate between panes
+Ctrl+b x        # Close current pane
+
+# Windows (tabs)
+Ctrl+b c        # Create new window
+Ctrl+b n        # Next window
+Ctrl+b p        # Previous window
+Ctrl+b 0-9      # Switch to window number
+
+# Copy mode (scrollback)
+Ctrl+b [        # Enter copy mode (use arrows to scroll)
+q               # Exit copy mode
+
+# Config
+Ctrl+b r        # Reload tmux config
+```
+
+**Reattaching to Sessions:**
+If you disconnect from SSH, your tmux session keeps running:
+```bash
+./scripts/cal-bootstrap --run   # Reattaches to 'cal' session automatically
+# Or manually:
+ssh -t admin@$(tart ip cal-dev) "tmux attach -t cal"
+```
+
+**Mouse Support:**
+The default config enables mouse support - you can:
+- Click to select panes
+- Scroll with mouse wheel
+- Resize panes by dragging borders
 
 ## Using the Agents
 
