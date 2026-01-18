@@ -5,7 +5,7 @@
 > See also: [SPEC](SPEC.md) (technical requirements) | [ADR-001](adr/ADR-001-cal-isolation.md) (design decisions)
 
 ## Phase 0: Bootstrap ✅ (Complete)
-Manual Tart setup for immediate safe agent use.
+Automated Tart setup for immediate safe agent use.
 - [x] Research Tart
 - [x] Document manual process
 - [x] Create automated vm-setup script
@@ -15,8 +15,11 @@ Manual Tart setup for immediate safe agent use.
 - [x] Execute keybinding tests (all working correctly)
 - [x] Create automated reset-vm script
 - [x] **Complete reset-vm.sh improvements** (all 6 TODOs completed)
-  - Cleanup trap, configurable credentials, --yes flag
-  - Shellcheck validation, full automation
+- [x] **Create cal-bootstrap script** - unified VM management
+  - `--init`: Create VMs, install tools, setup SSH keys
+  - `--run`: Start VM and SSH in
+  - `--stop`: Stop VM
+  - `--snapshot`: List, create, restore, delete snapshots
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.

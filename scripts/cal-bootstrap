@@ -1,0 +1,672 @@
+#!/bin/bash
+
+set -e
+
+# CAL Bootstrap Script
+# Usage: ./cal-bootstrap [--init|-i] [--run|-r] [--stop] [--snapshot <action> <name>]
+#
+# Options:
+#   --init, -i      Initialize VM environment (create cal-clean, cal-dev, cal-initialised)
+#   --run, -r       Run cal-dev and SSH in (default if VMs exist)
+#   --stop, -s      Stop cal-dev
+#   --snapshot, -S  Manage snapshots (list, create, restore, delete)
+#   --yes, -y       Skip confirmation prompts
+#
+# Environment variables:
+#   TART_PATH     - Path to tart binary
+#   VM_USER       - VM username (default: admin)
+#   VM_PASSWORD   - VM password (default: admin)
+
+# VM names
+VM_CLEAN="cal-clean"
+VM_DEV="cal-dev"
+VM_INIT="cal-initialised"
+
+# VM credentials
+VM_USER="${VM_USER:-admin}"
+VM_PASSWORD="${VM_PASSWORD:-admin}"
+
+# Cleanup tracking
+CLEANUP_VM=false
+CLEANUP_DONE=false
+TART_PID=""
+
+# Cleanup function
+cleanup() {
+    if [ "$CLEANUP_DONE" = true ]; then
+        return
+    fi
+    CLEANUP_DONE=true
+    
+    if [ "$CLEANUP_VM" = true ] && [ -n "$TART_PID" ] && kill -0 "$TART_PID" 2>/dev/null; then
+        echo ""
+        echo "Cleaning up background VM process (PID: $TART_PID)..."
+        kill "$TART_PID" 2>/dev/null || true
+        wait "$TART_PID" 2>/dev/null || true
+    fi
+}
+
+# Handle Ctrl-C properly
+handle_interrupt() {
+    echo ""
+    echo "Interrupted by user"
+    cleanup
+    exit 130
+}
+
+trap cleanup EXIT
+trap handle_interrupt INT TERM
+
+# Find tart binary
+find_tart() {
+    if command -v tart &>/dev/null; then
+        echo "tart"
+    elif [ -n "$TART_PATH" ] && [ -x "$TART_PATH" ]; then
+        echo "$TART_PATH"
+    elif [ -x "./tart.app/Contents/MacOS/tart" ]; then
+        echo "./tart.app/Contents/MacOS/tart"
+    else
+        echo ""
+    fi
+}
+
+# Check if VM exists
+vm_exists() {
+    "$TART" list 2>/dev/null | grep -qw "$1"
+}
+
+# Check if VM is running
+vm_running() {
+    "$TART" list 2>/dev/null | grep -w "$1" | grep -q "running"
+}
+
+# Stop VM if running
+stop_vm() {
+    local vm="$1"
+    if vm_running "$vm"; then
+        echo "  Stopping $vm..."
+        "$TART" stop "$vm" 2>/dev/null || true
+        sleep 2
+    fi
+}
+
+# Start VM in background and wait for IP/SSH
+start_vm_background() {
+    local vm="$1"
+    
+    echo "  Starting $vm in background..."
+    "$TART" run --no-graphics "$vm" >/dev/null 2>&1 &
+    TART_PID=$!
+    disown "$TART_PID" 2>/dev/null || true
+    CLEANUP_VM=true
+    echo "  VM started (PID: $TART_PID)"
+    
+    # Wait for IP
+    echo "  Waiting for IP..."
+    local max_wait=60
+    local count=0
+    VM_IP=""
+    
+    while [ $count -lt $max_wait ]; do
+        sleep 2
+        count=$((count + 2))
+        VM_IP=$("$TART" ip "$vm" 2>/dev/null || echo "")
+        if [ -n "$VM_IP" ]; then
+            echo "  VM IP: $VM_IP"
+            break
+        fi
+        printf "  Waiting... (%ds/%ds)\r" "$count" "$max_wait"
+    done
+    
+    if [ -z "$VM_IP" ]; then
+        echo "  Could not obtain IP after ${max_wait}s"
+        return 1
+    fi
+    
+    # Wait for SSH
+    echo "  Waiting for SSH..."
+    count=0
+    
+    while [ $count -lt $max_wait ]; do
+        if ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+               "${VM_USER}@${VM_IP}" "echo ok" &>/dev/null; then
+            echo "  SSH is ready"
+            return 0
+        fi
+        sleep 2
+        count=$((count + 2))
+        printf "  Waiting for SSH... (%ds/%ds)\r" "$count" "$max_wait"
+    done
+    
+    echo "  SSH not available after ${max_wait}s"
+    return 1
+}
+
+# Setup SSH keys
+setup_ssh_keys() {
+    local vm_ip="$1"
+    
+    echo "  Checking SSH keys..."
+    
+    # Check if SSH key exists
+    if [ ! -f ~/.ssh/id_rsa.pub ] && [ ! -f ~/.ssh/id_ed25519.pub ]; then
+        echo "  No SSH key found. Generating..."
+        ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N "" -q
+        echo "  SSH key generated"
+    fi
+    
+    # Test if key auth already works
+    if ssh -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${vm_ip}" "echo ok" &>/dev/null; then
+        echo "  SSH key authentication already configured"
+        return 0
+    fi
+    
+    # Copy SSH key
+    echo "  Copying SSH key to VM (password required once)..."
+    if command -v ssh-copy-id &>/dev/null; then
+        ssh-copy-id -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${vm_ip}"
+    else
+        # Manual copy if ssh-copy-id not available
+        local pubkey
+        if [ -f ~/.ssh/id_ed25519.pub ]; then
+            pubkey=$(cat ~/.ssh/id_ed25519.pub)
+        else
+            pubkey=$(cat ~/.ssh/id_rsa.pub)
+        fi
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${vm_ip}" \
+            "mkdir -p ~/.ssh && echo '$pubkey' >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+    fi
+    
+    echo "  SSH key copied"
+}
+
+# Copy and run vm-setup script
+run_vm_setup() {
+    local vm_ip="$1"
+    local script_dir="$(cd "$(dirname "$0")" && pwd)"
+    
+    if [ ! -f "$script_dir/vm-setup.sh" ]; then
+        echo "  vm-setup.sh not found at $script_dir/vm-setup.sh"
+        return 1
+    fi
+    
+    echo "  Copying vm-setup.sh to VM..."
+    scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "$script_dir/vm-setup.sh" "${VM_USER}@${vm_ip}":~/ &>/dev/null
+    
+    echo "  Running vm-setup.sh..."
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "chmod +x ~/vm-setup.sh && ~/vm-setup.sh"
+}
+
+# === INIT MODE ===
+do_init() {
+    echo ""
+    echo "CAL Bootstrap - Initialize"
+    echo "==========================="
+    echo ""
+    
+    # Step 1: Create cal-clean from base image
+    echo "Step 1: Create $VM_CLEAN"
+    if vm_exists "$VM_CLEAN"; then
+        echo "  $VM_CLEAN already exists, skipping"
+    else
+        echo "  Cloning from ghcr.io/cirruslabs/macos-sequoia-base:latest..."
+        echo "  (This downloads ~25GB, may take a while)"
+        "$TART" clone ghcr.io/cirruslabs/macos-sequoia-base:latest "$VM_CLEAN"
+        echo "  Setting VM resources (4 CPU, 8GB RAM, 80GB disk)..."
+        "$TART" set "$VM_CLEAN" --cpu 4 --memory 8192 --disk-size 80
+        echo "  $VM_CLEAN created"
+    fi
+    
+    # Step 2: Create cal-dev from cal-clean
+    echo ""
+    echo "Step 2: Create $VM_DEV"
+    if vm_exists "$VM_DEV"; then
+        echo "  $VM_DEV already exists, skipping"
+    else
+        echo "  Cloning from $VM_CLEAN..."
+        "$TART" clone "$VM_CLEAN" "$VM_DEV"
+        echo "  $VM_DEV created"
+    fi
+    
+    # Step 3: Start cal-dev and setup
+    echo ""
+    echo "Step 3: Setup $VM_DEV"
+    if ! start_vm_background "$VM_DEV"; then
+        echo "  Failed to start VM"
+        exit 1
+    fi
+    
+    # Step 4: Setup SSH keys
+    echo ""
+    echo "Step 4: Setup SSH keys"
+    setup_ssh_keys "$VM_IP"
+    
+    # Step 5: Run vm-setup
+    echo ""
+    echo "Step 5: Install tools"
+    run_vm_setup "$VM_IP"
+    
+    # Step 6: Prompt user for manual setup
+    echo ""
+    echo "============================================"
+    echo "Manual setup required in VM"
+    echo "============================================"
+    echo ""
+    echo "SSH into the VM and complete these steps:"
+    echo ""
+    echo "  ssh ${VM_USER}@${VM_IP}"
+    echo ""
+    echo "Then run and login to:"
+    echo "  gh auth login"
+    echo "  claude"
+    echo "  opencode auth login"
+    echo "  agent"
+    echo ""
+    echo "Press Enter when you have completed the setup..."
+    read -r
+    
+    # Step 7: Create cal-initialised
+    echo ""
+    echo "Step 7: Create $VM_INIT snapshot"
+    
+    # Stop VM first
+    CLEANUP_VM=false
+    echo "  Stopping $VM_DEV..."
+    "$TART" stop "$VM_DEV" 2>/dev/null || true
+    kill "$TART_PID" 2>/dev/null || true
+    sleep 2
+    
+    # Delete existing if present
+    if vm_exists "$VM_INIT"; then
+        if [ "$SKIP_CONFIRM" = true ]; then
+            "$TART" delete "$VM_INIT"
+        else
+            echo "  $VM_INIT already exists. Replace it? (y/N)"
+            read -r -n 1 reply
+            echo ""
+            if [[ $reply =~ ^[Yy]$ ]]; then
+                "$TART" delete "$VM_INIT"
+            else
+                echo "  Keeping existing $VM_INIT"
+                echo ""
+                echo "Bootstrap complete!"
+                return 0
+            fi
+        fi
+    fi
+    
+    echo "  Creating $VM_INIT from $VM_DEV..."
+    "$TART" clone "$VM_DEV" "$VM_INIT"
+    echo "  $VM_INIT created"
+    
+    echo ""
+    echo "Bootstrap complete!"
+    echo ""
+    echo "VMs created:"
+    printf "  %-17s - Base macOS image\n" "$VM_CLEAN"
+    printf "  %-17s - Development VM (use this)\n" "$VM_DEV"
+    printf "  %-17s - Snapshot with tools configured\n" "$VM_INIT"
+    echo ""
+    echo "Next: Run './cal-bootstrap --run' to start developing"
+}
+
+# === RUN MODE ===
+do_run() {
+    echo ""
+    echo "CAL Bootstrap - Run"
+    echo "===================="
+    echo ""
+    
+    local vm_to_run="$VM_DEV"
+    
+    # Check if VM exists
+    if ! vm_exists "$vm_to_run"; then
+        echo "$vm_to_run does not exist."
+        echo ""
+        echo "Run './cal-bootstrap --init' to set up the environment."
+        exit 1
+    fi
+    
+    # If already running, just SSH in
+    if vm_running "$vm_to_run"; then
+        echo "$vm_to_run is already running."
+        VM_IP=$("$TART" ip "$vm_to_run" 2>/dev/null || echo "")
+        if [ -n "$VM_IP" ]; then
+            echo ""
+            echo "Connecting via SSH..."
+            echo ""
+            ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${VM_IP}"
+        else
+            echo "Could not get VM IP address."
+            exit 1
+        fi
+        exit 0
+    fi
+    
+    # Start VM
+    if ! start_vm_background "$vm_to_run"; then
+        echo "Failed to start VM"
+        exit 1
+    fi
+    
+    # Don't cleanup on success
+    CLEANUP_VM=false
+    
+    echo ""
+    echo "$vm_to_run is running (PID: $TART_PID)"
+    echo ""
+    echo "VNC:   open vnc://${VM_IP}"
+    echo "Stop:  $TART stop $vm_to_run"
+    echo ""
+    echo "Connecting via SSH..."
+    echo ""
+    
+    # SSH into the VM
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${VM_IP}"
+}
+
+# === STOP MODE ===
+do_stop() {
+    echo ""
+    echo "CAL Bootstrap - Stop"
+    echo "===================="
+    echo ""
+    
+    if ! vm_exists "$VM_DEV"; then
+        echo "$VM_DEV does not exist."
+        exit 1
+    fi
+    
+    if ! vm_running "$VM_DEV"; then
+        echo "$VM_DEV is not running."
+        exit 0
+    fi
+    
+    echo "Stopping $VM_DEV..."
+    "$TART" stop "$VM_DEV"
+    echo ""
+    echo "$VM_DEV stopped."
+}
+
+# === SNAPSHOT MODE ===
+do_snapshot() {
+    local action="$1"
+    local name="$2"
+    
+    echo ""
+    echo "CAL Bootstrap - Snapshot"
+    echo "========================="
+    echo ""
+    
+    case "$action" in
+        create)
+            if [ -z "$name" ]; then
+                echo "Usage: ./cal-bootstrap --snapshot create <name>"
+                exit 1
+            fi
+            
+            # Stop VM if running
+            stop_vm "$VM_DEV"
+            
+            local snapshot_name="${VM_DEV}-${name}"
+            
+            if vm_exists "$snapshot_name"; then
+                if [ "$SKIP_CONFIRM" = true ]; then
+                    "$TART" delete "$snapshot_name"
+                else
+                    echo "Snapshot $snapshot_name already exists. Replace? (y/N)"
+                    read -r -n 1 reply
+                    echo ""
+                    if [[ $reply =~ ^[Yy]$ ]]; then
+                        "$TART" delete "$snapshot_name"
+                    else
+                        echo "Aborted"
+                        exit 1
+                    fi
+                fi
+            fi
+            
+            echo "Creating snapshot: $snapshot_name"
+            "$TART" clone "$VM_DEV" "$snapshot_name"
+            echo ""
+            echo "Snapshot created: $snapshot_name"
+            echo ""
+            echo "Restore with: ./cal-bootstrap --snapshot restore $name"
+            ;;
+            
+        restore)
+            if [ -z "$name" ]; then
+                echo "Usage: ./cal-bootstrap --snapshot restore <name>"
+                echo ""
+                do_snapshot list
+                exit 1
+            fi
+            
+            # Check for exact match first, then prefixed snapshot
+            local restore_from=""
+            if vm_exists "$name"; then
+                restore_from="$name"
+            elif vm_exists "${VM_DEV}-${name}"; then
+                restore_from="${VM_DEV}-${name}"
+            else
+                echo "VM '$name' not found"
+                echo ""
+                do_snapshot list
+                exit 1
+            fi
+            
+            # Can't restore from cal-dev to cal-dev
+            if [ "$restore_from" = "$VM_DEV" ]; then
+                echo "Cannot restore $VM_DEV from itself"
+                exit 1
+            fi
+            
+            # Confirm
+            if [ "$SKIP_CONFIRM" = false ]; then
+                echo "This will replace $VM_DEV with $restore_from"
+                echo "All changes in $VM_DEV will be lost!"
+                echo ""
+                echo "Continue? (y/N)"
+                read -r -n 1 reply
+                echo ""
+                if [[ ! $reply =~ ^[Yy]$ ]]; then
+                    echo "Aborted"
+                    exit 1
+                fi
+            fi
+            
+            # Stop and delete current VM
+            stop_vm "$VM_DEV"
+            if vm_exists "$VM_DEV"; then
+                echo "Deleting $VM_DEV..."
+                "$TART" delete "$VM_DEV"
+            fi
+            
+            # Restore from snapshot
+            echo "Restoring from $restore_from..."
+            "$TART" clone "$restore_from" "$VM_DEV"
+            
+            echo ""
+            echo "Restored $VM_DEV from $restore_from"
+            echo ""
+            echo "Run './cal-bootstrap --run' to start the VM"
+            ;;
+            
+        list)
+            echo "Base VMs:"
+            for vm in "$VM_CLEAN" "$VM_DEV" "$VM_INIT"; do
+                if vm_exists "$vm"; then
+                    echo "  $vm"
+                fi
+            done
+            echo ""
+            echo "Snapshots:"
+            if "$TART" list | grep -q "^${VM_DEV}-"; then
+                "$TART" list | grep "^${VM_DEV}-" | awk '{print "  " $1}'
+            else
+                echo "  (none)"
+            fi
+            exit 0
+            ;;
+            
+        delete)
+            if [ -z "$name" ]; then
+                echo "Usage: ./cal-bootstrap --snapshot delete <name>"
+                echo ""
+                do_snapshot list
+                exit 1
+            fi
+            
+            # Check for exact match first, then prefixed snapshot
+            local vm_to_delete=""
+            if vm_exists "$name"; then
+                vm_to_delete="$name"
+            elif vm_exists "${VM_DEV}-${name}"; then
+                vm_to_delete="${VM_DEV}-${name}"
+            else
+                echo "VM '$name' not found"
+                echo ""
+                do_snapshot list
+                exit 1
+            fi
+            
+            # Stop if running
+            stop_vm "$vm_to_delete"
+            
+            # Confirm
+            if [ "$SKIP_CONFIRM" = false ]; then
+                echo "Delete $vm_to_delete?"
+                echo ""
+                echo "Continue? (y/N)"
+                read -r -n 1 reply
+                echo ""
+                if [[ ! $reply =~ ^[Yy]$ ]]; then
+                    echo "Aborted"
+                    exit 1
+                fi
+            fi
+            
+            echo "Deleting $vm_to_delete..."
+            "$TART" delete "$vm_to_delete"
+            echo ""
+            echo "Deleted: $vm_to_delete"
+            ;;
+            
+        *)
+            echo "Usage: ./cal-bootstrap --snapshot <list|create|restore|delete> [name]"
+            echo ""
+            echo "Examples:"
+            echo "  ./cal-bootstrap --snapshot list"
+            echo "  ./cal-bootstrap --snapshot create before-refactor"
+            echo "  ./cal-bootstrap --snapshot restore before-refactor"
+            echo "  ./cal-bootstrap --snapshot delete before-refactor"
+            exit 1
+            ;;
+    esac
+}
+
+# === MAIN ===
+
+# Parse arguments
+MODE=""
+SKIP_CONFIRM=false
+SNAPSHOT_ACTION=""
+SNAPSHOT_NAME=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --init|-i)
+            MODE="init"
+            shift
+            ;;
+        --run|-r)
+            MODE="run"
+            shift
+            ;;
+        --stop|-s)
+            MODE="stop"
+            shift
+            ;;
+        --snapshot|-S)
+            MODE="snapshot"
+            shift
+            SNAPSHOT_ACTION="${1:-}"
+            shift || true
+            SNAPSHOT_NAME="${1:-}"
+            shift || true
+            ;;
+        --yes|-y)
+            SKIP_CONFIRM=true
+            shift
+            ;;
+        --help|-h)
+            echo "CAL Bootstrap - VM Environment Setup"
+            echo ""
+            echo "Usage: ./cal-bootstrap [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --init, -i                    Initialize VM environment"
+            echo "  --run, -r                     Run cal-dev (default if VMs exist)"
+            echo "  --stop, -s                    Stop cal-dev"
+            echo "  --snapshot, -S list           List available snapshots"
+            echo "  --snapshot, -S create <name>  Create a named snapshot"
+            echo "  --snapshot, -S restore <name> Restore from a snapshot"
+            echo "  --snapshot, -S delete <name>  Delete a snapshot"
+            echo "  --yes, -y                     Skip confirmation prompts"
+            echo "  --help, -h                    Show this help"
+            echo ""
+            echo "Examples:"
+            echo "  ./cal-bootstrap --init              # First-time setup"
+            echo "  ./cal-bootstrap                     # Start cal-dev (auto-detects mode)"
+            echo "  ./cal-bootstrap --snapshot create pre-experiment"
+            echo "  ./cal-bootstrap --snapshot restore pre-experiment"
+            echo "  ./cal-bootstrap --snapshot delete pre-experiment"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Run './cal-bootstrap --help' for usage"
+            exit 1
+            ;;
+    esac
+done
+
+# Find tart
+TART=$(find_tart)
+if [ -z "$TART" ]; then
+    echo "Error: tart not found"
+    echo ""
+    echo "Install with: brew install cirruslabs/cli/tart"
+    echo ""
+    echo "Or set TART_PATH environment variable"
+    exit 1
+fi
+
+# Auto-detect mode if not specified
+if [ -z "$MODE" ]; then
+    if vm_exists "$VM_CLEAN" && vm_exists "$VM_DEV" && vm_exists "$VM_INIT"; then
+        MODE="run"
+    else
+        MODE="init"
+    fi
+    echo "Auto-detected mode: $MODE"
+fi
+
+# Execute mode
+case "$MODE" in
+    init)
+        do_init
+        ;;
+    run)
+        do_run
+        ;;
+    stop)
+        do_stop
+        ;;
+    snapshot)
+        do_snapshot "$SNAPSHOT_ACTION" "$SNAPSHOT_NAME"
+        ;;
+esac

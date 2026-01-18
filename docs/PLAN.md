@@ -23,8 +23,19 @@
   - [x] Add --yes flag for non-interactive mode
   - [x] Run shellcheck and address warnings
   - [x] Fully automate post-reset setup (chmod, run script, gh auth note)
+- [x] **Create cal-bootstrap script** - unified VM management
+  - [x] `--init`: Create cal-clean, cal-dev, cal-initialised VMs
+  - [x] `--run`: Start VM and SSH in automatically
+  - [x] `--stop`: Stop cal-dev
+  - [x] `--snapshot`: List, create, restore, delete snapshots
+  - [x] Auto-detect mode based on VM state
+  - [x] SSH key setup automation
+  - [x] Cleanup traps for background processes
 
 **All subsequent phases:** Not started
+
+### Known Issues
+- [ ] **Cursor Agent login fails in VM** - `agent` command fails with "Security command failed" (exit code 36). Keychain access issue in VM environment. Workaround: Run `agent login` and complete browser-based OAuth flow manually. See: https://cursor.com/loginDeepControl
 
 ---
 

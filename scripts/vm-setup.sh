@@ -4,6 +4,13 @@ echo "🚀 CAL VM Setup Script"
 echo "======================"
 echo ""
 
+# Ensure Homebrew is in PATH (needed for non-interactive SSH)
+if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+fi
+
 # Helper function to check if a brew package is installed
 brew_installed() {
     brew list "$1" &>/dev/null
@@ -24,10 +31,15 @@ fi
 
 # Install Homebrew dependencies
 echo ""
-echo "📦 Installing Homebrew packages..."
+echo "📦 Installing/upgrading Homebrew packages..."
 for pkg in node gh; do
     if brew_installed "$pkg"; then
-        echo "  ✓ $pkg already installed"
+        echo "  → Upgrading $pkg..."
+        if brew upgrade "$pkg" 2>/dev/null; then
+            echo "  ✓ $pkg upgraded"
+        else
+            echo "  ✓ $pkg already up to date"
+        fi
     else
         echo "  → Installing $pkg..."
         if brew install "$pkg"; then

@@ -2,167 +2,138 @@
 
 > Extracted from [ADR-001](adr/ADR-001-cal-isolation.md) for quick reference.
 
-Manual Tart setup until CAL CLI is implemented.
-
-## Initial Setup
+## Quick Start
 
 ```bash
 # 1. Install Tart
 brew install cirruslabs/cli/tart
 
-# 2. Create clean VM (~25GB download)
+# 2. Run bootstrap script (creates VMs, installs tools, sets up SSH keys)
+./scripts/cal-bootstrap --init
+
+# 3. After manual login setup, start developing
+./scripts/cal-bootstrap --run
+```
+
+## cal-bootstrap Script
+
+The `cal-bootstrap` script automates VM setup and management.
+
+### Commands
+
+```bash
+# First-time setup (creates cal-clean, cal-dev, cal-initialised)
+./scripts/cal-bootstrap --init
+./scripts/cal-bootstrap -i
+
+# Start cal-dev and SSH in (default if VMs exist)
+./scripts/cal-bootstrap --run
+./scripts/cal-bootstrap -r
+./scripts/cal-bootstrap          # Auto-detects mode
+
+# Stop cal-dev
+./scripts/cal-bootstrap --stop
+./scripts/cal-bootstrap -s
+
+# Snapshot management
+./scripts/cal-bootstrap --snapshot list
+./scripts/cal-bootstrap -S list
+./scripts/cal-bootstrap -S create before-refactor
+./scripts/cal-bootstrap -S restore before-refactor
+./scripts/cal-bootstrap -S restore cal-initialised  # Restore from base
+./scripts/cal-bootstrap -S delete before-refactor
+
+# Skip confirmation prompts
+./scripts/cal-bootstrap -y -S restore cal-initialised
+```
+
+### Init Workflow
+
+The `--init` command performs these steps:
+
+1. Creates `cal-clean` from base macOS image (~25GB download)
+2. Creates `cal-dev` from `cal-clean`
+3. Starts VM and waits for SSH
+4. Sets up SSH keys (generates if needed)
+5. Runs `vm-setup.sh` to install tools
+6. Prompts for manual login setup (gh, claude, opencode, agent)
+7. Creates `cal-initialised` snapshot
+
+### VMs Created
+
+| VM | Purpose |
+|----|---------|
+| `cal-clean` | Base macOS image (pristine) |
+| `cal-dev` | Development VM (use this) |
+| `cal-initialised` | Snapshot with tools and auth configured |
+
+## Manual Setup (Alternative)
+
+If you prefer manual setup:
+
+```bash
+# Create VM
 tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest cal-clean
-
-# 3. Set VM resources
 tart set cal-clean --cpu 4 --memory 8192 --disk-size 80
-
-# 4. Snapshot to cal-dev
 tart clone cal-clean cal-dev
 
-# 5. Create output directory (for file sharing)
-mkdir -p ~/cal-output
-
-# 6. Start VM with SSH access
-tart run cal-dev --no-graphics --vnc &
+# Start and connect
+tart run cal-dev --no-graphics &
 sleep 30 && ssh admin@$(tart ip cal-dev)  # password: admin
 
-# 7. In VM: Install agents (copy setup script first)
-# From host:
-scp scripts/vm-setup.sh admin@$(tart ip cal-dev):~/
-# Then in VM:
-chmod +x ~/vm-setup.sh && ./vm-setup.sh && gh auth login
+# In VM: run setup script
+# (copy from host first: scp scripts/vm-setup.sh admin@$(tart ip cal-dev):~/)
+chmod +x ~/vm-setup.sh && ./vm-setup.sh
 ```
 
 ## Accessing the VM
 
-Once the VM is running, you can access it in several ways:
-
-**Option 1: SSH (Recommended)**
+**SSH (Recommended):**
 ```bash
-# Get the VM's IP address
-tart ip cal-dev
-
-# SSH into the VM (password: admin)
+./scripts/cal-bootstrap --run   # Starts VM and SSHs in
+# Or manually:
 ssh admin@$(tart ip cal-dev)
 ```
 
-**Option 2: GUI**
-The `tart run cal-dev` command opens a window with the VM's display. You can interact with it directly through that window (login: admin/admin).
-
-**Option 3: Headless with VNC**
+**VNC:**
 ```bash
-# Start VM headless with VNC available
-tart run cal-dev --no-graphics --vnc &
-
-# Connect via VNC (password: admin)
-open vnc://$(tart ip cal-dev)
-```
-
-## VM Setup
-
-Once inside the VM, you can set up all agents and tools automatically or manually.
-
-**Automated Setup (Recommended):**
-```bash
-# Copy setup script to VM (run from host)
-scp scripts/vm-setup.sh admin@$(tart ip cal-dev):~/
-
-# Inside VM, run the setup script
-ssh admin@$(tart ip cal-dev)
-chmod +x ~/vm-setup.sh
-./vm-setup.sh
-
-# Authenticate with GitHub
-gh auth login
-
-# Configure opencode
-opencode init
-```
-
-**Manual Setup:**
-
-Inside VM:
-```bash
-brew update && brew install node gh ripgrep fzf
-npm install -g @anthropic-ai/claude-code
-gh auth login
-
-# Optional: cursor-cli (command: agent)
-curl -fsSL https://cursor.com/install | bash
-# Add to PATH
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-
-# Optional: opencode (requires ripgrep and fzf)
-brew install go && go install github.com/opencode-ai/opencode@latest
-echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.zshrc
-opencode init  # Configure agent and API keys
+open vnc://$(tart ip cal-dev)   # password: admin
 ```
 
 ## Using the Agents
 
-Once installed, use these commands to launch each agent:
+Once logged in to the VM:
 
 ```bash
-# Claude Code
-claude
-
-# Cursor CLI
-agent
-
-# opencode
-opencode
+claude      # Claude Code
+agent       # Cursor CLI
+opencode    # opencode
+gh          # GitHub CLI
 ```
 
-## Safety Snapshot (Critical)
-
-On host, before any agent session:
-```bash
-tart stop cal-dev
-tart clone cal-dev cal-dev-clean
-```
-
-## Daily Use
+## Snapshots and Rollback
 
 ```bash
-# Start headless with VNC available
-tart run cal-dev --no-graphics --vnc &
-sleep 30 && ssh admin@$(tart ip cal-dev)
+# Create snapshot before risky changes
+./scripts/cal-bootstrap -S create before-experiment
 
-# Or with artifact sync
-mkdir -p ~/cal-output
-tart run cal-dev --no-graphics --dir=output:~/cal-output &
-# VM path: /Volumes/My Shared Files/output/
-```
+# Restore if something goes wrong
+./scripts/cal-bootstrap -S restore before-experiment
 
-## Rollback
+# Restore to freshly-configured state
+./scripts/cal-bootstrap -S restore cal-initialised
 
-**Automated (Recommended):**
-```bash
-# Reset VM from pristine snapshot (interactive)
-scripts/reset-vm.sh cal-dev cal-dev-pristine
-
-# The script will:
-# 1. Prompt for confirmation before deleting
-# 2. Clone from pristine snapshot
-# 3. Start VM in background
-# 4. Wait for SSH availability
-# 5. Copy vm-setup.sh to VM
-```
-
-**Manual:**
-```bash
-tart stop cal-dev && tart delete cal-dev && tart clone cal-dev-clean cal-dev
+# List all VMs and snapshots
+./scripts/cal-bootstrap -S list
 ```
 
 ## Aliases (~/.zshrc)
 
 ```bash
-alias cal-start='tart run cal-dev --no-graphics & sleep 30 && ssh admin@$(tart ip cal-dev)'
-alias cal-stop='tart stop cal-dev'
-alias cal-ssh='ssh admin@$(tart ip cal-dev)'
-alias cal-rollback='tart stop cal-dev && tart delete cal-dev && tart clone cal-dev-clean cal-dev'
-alias cal-reset='scripts/reset-vm.sh cal-dev cal-dev-pristine'  # Automated reset
-alias cal-vnc='open vnc://$(tart ip cal-dev)'  # password: admin
+alias cal='./scripts/cal-bootstrap'
+alias cal-start='./scripts/cal-bootstrap --run'
+alias cal-stop='./scripts/cal-bootstrap --stop'
+alias cal-snap='./scripts/cal-bootstrap --snapshot'
 ```
 
 ## Tart Reference
@@ -179,24 +150,18 @@ tart clone <src> <dst>       # Clone/snapshot
 ## Troubleshooting
 
 - **SSH refused**: VM still booting - wait or check System Preferences → Sharing → Remote Login
-- **Agent not found**: Check PATH includes `~/go/bin`
-- **Disk full**: `rm -rf ~/Library/Caches/* ~/.npm/_cacache && go clean -cache`
-- **VNC needed**: `tart run cal-dev --vnc` then connect via Screen Sharing app
-- **Delete key not working**: Add to `~/.zshrc` in VM: `export TERM=xterm-256color` then `source ~/.zshrc`
-- **Up arrow history broken**: SSH with proper terminal allocation: `ssh -t admin@$(tart ip cal-dev)` or add `bindkey "^[[A" up-line-or-history` to `~/.zshrc`
+- **Agent not found**: Restart shell with `exec zsh` or check PATH
+- **Disk full**: `rm -rf ~/Library/Caches/* ~/.npm/_cacache`
+- **Delete key not working**: Already fixed in vm-setup.sh (TERM=xterm-256color)
+- **Up arrow history broken**: Already fixed in vm-setup.sh (bindkey)
+- **Cursor Agent login fails**: Known issue - run `agent login` and complete browser OAuth flow
 
 ## Terminal Keybinding Testing
 
-To test and verify terminal keybindings in the VM:
-
 ```bash
-# Copy test script to VM
+# Copy and run test script
 scp scripts/test-keybindings.sh admin@$(tart ip cal-dev):~/
-
-# Run interactive test
-ssh admin@$(tart ip cal-dev)
-chmod +x ~/test-keybindings.sh
-./test-keybindings.sh
+ssh admin@$(tart ip cal-dev) "chmod +x ~/test-keybindings.sh && ~/test-keybindings.sh"
 ```
 
-See [Terminal Keybindings Test Plan](terminal-keybindings-test.md) for detailed test procedures and results.
+See [Terminal Keybindings Test Plan](terminal-keybindings-test.md) for details.
