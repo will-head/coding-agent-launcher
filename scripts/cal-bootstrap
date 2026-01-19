@@ -30,6 +30,18 @@ VM_INIT="cal-initialised"
 VM_USER="${VM_USER:-admin}"
 VM_PASSWORD="${VM_PASSWORD:-admin}"
 
+# Host user for SOCKS tunnel (the user running this script)
+HOST_USER="${HOST_USER:-$(whoami)}"
+
+# SOCKS tunnel settings (configurable via environment)
+SOCKS_MODE="${SOCKS_MODE:-auto}"  # on, off, or auto (default)
+SOCKS_PORT="${SOCKS_PORT:-1080}"
+HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-8080}"  # HTTP-to-SOCKS bridge for Node.js tools
+HOST_GATEWAY="${HOST_GATEWAY:-192.168.64.1}"
+
+# Log file for debugging
+CAL_LOG="${HOME}/.cal-bootstrap.log"
+
 # Cleanup tracking
 CLEANUP_VM=false
 CLEANUP_DONE=false
@@ -312,18 +324,19 @@ run_vm_setup() {
     
     echo "  Copying vm-setup.sh to VM..."
     scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "$SCRIPT_DIR/vm-setup.sh" "${VM_USER}@${vm_ip}":~/ &>/dev/null
-    
+        "$SCRIPT_DIR/vm-setup.sh" "${VM_USER}@${vm_ip}":~/ 2>> "$CAL_LOG"
+
     echo "  Running vm-setup.sh..."
+    # Pass HOST_USER, SOCKS_MODE, SOCKS_PORT, HTTP_PROXY_PORT, and HOST_GATEWAY so vm-setup.sh can configure the tunnel
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "chmod +x ~/vm-setup.sh && ~/vm-setup.sh"
+        "${VM_USER}@${vm_ip}" "chmod +x ~/vm-setup.sh && HOST_USER='${HOST_USER}' SOCKS_MODE='${SOCKS_MODE}' SOCKS_PORT='${SOCKS_PORT}' HTTP_PROXY_PORT='${HTTP_PROXY_PORT}' HOST_GATEWAY='${HOST_GATEWAY}' ~/vm-setup.sh"
 }
 
 # Unlock keychain for SSH sessions (enables agent authentication)
 # Returns 0 even on failure to avoid blocking SSH connection
 unlock_keychain() {
     local vm_ip="$1"
-    
+
     echo "  Unlocking keychain for SSH access..."
     if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
            "${VM_USER}@${vm_ip}" "security unlock-keychain -p '${VM_PASSWORD}' login.keychain 2>/dev/null"; then
@@ -333,6 +346,347 @@ unlock_keychain() {
         echo "  ⚠ Could not unlock keychain (may already be unlocked)"
         return 0
     fi
+}
+
+# NOTE: SSH commands throughout this file use similar patterns
+# TODO: Future refactoring opportunity - create ssh_to_vm() helper function
+# to reduce duplication of: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+# However, this would trade off code clarity for DRYness - evaluate trade-offs
+
+# Test if VM can reach github.com (for auto mode)
+test_vm_connectivity() {
+    local vm_ip="$1"
+
+    echo "  Testing VM network connectivity to github.com..."
+    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${vm_ip}" "curl -s --connect-timeout 5 -I https://github.com 2>&1 | grep -q 'HTTP'" 2>> "$CAL_LOG"; then
+        echo "  ✓ VM can reach github.com directly"
+        return 0
+    else
+        echo "  ⚠ VM cannot reach github.com (needs SOCKS tunnel)"
+        return 1
+    fi
+}
+
+# Check if host SSH server is available (required for SOCKS tunnel)
+check_host_ssh() {
+    echo "  Checking if host SSH server is available..."
+
+    # Check if SSH is listening on the host gateway IP
+    if nc -z -w 2 "$HOST_GATEWAY" 22 2>/dev/null; then
+        echo "  ✓ Host SSH server is running"
+        return 0
+    else
+        echo "  ⚠ Host SSH server not available on $HOST_GATEWAY:22"
+        echo ""
+        echo "  SOCKS tunnel requires SSH server on host Mac."
+        echo "  To enable Remote Login (SSH):"
+        echo "    System Settings → General → Sharing → Remote Login (ON)"
+        echo "  Or via command line:"
+        echo "    sudo systemsetup -setremotelogin on"
+        echo ""
+        echo "  Skipping SOCKS tunnel setup."
+        echo "[$(date)] Host SSH not available on $HOST_GATEWAY:22" >> "$CAL_LOG"
+        return 1
+    fi
+}
+
+# Setup SSH key in VM for SOCKS tunnel back to host
+# Security: Key is added with restrictions to limit what VM can do on host
+setup_vm_ssh_key() {
+    local vm_ip="$1"
+
+    echo "  Setting up VM SSH key for SOCKS tunnel..."
+
+    # Check if host SSH is available first
+    if ! check_host_ssh; then
+        return 1
+    fi
+
+    # Check if VM already has an SSH key
+    local has_key
+    has_key=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "[ -f ~/.ssh/id_ed25519 ] && echo yes || echo no" 2>> "$CAL_LOG")
+
+    if [ "$has_key" = "yes" ]; then
+        echo "  ✓ VM SSH key already exists"
+    else
+        echo "  Generating SSH key in VM..."
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${vm_ip}" "ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N '' -C 'cal-vm-socks' >/dev/null 2>&1" 2>> "$CAL_LOG"
+        echo "  ✓ VM SSH key generated"
+    fi
+
+    # Get the VM's public key
+    local vm_pubkey
+    vm_pubkey=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "cat ~/.ssh/id_ed25519.pub" 2>> "$CAL_LOG")
+
+    if [ -z "$vm_pubkey" ]; then
+        echo "  ⚠ Could not retrieve VM public key"
+        echo "[$(date)] Failed to retrieve VM public key from $vm_ip" >> "$CAL_LOG"
+        return 1
+    fi
+
+    # Get the key fingerprint for comparison (more reliable than comment)
+    local vm_key_fp
+    vm_key_fp=$(echo "$vm_pubkey" | ssh-keygen -lf - 2>/dev/null | awk '{print $2}')
+
+    if [ -z "$vm_key_fp" ]; then
+        echo "  ⚠ Could not calculate key fingerprint"
+        echo "[$(date)] Failed to calculate fingerprint for VM key" >> "$CAL_LOG"
+        return 1
+    fi
+
+    # Check if this specific key is already in host's authorized_keys (by fingerprint)
+    mkdir -p ~/.ssh
+    chmod 700 ~/.ssh
+    touch ~/.ssh/authorized_keys
+    chmod 600 ~/.ssh/authorized_keys
+
+    local key_exists=false
+    if [ -s ~/.ssh/authorized_keys ]; then
+        # Check each key's fingerprint (suppress any debug output)
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            [[ "$line" =~ ^# ]] && continue
+            local existing_fp=""
+            existing_fp=$(echo "$line" | awk '{print $1, $2}' | ssh-keygen -lf - 2>/dev/null | awk '{print $2}') 2>/dev/null
+            if [ "$existing_fp" = "$vm_key_fp" ]; then
+                key_exists=true
+                break
+            fi
+        done < ~/.ssh/authorized_keys 2>/dev/null
+    fi
+
+    if [ "$key_exists" = "true" ]; then
+        echo "  ✓ VM key already in host authorized_keys (fingerprint: ${vm_key_fp:0:16}...)"
+    else
+        echo "  Adding VM key to host authorized_keys (with restrictions)..."
+        # Add key with security restrictions:
+        # - restrict: Most restrictive option, prevents shell access
+        # - port-forwarding: Allow port forwarding (needed for SOCKS -D)
+        # - command="/usr/bin/true": Command runs but does nothing (bypassed by -N flag)
+        # The key can ONLY be used for SSH SOCKS tunneling (-D), not interactive access
+        local restricted_key="restrict,port-forwarding,command=\"/usr/bin/true\" ${vm_pubkey}"
+        echo "$restricted_key" >> ~/.ssh/authorized_keys
+        echo "  ✓ VM key added to host (restricted: SOCKS only, no shell access)"
+        echo "[$(date)] Added restricted VM key with fingerprint $vm_key_fp" >> "$CAL_LOG"
+    fi
+
+    # Pre-populate host's SSH key in VM's known_hosts for secure connections
+    echo "  Setting up host key verification in VM..."
+    setup_vm_known_hosts "$vm_ip"
+
+    # Test SSH from VM to host
+    echo "  Testing VM→Host SSH connection..."
+    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${vm_ip}" "ssh -o StrictHostKeyChecking=yes -o ConnectTimeout=5 ${HOST_USER}@${HOST_GATEWAY} 'echo ok'" 2>> "$CAL_LOG"; then
+        echo "  ✓ VM can SSH to host (with host key verification)"
+        return 0
+    else
+        echo "  ⚠ VM→Host SSH test failed (tunnel may still work)"
+        echo "[$(date)] VM→Host SSH test failed" >> "$CAL_LOG"
+        return 0
+    fi
+}
+
+# Pre-populate VM's known_hosts with host's SSH key
+# This enables StrictHostKeyChecking=yes for security
+setup_vm_known_hosts() {
+    local vm_ip="$1"
+
+    # Get host's SSH public keys
+    local host_keys
+    host_keys=$(ssh-keyscan -H "$HOST_GATEWAY" 2>/dev/null)
+
+    if [ -z "$host_keys" ]; then
+        echo "  ⚠ Could not scan host SSH keys"
+        echo "[$(date)] ssh-keyscan failed for $HOST_GATEWAY" >> "$CAL_LOG"
+        return 1
+    fi
+
+    # Add host keys to VM's known_hosts
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/known_hosts" <<< "$host_keys" 2>> "$CAL_LOG"
+
+    echo "  ✓ Host SSH keys added to VM's known_hosts"
+}
+
+# Start HTTP-to-SOCKS bridge in VM (for Node.js tools like opencode)
+# Note: gost must be installed first (via vm-setup.sh)
+start_http_proxy_bridge() {
+    local vm_ip="$1"
+    local silent="${2:-false}"  # Pass "true" to suppress warnings (e.g., during init before gost is installed)
+
+    # Check if HTTP bridge is already running
+    local bridge_running
+    bridge_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "nc -z localhost ${HTTP_PROXY_PORT} 2>/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+
+    if [ "$bridge_running" = "yes" ]; then
+        [ "$silent" != "true" ] && echo "  ✓ HTTP bridge already running on port ${HTTP_PROXY_PORT}"
+        return 0
+    fi
+
+    # Check if gost is installed
+    local has_gost
+    has_gost=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "command -v gost >/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+
+    if [ "$has_gost" != "yes" ]; then
+        # Only warn if not in silent mode (during init, gost isn't installed yet)
+        [ "$silent" != "true" ] && echo "  ⚠ gost not installed in VM - HTTP bridge unavailable"
+        echo "[$(date)] gost not found in VM" >> "$CAL_LOG"
+        # Return 0 in silent mode to not trigger set -e exit during init
+        [ "$silent" = "true" ] && return 0
+        return 1
+    fi
+
+    [ "$silent" != "true" ] && echo "  Starting HTTP-to-SOCKS bridge..."
+
+    # Start gost HTTP-to-SOCKS bridge (silent - logs to file in VM, with PID tracking)
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "nohup gost -L 'http://:${HTTP_PROXY_PORT}' -F 'socks5://localhost:${SOCKS_PORT}' >> ~/.cal-http-proxy.log 2>&1 & echo \$! > ~/.cal-http-proxy.pid; disown" 2>> "$CAL_LOG"
+
+    # Wait for bridge to start (2s allows gost to initialize and bind to port)
+    sleep 2
+    bridge_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "nc -z localhost ${HTTP_PROXY_PORT} 2>/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+
+    if [ "$bridge_running" = "yes" ]; then
+        [ "$silent" != "true" ] && echo "  ✓ HTTP bridge started (SOCKS :${SOCKS_PORT} → HTTP :${HTTP_PROXY_PORT})"
+        return 0
+    else
+        [ "$silent" != "true" ] && echo "  ⚠ HTTP bridge failed to start"
+        echo "[$(date)] HTTP bridge failed to start" >> "$CAL_LOG"
+        return 1
+    fi
+}
+
+# Start SOCKS tunnel in VM (if not already running)
+# This provides reliable network connectivity for restrictive corporate networks
+start_socks_tunnel() {
+    local vm_ip="$1"
+
+    echo "  Checking SOCKS tunnel..."
+
+    # Check if tunnel is already running
+    local tunnel_running
+    tunnel_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "nc -z localhost ${SOCKS_PORT} 2>/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+
+    if [ "$tunnel_running" = "yes" ]; then
+        echo "  ✓ SOCKS tunnel already running on port ${SOCKS_PORT}"
+        # Try to start HTTP bridge (silent if gost not installed - e.g., during init)
+        start_http_proxy_bridge "$vm_ip" "true"
+        show_socks_cow "$vm_ip"
+        return 0
+    fi
+
+    # Check if port is available in VM
+    local port_check
+    port_check=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "lsof -i :${SOCKS_PORT} 2>/dev/null | head -2" 2>> "$CAL_LOG")
+
+    if [ -n "$port_check" ]; then
+        echo "  ⚠ Port ${SOCKS_PORT} already in use in VM:"
+        echo "$port_check" | sed 's/^/    /'
+        echo "[$(date)] Port ${SOCKS_PORT} already in use: $port_check" >> "$CAL_LOG"
+        return 1
+    fi
+
+    echo "  Starting SOCKS tunnel (VM→Host on port ${SOCKS_PORT})..."
+
+    # Start the SSH SOCKS tunnel in background
+    # Uses StrictHostKeyChecking=yes since we pre-populated known_hosts
+    local tunnel_result
+    tunnel_result=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "ssh -D ${SOCKS_PORT} -f -N -o StrictHostKeyChecking=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes ${HOST_USER}@${HOST_GATEWAY} 2>&1" 2>> "$CAL_LOG")
+
+    local ssh_exit=$?
+    if [ $ssh_exit -ne 0 ]; then
+        echo "  ⚠ SSH tunnel command failed"
+        echo "[$(date)] Tunnel SSH failed (exit $ssh_exit): $tunnel_result" >> "$CAL_LOG"
+    fi
+
+    # Wait for tunnel to be ready (max 10s - SSH tunnel typically ready in 1-2s)
+    # Timeout allows for slow SSH handshakes or network issues without hanging indefinitely
+    local count=0
+    local max_wait=10
+    while [ $count -lt $max_wait ]; do
+        sleep 1
+        count=$((count + 1))
+        tunnel_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${vm_ip}" "nc -z localhost ${SOCKS_PORT} 2>/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+        if [ "$tunnel_running" = "yes" ]; then
+            echo "  ✓ SOCKS tunnel started successfully"
+            # Try to start HTTP bridge (silent if gost not installed - e.g., during init)
+            start_http_proxy_bridge "$vm_ip" "true"
+            show_socks_cow "$vm_ip"
+            return 0
+        fi
+    done
+
+    echo "  ⚠ SOCKS tunnel may not have started (check ~/.cal-bootstrap.log)"
+    echo "[$(date)] Tunnel start timeout after ${max_wait}s" >> "$CAL_LOG"
+    return 1
+}
+
+# Show the celebratory cow when SOCKS is working
+show_socks_cow() {
+    local vm_ip="$1"
+
+    # Test that SOCKS actually works
+    local test_result
+    test_result=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "curl -s --connect-timeout 5 --socks5-hostname localhost:${SOCKS_PORT} -I https://www.google.com 2>&1 | grep -q '200' && echo yes || echo no" 2>> "$CAL_LOG")
+
+    if [ "$test_result" = "yes" ]; then
+        echo ""
+        echo " _____________________"
+        echo "< SOCKS tunnel works! >"
+        echo " ---------------------"
+        echo "        \\   ^__^"
+        echo "         \\  (oo)\\_______"
+        echo "            (__)\\       )\\/\\"
+        echo "                ||----w |"
+        echo "                ||     ||"
+        echo ""
+    else
+        echo "[$(date)] SOCKS connectivity test failed" >> "$CAL_LOG"
+    fi
+}
+
+# Determine whether to enable SOCKS based on mode
+should_enable_socks() {
+    local vm_ip="$1"
+
+    case "$SOCKS_MODE" in
+        on)
+            echo "  SOCKS mode: on (forced)"
+            return 0
+            ;;
+        off)
+            echo "  SOCKS mode: off (disabled)"
+            return 1
+            ;;
+        auto)
+            echo "  SOCKS mode: auto (testing connectivity...)"
+            if test_vm_connectivity "$vm_ip"; then
+                echo "  → Network OK, SOCKS tunnel not needed"
+                return 1
+            else
+                echo "  → Network restricted, enabling SOCKS tunnel"
+                return 0
+            fi
+            ;;
+        *)
+            echo "  ⚠ Invalid SOCKS_MODE='$SOCKS_MODE', defaulting to auto"
+            SOCKS_MODE="auto"
+            should_enable_socks "$vm_ip"
+            ;;
+    esac
 }
 
 # === INIT MODE ===
@@ -374,17 +728,27 @@ do_init() {
         exit 1
     fi
     
-    # Step 4: Setup SSH keys
+    # Step 4: Setup SSH keys (host→VM)
     echo ""
-    echo "Step 4: Setup SSH keys"
+    echo "Step 4: Setup SSH keys (host→VM)"
     setup_ssh_keys "$VM_IP"
-    
-    # Step 5: Run vm-setup
+
+    # Step 5: Setup SOCKS tunnel (VM→Host for network access)
     echo ""
-    echo "Step 5: Install tools"
+    echo "Step 5: Setup SOCKS tunnel for network access"
+    if should_enable_socks "$VM_IP"; then
+        setup_vm_ssh_key "$VM_IP"
+        start_socks_tunnel "$VM_IP"
+    else
+        echo "  ✓ SOCKS tunnel skipped (not needed)"
+    fi
+
+    # Step 6: Run vm-setup
+    echo ""
+    echo "Step 6: Install tools"
     run_vm_setup "$VM_IP"
-    
-    # Step 6: Prompt user for manual setup
+
+    # Step 7: Prompt user for manual setup
     echo ""
     echo "============================================"
     echo "Manual setup required in VM"
@@ -480,10 +844,10 @@ chmod +x ~/.cal-welcome.sh'
 
     echo ""
     echo "Continuing with setup..."
-    
-    # Step 7: Create cal-initialised
+
+    # Step 8: Create cal-initialised
     echo ""
-    echo "Step 7: Create $VM_INIT snapshot"
+    echo "Step 8: Create $VM_INIT snapshot"
     
     # Stop VM first
     CLEANUP_VM=false
@@ -549,6 +913,17 @@ do_run() {
         VM_IP=$("$TART" ip "$vm_to_run" 2>/dev/null || echo "")
         if [ -n "$VM_IP" ]; then
             echo ""
+            # Setup and start SOCKS tunnel if needed
+            if should_enable_socks "$VM_IP"; then
+                # Ensure VM SSH key is set up (idempotent - safe to run multiple times)
+                if setup_vm_ssh_key "$VM_IP"; then
+                    start_socks_tunnel "$VM_IP" || echo "  ⚠ SOCKS tunnel failed to start (see ~/.cal-bootstrap.log)"
+                    # Start HTTP bridge for Node.js tools (gost should be installed)
+                    start_http_proxy_bridge "$VM_IP" || true
+                else
+                    echo "  ⚠ Skipping SOCKS tunnel (setup failed)"
+                fi
+            fi
             unlock_keychain "$VM_IP"
             echo ""
             echo "Connecting via SSH with tmux..."
@@ -571,9 +946,21 @@ do_run() {
     
     # Don't cleanup on success
     CLEANUP_VM=false
-    
+
     echo ""
     echo "$vm_to_run is running (PID: $TART_PID)"
+
+    # Setup and start SOCKS tunnel if needed
+    if should_enable_socks "$VM_IP"; then
+        # Ensure VM SSH key is set up (idempotent - safe to run multiple times)
+        if setup_vm_ssh_key "$VM_IP"; then
+            start_socks_tunnel "$VM_IP" || echo "  ⚠ SOCKS tunnel failed to start (see ~/.cal-bootstrap.log)"
+            # Start HTTP bridge for Node.js tools (gost should be installed)
+            start_http_proxy_bridge "$VM_IP" || true
+        else
+            echo "  ⚠ Skipping SOCKS tunnel (setup failed)"
+        fi
+    fi
 
     # Unlock keychain for SSH access
     unlock_keychain "$VM_IP"
@@ -650,6 +1037,18 @@ do_restart() {
 
     echo ""
     echo "$VM_DEV is running (PID: $TART_PID)"
+
+    # Setup and start SOCKS tunnel if needed
+    if should_enable_socks "$VM_IP"; then
+        # Ensure VM SSH key is set up (idempotent - safe to run multiple times)
+        if setup_vm_ssh_key "$VM_IP"; then
+            start_socks_tunnel "$VM_IP" || echo "  ⚠ SOCKS tunnel failed to start (see ~/.cal-bootstrap.log)"
+            # Start HTTP bridge for Node.js tools (gost should be installed)
+            start_http_proxy_bridge "$VM_IP" || true
+        else
+            echo "  ⚠ Skipping SOCKS tunnel (setup failed)"
+        fi
+    fi
 
     # Unlock keychain for SSH access
     unlock_keychain "$VM_IP"
@@ -1069,6 +1468,16 @@ while [[ $# -gt 0 ]]; do
             SNAPSHOT_NAME="${1:-}"
             [[ $# -gt 0 ]] && shift
             ;;
+        --socks)
+            shift
+            SOCKS_MODE="${1:-auto}"
+            if [[ ! "$SOCKS_MODE" =~ ^(on|off|auto)$ ]]; then
+                echo "Error: --socks must be 'on', 'off', or 'auto'"
+                echo "Got: '$SOCKS_MODE'"
+                exit 1
+            fi
+            shift
+            ;;
         --yes|-y)
             SKIP_CONFIRM=true
             shift
@@ -1087,6 +1496,10 @@ while [[ $# -gt 0 ]]; do
             echo "  --snapshot, -S create <name>  Create a named snapshot"
             echo "  --snapshot, -S restore <name> Restore from a snapshot"
             echo "  --snapshot, -S delete <name>  Delete a snapshot"
+            echo "  --socks <on|off|auto>         SOCKS tunnel mode (default: auto)"
+            echo "                                  on   - Always enable SOCKS tunnel"
+            echo "                                  off  - Disable SOCKS tunnel"
+            echo "                                  auto - Test github.com, enable if needed"
             echo "  --yes, -y                     Skip confirmation prompts"
             echo "  --help, -h                    Show this help"
             echo ""

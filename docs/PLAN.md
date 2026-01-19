@@ -8,7 +8,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Mostly complete (4 testing TODOs in 0.7, 4 enhancement TODOs remaining in 0.8)
+**Phase 0 (Bootstrap):** Mostly complete (4 enhancement TODOs remaining in 0.8)
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -53,8 +53,19 @@
    - [x] Investigate if uncommitted or unpushed git changes can be automatically checked if they exist in VM before restore (implemented)
    - [x] Remove distinction between clones and snapshots in `--snapshot list` (they're functionally same for our purposes)
    - [ ] Create method for coding agent to detect if it's running in a VM and add this capability to coding agent's config
+- [x] **SOCKS Proxy for Network Reliability** (Phase 0.9 - Complete)
+   - [x] Implement SSH SOCKS tunnel (VM→Host on port 1080)
+   - [x] Implement HTTP-to-SOCKS bridge via gost (port 8080 for Node.js tools)
+   - [x] Add `--socks on/off/auto` flag to cal-bootstrap
+   - [x] Implement auto mode (tests github.com connectivity, enables SOCKS if needed)
+   - [x] Setup restricted SSH keys (port-forwarding only, no shell access to host)
+   - [x] Add VM commands: start_socks, stop_socks, restart_socks, socks_status
+   - [x] Auto-start tunnel on VM boot/shell login (configurable via SOCKS_MODE)
+   - [x] PID file tracking for gost process (cleaner management)
+   - [x] Check host SSH server availability and provide clear setup instructions
+   - [x] Comprehensive documentation (docs/socks-proxy.md, updated bootstrap.md and architecture.md)
 
-**Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection.
+**Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. SOCKS tunneling for reliable network access in corporate environments.
 
 **Testing Issues Found & Fixed:**
 - [x] vm_exists() initially used grep -qw which didn't work reliably - fixed with awk column match

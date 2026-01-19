@@ -53,6 +53,48 @@ The `cal-bootstrap` script automates VM setup and management.
 ./scripts/cal-bootstrap -y -S restore cal-initialised
 ```
 
+### SOCKS Proxy (Optional)
+
+For corporate environments with restrictive network proxies, CAL supports SOCKS tunneling to enable reliable VM network access.
+
+**When you need SOCKS:**
+- Corporate network blocks direct VM internet access
+- HTTP proxy required but VM can't use it
+- `curl https://github.com` fails inside the VM
+
+**Prerequisites:**
+- SSH server enabled on host Mac (System Settings → Sharing → Remote Login)
+- Requires admin privileges to enable
+
+**Usage:**
+```bash
+# Auto mode (default) - detects if SOCKS is needed
+./scripts/cal-bootstrap --init
+
+# Force SOCKS on (always enable)
+./scripts/cal-bootstrap --init --socks on
+
+# Force SOCKS off (disable)
+./scripts/cal-bootstrap --init --socks off
+```
+
+**SOCKS Modes:**
+- `auto` (default): Tests github.com connectivity, enables SOCKS only if needed
+- `on`: Always enable SOCKS tunnel
+- `off`: Never enable SOCKS tunnel
+
+**In VM commands:**
+```bash
+socks_status      # Check tunnel status
+start_socks       # Start tunnel manually
+stop_socks        # Stop tunnel
+restart_socks     # Restart tunnel
+```
+
+**See [SOCKS Proxy Documentation](socks-proxy.md) for complete setup, troubleshooting, and security details.**
+
+---
+
 ### Init Workflow
 
 The `--init` command performs these steps:
@@ -60,10 +102,11 @@ The `--init` command performs these steps:
 1. Creates `cal-clean` from base macOS image (~25GB download)
 2. Creates `cal-dev` from `cal-clean`
 3. Starts VM and waits for SSH
-4. Sets up SSH keys (generates if needed)
-5. Runs `vm-setup.sh` to install tools
-6. Opens tmux session with interactive authentication prompts (gh, claude, opencode, agent)
-7. Creates `cal-initialised` snapshot
+4. Sets up SSH keys (host→VM, generates if needed)
+5. Sets up SOCKS tunnel (VM→Host, if needed - see `--socks` mode)
+6. Runs `vm-setup.sh` to install tools (node, gh, tmux, gost, claude, agent, opencode)
+7. Opens tmux session with interactive authentication prompts (gh, claude, opencode, agent)
+8. Creates `cal-initialised` snapshot
 
 ### VMs Created
 
@@ -221,6 +264,7 @@ tart clone <src> <dst>       # Clone/snapshot
 - **Agent login fails**: If SSH agent login fails, use Screen Sharing (standard mode, not High Performance) to authenticate: `open vnc://$(tart ip cal-dev)` → authenticate agent → return to terminal
 - **Screen Sharing shows lock screen**: Auto-login is configured by vm-setup.sh but requires VM reboot to activate. Stop and restart the VM, then Screen Sharing will show the desktop.
 - **opencode not found**: Try `export PATH="$HOME/.opencode/bin:$PATH"` or `export PATH="$HOME/go/bin:$PATH"` - opencode may have installed to a different location. Use Go install if shell script fails.
+- **SOCKS tunnel issues**: See [SOCKS Proxy Documentation](socks-proxy.md) - requires SSH server enabled on host (admin privileges). Network issues in VM may be resolved by enabling SOCKS: `./scripts/cal-bootstrap --restart --socks on`
 
 ## Terminal Keybinding Testing
 

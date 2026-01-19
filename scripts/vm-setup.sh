@@ -4,6 +4,28 @@ echo "🚀 CAL VM Setup Script"
 echo "======================"
 echo ""
 
+# SOCKS tunnel settings
+SOCKS_PORT="${SOCKS_PORT:-1080}"
+HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-8080}"  # HTTP-to-SOCKS bridge for Node.js tools
+HOST_GATEWAY="${HOST_GATEWAY:-192.168.64.1}"
+SOCKS_MODE="${SOCKS_MODE:-auto}"  # on, off, or auto
+
+# HOST_USER must be passed from cal-bootstrap (no sensible default in VM context)
+if [ -z "$HOST_USER" ]; then
+    echo "⚠️  HOST_USER not set - SOCKS tunnel will not be configured"
+    echo "   Re-run via cal-bootstrap to set up networking properly"
+    SOCKS_TUNNEL_AVAILABLE=false
+else
+    SOCKS_TUNNEL_AVAILABLE=true
+fi
+
+# Log file for debugging (errors logged here instead of suppressed)
+SOCKS_LOG="${HOME}/.cal-socks.log"
+
+# PID files for tunnel management
+SOCKS_PID_FILE="${HOME}/.cal-socks.pid"
+HTTP_PROXY_PID_FILE="${HOME}/.cal-http-proxy.pid"
+
 # Ensure Homebrew is in PATH (needed for non-interactive SSH)
 if [ -x /opt/homebrew/bin/brew ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -32,7 +54,7 @@ fi
 # Install Homebrew dependencies
 echo ""
 echo "📦 Installing/upgrading Homebrew packages..."
-for pkg in node gh tmux; do
+for pkg in node gh tmux gost; do
     if brew_installed "$pkg"; then
         echo "  → Upgrading $pkg..."
         if brew upgrade "$pkg" 2>/dev/null; then
@@ -300,6 +322,206 @@ else
     echo "  ✗ tmux: not found"
 fi
 
+if command_exists gost; then
+    GOST_VERSION=$(gost --version 2>/dev/null | head -n1)
+    echo "  ✓ gost: $GOST_VERSION"
+else
+    echo "  ✗ gost: not found"
+fi
+
+# Configure SOCKS tunnel for reliable network access
+if [ "$SOCKS_TUNNEL_AVAILABLE" = "true" ]; then
+    echo ""
+    echo "🌐 Configuring SOCKS tunnel for network access..."
+
+    # Save SOCKS configuration
+    cat > ~/.cal-socks-config <<EOF
+# CAL SOCKS Configuration
+export SOCKS_PORT="${SOCKS_PORT}"
+export HTTP_PROXY_PORT="${HTTP_PROXY_PORT}"
+export HOST_GATEWAY="${HOST_GATEWAY}"
+export HOST_USER="${HOST_USER}"
+export SOCKS_MODE="${SOCKS_MODE}"
+export ALL_PROXY="socks5://localhost:${SOCKS_PORT}"
+export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT}"
+export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT}"
+EOF
+    echo "  ✓ SOCKS configuration saved to ~/.cal-socks-config"
+
+    # Add SOCKS tunnel functions to .zshrc if not present
+    if ! grep -q '# CAL SOCKS Tunnel Functions' ~/.zshrc; then
+        cat >> ~/.zshrc <<'EOF'
+
+# CAL SOCKS Tunnel Functions
+# Auto-loaded from vm-setup.sh
+
+# Load SOCKS configuration
+if [ -f ~/.cal-socks-config ]; then
+    source ~/.cal-socks-config
+fi
+
+# Start SOCKS tunnel (VM→Host for network access)
+start_socks() {
+    # Check if tunnel is already running
+    if nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
+        echo "SOCKS tunnel already running on port ${SOCKS_PORT}"
+        return 0
+    fi
+
+    echo "Starting SOCKS tunnel (VM→Host on port ${SOCKS_PORT})..."
+    ssh -D ${SOCKS_PORT} -f -N \
+        -o StrictHostKeyChecking=yes \
+        -o ServerAliveInterval=60 \
+        -o ServerAliveCountMax=3 \
+        -o ExitOnForwardFailure=yes \
+        ${HOST_USER}@${HOST_GATEWAY} 2>>~/.cal-socks.log
+
+    # Wait for tunnel
+    local count=0
+    while [ $count -lt 5 ]; do
+        if nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
+            echo "✓ SOCKS tunnel started"
+            # Also start HTTP bridge
+            start_http_proxy
+            return 0
+        fi
+        sleep 1
+        count=$((count + 1))
+    done
+
+    echo "⚠ SOCKS tunnel failed to start (check ~/.cal-socks.log)"
+    return 1
+}
+
+# Stop SOCKS tunnel
+stop_socks() {
+    local pid=$(lsof -ti :${SOCKS_PORT} 2>/dev/null)
+    if [ -n "$pid" ]; then
+        echo "Stopping SOCKS tunnel (PID: $pid)..."
+        kill "$pid" 2>/dev/null
+        echo "✓ SOCKS tunnel stopped"
+    else
+        echo "SOCKS tunnel not running"
+    fi
+
+    # Also stop HTTP bridge
+    stop_http_proxy
+}
+
+# Restart SOCKS tunnel
+restart_socks() {
+    stop_socks
+    sleep 1
+    start_socks
+}
+
+# Check SOCKS tunnel status
+socks_status() {
+    echo "SOCKS Tunnel Status:"
+    echo "  Mode: ${SOCKS_MODE}"
+    echo "  SOCKS port: ${SOCKS_PORT}"
+    echo "  HTTP proxy port: ${HTTP_PROXY_PORT}"
+    echo "  Host: ${HOST_USER}@${HOST_GATEWAY}"
+    echo ""
+
+    if nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
+        local pid=$(lsof -ti :${SOCKS_PORT} 2>/dev/null)
+        echo "  Status: ✓ Running (PID: $pid)"
+
+        # Test connectivity
+        if curl -s --connect-timeout 5 --socks5-hostname localhost:${SOCKS_PORT} -I https://www.google.com 2>&1 | grep -q '200'; then
+            echo "  Connectivity: ✓ Working"
+        else
+            echo "  Connectivity: ⚠ Not working"
+        fi
+    else
+        echo "  Status: ✗ Not running"
+    fi
+
+    echo ""
+    if nc -z localhost ${HTTP_PROXY_PORT} 2>/dev/null; then
+        local http_pid=$(lsof -ti :${HTTP_PROXY_PORT} 2>/dev/null)
+        echo "  HTTP Bridge: ✓ Running (PID: $http_pid)"
+    else
+        echo "  HTTP Bridge: ✗ Not running"
+    fi
+}
+
+# Start HTTP-to-SOCKS bridge (for Node.js tools like opencode)
+start_http_proxy() {
+    # Check if bridge is already running
+    if nc -z localhost ${HTTP_PROXY_PORT} 2>/dev/null; then
+        return 0
+    fi
+
+    # Check if gost is installed
+    if ! command -v gost >/dev/null 2>&1; then
+        return 1
+    fi
+
+    # Start gost bridge (silent, with PID tracking for cleaner management)
+    nohup gost -L "http://:${HTTP_PROXY_PORT}" -F "socks5://localhost:${SOCKS_PORT}" >>~/.cal-http-proxy.log 2>&1 &
+    local gost_pid=$!
+    echo "$gost_pid" > ~/.cal-http-proxy.pid
+    disown
+    sleep 1
+}
+
+# Stop HTTP-to-SOCKS bridge
+stop_http_proxy() {
+    # Try PID file first (cleaner), fall back to port-based detection
+    if [ -f ~/.cal-http-proxy.pid ]; then
+        local pid=$(cat ~/.cal-http-proxy.pid)
+        if kill "$pid" 2>/dev/null; then
+            rm ~/.cal-http-proxy.pid
+            return 0
+        fi
+        # PID file stale, remove it
+        rm ~/.cal-http-proxy.pid
+    fi
+
+    # Fallback: find by port (handles cases where PID file is missing)
+    local pid=$(lsof -ti :${HTTP_PROXY_PORT} 2>/dev/null)
+    if [ -n "$pid" ]; then
+        kill "$pid" 2>/dev/null
+    fi
+}
+
+# Auto-start SOCKS tunnel on shell initialization (if mode=on or mode=auto with failed connectivity test)
+# NOTE: Errors are intentionally suppressed during auto-start to avoid spamming shell startup
+# If SOCKS fails to start automatically, users can manually run:
+#   start_socks        - to see error messages
+#   socks_status       - to check current state
+#   ~/.cal-socks.log   - to view error logs
+if [ "$SOCKS_MODE" = "on" ] || [ "$SOCKS_MODE" = "auto" ]; then
+    # Don't spam output - check silently
+    if ! nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
+        # SOCKS not running - should we start it?
+        if [ "$SOCKS_MODE" = "on" ]; then
+            start_socks >/dev/null 2>&1  # Silent: errors logged to ~/.cal-socks.log
+        elif [ "$SOCKS_MODE" = "auto" ]; then
+            # Test if we can reach github.com directly (quietly)
+            if ! curl -s --connect-timeout 5 -I https://github.com 2>&1 | grep -q 'HTTP'; then
+                # Network restricted - start SOCKS
+                start_socks >/dev/null 2>&1  # Silent: errors logged to ~/.cal-socks.log
+            fi
+        fi
+    fi
+fi
+EOF
+        echo "  ✓ SOCKS tunnel functions added to ~/.zshrc"
+    else
+        echo "  ✓ SOCKS tunnel functions already in ~/.zshrc"
+    fi
+
+    # Source the configuration
+    if source ~/.zshrc 2>/dev/null; then
+        echo "  ✓ Shell configuration reloaded with SOCKS support"
+    else
+        echo "  ⚠ Could not reload shell config (restart shell manually)"
+    fi
+fi
+
 echo ""
 echo "✅ Setup complete!"
 echo ""
@@ -307,9 +529,16 @@ echo "📋 Next steps:"
 echo "  1. Reload shell configuration: source ~/.zshrc"
 echo "  2. Authenticate with GitHub: gh auth login"
 echo "  3. Authenticate agents: claude, opencode auth login, agent"
+if [ "$SOCKS_TUNNEL_AVAILABLE" = "true" ]; then
+    echo "  4. Check SOCKS tunnel: socks_status"
+fi
 echo ""
 echo "💡 Notes:"
 echo "  • Auto-login is enabled - VM will boot to desktop for Screen Sharing"
 echo "  • Login keychain is unlocked - enables agent authentication via SSH"
+if [ "$SOCKS_TUNNEL_AVAILABLE" = "true" ]; then
+    echo "  • SOCKS tunnel configured - provides reliable network access"
+    echo "  • SOCKS commands: start_socks, stop_socks, restart_socks, socks_status"
+fi
 echo "  • If any commands show 'not found', restart your shell with: exec zsh"
 echo "  • Auto-login takes effect on next VM reboot"
