@@ -35,6 +35,7 @@ The `cal-bootstrap` script automates VM setup and management.
 
 # Restart cal-dev and SSH in (quick refresh)
 ./scripts/cal-bootstrap --restart
+./scripts/cal-bootstrap -r
 
 # Stop cal-dev
 ./scripts/cal-bootstrap --stop

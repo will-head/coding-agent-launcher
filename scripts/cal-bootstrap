@@ -6,12 +6,12 @@ set -e
 SCRIPT_DIR="${0:A:h}"
 
 # CAL Bootstrap Script
-# Usage: ./cal-bootstrap [--init|-i] [--run|-r] [--stop] [--snapshot <action> <name>]
+# Usage: ./cal-bootstrap [--init|-i] [--run] [--restart|-r] [--stop] [--snapshot <action> <name>]
 #
 # Options:
 #   --init, -i      Initialize VM environment (create cal-clean, cal-dev, cal-initialised)
-#   --run, -r       Run cal-dev and SSH in with tmux (default if VMs exist)
-#   --restart       Restart cal-dev and SSH in with tmux
+#   --run           Run cal-dev and SSH in with tmux (default if VMs exist)
+#   --restart, -r   Restart cal-dev and SSH in with tmux
 #   --stop, -s      Stop cal-dev
 #   --snapshot, -S  Manage snapshots (list, create, restore, delete)
 #   --yes, -y       Skip confirmation prompts
@@ -1053,7 +1053,7 @@ while [[ $# -gt 0 ]]; do
             MODE="run"
             shift
             ;;
-        --restart)
+        --restart|-r)
             MODE="restart"
             shift
             ;;
@@ -1081,7 +1081,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --init, -i                    Initialize VM environment"
             echo "  --run                         Run cal-dev with tmux (default if VMs exist)"
-            echo "  --restart                     Restart cal-dev and connect with tmux"
+            echo "  --restart, -r                 Restart cal-dev and connect with tmux"
             echo "  --stop, -s                    Stop cal-dev"
             echo "  --snapshot, -S list           List available snapshots"
             echo "  --snapshot, -S create <name>  Create a named snapshot"
