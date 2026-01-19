@@ -58,8 +58,16 @@
 
 **Testing Issues Found & Fixed:**
 - [x] vm_exists() initially used grep -qw which didn't work reliably - fixed with awk column match
+- [x] vm_exists() and vm_running() awk syntax incompatible with BSD awk - fixed with flag variable pattern
+- [x] vm_running() used grep which could match partial names - fixed with awk column-specific matching
 - [x] Double confirmation prompt on restore - fixed by consolidating to single prompt after git check
-- [x] Git check timing issue - initially ran before confirmation and tried to start deleted VM - fixed to check only if VM already running
+- [x] Triple duplicate git check blocks in restore - consolidated to single check
+- [x] Git check only ran if VM already running - now always boots VM to check before restore
+- [x] Git search limited to ~/workspace - expanded to ~/workspace, ~/projects, ~/repos, ~/code, + ~ maxdepth 2
+- [x] $vm_to_run undefined variable in do_restart - fixed to use $VM_DEV
+- [x] Missing Screen Sharing hint in do_restart - added for parity with do_run
+- [x] Delete only warned for cal-dev - added warnings for cal-clean and cal-initialised
+- [x] Argument parsing `shift || true` showed error in zsh - fixed with `[[ $# -gt 0 ]] && shift`
 - [x] Unpushed commits detection requires proper git upstream tracking to be set - working as designed (has prerequisites)
 
 ---

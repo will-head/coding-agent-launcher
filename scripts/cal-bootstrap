@@ -76,7 +76,7 @@ find_tart() {
 
 # Check if VM exists
 vm_exists() {
-    "$TART" list 2>/dev/null | awk -v vm="$1" 'NR>1 { if ($2 == vm) exit 0 } END { exit 1 }'
+    "$TART" list 2>/dev/null | awk -v vm="$1" 'NR>1 { if ($2 == vm) { found=1; exit } } END { if (found) exit 0; else exit 1 }'
 }
 
 # Resolve VM name (short name to full name if needed)
@@ -134,7 +134,7 @@ resolve_vm_name() {
 
 # Check if VM is running
 vm_running() {
-    "$TART" list 2>/dev/null | grep -w "$1" | grep -q "running"
+    "$TART" list 2>/dev/null | awk -v vm="$1" 'NR>1 { if ($2 == vm && $NF == "running") { found=1; exit } } END { if (found) exit 0; else exit 1 }'
 }
 
 # Stop VM if running
@@ -656,7 +656,10 @@ do_restart() {
 
     echo ""
     echo "VNC:   open vnc://${VM_IP}"
-    echo "Stop:  $TART stop $vm_to_run"
+    echo "Stop:  $TART stop $VM_DEV"
+    echo ""
+    echo "💡 If agent login fails, use Screen Sharing (standard mode, not High Performance):"
+    echo "   open vnc://${VM_IP} → Authenticate agent → Return to terminal"
     echo ""
     echo "Connecting via SSH with tmux..."
     echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
@@ -756,75 +759,21 @@ do_snapshot() {
                 exit 1
             fi
 
-            # Check for git changes if VM is running (don't start VM if it's stopped)
-            if vm_running "$VM_DEV"; then
-                echo "Checking for git changes in $VM_DEV..."
-                local vm_ip
-                vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
+            # Always check for git changes - boot VM if needed
+            local has_uncommitted=false
+            local has_unpushed=false
+            local uncommitted_check=""
+            local unpushed_check=""
+            local we_started_vm=false
 
-                if [ -n "$vm_ip" ]; then
-                    local has_uncommitted=false
-                    local has_unpushed=false
-
-                    # Check for uncommitted changes
-                    local uncommitted_check
-                    uncommitted_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); done' 2>/dev/null || echo "")
-
-                    if [ -n "$uncommitted_check" ]; then
-                        has_uncommitted=true
-                    fi
-
-                    # Check for unpushed commits (requires upstream tracking to be set)
-                    local unpushed_check
-                    unpushed_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); done' 2>/dev/null || echo "")
-
-                    if [ -n "$unpushed_check" ]; then
-                        has_unpushed=true
-                    fi
-
-                    # Show warnings
-                    if [ "$has_uncommitted" = true ] || [ "$has_unpushed" = true ]; then
-                        echo ""
-                        echo "⚠️  WARNING: Found git changes that will be lost!"
-                        echo ""
-
-                        if [ "$has_uncommitted" = true ]; then
-                            echo "Uncommitted changes in:"
-                            echo "$uncommitted_check" | while read -r repo; do
-                                [ -n "$repo" ] && echo "  - $repo"
-                            done
-                            echo ""
-                        fi
-
-                        if [ "$has_unpushed" = true ]; then
-                            echo "Unpushed commits in:"
-                            echo "$unpushed_check" | while read -r repo; do
-                                [ -n "$repo" ] && echo "  - $repo"
-                            done
-                            echo ""
-                        fi
-
-                        echo "These changes will be lost if you restore from snapshot."
-                    else
-                        echo "  ✓ No uncommitted or unpushed changes found"
-                    fi
-                fi
-            fi
-
-            # Confirm (after git check, once)
-            if [ "$SKIP_CONFIRM" = false ]; then
-                echo ""
-                echo "This will replace $VM_DEV with $restore_from"
-                echo "All changes in $VM_DEV will be lost!"
-                echo ""
-                echo "Continue? (y/N)"
-                read -r -k 1 reply
-                echo ""
-                if [[ ! $reply =~ ^[Yy]$ ]]; then
-                    echo "Aborted"
-                    exit 1
+            # Start VM if not running
+            if ! vm_running "$VM_DEV"; then
+                echo "Starting $VM_DEV to check for uncommitted changes..."
+                if start_vm_background "$VM_DEV"; then
+                    we_started_vm=true
+                else
+                    echo "  ⚠ Could not start VM to check for git changes"
+                    echo "  Proceeding without git check..."
                 fi
             fi
 
@@ -835,22 +784,17 @@ do_snapshot() {
                 vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
 
                 if [ -n "$vm_ip" ]; then
-                    local has_uncommitted=false
-                    local has_unpushed=false
-
-                    # Check for uncommitted changes (more reliable approach)
-                    local uncommitted_check
+                    # Check for uncommitted changes (search common dev directories + home with depth limit)
                     uncommitted_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); done' 2>/dev/null || echo "")
+                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d 2>/dev/null; find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null) | sort -u; do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); done' 2>/dev/null || echo "")
 
                     if [ -n "$uncommitted_check" ]; then
                         has_uncommitted=true
                     fi
 
                     # Check for unpushed commits (requires upstream tracking to be set)
-                    local unpushed_check
                     unpushed_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); done' 2>/dev/null || echo "")
+                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d 2>/dev/null; find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null) | sort -u; do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); done' 2>/dev/null || echo "")
 
                     if [ -n "$unpushed_check" ]; then
                         has_unpushed=true
@@ -879,24 +823,23 @@ do_snapshot() {
                         fi
 
                         echo "These changes will be lost if you restore from snapshot."
-                        echo ""
-                        if [ "$SKIP_CONFIRM" = false ]; then
-                            echo "Continue anyway? (y/N)"
-                            read -r -k 1 reply
-                            echo ""
-                            if [[ ! $reply =~ ^[Yy]$ ]]; then
-                                echo "Aborted"
-                                exit 1
-                            fi
-                        fi
                     else
                         echo "  ✓ No uncommitted or unpushed changes found"
                     fi
                 fi
             fi
 
-            # Confirm (before git check so we don't start VM unnecessarily)
+            # Stop VM if we started it just for the git check
+            if [ "$we_started_vm" = true ]; then
+                echo ""
+                echo "Stopping $VM_DEV..."
+                stop_vm "$VM_DEV"
+                CLEANUP_VM=false
+            fi
+
+            # Single confirmation prompt (after showing git warnings if any)
             if [ "$SKIP_CONFIRM" = false ]; then
+                echo ""
                 echo "This will replace $VM_DEV with $restore_from"
                 echo "All changes in $VM_DEV will be lost!"
                 echo ""
@@ -909,93 +852,6 @@ do_snapshot() {
                 fi
             fi
 
-            # Check for git changes (start VM briefly if stopped)
-            local vm_was_running=false
-            if vm_running "$VM_DEV"; then
-                vm_was_running=true
-            else
-                # Start VM briefly to check git changes
-                echo "Checking for git changes in $VM_DEV..."
-                if ! start_vm_background "$VM_DEV"; then
-                    echo "  ⚠ Could not start VM to check for git changes"
-                    echo "  Proceeding with restore without git check..."
-                else
-                    vm_was_running=false  # Wasn't running, we started it
-                fi
-            fi
-
-            # Now check for git changes (VM is running)
-            if vm_running "$VM_DEV"; then
-                local vm_ip
-                vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
-
-                if [ -n "$vm_ip" ]; then
-                    local has_uncommitted=false
-                    local has_unpushed=false
-
-                    # Check for uncommitted changes
-                    local uncommitted_check
-                    uncommitted_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); done' 2>/dev/null || echo "")
-
-                    if [ -n "$uncommitted_check" ]; then
-                        has_uncommitted=true
-                    fi
-
-                    # Check for unpushed commits (requires upstream tracking to be set)
-                    local unpushed_check
-                    unpushed_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace -name ".git" -type d 2>/dev/null); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); done' 2>/dev/null || echo "")
-
-                    if [ -n "$unpushed_check" ]; then
-                        has_unpushed=true
-                    fi
-
-                    # Show warnings
-                    if [ "$has_uncommitted" = true ] || [ "$has_unpushed" = true ]; then
-                        echo ""
-                        echo "⚠️  WARNING: Found git changes that will be lost!"
-                        echo ""
-
-                        if [ "$has_uncommitted" = true ]; then
-                            echo "Uncommitted changes in:"
-                            echo "$uncommitted_check" | while read -r repo; do
-                                [ -n "$repo" ] && echo "  - $repo"
-                            done
-                            echo ""
-                        fi
-
-                        if [ "$has_unpushed" = true ]; then
-                            echo "Unpushed commits in:"
-                            echo "$unpushed_check" | while read -r repo; do
-                                [ -n "$repo" ] && echo "  - $repo"
-                            done
-                            echo ""
-                        fi
-
-                        echo "These changes will be lost if you restore from snapshot."
-                        echo ""
-                        if [ "$SKIP_CONFIRM" = false ]; then
-                            echo "Continue anyway? (y/N)"
-                            read -r -k 1 reply
-                            echo ""
-                            if [[ ! $reply =~ ^[Yy]$ ]]; then
-                                echo "Aborted"
-                                exit 1
-                            fi
-                        fi
-                    else
-                        echo "  ✓ No uncommitted or unpushed changes found"
-                    fi
-                fi
-
-                # Stop VM if we started it for git check
-                if [ "$vm_was_running" = false ]; then
-                    echo ""
-                    stop_vm "$VM_DEV"
-                fi
-            fi
-            
             # Stop and delete current VM
             stop_vm "$VM_DEV"
 
@@ -1128,13 +984,25 @@ do_snapshot() {
             # Stop if running
             stop_vm "$vm_to_delete"
             
-            # Confirm (with extra warning for cal-dev)
+            # Confirm (with extra warning for system VMs)
             if [ "$SKIP_CONFIRM" = false ]; then
                 if [ "$vm_to_delete" = "$VM_DEV" ]; then
                     echo "⚠️  WARNING: Deleting your working VM!"
                     echo ""
                     echo "This will delete $vm_to_delete permanently."
                     echo "You may want to use restore instead to reset state."
+                    echo ""
+                elif [ "$vm_to_delete" = "$VM_CLEAN" ]; then
+                    echo "⚠️  WARNING: Deleting the clean base image!"
+                    echo ""
+                    echo "This will delete $vm_to_delete permanently."
+                    echo "You'll need to re-download (~25GB) to recreate it."
+                    echo ""
+                elif [ "$vm_to_delete" = "$VM_INIT" ]; then
+                    echo "⚠️  WARNING: Deleting the initialized snapshot!"
+                    echo ""
+                    echo "This will delete $vm_to_delete permanently."
+                    echo "You'll need to run --init again to recreate it."
                     echo ""
                 fi
                 echo "Delete $vm_to_delete?"
@@ -1197,9 +1065,9 @@ while [[ $# -gt 0 ]]; do
             MODE="snapshot"
             shift
             SNAPSHOT_ACTION="${1:-}"
-            shift || true
+            [[ $# -gt 0 ]] && shift
             SNAPSHOT_NAME="${1:-}"
-            shift || true
+            [[ $# -gt 0 ]] && shift
             ;;
         --yes|-y)
             SKIP_CONFIRM=true
