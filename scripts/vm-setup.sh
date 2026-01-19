@@ -140,6 +140,16 @@ else
     fi
 fi
 
+# Create code directory for development
+echo ""
+echo "📁 Creating code directory..."
+if [ ! -d ~/code ]; then
+    mkdir -p ~/code
+    echo "  ✓ Created ~/code directory"
+else
+    echo "  ✓ ~/code directory already exists"
+fi
+
 # Configure shell environment
 echo ""
 echo "⚙️  Configuring shell environment..."

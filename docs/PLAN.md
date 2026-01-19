@@ -64,24 +64,24 @@
    - [x] PID file tracking for gost process (cleaner management)
    - [x] Check host SSH server availability and provide clear setup instructions
    - [x] Comprehensive documentation (docs/socks-proxy.md, updated bootstrap.md and architecture.md)
- - [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
-    - [ ] Add option to sync git repos on init (clone specified repos into VM automatically)
-    - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
-    - [ ] Add Cursor API key auth login support (https://cursor.com/docs/cli/reference/authentication)
-    - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
-    - [ ] Verify opencode login flow is fixed (test authentication reliability)
-    - [ ] Add Codex GitHub CLI Antigravity tools installation in init
-    - [x] Renamed cal-initialised to cal-init (shorter, clearer naming)
-    - [ ] Make `--init` safer: delete existing cal-dev and cal-init as first step
-      - Warn user before deletion
-      - Check for uncommitted/unpushed git changes
-      - Provide abort option with no changes made
-      - Only proceed after user confirmation
-    - [ ] Create code directory in user home during --init
-    - [ ] Add git change checks to all destructive operations (delete VM, restore snapshot, etc)
-      - Currently only implemented for --snapshot restore
-      - Should also check for: --snapshot delete, manual VM deletion warnings
-    - [x] Update README.md Quick Start to match bootstrap.md (correct Quick Start instructions)
+  - [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
+     - [ ] Add option to sync git repos on init (clone specified repos into VM automatically)
+     - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
+     - [ ] Add Cursor API key auth login support (https://cursor.com/docs/cli/reference/authentication)
+     - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
+     - [ ] Verify opencode login flow is fixed (test authentication reliability)
+     - [ ] Add Codex GitHub CLI Antigravity tools installation in init
+     - [x] Renamed cal-initialised to cal-init (shorter, clearer naming)
+     - [ ] Make `--init` safer: delete existing cal-dev and cal-init as first step
+       - Warn user before deletion
+       - Check for uncommitted/unpushed git changes
+       - Provide abort option with no changes made
+       - Only proceed after user confirmation
+     - [x] Create code directory in user home during --init
+     - [ ] Add git change checks to all destructive operations (delete VM, restore snapshot, etc)
+       - Currently only implemented for --snapshot restore
+       - Should also check for: --snapshot delete, manual VM deletion warnings
+     - [x] Update README.md Quick Start to match bootstrap.md (correct Quick Start instructions)
 
 **Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. SOCKS tunneling for reliable network access in corporate environments. Improved init workflow with better safety and automation.
 

@@ -44,15 +44,16 @@ Automated Tart setup for immediate safe agent use.
   - [x] VM commands (start_socks, stop_socks, status)
   - [x] Documentation (socks-proxy.md)
   - [x] Update architecture.md and bootstrap.md
-- [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
-  - [ ] Add option to sync git repos on init
-  - [ ] Try to install Tart automatically during init
-  - [ ] Add Cursor API key auth login support
-  - [ ] Consider using GUIDs for VM/snapshot names
-  - [ ] Verify opencode login flow is fixed
-  - [ ] Add Codex GitHub CLI Antigravity tools installation
-  - [x] Renamed cal-initialised to cal-init
-  - [ ] Make `--init` safer with pre-deletion checks and warnings
+ - [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
+   - [ ] Add option to sync git repos on init
+   - [ ] Try to install Tart automatically during init
+   - [ ] Add Cursor API key auth login support
+   - [ ] Consider using GUIDs for VM/snapshot names
+   - [ ] Verify opencode login flow is fixed
+   - [ ] Add Codex GitHub CLI Antigravity tools installation
+   - [x] Renamed cal-initialised to cal-init
+   - [x] Create code directory in user home during --init
+   - [ ] Make `--init` safer with pre-deletion checks and warnings
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.
