@@ -19,23 +19,18 @@ VM-based sandbox for running AI coding agents (Claude Code, Cursor, opencode) sa
 
 ## Quick Start
 
-**Phase 0 is complete!** Use automated scripts for VM setup:
-
 ```bash
-# Install Tart
+# 1. Install Tart
 brew install cirruslabs/cli/tart
 
-# Clone base image
-tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest cal-dev
+# 2. Run bootstrap script (creates VMs, installs tools, sets up SSH keys)
+./scripts/cal-bootstrap --init
 
-# Configure VM
-tart set cal-dev --cpu 4 --memory 8192 --disk-size 80
+# 3. After manual login setup, start developing
+./scripts/cal-bootstrap --run
 
-# Start VM
-tart run cal-dev  # login: admin/admin
-
-# Inside VM, copy and run setup script (from host)
-# See docs/bootstrap.md for detailed instructions
+# OR: Restart VM and reconnect (quick refresh)
+./scripts/cal-bootstrap --restart
 ```
 
 See [Bootstrap Guide](docs/bootstrap.md) for full setup instructions.
