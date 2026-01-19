@@ -51,7 +51,7 @@ Automated Tart setup for immediate safe agent use.
   - [ ] Consider using GUIDs for VM/snapshot names
   - [ ] Verify opencode login flow is fixed
   - [ ] Add Codex GitHub CLI Antigravity tools installation
-  - [ ] Rename `cal-initialised` to `cal-init`
+  - [x] Renamed cal-initialised to cal-init
   - [ ] Make `--init` safer with pre-deletion checks and warnings
 
 ## Phase 1: CLI Foundation

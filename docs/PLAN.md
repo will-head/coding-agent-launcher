@@ -16,7 +16,7 @@
 - [x] Create clean snapshot for rollback (documented)
 - [x] Investigate and test terminal keybindings (all working correctly)
 - [x] **Create cal-bootstrap script** - unified VM management
-  - [x] `--init`: Create cal-clean, cal-dev, cal-initialised VMs
+  - [x] `--init`: Create cal-clean, cal-dev, cal-init VMs
   - [x] `--run`: Start VM and SSH in automatically
   - [x] `--stop`: Stop cal-dev
   - [x] `--snapshot`: List, create, restore, delete snapshots
@@ -71,7 +71,7 @@
    - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
    - [ ] Verify opencode login flow is fixed (test authentication reliability)
    - [ ] Add Codex GitHub CLI Antigravity tools installation in init
-   - [ ] Rename `cal-initialised` to `cal-init` (shorter, clearer naming)
+    - [x] Renamed cal-initialised to cal-init (shorter, clearer naming)
    - [ ] Make `--init` safer: delete existing cal-dev and cal-init as first step
      - Warn user before deletion
      - Check for uncommitted/unpushed git changes
@@ -90,7 +90,7 @@
 - [x] Git search limited to ~/workspace - expanded to ~/workspace, ~/projects, ~/repos, ~/code, + ~ maxdepth 2
 - [x] $vm_to_run undefined variable in do_restart - fixed to use $VM_DEV
 - [x] Missing Screen Sharing hint in do_restart - added for parity with do_run
-- [x] Delete only warned for cal-dev - added warnings for cal-clean and cal-initialised
+- [x] Delete only warned for cal-dev - added warnings for cal-clean and cal-init
 - [x] Argument parsing `shift || true` showed error in zsh - fixed with `[[ $# -gt 0 ]] && shift`
 - [x] Unpushed commits detection requires proper git upstream tracking to be set - working as designed (has prerequisites)
 

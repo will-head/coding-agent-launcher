@@ -18,6 +18,11 @@ brew install cirruslabs/cli/tart
 ./scripts/cal-bootstrap --restart
 ```
 
+**Migration Note:** If you have an existing `cal-initialised` VM from before this change, it will not be automatically renamed. You can:
+1. Keep it as a backup
+2. Delete it manually: `tart delete cal-initialised`
+3. Or re-run `--init` to create fresh `cal-init`
+
 ## cal-bootstrap Script
 
 The `cal-bootstrap` script automates VM setup and management.
@@ -25,7 +30,7 @@ The `cal-bootstrap` script automates VM setup and management.
 ### Commands
 
 ```bash
-# First-time setup (creates cal-clean, cal-dev, cal-initialised)
+# First-time setup (creates cal-clean, cal-dev, cal-init)
 ./scripts/cal-bootstrap --init
 ./scripts/cal-bootstrap -i
 
@@ -46,11 +51,11 @@ The `cal-bootstrap` script automates VM setup and management.
 ./scripts/cal-bootstrap -S list
 ./scripts/cal-bootstrap -S create before-refactor
 ./scripts/cal-bootstrap -S restore before-refactor
-./scripts/cal-bootstrap -S restore cal-initialised  # Restore from base
+./scripts/cal-bootstrap -S restore cal-init  # Restore from base
 ./scripts/cal-bootstrap -S delete before-refactor
 
 # Skip confirmation prompts
-./scripts/cal-bootstrap -y -S restore cal-initialised
+./scripts/cal-bootstrap -y -S restore cal-init
 ```
 
 ### SOCKS Proxy (Optional)
@@ -106,7 +111,7 @@ The `--init` command performs these steps:
 5. Sets up SOCKS tunnel (VM→Host, if needed - see `--socks` mode)
 6. Runs `vm-setup.sh` to install tools (node, gh, tmux, gost, claude, agent, opencode)
 7. Opens tmux session with interactive authentication prompts (gh, claude, opencode, agent)
-8. Creates `cal-initialised` snapshot
+8. Creates `cal-init` snapshot
 
 ### VMs Created
 
@@ -114,7 +119,7 @@ The `--init` command performs these steps:
 |----|---------|
 | `cal-clean` | Base macOS image (pristine) |
 | `cal-dev` | Development VM (use this) |
-| `cal-initialised` | Snapshot with tools and auth configured |
+| `cal-init` | Snapshot with tools and auth configured |
 
 ## Manual Setup (Alternative)
 
@@ -226,7 +231,7 @@ gh          # GitHub CLI
 ./scripts/cal-bootstrap -S restore before-experiment
 
 # Restore to freshly-configured state
-./scripts/cal-bootstrap -S restore cal-initialised
+./scripts/cal-bootstrap -S restore cal-init
 
 # List all VMs and snapshots
 ./scripts/cal-bootstrap -S list

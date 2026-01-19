@@ -309,7 +309,7 @@ shellcheck scripts/test-cursor-login.sh
 ### After User Testing
 1. Update PLAN.md Phase 0.8 items based on results
 2. If tests pass, mark Phase 0 as complete
-3. Consider creating new cal-initialised snapshot
+3. Consider creating new cal-init snapshot
 4. Document any issues discovered
 
 ### Future Enhancements

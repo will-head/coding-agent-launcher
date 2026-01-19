@@ -191,7 +191,7 @@ Once testing is complete and all checks pass:
 1. Update PLAN.md to mark Phase 0.8 testing items as complete
 2. Consider marking Phase 0 as fully complete
 3. Document any remaining issues in Known Issues section
-4. Consider creating a new cal-initialised snapshot with the fixes
+4. Consider creating a new cal-init snapshot with the fixes
 
 ## Questions to Answer During Testing
 

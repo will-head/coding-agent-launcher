@@ -9,7 +9,7 @@ SCRIPT_DIR="${0:A:h}"
 # Usage: ./cal-bootstrap [--init|-i] [--run] [--restart|-r] [--stop] [--snapshot <action> <name>]
 #
 # Options:
-#   --init, -i      Initialize VM environment (create cal-clean, cal-dev, cal-initialised)
+#   --init, -i      Initialize VM environment (create cal-clean, cal-dev, cal-init)
 #   --run           Run cal-dev and SSH in with tmux (default if VMs exist)
 #   --restart, -r   Restart cal-dev and SSH in with tmux
 #   --stop, -s      Stop cal-dev
@@ -24,7 +24,7 @@ SCRIPT_DIR="${0:A:h}"
 # VM names
 VM_CLEAN="cal-clean"
 VM_DEV="cal-dev"
-VM_INIT="cal-initialised"
+VM_INIT="cal-init"
 
 # VM credentials
 VM_USER="${VM_USER:-admin}"
@@ -845,7 +845,7 @@ chmod +x ~/.cal-welcome.sh'
     echo ""
     echo "Continuing with setup..."
 
-    # Step 8: Create cal-initialised
+    # Step 8: Create cal-init
     echo ""
     echo "Step 8: Create $VM_INIT snapshot"
     
