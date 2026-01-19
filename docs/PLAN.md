@@ -8,7 +8,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Mostly complete (4 enhancement TODOs remaining in 0.8)
+**Phase 0 (Bootstrap):** Mostly complete (4 TODOs in 0.8, 8 new TODOs in 0.10)
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -64,8 +64,21 @@
    - [x] PID file tracking for gost process (cleaner management)
    - [x] Check host SSH server availability and provide clear setup instructions
    - [x] Comprehensive documentation (docs/socks-proxy.md, updated bootstrap.md and architecture.md)
+- [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
+   - [ ] Add option to sync git repos on init (clone specified repos into VM automatically)
+   - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
+   - [ ] Add Cursor API key auth login support (https://cursor.com/docs/cli/reference/authentication)
+   - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
+   - [ ] Verify opencode login flow is fixed (test authentication reliability)
+   - [ ] Add Codex GitHub CLI Antigravity tools installation in init
+   - [ ] Rename `cal-initialised` to `cal-init` (shorter, clearer naming)
+   - [ ] Make `--init` safer: delete existing cal-dev and cal-init as first step
+     - Warn user before deletion
+     - Check for uncommitted/unpushed git changes
+     - Provide abort option with no changes made
+     - Only proceed after user confirmation
 
-**Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. SOCKS tunneling for reliable network access in corporate environments.
+**Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. SOCKS tunneling for reliable network access in corporate environments. Improved init workflow with better safety and automation.
 
 **Testing Issues Found & Fixed:**
 - [x] vm_exists() initially used grep -qw which didn't work reliably - fixed with awk column match

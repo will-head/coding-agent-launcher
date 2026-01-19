@@ -4,7 +4,7 @@
 >
 > See also: [SPEC](SPEC.md) (technical requirements) | [ADR-001](adr/ADR-001-cal-isolation.md) (design decisions)
 
-## Phase 0: Bootstrap (Mostly Complete - 4 testing + 6 enhancement TODOs remaining)
+## Phase 0: Bootstrap (Mostly Complete - 4 TODOs in 0.8, 8 new TODOs in 0.10)
 Automated Tart setup for immediate safe agent use.
 - [x] Research Tart
 - [x] Document manual process
@@ -35,6 +35,24 @@ Automated Tart setup for immediate safe agent use.
   - [ ] Check VM keyboard layout
   - [ ] Investigate High Performance Screen Sharing issues
   - [ ] Create VM detection capability for agents
+- [x] **SOCKS Proxy Support** (Phase 0.9 - Complete)
+  - [x] Implement SSH SOCKS tunnel (VM→Host)
+  - [x] Add HTTP-to-SOCKS bridge (gost)
+  - [x] Add --socks on/off/auto flag
+  - [x] Auto-detection of network connectivity
+  - [x] Restricted SSH keys (port-forwarding only)
+  - [x] VM commands (start_socks, stop_socks, status)
+  - [x] Documentation (socks-proxy.md)
+  - [x] Update architecture.md and bootstrap.md
+- [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
+  - [ ] Add option to sync git repos on init
+  - [ ] Try to install Tart automatically during init
+  - [ ] Add Cursor API key auth login support
+  - [ ] Consider using GUIDs for VM/snapshot names
+  - [ ] Verify opencode login flow is fixed
+  - [ ] Add Codex GitHub CLI Antigravity tools installation
+  - [ ] Rename `cal-initialised` to `cal-init`
+  - [ ] Make `--init` safer with pre-deletion checks and warnings
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.
