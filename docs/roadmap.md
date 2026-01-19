@@ -54,6 +54,9 @@ Automated Tart setup for immediate safe agent use.
    - [x] Renamed cal-initialised to cal-init
    - [x] Create code directory in user home during --init
    - [ ] Make `--init` safer with pre-deletion checks and warnings
+   - [ ] Install all packages required for full Go development in cal-dev during --init (follow best practice)
+   - [ ] Create auth script to easily re-run agent authentication
+   - [ ] Add vm-setup.sh and vm-auth.sh to ~/scripts folder in cal-dev during --init
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.

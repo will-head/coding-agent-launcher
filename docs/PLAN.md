@@ -81,6 +81,20 @@
      - [ ] Add git change checks to all destructive operations (delete VM, restore snapshot, etc)
        - Currently only implemented for --snapshot restore
        - Should also check for: --snapshot delete, manual VM deletion warnings
+     - [ ] Install all packages required for full Go development in cal-dev during --init (follow best practice)
+       - Research and install in vm-setup.sh: golangci-lint (linters runner), goimports, delve (debugger), mockgen (test mocking), air (hot reload)
+       - Note: Core Go tools already included (go fmt, go vet, go test, go mod)
+       - Reference: https://golangci-lint.run/ and Go community best practices
+     - [ ] Create auth script to easily re-run agent authentication
+       - Create vm-auth.sh script that runs: gh auth login, claude auth login, agent (Cursor auth), opencode auth login
+       - Provide convenient way to re-authenticate all agents without manual steps
+       - Make script idempotent (skip if already authenticated)
+       - Install in cal-dev during --init
+     - [ ] Add vm-setup.sh and vm-auth.sh to ~/scripts folder in cal-dev during --init
+       - Create ~/scripts directory in cal-dev if it doesn't exist
+       - Copy vm-setup.sh and vm-auth.sh from host to VM during --init
+       - Add ~/scripts to PATH in .zshrc for easy access
+       - Reference scripts from ~/scripts in .zshrc instead of ~
      - [x] Update README.md Quick Start to match bootstrap.md (correct Quick Start instructions)
 
 **Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. SOCKS tunneling for reliable network access in corporate environments. Improved init workflow with better safety and automation.
