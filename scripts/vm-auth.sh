@@ -21,9 +21,8 @@ echo ""
 echo "🌐 Checking network connectivity..."
 
 test_network() {
-    if curl -s --connect-timeout 5 -I https://github.com 2>&1 | grep -q 'HTTP'; then
-        return 0
-    elif nc -z -w 5 github.com 443 2>/dev/null; then
+    # Quick connectivity test - 2 second timeout
+    if curl -s --connect-timeout 2 -I https://github.com 2>&1 | grep -q 'HTTP'; then
         return 0
     else
         return 1
@@ -45,10 +44,10 @@ start_proxy_standalone() {
     echo "  Starting transparent proxy (sshuttle)..."
     nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.cal-proxy.log 2>&1 &
     
-    # Wait for it to start
+    # Wait for it to start (usually takes 1-2 seconds)
     local count=0
-    while [ $count -lt 10 ]; do
-        sleep 1
+    while [ $count -lt 5 ]; do
+        sleep 0.5
         count=$((count + 1))
         if pgrep -f sshuttle >/dev/null 2>&1; then
             echo "  ✓ Proxy started"
@@ -80,7 +79,7 @@ else
         
         if start_proxy_standalone; then
             # Re-test network after starting proxy
-            sleep 2
+            sleep 1
             if test_network; then
                 echo "  ✓ Network now working via proxy"
                 echo ""
