@@ -4,7 +4,7 @@
 >
 > See also: [SPEC](SPEC.md) (technical requirements) | [ADR-001](adr/ADR-001-cal-isolation.md) (design decisions)
 
-## Phase 0: Bootstrap (Mostly Complete - 4 TODOs in 0.8, 8 new TODOs in 0.10)
+## Phase 0: Bootstrap (Mostly Complete - multiple improvements pending)
 Automated Tart setup for immediate safe agent use.
 - [x] Research Tart
 - [x] Document manual process
@@ -48,16 +48,20 @@ Automated Tart setup for immediate safe agent use.
  - [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
    - [ ] Add option to sync git repos on init
    - [ ] Try to install Tart automatically during init
-   - [ ] Add Cursor API key auth login support
    - [ ] Consider using GUIDs for VM/snapshot names
-   - [ ] Verify opencode login flow is fixed
    - [ ] Add Codex GitHub CLI Antigravity tools installation
+   - [ ] Check and fix auth flows (GH PAT, opencode status check)
    - [x] Renamed cal-initialised to cal-init
    - [x] Create code directory in user home during --init
    - [ ] Make `--init` safer with pre-deletion checks and warnings
-   - [ ] Install all packages required for full Go development in cal-dev during --init (follow best practice)
-   - [ ] Create auth script to easily re-run agent authentication
-   - [ ] Add vm-setup.sh and vm-auth.sh to ~/scripts folder in cal-dev during --init
+   - [ ] Install all packages required for full Go development in cal-dev during --init
+ - [ ] **cal-bootstrap Script Enhancements**
+   - [ ] Show VM/snapshot sizes in `--snapshot list`
+   - [ ] Allow `--snapshot delete` to accept multiple VM names
+ - [ ] **Session State Management** (Phase 0.11 - Future)
+   - [ ] Implement constant context state persistence for seamless recovery
+ - [ ] **Documentation Cleanup**
+   - [ ] Clean up AGENTS.md (fix refs, merge duplicates, add TDD to Step 1)
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.

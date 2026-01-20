@@ -8,7 +8,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Mostly complete (3 TODOs in 0.8, 4 TODOs in 0.10, 6 future enhancements)
+**Phase 0 (Bootstrap):** Mostly complete (4 TODOs in 0.8, multiple improvements pending in 0.10/0.11)
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -71,6 +71,11 @@
      - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
      - [ ] Verify opencode login flow is fixed (test authentication reliability)
      - [ ] Add Codex GitHub CLI Antigravity tools installation in init
+     - [ ] **Check and fix authentication flows**
+       - [ ] GH CLI: Fix PAT login flow (currently fails, token may be issue)
+       - [ ] opencode: Works but reports not authenticated in check (investigate status check)
+       - Note: Cursor CLI issues tracked separately (see Phase 0.8 line 39)
+       - Note: Claude Code authentication working correctly - do not modify
      - [x] Renamed cal-initialised to cal-init (shorter, clearer naming)
      - [ ] Make `--init` safer: delete existing cal-dev and cal-init as first step
        - Warn user before deletion
@@ -104,6 +109,20 @@
        - [ ] Check for specific opencode auth token file if documented
        - [ ] Add Ctrl+C trap handlers during authentication flows
        - [ ] Ensure gh username parsing works in non-English locales
+     - [ ] **cal-bootstrap Script Enhancements**
+       - [ ] Show VM/snapshot sizes in `--snapshot list` output
+       - [ ] Allow `--snapshot delete` to accept multiple VM names
+     - [ ] **Session State Management** (Phase 0.11 - Future)
+       - [ ] Implement constant context state persistence
+       - [ ] Write context to file after every operation
+       - [ ] Enable seamless session recovery on crash or usage limits
+       - [ ] Allow session continuation across Claude Code restarts
+     - [ ] **Documentation Cleanup**
+       - [ ] Clean up AGENTS.md (CLAUDE.md symlinks to it)
+         - [ ] Change internal refs from CLAUDE.md to AGENTS.md
+         - [ ] Merge duplicate Command Execution Policy sections
+         - [ ] Review for inconsistencies
+         - [ ] Add TDD (Test-Driven Development) to 8-step workflow Step 1
 
 **Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. Transparent proxy (sshuttle) for reliable network access in corporate environments. Improved init workflow with better safety and automation.
 
