@@ -53,17 +53,17 @@
    - [x] Investigate if uncommitted or unpushed git changes can be automatically checked if they exist in VM before restore (implemented)
    - [x] Remove distinction between clones and snapshots in `--snapshot list` (they're functionally same for our purposes)
    - [ ] Create method for coding agent to detect if it's running in a VM and add this capability to coding agent's config
-- [x] **SOCKS Proxy for Network Reliability** (Phase 0.9 - Complete)
-   - [x] Implement SSH SOCKS tunnel (VM→Host on port 1080)
-   - [x] Implement HTTP-to-SOCKS bridge via gost (port 8080 for Node.js tools)
-   - [x] Add `--socks on/off/auto` flag to cal-bootstrap
-   - [x] Implement auto mode (tests github.com connectivity, enables SOCKS if needed)
-   - [x] Setup restricted SSH keys (port-forwarding only, no shell access to host)
-   - [x] Add VM commands: start_socks, stop_socks, restart_socks, socks_status
-   - [x] Auto-start tunnel on VM boot/shell login (configurable via SOCKS_MODE)
-   - [x] PID file tracking for gost process (cleaner management)
-   - [x] Check host SSH server availability and provide clear setup instructions
-   - [x] Comprehensive documentation (docs/socks-proxy.md, updated bootstrap.md and architecture.md)
+- [x] **Transparent Proxy for Network Reliability** (Phase 0.9 - Complete, migrated to sshuttle)
+   - [x] Implement transparent proxy via sshuttle (VM→Host)
+   - [x] Add bootstrap SOCKS proxy (SSH -D) for --init phase before sshuttle installed
+   - [x] Add `--proxy on/off/auto` flag to cal-bootstrap
+   - [x] Implement auto mode (tests github.com connectivity, enables proxy if needed)
+   - [x] Setup VM→Host SSH keys with host key verification
+   - [x] Add VM commands: proxy-start, proxy-stop, proxy-restart, proxy-status, proxy-log
+   - [x] Auto-start proxy on VM boot/shell login (configurable via PROXY_MODE)
+   - [x] Auto-start in vm-auth.sh if network fails
+   - [x] Check host SSH server and Python availability
+   - [x] Comprehensive documentation (docs/proxy.md, updated bootstrap.md and architecture.md)
   - [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
      - [ ] Add option to sync git repos on init (clone specified repos into VM automatically)
      - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
@@ -90,7 +90,7 @@
        - [x] Provide convenient way to re-authenticate all agents without manual steps
        - [x] Make script idempotent (skip if already authenticated, smart defaults)
        - [x] Install in cal-dev during --init
-       - [x] Detect network connectivity and use SOCKS proxy only when needed
+       - [x] Detect network connectivity and auto-start transparent proxy when needed
      - [x] Add vm-setup.sh and vm-auth.sh to ~/scripts folder in cal-dev during --init
        - [x] Create ~/scripts directory in cal-dev if it doesn't exist
        - [x] Copy vm-setup.sh and vm-auth.sh from host to VM during --init
@@ -105,7 +105,7 @@
        - [ ] Add Ctrl+C trap handlers during authentication flows
        - [ ] Ensure gh username parsing works in non-English locales
 
-**Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. SOCKS tunneling for reliable network access in corporate environments. Improved init workflow with better safety and automation.
+**Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. Transparent proxy (sshuttle) for reliable network access in corporate environments. Improved init workflow with better safety and automation.
 
 **Testing Issues Found & Fixed:**
 - [x] vm_exists() initially used grep -qw which didn't work reliably - fixed with awk column match

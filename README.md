@@ -56,8 +56,8 @@ This repo works with multiple AI coding agents. Context is in `AGENTS.md` with s
 **Reference:**
 - [Architecture](docs/architecture.md) - System design, UX, config
 - [CLI](docs/cli.md) - Command reference
-- [Bootstrap](docs/bootstrap.md) - Manual Tart setup
-- [SOCKS Proxy](docs/socks-proxy.md) - Network tunneling for corporate environments
+- [Bootstrap](docs/bootstrap.md) - Manual Tart setup and VM management
+- [Proxy](docs/proxy.md) - Transparent proxy for corporate environments
 - [Cursor Login Fix](docs/cursor-login-fix.md) - Keychain solution for agent authentication
 - [Terminal Keybindings Test](docs/terminal-keybindings-test.md) - VM terminal testing
 - [SSH Alternatives Investigation](docs/ssh-alternatives-investigation.md) - Research on terminal access options

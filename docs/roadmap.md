@@ -35,14 +35,15 @@ Automated Tart setup for immediate safe agent use.
   - [ ] Check VM keyboard layout
   - [ ] Investigate High Performance Screen Sharing issues
   - [ ] Create VM detection capability for agents
-- [x] **SOCKS Proxy Support** (Phase 0.9 - Complete)
-  - [x] Implement SSH SOCKS tunnel (VM→Host)
-  - [x] Add HTTP-to-SOCKS bridge (gost)
-  - [x] Add --socks on/off/auto flag
+- [x] **Transparent Proxy Support** (Phase 0.9 - Complete, migrated to sshuttle)
+  - [x] Implement transparent proxy via sshuttle
+  - [x] Add bootstrap SOCKS proxy for --init phase
+  - [x] Add --proxy on/off/auto flag
   - [x] Auto-detection of network connectivity
-  - [x] Restricted SSH keys (port-forwarding only)
-  - [x] VM commands (start_socks, stop_socks, status)
-  - [x] Documentation (socks-proxy.md)
+  - [x] VM→Host SSH keys with host key verification
+  - [x] VM commands (proxy-start, proxy-stop, proxy-status, proxy-log)
+  - [x] Auto-start in vm-auth.sh
+  - [x] Documentation (proxy.md)
   - [x] Update architecture.md and bootstrap.md
  - [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
    - [ ] Add option to sync git repos on init
