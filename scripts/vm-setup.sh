@@ -79,16 +79,38 @@ if [ "$USING_SOCKS_PROXY" = "true" ]; then
     # Homebrew is slow with SOCKS5, so we need the HTTP bridge running
     echo "📦 Installing gost (HTTP-to-SOCKS bridge) first..."
     echo "   (Required for Homebrew to work properly with SOCKS proxy)"
+    echo "   (This may take 30-60 seconds with SOCKS5...)"
     
     # Install gost using Homebrew with ALL_PROXY
     if ! command_exists gost; then
-        echo "  → Installing gost via Homebrew..."
-        if ALL_PROXY="$ALL_PROXY" brew install gost 2>&1 | grep -E "Downloaded|Pouring|Installed" || true; then
+        echo "  → Installing gost via Homebrew (please wait)..."
+        
+        # Set a reasonable timeout and show progress
+        # Use timeout command to prevent hanging forever
+        brew_output=$(timeout 120 env ALL_PROXY="$ALL_PROXY" brew install gost 2>&1 || echo "TIMEOUT")
+        brew_exit=$?
+        
+        if echo "$brew_output" | grep -q "TIMEOUT"; then
+            echo "  ✗ gost install timed out after 2 minutes"
+            echo "  ⚠ Continuing without HTTP bridge (Homebrew will be very slow)"
+        elif [ $brew_exit -eq 0 ]; then
             if command_exists gost; then
-                echo "  ✓ gost installed"
+                echo "  ✓ gost installed successfully"
             else
-                echo "  ⚠ gost install may have failed, continuing anyway"
+                echo "  ⚠ gost install completed but command not found"
+                # Try rehashing PATH
+                hash -r 2>/dev/null || true
+                if command_exists gost; then
+                    echo "  ✓ gost found after rehash"
+                else
+                    echo "  ✗ gost still not found"
+                fi
             fi
+        else
+            echo "  ✗ gost install failed (exit code: $brew_exit)"
+            echo "  Error output:"
+            echo "$brew_output" | grep -i "error\|fail" | head -3 | sed 's/^/    /'
+            echo "  ⚠ Continuing without HTTP bridge (Homebrew will be very slow)"
         fi
     else
         echo "  ✓ gost already installed"
@@ -118,11 +140,14 @@ if [ "$USING_SOCKS_PROXY" = "true" ]; then
             echo "  ✓ Switched to HTTP proxy for better performance"
             echo ""
         else
-            echo "  ⚠ HTTP bridge failed to start, staying with SOCKS5"
+            echo "  ⚠ HTTP bridge failed to start"
+            echo "  → Continuing with SOCKS5 (installations will be slower)"
             echo ""
         fi
     else
-        echo "  ⚠ gost not available, Homebrew will be slow with SOCKS5"
+        echo "  ⚠ gost not available"
+        echo "  → Continuing with SOCKS5 directly (installations will be slower)"
+        echo "  → This is OK but may take 5-10 minutes for Homebrew operations"
         echo ""
     fi
 else
