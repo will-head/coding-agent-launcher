@@ -58,45 +58,46 @@ The `cal-bootstrap` script automates VM setup and management.
 ./scripts/cal-bootstrap -y -S restore cal-init
 ```
 
-### SOCKS Proxy (Optional)
+### Transparent Proxy (Optional)
 
-For corporate environments with restrictive network proxies, CAL supports SOCKS tunneling to enable reliable VM network access.
+For corporate environments with restrictive network proxies, CAL supports transparent proxying via sshuttle to enable reliable VM network access.
 
-**When you need SOCKS:**
+**When you need proxy:**
 - Corporate network blocks direct VM internet access
 - HTTP proxy required but VM can't use it
 - `curl https://github.com` fails inside the VM
 
 **Prerequisites:**
 - SSH server enabled on host Mac (System Settings → Sharing → Remote Login)
-- Requires admin privileges to enable
+- Python installed on host (included with macOS)
 
 **Usage:**
 ```bash
-# Auto mode (default) - detects if SOCKS is needed
+# Auto mode (default) - detects if proxy is needed
 ./scripts/cal-bootstrap --init
 
-# Force SOCKS on (always enable)
-./scripts/cal-bootstrap --init --socks on
+# Force proxy on (always enable)
+./scripts/cal-bootstrap --init --proxy on
 
-# Force SOCKS off (disable)
-./scripts/cal-bootstrap --init --socks off
+# Force proxy off (disable)
+./scripts/cal-bootstrap --init --proxy off
 ```
 
-**SOCKS Modes:**
-- `auto` (default): Tests github.com connectivity, enables SOCKS only if needed
-- `on`: Always enable SOCKS tunnel
-- `off`: Never enable SOCKS tunnel
+**Proxy Modes:**
+- `auto` (default): Tests github.com connectivity, enables proxy only if needed
+- `on`: Always enable transparent proxy
+- `off`: Never enable proxy
 
 **In VM commands:**
 ```bash
-socks_status      # Check tunnel status
-start_socks       # Start tunnel manually
-stop_socks        # Stop tunnel
-restart_socks     # Restart tunnel
+proxy-status      # Check proxy status
+proxy-start       # Start proxy manually
+proxy-stop        # Stop proxy
+proxy-restart     # Restart proxy
+proxy-log         # View proxy logs
 ```
 
-**See [SOCKS Proxy Documentation](socks-proxy.md) for complete setup, troubleshooting, and security details.**
+**See [Proxy Documentation](proxy.md) for complete setup, troubleshooting, and security details.**
 
 ---
 
@@ -108,10 +109,12 @@ The `--init` command performs these steps:
 2. Creates `cal-dev` from `cal-clean`
 3. Starts VM and waits for SSH
 4. Sets up SSH keys (host→VM, generates if needed)
-5. Sets up SOCKS tunnel (VM→Host, if needed - see `--socks` mode)
-6. Runs `vm-setup.sh` to install tools (node, gh, tmux, gost, claude, agent, opencode)
-7. Opens tmux session running `vm-auth.sh` for agent authentication (gh, opencode, agent, claude)
-8. Creates `cal-init` snapshot
+5. Sets up network access (VM→Host SSH, bootstrap proxy if needed)
+6. Copies helper scripts to `~/scripts/` in VM
+7. Runs `vm-setup.sh` to install tools (node, gh, tmux, sshuttle, claude, agent, opencode)
+8. Switches from bootstrap proxy to sshuttle (if proxy enabled)
+9. Opens tmux session running `vm-auth.sh` for agent authentication
+10. Creates `cal-init` snapshot
 
 ### VMs Created
 
@@ -128,7 +131,7 @@ The init process installs helper scripts in `~/scripts/` (added to PATH):
 - **`vm-auth.sh`** - Re-authenticate all agents (gh, opencode, agent, claude)
   - Detects which agents are already authenticated
   - Smart defaults: skip if authenticated, prompt if not
-  - Automatically uses SOCKS proxy if direct connection fails
+  - Checks network connectivity before authentication
   - Run anytime: `vm-auth.sh`
 
 - **`vm-setup.sh`** - Re-run tool installation and configuration
@@ -283,7 +286,7 @@ tart clone <src> <dst>       # Clone/snapshot
 - **Agent login fails**: If SSH agent login fails, use Screen Sharing (standard mode, not High Performance) to authenticate: `open vnc://$(tart ip cal-dev)` → authenticate agent → return to terminal
 - **Screen Sharing shows lock screen**: Auto-login is configured by vm-setup.sh but requires VM reboot to activate. Stop and restart the VM, then Screen Sharing will show the desktop.
 - **opencode not found**: Try `export PATH="$HOME/.opencode/bin:$PATH"` or `export PATH="$HOME/go/bin:$PATH"` - opencode may have installed to a different location. Use Go install if shell script fails.
-- **SOCKS tunnel issues**: See [SOCKS Proxy Documentation](socks-proxy.md) - requires SSH server enabled on host (admin privileges). Network issues in VM may be resolved by enabling SOCKS: `./scripts/cal-bootstrap --restart --socks on`
+- **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host (admin privileges). Network issues in VM may be resolved by enabling proxy: `./scripts/cal-bootstrap --restart --proxy on`
 
 ## Terminal Keybinding Testing
 

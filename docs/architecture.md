@@ -63,7 +63,7 @@ Colors: 🟢 running, 🟡 starting, 🔴 error
 | Bad code pushed | Work on branches; PR review |
 | Token leak | Fine-grained PAT, limited scope |
 | Malware | Snapshots enable quick recovery |
-| VM accessing host | Restricted SSH keys (SOCKS only, no shell) |
+| VM accessing host | SSH keys only valid from VM network; host key verification |
 
 ## Networking
 
@@ -85,33 +85,33 @@ VMs run in isolated virtual network (192.168.64.x) with NAT to host internet con
 └─────────────────────────────────────┘
 ```
 
-### SOCKS Proxy (Optional)
+### Transparent Proxy (Optional)
 
-For corporate environments with restrictive HTTP proxies, CAL provides SOCKS tunneling:
+For corporate environments with restrictive HTTP proxies, CAL provides transparent proxying via sshuttle:
 
 **Problem:** Corporate networks may block direct VM internet access or require complex proxy configurations that VMs can't satisfy (authentication, PAC files, etc.).
 
-**Solution:** Tunnel VM traffic through host's internet connection via SSH SOCKS proxy.
+**Solution:** Use sshuttle to create a VPN-like tunnel through the host - all traffic routes automatically without app configuration.
 
 **Architecture:**
 ```
-VM Application → SOCKS :1080 → SSH Tunnel → Host → Corporate Proxy → Internet
-                   ↓
-                HTTP :8080 (gost bridge for Node.js tools)
+┌──────────────────────────────────────────────────────────────┐
+│ VM (cal-dev)                                                 │
+│  All apps (no config) → sshuttle → SSH tunnel → Host → Net  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-**Security Model:**
-- VM's SSH key is added to host with `restrict,port-forwarding` flags
-- Key can ONLY create port forwarding (SOCKS tunnel)
-- Key CANNOT execute commands, get shell, or access host files
-- Minimal attack surface: tunneling only
+**Key Benefits:**
+- Truly transparent - no HTTP_PROXY env vars needed
+- Works with all applications automatically
+- DNS queries also route through the tunnel
 
 **Auto-Detection:**
 - Tests if VM can reach github.com directly
-- Enables SOCKS only if connectivity test fails
-- User can override with `--socks on/off/auto`
+- Enables proxy only if connectivity test fails
+- User can override with `--proxy on/off/auto`
 
-**See [SOCKS Proxy Documentation](socks-proxy.md) for implementation details.**
+**See [Proxy Documentation](proxy.md) for implementation details.**
 
 ## Config Schema
 

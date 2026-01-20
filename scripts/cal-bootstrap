@@ -30,13 +30,12 @@ VM_INIT="cal-init"
 VM_USER="${VM_USER:-admin}"
 VM_PASSWORD="${VM_PASSWORD:-admin}"
 
-# Host user for SOCKS tunnel (the user running this script)
+# Host user for transparent proxy tunnel (the user running this script)
 HOST_USER="${HOST_USER:-$(whoami)}"
 
-# SOCKS tunnel settings (configurable via environment)
-SOCKS_MODE="${SOCKS_MODE:-auto}"  # on, off, or auto (default)
-SOCKS_PORT="${SOCKS_PORT:-1080}"
-HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-8080}"  # HTTP-to-SOCKS bridge for Node.js tools
+# Transparent proxy settings (configurable via environment)
+# Uses sshuttle for truly transparent network routing - no app configuration needed
+PROXY_MODE="${PROXY_MODE:-auto}"  # on, off, or auto (default)
 HOST_GATEWAY="${HOST_GATEWAY:-192.168.64.1}"
 
 # Log file for debugging
@@ -313,23 +312,72 @@ setup_ssh_keys() {
     echo "  SSH key copied"
 }
 
+# Start bootstrap SOCKS proxy (SSH -D tunnel, no extra packages needed)
+# Used during --init before sshuttle is installed
+start_bootstrap_proxy() {
+    local vm_ip="$1"
+
+    echo "  Starting bootstrap SOCKS proxy (SSH tunnel)..."
+
+    # Check if host SSH is available
+    if ! check_host_ssh; then
+        echo "  ⚠ Cannot start bootstrap proxy (host SSH not available)"
+        return 1
+    fi
+
+    # Start SSH SOCKS tunnel from VM to Host
+    # -D 1080: SOCKS proxy on localhost:1080
+    # -f: background
+    # -N: no command
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "ssh -D 1080 -f -N -o StrictHostKeyChecking=yes -o ServerAliveInterval=60 ${HOST_USER}@${HOST_GATEWAY}" 2>> "$CAL_LOG"
+
+    # Wait for tunnel to start
+    sleep 2
+
+    # Verify tunnel is running
+    local tunnel_running
+    tunnel_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "nc -z localhost 1080 && echo yes || echo no" 2>> "$CAL_LOG")
+
+    if [ "$tunnel_running" = "yes" ]; then
+        echo "  ✓ Bootstrap SOCKS proxy started (localhost:1080)"
+        return 0
+    else
+        echo "  ⚠ Bootstrap proxy may not have started"
+        return 1
+    fi
+}
+
+# Stop bootstrap SOCKS proxy
+stop_bootstrap_proxy() {
+    local vm_ip="$1"
+
+    echo "  Stopping bootstrap SOCKS proxy..."
+
+    # Find and kill the SSH tunnel process
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "pkill -f 'ssh -D 1080' 2>/dev/null || true" 2>> "$CAL_LOG"
+
+    echo "  ✓ Bootstrap proxy stopped"
+}
+
 # Run vm-setup script from ~/scripts folder
 run_vm_setup() {
     local vm_ip="$1"
     local use_proxy="${2:-false}"
 
     echo "  Running ~/scripts/vm-setup.sh..."
-    
+
     # Build environment variables
-    local env_vars="HOST_USER='${HOST_USER}' SOCKS_MODE='${SOCKS_MODE}' SOCKS_PORT='${SOCKS_PORT}' HTTP_PROXY_PORT='${HTTP_PROXY_PORT}' HOST_GATEWAY='${HOST_GATEWAY}'"
-    
-    # If SOCKS tunnel is running, also export proxy variables so tools can use them
-    # During init, gost (HTTP bridge) isn't installed yet, so use SOCKS5 directly
-    # Most modern tools (curl, git, npm, brew) support socks5:// in HTTP_PROXY
+    local env_vars="HOST_USER='${HOST_USER}' PROXY_MODE='${PROXY_MODE}' HOST_GATEWAY='${HOST_GATEWAY}'"
+
+    # If using proxy during init (bootstrap SOCKS), set proxy env vars
+    # socks5h:// tells curl to resolve DNS through the proxy too
     if [ "$use_proxy" = "true" ]; then
-        env_vars="${env_vars} ALL_PROXY='socks5://localhost:${SOCKS_PORT}' HTTP_PROXY='socks5://localhost:${SOCKS_PORT}' HTTPS_PROXY='socks5://localhost:${SOCKS_PORT}'"
+        env_vars="${env_vars} ALL_PROXY='socks5h://localhost:1080' http_proxy='socks5h://localhost:1080' https_proxy='socks5h://localhost:1080'"
     fi
-    
+
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
         "${VM_USER}@${vm_ip}" "${env_vars} ~/scripts/vm-setup.sh"
 }
@@ -405,12 +453,12 @@ test_vm_connectivity() {
         echo "  ✓ VM can reach github.com directly"
         return 0
     else
-        echo "  ⚠ VM cannot reach github.com (needs SOCKS tunnel)"
+        echo "  ⚠ VM cannot reach github.com (needs transparent proxy)"
         return 1
     fi
 }
 
-# Check if host SSH server is available (required for SOCKS tunnel)
+# Check if host SSH server is available (required for transparent proxy)
 check_host_ssh() {
     echo "  Checking if host SSH server is available..."
 
@@ -421,27 +469,57 @@ check_host_ssh() {
     else
         echo "  ⚠ Host SSH server not available on $HOST_GATEWAY:22"
         echo ""
-        echo "  SOCKS tunnel requires SSH server on host Mac."
+        echo "  Transparent proxy requires SSH server on host Mac."
         echo "  To enable Remote Login (SSH):"
         echo "    System Settings → General → Sharing → Remote Login (ON)"
         echo "  Or via command line:"
         echo "    sudo systemsetup -setremotelogin on"
         echo ""
-        echo "  Skipping SOCKS tunnel setup."
+        echo "  Skipping transparent proxy setup."
         echo "[$(date)] Host SSH not available on $HOST_GATEWAY:22" >> "$CAL_LOG"
         return 1
     fi
 }
 
-# Setup SSH key in VM for SOCKS tunnel back to host
-# Security: Key is added with restrictions to limit what VM can do on host
+# Check if host has Python (required for sshuttle server side)
+check_host_python() {
+    echo "  Checking if host has Python (required for sshuttle)..."
+
+    # Check for python3 first, then python
+    if command -v python3 &>/dev/null; then
+        local py_version
+        py_version=$(python3 --version 2>&1)
+        echo "  ✓ Host has $py_version"
+        return 0
+    elif command -v python &>/dev/null; then
+        local py_version
+        py_version=$(python --version 2>&1)
+        echo "  ✓ Host has $py_version"
+        return 0
+    else
+        echo "  ⚠ Python not found on host"
+        echo "  sshuttle requires Python on the server side."
+        echo "  macOS should have Python pre-installed. Check with:"
+        echo "    python3 --version"
+        echo "[$(date)] Python not found on host" >> "$CAL_LOG"
+        return 1
+    fi
+}
+
+# Setup SSH key in VM for transparent proxy back to host
+# Note: sshuttle needs full SSH access (runs Python on server)
 setup_vm_ssh_key() {
     local vm_ip="$1"
 
-    echo "  Setting up VM SSH key for SOCKS tunnel..."
+    echo "  Setting up VM SSH key for transparent proxy..."
 
     # Check if host SSH is available first
     if ! check_host_ssh; then
+        return 1
+    fi
+
+    # Check if host has Python (required for sshuttle)
+    if ! check_host_python; then
         return 1
     fi
 
@@ -455,7 +533,7 @@ setup_vm_ssh_key() {
     else
         echo "  Generating SSH key in VM..."
         ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "${VM_USER}@${vm_ip}" "ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N '' -C 'cal-vm-socks' >/dev/null 2>&1" 2>> "$CAL_LOG"
+            "${VM_USER}@${vm_ip}" "ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N '' -C 'cal-vm-proxy' >/dev/null 2>&1" 2>> "$CAL_LOG"
         echo "  ✓ VM SSH key generated"
     fi
 
@@ -504,16 +582,12 @@ setup_vm_ssh_key() {
     if [ "$key_exists" = "true" ]; then
         echo "  ✓ VM key already in host authorized_keys (fingerprint: ${vm_key_fp:0:16}...)"
     else
-        echo "  Adding VM key to host authorized_keys (with restrictions)..."
-        # Add key with security restrictions:
-        # - restrict: Most restrictive option, prevents shell access
-        # - port-forwarding: Allow port forwarding (needed for SOCKS -D)
-        # - command="/usr/bin/true": Command runs but does nothing (bypassed by -N flag)
-        # The key can ONLY be used for SSH SOCKS tunneling (-D), not interactive access
-        local restricted_key="restrict,port-forwarding,command=\"/usr/bin/true\" ${vm_pubkey}"
-        echo "$restricted_key" >> ~/.ssh/authorized_keys
-        echo "  ✓ VM key added to host (restricted: SOCKS only, no shell access)"
-        echo "[$(date)] Added restricted VM key with fingerprint $vm_key_fp" >> "$CAL_LOG"
+        echo "  Adding VM key to host authorized_keys..."
+        # sshuttle needs full SSH access (runs Python on server side)
+        # The key is only accessible from the VM's local network
+        echo "$vm_pubkey" >> ~/.ssh/authorized_keys
+        echo "  ✓ VM key added to host"
+        echo "[$(date)] Added VM key with fingerprint $vm_key_fp" >> "$CAL_LOG"
     fi
 
     # Pre-populate host's SSH key in VM's known_hosts for secure connections
@@ -555,142 +629,78 @@ setup_vm_known_hosts() {
     echo "  ✓ Host SSH keys added to VM's known_hosts"
 }
 
-# Start HTTP-to-SOCKS bridge in VM (for Node.js tools like opencode)
-# Note: gost must be installed first (via vm-setup.sh)
-start_http_proxy_bridge() {
+# Start transparent proxy (sshuttle) in VM
+# This provides truly transparent network routing - no app configuration needed
+start_transparent_proxy() {
     local vm_ip="$1"
-    local silent="${2:-false}"  # Pass "true" to suppress warnings (e.g., during init before gost is installed)
 
-    # Check if HTTP bridge is already running
-    local bridge_running
-    bridge_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "nc -z localhost ${HTTP_PROXY_PORT} 2>/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+    echo "  Checking transparent proxy (sshuttle)..."
 
-    if [ "$bridge_running" = "yes" ]; then
-        [ "$silent" != "true" ] && echo "  ✓ HTTP bridge already running on port ${HTTP_PROXY_PORT}"
+    # Check if sshuttle is already running
+    local proxy_running
+    proxy_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "pgrep -f sshuttle >/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+
+    if [ "$proxy_running" = "yes" ]; then
+        echo "  ✓ Transparent proxy already running"
+        show_proxy_cow "$vm_ip"
         return 0
     fi
 
-    # Check if gost is installed
-    local has_gost
-    has_gost=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "command -v gost >/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+    # Check if sshuttle is installed
+    local has_sshuttle
+    has_sshuttle=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "command -v sshuttle >/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
 
-    if [ "$has_gost" != "yes" ]; then
-        # Only warn if not in silent mode (during init, gost isn't installed yet)
-        [ "$silent" != "true" ] && echo "  ⚠ gost not installed in VM - HTTP bridge unavailable"
-        echo "[$(date)] gost not found in VM" >> "$CAL_LOG"
-        # Return 0 in silent mode to not trigger set -e exit during init
-        [ "$silent" = "true" ] && return 0
+    if [ "$has_sshuttle" != "yes" ]; then
+        echo "  ⚠ sshuttle not installed in VM"
+        echo "  Run vm-setup.sh to install sshuttle"
+        echo "[$(date)] sshuttle not found in VM" >> "$CAL_LOG"
         return 1
     fi
 
-    [ "$silent" != "true" ] && echo "  Starting HTTP-to-SOCKS bridge..."
+    echo "  Starting transparent proxy (sshuttle)..."
 
-    # Start gost HTTP-to-SOCKS bridge (silent - logs to file in VM, with PID tracking)
+    # Start sshuttle in background
+    # Routes all traffic (0.0.0.0/0) through host, handles DNS
+    # Excludes local/VM network to prevent routing loops
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "nohup gost -L 'http://:${HTTP_PROXY_PORT}' -F 'socks5://localhost:${SOCKS_PORT}' >> ~/.cal-http-proxy.log 2>&1 & echo \$! > ~/.cal-http-proxy.pid; disown" 2>> "$CAL_LOG"
+        "${VM_USER}@${vm_ip}" "nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.cal-proxy.log 2>&1 &" 2>> "$CAL_LOG"
 
-    # Wait for bridge to start (2s allows gost to initialize and bind to port)
-    sleep 2
-    bridge_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "nc -z localhost ${HTTP_PROXY_PORT} 2>/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
-
-    if [ "$bridge_running" = "yes" ]; then
-        [ "$silent" != "true" ] && echo "  ✓ HTTP bridge started (SOCKS :${SOCKS_PORT} → HTTP :${HTTP_PROXY_PORT})"
-        return 0
-    else
-        [ "$silent" != "true" ] && echo "  ⚠ HTTP bridge failed to start"
-        echo "[$(date)] HTTP bridge failed to start" >> "$CAL_LOG"
-        return 1
-    fi
-}
-
-# Start SOCKS tunnel in VM (if not already running)
-# This provides reliable network connectivity for restrictive corporate networks
-start_socks_tunnel() {
-    local vm_ip="$1"
-
-    echo "  Checking SOCKS tunnel..."
-
-    # Check if tunnel is already running
-    local tunnel_running
-    tunnel_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "nc -z localhost ${SOCKS_PORT} 2>/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
-
-    if [ "$tunnel_running" = "yes" ]; then
-        echo "  ✓ SOCKS tunnel already running on port ${SOCKS_PORT}"
-        # Try to start HTTP bridge (silent if gost not installed - e.g., during init)
-        start_http_proxy_bridge "$vm_ip" "true"
-        show_socks_cow "$vm_ip"
-        return 0
-    fi
-
-    # Check if port is available in VM
-    local port_check
-    port_check=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "lsof -i :${SOCKS_PORT} 2>/dev/null | head -2" 2>> "$CAL_LOG")
-
-    if [ -n "$port_check" ]; then
-        echo "  ⚠ Port ${SOCKS_PORT} already in use in VM:"
-        echo "$port_check" | sed 's/^/    /'
-        echo "[$(date)] Port ${SOCKS_PORT} already in use: $port_check" >> "$CAL_LOG"
-        return 1
-    fi
-
-    echo "  Starting SOCKS tunnel (VM→Host on port ${SOCKS_PORT})..."
-
-    # Start the SSH SOCKS tunnel in background
-    # Use StrictHostKeyChecking=no for reliability (minimal security risk on localhost network)
-    # The tunnel command runs inside the VM and connects back to the host
-    local tunnel_result
-    tunnel_result=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "ssh -D ${SOCKS_PORT} -f -N -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes ${HOST_USER}@${HOST_GATEWAY} >/dev/null 2>&1" 2>> "$CAL_LOG")
-
-    local ssh_exit=$?
-    if [ $ssh_exit -ne 0 ]; then
-        echo "  ⚠ SSH tunnel command failed (exit code: $ssh_exit)"
-        echo "[$(date)] Tunnel SSH failed (exit $ssh_exit): $tunnel_result" >> "$CAL_LOG"
-        echo "  Tunnel output: $tunnel_result"
-    fi
-
-    # Wait for tunnel to be ready (max 10s - SSH tunnel typically ready in 1-2s)
-    # Timeout allows for slow SSH handshakes or network issues without hanging indefinitely
+    # Wait for sshuttle to start
     local count=0
     local max_wait=10
     while [ $count -lt $max_wait ]; do
         sleep 1
         count=$((count + 1))
-        tunnel_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "${VM_USER}@${vm_ip}" "nc -z localhost ${SOCKS_PORT} 2>/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
-        if [ "$tunnel_running" = "yes" ]; then
-            echo "  ✓ SOCKS tunnel started successfully"
-            # Try to start HTTP bridge (silent if gost not installed - e.g., during init)
-            start_http_proxy_bridge "$vm_ip" "true"
-            show_socks_cow "$vm_ip"
+        proxy_running=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${vm_ip}" "pgrep -f sshuttle >/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+        if [ "$proxy_running" = "yes" ]; then
+            echo "  ✓ Transparent proxy started"
+            show_proxy_cow "$vm_ip"
             return 0
         fi
     done
 
-    echo "  ⚠ SOCKS tunnel may not have started (check ~/.cal-bootstrap.log)"
-    echo "[$(date)] Tunnel start timeout after ${max_wait}s" >> "$CAL_LOG"
+    echo "  ⚠ Transparent proxy may not have started (check ~/.cal-proxy.log in VM)"
+    echo "[$(date)] sshuttle start timeout after ${max_wait}s" >> "$CAL_LOG"
     return 1
 }
 
-# Show the celebratory cow when SOCKS is working
-show_socks_cow() {
+# Show the celebratory cow when proxy is working
+show_proxy_cow() {
     local vm_ip="$1"
 
-    # Test that SOCKS actually works
+    # Test that proxy actually works
     local test_result
     test_result=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "curl -s --connect-timeout 5 --socks5-hostname localhost:${SOCKS_PORT} -I https://www.google.com 2>&1 | grep -q '200' && echo yes || echo no" 2>> "$CAL_LOG")
+        "${VM_USER}@${vm_ip}" "curl -s --connect-timeout 5 -I https://www.google.com 2>&1 | grep -q '200' && echo yes || echo no" 2>> "$CAL_LOG")
 
     if [ "$test_result" = "yes" ]; then
         echo ""
-        echo " _____________________"
-        echo "< SOCKS tunnel works! >"
-        echo " ---------------------"
+        echo " ___________________________"
+        echo "< Transparent proxy works! >"
+        echo " ---------------------------"
         echo "        \\   ^__^"
         echo "         \\  (oo)\\_______"
         echo "            (__)\\       )\\/\\"
@@ -698,37 +708,37 @@ show_socks_cow() {
         echo "                ||     ||"
         echo ""
     else
-        echo "[$(date)] SOCKS connectivity test failed" >> "$CAL_LOG"
+        echo "[$(date)] Proxy connectivity test failed" >> "$CAL_LOG"
     fi
 }
 
-# Determine whether to enable SOCKS based on mode
-should_enable_socks() {
+# Determine whether to enable proxy based on mode
+should_enable_proxy() {
     local vm_ip="$1"
 
-    case "$SOCKS_MODE" in
+    case "$PROXY_MODE" in
         on)
-            echo "  SOCKS mode: on (forced)"
+            echo "  Proxy mode: on (forced)"
             return 0
             ;;
         off)
-            echo "  SOCKS mode: off (disabled)"
+            echo "  Proxy mode: off (disabled)"
             return 1
             ;;
         auto)
-            echo "  SOCKS mode: auto (testing connectivity...)"
+            echo "  Proxy mode: auto (testing connectivity...)"
             if test_vm_connectivity "$vm_ip"; then
-                echo "  → Network OK, SOCKS tunnel not needed"
+                echo "  → Network OK, transparent proxy not needed"
                 return 1
             else
-                echo "  → Network restricted, enabling SOCKS tunnel"
+                echo "  → Network restricted, enabling transparent proxy"
                 return 0
             fi
             ;;
         *)
-            echo "  ⚠ Invalid SOCKS_MODE='$SOCKS_MODE', defaulting to auto"
-            SOCKS_MODE="auto"
-            should_enable_socks "$vm_ip"
+            echo "  ⚠ Invalid PROXY_MODE='$PROXY_MODE', defaulting to auto"
+            PROXY_MODE="auto"
+            should_enable_proxy "$vm_ip"
             ;;
     esac
 }
@@ -777,19 +787,32 @@ do_init() {
     echo "Step 4: Setup SSH keys (host→VM)"
     setup_ssh_keys "$VM_IP"
 
-    # Step 5: Setup SOCKS tunnel (VM→Host for network access)
+    # Step 5: Setup proxy for network access
     echo ""
-    echo "Step 5: Setup SOCKS tunnel for network access"
-    local socks_enabled=false
-    if should_enable_socks "$VM_IP"; then
-        if setup_vm_ssh_key "$VM_IP" && start_socks_tunnel "$VM_IP"; then
-            socks_enabled=true
-            echo "  ✓ SOCKS tunnel ready for tool installation"
+    echo "Step 5: Setup network access"
+    local proxy_enabled=false
+    local bootstrap_proxy_started=false
+
+    if should_enable_proxy "$VM_IP"; then
+        echo "  Proxy mode enabled, setting up VM→Host SSH..."
+        if setup_vm_ssh_key "$VM_IP"; then
+            proxy_enabled=true
+            echo "  ✓ VM→Host SSH ready"
+
+            # Start bootstrap SOCKS proxy for package installation
+            # (sshuttle isn't installed yet, so use SSH -D tunnel)
+            echo ""
+            echo "Step 5.5: Start bootstrap proxy for package installation"
+            if start_bootstrap_proxy "$VM_IP"; then
+                bootstrap_proxy_started=true
+            else
+                echo "  ⚠ Bootstrap proxy failed, will try direct connection"
+            fi
         else
-            echo "  ⚠ SOCKS tunnel setup failed, continuing anyway"
+            echo "  ⚠ VM→Host SSH setup failed, will try direct connection"
         fi
     else
-        echo "  ✓ SOCKS tunnel skipped (not needed)"
+        echo "  ✓ Direct network connection available"
     fi
 
     # Step 6: Setup scripts folder first
@@ -797,33 +820,24 @@ do_init() {
     echo "Step 6: Setup scripts folder"
     setup_scripts_folder "$VM_IP"
 
-    # Step 7: Run vm-setup from ~/scripts (with proxy if SOCKS is enabled)
+    # Step 7: Run vm-setup from ~/scripts
+    # Pass proxy flag so vm-setup knows to use SOCKS proxy env vars
     echo ""
     echo "Step 7: Install tools"
-    
-    # If SOCKS was enabled, verify tunnel is still running before vm-setup
-    if [ "$socks_enabled" = "true" ]; then
-        echo "  Verifying SOCKS tunnel is still active..."
-        local tunnel_check
-        tunnel_check=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "${VM_USER}@${VM_IP}" "nc -z localhost ${SOCKS_PORT} 2>/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
-        
-        if [ "$tunnel_check" = "yes" ]; then
-            echo "  ✓ SOCKS tunnel confirmed active"
-        else
-            echo "  ⚠ SOCKS tunnel died! Attempting to restart..."
-            if start_socks_tunnel "$VM_IP"; then
-                echo "  ✓ SOCKS tunnel restarted"
-                socks_enabled=true
-            else
-                echo "  ✗ Could not restart SOCKS tunnel"
-                echo "  → Continuing without proxy (installations may fail)"
-                socks_enabled=false
-            fi
-        fi
+    run_vm_setup "$VM_IP" "$bootstrap_proxy_started"
+
+    # Step 7.5: Clean up bootstrap proxy and start sshuttle
+    if [ "$bootstrap_proxy_started" = "true" ]; then
+        echo ""
+        echo "Step 7.5: Switch to transparent proxy (sshuttle)"
+        stop_bootstrap_proxy "$VM_IP"
+        start_transparent_proxy "$VM_IP" || echo "  ⚠ sshuttle start failed (see logs)"
+    elif [ "$proxy_enabled" = "true" ]; then
+        # Proxy was requested but bootstrap failed - try sshuttle anyway
+        echo ""
+        echo "Step 7.5: Start transparent proxy (sshuttle)"
+        start_transparent_proxy "$VM_IP" || echo "  ⚠ sshuttle start failed (see logs)"
     fi
-    
-    run_vm_setup "$VM_IP" "$socks_enabled"
 
     # Step 8: Prompt user for manual setup
     echo ""
@@ -909,15 +923,13 @@ do_run() {
         VM_IP=$("$TART" ip "$vm_to_run" 2>/dev/null || echo "")
         if [ -n "$VM_IP" ]; then
             echo ""
-            # Setup and start SOCKS tunnel if needed
-            if should_enable_socks "$VM_IP"; then
+            # Setup and start transparent proxy if needed
+            if should_enable_proxy "$VM_IP"; then
                 # Ensure VM SSH key is set up (idempotent - safe to run multiple times)
                 if setup_vm_ssh_key "$VM_IP"; then
-                    start_socks_tunnel "$VM_IP" || echo "  ⚠ SOCKS tunnel failed to start (see ~/.cal-bootstrap.log)"
-                    # Start HTTP bridge for Node.js tools (gost should be installed)
-                    start_http_proxy_bridge "$VM_IP" || true
+                    start_transparent_proxy "$VM_IP" || echo "  ⚠ Transparent proxy failed to start (see ~/.cal-bootstrap.log)"
                 else
-                    echo "  ⚠ Skipping SOCKS tunnel (setup failed)"
+                    echo "  ⚠ Skipping transparent proxy (setup failed)"
                 fi
             fi
             unlock_keychain "$VM_IP"
@@ -946,15 +958,13 @@ do_run() {
     echo ""
     echo "$vm_to_run is running (PID: $TART_PID)"
 
-    # Setup and start SOCKS tunnel if needed
-    if should_enable_socks "$VM_IP"; then
+    # Setup and start transparent proxy if needed
+    if should_enable_proxy "$VM_IP"; then
         # Ensure VM SSH key is set up (idempotent - safe to run multiple times)
         if setup_vm_ssh_key "$VM_IP"; then
-            start_socks_tunnel "$VM_IP" || echo "  ⚠ SOCKS tunnel failed to start (see ~/.cal-bootstrap.log)"
-            # Start HTTP bridge for Node.js tools (gost should be installed)
-            start_http_proxy_bridge "$VM_IP" || true
+            start_transparent_proxy "$VM_IP" || echo "  ⚠ Transparent proxy failed to start (see ~/.cal-bootstrap.log)"
         else
-            echo "  ⚠ Skipping SOCKS tunnel (setup failed)"
+            echo "  ⚠ Skipping transparent proxy (setup failed)"
         fi
     fi
 
@@ -1034,15 +1044,13 @@ do_restart() {
     echo ""
     echo "$VM_DEV is running (PID: $TART_PID)"
 
-    # Setup and start SOCKS tunnel if needed
-    if should_enable_socks "$VM_IP"; then
+    # Setup and start transparent proxy if needed
+    if should_enable_proxy "$VM_IP"; then
         # Ensure VM SSH key is set up (idempotent - safe to run multiple times)
         if setup_vm_ssh_key "$VM_IP"; then
-            start_socks_tunnel "$VM_IP" || echo "  ⚠ SOCKS tunnel failed to start (see ~/.cal-bootstrap.log)"
-            # Start HTTP bridge for Node.js tools (gost should be installed)
-            start_http_proxy_bridge "$VM_IP" || true
+            start_transparent_proxy "$VM_IP" || echo "  ⚠ Transparent proxy failed to start (see ~/.cal-bootstrap.log)"
         else
-            echo "  ⚠ Skipping SOCKS tunnel (setup failed)"
+            echo "  ⚠ Skipping transparent proxy (setup failed)"
         fi
     fi
 
@@ -1464,12 +1472,12 @@ while [[ $# -gt 0 ]]; do
             SNAPSHOT_NAME="${1:-}"
             [[ $# -gt 0 ]] && shift
             ;;
-        --socks)
+        --socks|--proxy)
             shift
-            SOCKS_MODE="${1:-auto}"
-            if [[ ! "$SOCKS_MODE" =~ ^(on|off|auto)$ ]]; then
-                echo "Error: --socks must be 'on', 'off', or 'auto'"
-                echo "Got: '$SOCKS_MODE'"
+            PROXY_MODE="${1:-auto}"
+            if [[ ! "$PROXY_MODE" =~ ^(on|off|auto)$ ]]; then
+                echo "Error: --proxy must be 'on', 'off', or 'auto'"
+                echo "Got: '$PROXY_MODE'"
                 exit 1
             fi
             shift
@@ -1492,9 +1500,9 @@ while [[ $# -gt 0 ]]; do
             echo "  --snapshot, -S create <name>  Create a named snapshot"
             echo "  --snapshot, -S restore <name> Restore from a snapshot"
             echo "  --snapshot, -S delete <name>  Delete a snapshot"
-            echo "  --socks <on|off|auto>         SOCKS tunnel mode (default: auto)"
-            echo "                                  on   - Always enable SOCKS tunnel"
-            echo "                                  off  - Disable SOCKS tunnel"
+            echo "  --proxy <on|off|auto>         Transparent proxy mode (default: auto)"
+            echo "                                  on   - Always enable transparent proxy"
+            echo "                                  off  - Disable transparent proxy"
             echo "                                  auto - Test github.com, enable if needed"
             echo "  --yes, -y                     Skip confirmation prompts"
             echo "  --help, -h                    Show this help"

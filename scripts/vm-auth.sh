@@ -2,7 +2,7 @@
 
 # Initialize environment with all paths
 eval "$(/opt/homebrew/bin/brew shellenv)"
-export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/go/bin:/opt/homebrew/bin:$PATH"
 
 clear
 echo ""
@@ -11,107 +11,42 @@ echo "  CAL VM Setup - Authenticate Agents"
 echo "============================================"
 echo ""
 
-# Network connectivity detection and proxy setup
-# Strategy: Try direct connection first, only use SOCKS if direct fails
-
+# Network connectivity check
+# With transparent proxy (sshuttle), no env vars needed - traffic routes automatically
 echo "🌐 Checking network connectivity..."
 
-# Function to test network connectivity
 test_network() {
-    # Test with timeout - if curl or nc work, we have connectivity
-    if curl -s --connect-timeout 3 -I https://github.com 2>&1 | grep -q 'HTTP'; then
+    if curl -s --connect-timeout 5 -I https://github.com 2>&1 | grep -q 'HTTP'; then
         return 0
-    elif nc -z -w 3 github.com 443 2>/dev/null; then
+    elif nc -z -w 5 github.com 443 2>/dev/null; then
         return 0
     else
         return 1
     fi
 }
 
-# ALWAYS start with NO proxy vars set - test direct connection first
-unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
-
 if test_network; then
-    # Direct connection works - use it!
-    echo "  ✓ Direct connection working"
+    echo "  ✓ Network connectivity working"
     echo ""
 else
-    # Direct connection failed - try SOCKS proxy
-    echo "  ⚠ Direct connection failed"
-    echo "  → Checking for SOCKS proxy..."
-    
-    # Load SOCKS configuration if available
-    if [ -f ~/.cal-socks-config ]; then
-        source ~/.cal-socks-config
-        
-        # Check if SOCKS tunnel is running
-        if nc -z localhost ${SOCKS_PORT:-1080} 2>/dev/null; then
-            echo "  → SOCKS tunnel detected on port ${SOCKS_PORT:-1080}"
-            
-            # Set proxy environment variables
-            export ALL_PROXY="socks5://localhost:${SOCKS_PORT:-1080}"
-            export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
-            export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
-            
-            # Test connectivity with proxy
-            if test_network; then
-                echo "  ✓ Using SOCKS proxy successfully"
-                echo "     HTTP_PROXY=$HTTP_PROXY"
-                echo ""
-            else
-                echo "  ⚠ SOCKS proxy not working"
-                echo "     Authentication may fail"
-                echo ""
-                # Unset proxy since it's not helping
-                unset HTTP_PROXY HTTPS_PROXY ALL_PROXY
-            fi
-        else
-            # SOCKS not running - try to start it
-            echo "  → SOCKS tunnel not running, attempting to start..."
-            
-            # Try to start SOCKS if functions are available
-            if type start_socks &>/dev/null; then
-                if start_socks >/dev/null 2>&1; then
-                    # Wait a moment for tunnel to stabilize
-                    sleep 2
-                    
-                    # Set proxy vars and test again
-                    export ALL_PROXY="socks5://localhost:${SOCKS_PORT:-1080}"
-                    export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
-                    export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
-                    
-                    if test_network; then
-                        echo "  ✓ SOCKS tunnel started and working"
-                        echo "     HTTP_PROXY=$HTTP_PROXY"
-                        echo ""
-                    else
-                        echo "  ⚠ SOCKS started but not working"
-                        echo "     Authentication may fail"
-                        echo ""
-                        unset HTTP_PROXY HTTPS_PROXY ALL_PROXY
-                    fi
-                else
-                    echo "  ✗ Failed to start SOCKS tunnel"
-                    echo "     Try manually: start_socks"
-                    echo "     Authentication may fail"
-                    echo ""
-                fi
-            else
-                echo "  ✗ SOCKS functions not available"
-                echo "     Try manually: source ~/.zshrc && start_socks"
-                echo "     Authentication may fail"
-                echo ""
-            fi
-        fi
+    echo "  ⚠ Network connectivity issue"
+    echo ""
+    echo "  Checking transparent proxy (sshuttle)..."
+
+    if pgrep -f sshuttle >/dev/null 2>&1; then
+        echo "  → Proxy is running but connectivity failed"
+        echo "  → Check ~/.cal-proxy.log for errors"
     else
-        echo "  ✗ No SOCKS configuration found"
-        echo "     Direct connection failed and no proxy available"
-        echo "     Authentication will likely fail"
-        echo ""
+        echo "  → Proxy not running"
+        echo "  → Start with: proxy-start"
+        echo "  → Or restart VM with: cal-bootstrap --restart"
     fi
+
+    echo ""
+    echo "  ⚠ Authentication may fail without network"
+    echo ""
 fi
 
-echo ""
 echo "💡 tmux: Ctrl+b d to detach if needed"
 echo ""
 
@@ -126,7 +61,6 @@ gh_authenticated() {
 }
 
 opencode_authenticated() {
-    # Check multiple possible config locations for opencode
     command_exists opencode && {
         [ -f ~/.opencode/config.json ] && [ -s ~/.opencode/config.json ] ||
         [ -f ~/.config/opencode/config.json ] && [ -s ~/.config/opencode/config.json ] ||
@@ -269,6 +203,12 @@ echo ""
 echo "============================================"
 echo "  ✅ Setup Complete!"
 echo "============================================"
+echo ""
+echo "💡 Proxy commands:"
+echo "   proxy-status  - Check if proxy is running"
+echo "   proxy-start   - Start proxy manually"
+echo "   proxy-stop    - Stop proxy"
+echo "   proxy-log     - View proxy logs"
 echo ""
 echo "💡 To re-authenticate agents later, run:"
 echo "   ~/scripts/vm-auth.sh"

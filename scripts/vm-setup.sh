@@ -4,11 +4,10 @@ echo "🚀 CAL VM Setup Script"
 echo "======================"
 echo ""
 
-# SOCKS tunnel settings (passed from cal-bootstrap)
-SOCKS_PORT="${SOCKS_PORT:-1080}"
-HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-8080}"
+# Transparent proxy settings (passed from cal-bootstrap)
+# With sshuttle, no ports or env vars needed - traffic routes automatically
 HOST_GATEWAY="${HOST_GATEWAY:-192.168.64.1}"
-SOCKS_MODE="${SOCKS_MODE:-auto}"
+PROXY_MODE="${PROXY_MODE:-auto}"
 HOST_USER="${HOST_USER:-}"
 
 # Ensure Homebrew is in PATH (needed for non-interactive SSH)
@@ -23,129 +22,41 @@ command_exists() {
     command -v "$1" &>/dev/null
 }
 
-# Store whether we're using SOCKS proxy (check early before helper functions)
-USING_SOCKS_PROXY=false
-if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
-    USING_SOCKS_PROXY=true
+# Check network connectivity
+echo "🌐 Checking network connectivity..."
+
+# Check if we're using bootstrap SOCKS proxy (passed via env vars during --init)
+USING_BOOTSTRAP_PROXY=false
+if [ -n "$ALL_PROXY" ] || [ -n "$http_proxy" ]; then
+    USING_BOOTSTRAP_PROXY=true
+    echo "  Using bootstrap SOCKS proxy: ${ALL_PROXY:-$http_proxy}"
+    
+    # Configure git to use the proxy
+    git config --global http.proxy "${ALL_PROXY:-$http_proxy}"
+    git config --global https.proxy "${ALL_PROXY:-$http_proxy}"
 fi
 
-# Check if we have proxy environment variables set (indicating SOCKS is active)
-# These are passed by cal-bootstrap when SOCKS tunnel was started before vm-setup.sh
-if [ "$USING_SOCKS_PROXY" = "true" ]; then
-    echo "🌐 Network: Using SOCKS proxy"
-    echo "   ALL_PROXY=$ALL_PROXY"
-    echo "   HTTP_PROXY=$HTTP_PROXY"
-    echo "   HTTPS_PROXY=$HTTPS_PROXY"
-    echo ""
-    
-    # Export lowercase versions too (some tools need lowercase)
-    export http_proxy="$HTTP_PROXY"
-    export https_proxy="$HTTPS_PROXY"
-    export all_proxy="$ALL_PROXY"
-    
-    # Also set NO_PROXY to avoid proxying localhost/internal addresses
-    export NO_PROXY="localhost,127.0.0.1,::1,192.168.64.0/24"
-    export no_proxy="$NO_PROXY"
-    
-    # Git needs special config for SOCKS proxy
-    git config --global http.proxy "$ALL_PROXY"
-    git config --global https.proxy "$ALL_PROXY"
-    
-    # Test if proxy is actually working
-    echo "  Testing proxy connectivity..."
-    
-    # First, verify SOCKS tunnel is accessible
-    if nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
-        echo "  ✓ SOCKS tunnel is listening on port ${SOCKS_PORT}"
+# Test connectivity (will use proxy if env vars are set)
+if curl -s --connect-timeout 10 -I https://github.com 2>&1 | head -1 | grep -q "HTTP"; then
+    if [ "$USING_BOOTSTRAP_PROXY" = "true" ]; then
+        echo "  ✓ Network connectivity working (via SOCKS proxy)"
     else
-        echo "  ✗ SOCKS tunnel NOT accessible on port ${SOCKS_PORT}"
-        echo "    This will cause all installations to fail!"
-        echo ""
-    fi
-    
-    # Test actual connectivity through proxy using curl with explicit --socks5 flag
-    # (More reliable than relying on HTTP_PROXY env var)
-    echo "  → Testing https://github.com through proxy..."
-    if curl --socks5-hostname localhost:${SOCKS_PORT} --connect-timeout 10 -s -I https://github.com 2>&1 | head -1 | grep -q "HTTP"; then
-        echo "  ✓ SOCKS proxy is working (github.com reachable)"
-        echo ""
-    else
-        echo "  ✗ SOCKS proxy test failed"
-        echo "  ⚠ Installations will likely fail!"
-        echo ""
-    fi
-    
-    # CRITICAL: Install gost FIRST (it's needed for HTTP-to-SOCKS bridge)
-    # Homebrew is slow with SOCKS5, so we need the HTTP bridge running
-    echo "📦 Installing gost (HTTP-to-SOCKS bridge) first..."
-    echo "   (Required for Homebrew to work properly with SOCKS proxy)"
-    echo "   ⚠️  This may take 5-10 minutes with SOCKS5 - please be patient!"
-    echo ""
-    
-    # TODO: Investigate why gost install is so slow/hangs with SOCKS5
-    # See SOCKS_ISSUES.md for details and attempted solutions
-    
-    # Install gost using Homebrew with ALL_PROXY (no timeout - let it complete)
-    if ! command_exists gost; then
-        echo "  → Installing gost via Homebrew..."
-        echo "     (Downloading through SOCKS5 proxy - this is slow but works)"
-        
-        # Simple approach - just run it and wait
-        # User can Ctrl+C if they want to abort
-        if env ALL_PROXY="$ALL_PROXY" brew install gost 2>&1 | grep -E "Downloaded|Pouring|Installed|Error|Failed" | sed 's/^/     /'; then
-            # Check if gost is now available
-            hash -r 2>/dev/null || true  # Rehash PATH
-            if command_exists gost; then
-                echo "  ✓ gost installed successfully"
-            else
-                echo "  ⚠ gost install completed but command not found"
-                echo "     Continuing without HTTP bridge"
-            fi
-        else
-            echo "  ✗ gost install failed"
-            echo "     Continuing without HTTP bridge"
-        fi
-    else
-        echo "  ✓ gost already installed"
+        echo "  ✓ Network connectivity working (direct)"
     fi
     echo ""
-    
-    # Start HTTP-to-SOCKS bridge NOW (before other installations)
-    if command_exists gost; then
-        echo "  Starting HTTP-to-SOCKS bridge..."
-        # Kill any existing gost process
-        pkill -f "gost -L" 2>/dev/null || true
-        # Start gost in background
-        nohup gost -L "http://:${HTTP_PROXY_PORT}" -F "socks5://localhost:${SOCKS_PORT}" >/dev/null 2>&1 &
-        echo $! > ~/.cal-http-proxy.pid
-        disown 2>/dev/null || true
-        sleep 2
-        
-        # Verify it's running
-        if nc -z localhost ${HTTP_PROXY_PORT} 2>/dev/null; then
-            echo "  ✓ HTTP bridge running on port ${HTTP_PROXY_PORT}"
-            
-            # Now switch to HTTP proxy (much faster for Homebrew)
-            export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT}"
-            export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT}"
-            export http_proxy="$HTTP_PROXY"
-            export https_proxy="$HTTPS_PROXY"
-            
-            echo "  ✓ Switched to HTTP proxy for better performance"
-            echo ""
-        else
-            echo "  ⚠ HTTP bridge failed to start"
-            echo "  → Continuing with SOCKS5 (installations will be slower)"
-            echo ""
-        fi
-    else
-        echo "  ⚠ gost not available"
-        echo "  → Continuing with SOCKS5 directly (installations will be slower)"
-        echo "  → This is OK but may take 5-10 minutes for Homebrew operations"
-        echo ""
-    fi
 else
-    echo "🌐 Network: Direct connection"
+    echo "  ⚠ Cannot reach github.com"
+    
+    if [ "$USING_BOOTSTRAP_PROXY" = "true" ]; then
+        echo "  → SOCKS proxy is configured but connectivity failed"
+        echo "  → Check if SSH tunnel is still running"
+    elif pgrep -f sshuttle >/dev/null 2>&1; then
+        echo "  → Transparent proxy (sshuttle) is running but connectivity failed"
+        echo "  → Check ~/.cal-proxy.log for errors"
+    else
+        echo "  → No proxy active"
+        echo "  → This may cause installations to fail"
+    fi
     echo ""
 fi
 
@@ -170,7 +81,7 @@ fi
 # Install Homebrew dependencies
 echo ""
 echo "📦 Installing/upgrading Homebrew packages..."
-for pkg in node gh tmux; do
+for pkg in node gh tmux sshuttle; do
     if brew_installed "$pkg"; then
         echo "  → Upgrading $pkg..."
         if brew upgrade "$pkg" 2>/dev/null; then
@@ -407,232 +318,185 @@ else
     echo "  ✗ tmux: not found"
 fi
 
-if command_exists gost; then
-    GOST_VERSION=$(gost --version 2>/dev/null | head -n1)
-    echo "  ✓ gost: $GOST_VERSION"
+if command_exists sshuttle; then
+    SSHUTTLE_VERSION=$(sshuttle --version 2>/dev/null | head -n1)
+    echo "  ✓ sshuttle: $SSHUTTLE_VERSION"
 else
-    echo "  ✗ gost: not found"
+    echo "  ✗ sshuttle: not found"
 fi
 
-# Configure SOCKS tunnel for reliable network access
-# (Only configure for future use - tunnel should already be running if needed)
+# Configure transparent proxy for reliable network access
+# (Only configure for future use - proxy should already be running if needed)
 if [ -n "$HOST_USER" ]; then
     echo ""
-    echo "🌐 Configuring SOCKS tunnel for network access..."
+    echo "🌐 Configuring transparent proxy (sshuttle)..."
 
-    # Save SOCKS configuration (but NOT the proxy environment variables yet)
-    # Proxy vars will only be set when SOCKS tunnel is actually running
-    cat > ~/.cal-socks-config <<EOF
-# CAL SOCKS Configuration
-export SOCKS_PORT="${SOCKS_PORT}"
-export HTTP_PROXY_PORT="${HTTP_PROXY_PORT}"
+    # Save proxy configuration
+    cat > ~/.cal-proxy-config <<EOF
+# CAL Transparent Proxy Configuration
 export HOST_GATEWAY="${HOST_GATEWAY}"
 export HOST_USER="${HOST_USER}"
-export SOCKS_MODE="${SOCKS_MODE}"
-# Proxy environment variables are set dynamically when SOCKS tunnel starts
-# export ALL_PROXY="socks5://localhost:${SOCKS_PORT}"
-# export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT}"
-# export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT}"
+export PROXY_MODE="${PROXY_MODE}"
 EOF
-    echo "  ✓ SOCKS configuration saved to ~/.cal-socks-config"
+    echo "  ✓ Proxy configuration saved to ~/.cal-proxy-config"
 
-    # Add SOCKS tunnel functions to .zshrc if not present
-    if ! grep -q '# CAL SOCKS Tunnel Functions' ~/.zshrc; then
+    # Add transparent proxy functions to .zshrc if not present
+    if ! grep -q '# CAL Transparent Proxy Functions' ~/.zshrc; then
         cat >> ~/.zshrc <<'EOF'
 
-# CAL SOCKS Tunnel Functions
+# CAL Transparent Proxy Functions
 # Auto-loaded from vm-setup.sh
+# Uses sshuttle for truly transparent network routing - no app config needed
 
-# Load SOCKS configuration
-if [ -f ~/.cal-socks-config ]; then
-    source ~/.cal-socks-config
+# Load proxy configuration
+if [ -f ~/.cal-proxy-config ]; then
+    source ~/.cal-proxy-config
 fi
 
-# Set proxy environment variables (only when SOCKS is running)
-set_proxy_vars() {
-    export ALL_PROXY="socks5://localhost:${SOCKS_PORT}"
-    export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT}"
-    export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT}"
-}
-
-# Unset proxy environment variables
-unset_proxy_vars() {
-    unset ALL_PROXY HTTP_PROXY HTTPS_PROXY
-}
-
-# Start SOCKS tunnel (VM→Host for network access)
-start_socks() {
-    # Check if tunnel is already running
-    if nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
-        echo "SOCKS tunnel already running on port ${SOCKS_PORT}"
-        set_proxy_vars  # Ensure proxy vars are set
+# Start transparent proxy (sshuttle)
+proxy-start() {
+    # Check if already running
+    if pgrep -f sshuttle >/dev/null 2>&1; then
+        echo "Transparent proxy already running"
         return 0
     fi
 
-    echo "Starting SOCKS tunnel (VM→Host on port ${SOCKS_PORT})..."
-    ssh -D ${SOCKS_PORT} -f -N \
-        -o StrictHostKeyChecking=yes \
-        -o ServerAliveInterval=60 \
-        -o ServerAliveCountMax=3 \
-        -o ExitOnForwardFailure=yes \
-        ${HOST_USER}@${HOST_GATEWAY} 2>>~/.cal-socks.log
+    echo "Starting transparent proxy (sshuttle)..."
+    
+    # Check if sshuttle is installed
+    if ! command -v sshuttle >/dev/null 2>&1; then
+        echo "⚠ sshuttle not installed"
+        echo "  Install with: brew install sshuttle"
+        return 1
+    fi
 
-    # Wait for tunnel
+    # Start sshuttle in background
+    # Routes all traffic through host, handles DNS, excludes local network
+    nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.cal-proxy.log 2>&1 &
+    local sshuttle_pid=$!
+    echo "$sshuttle_pid" > ~/.cal-proxy.pid
+    disown 2>/dev/null || true
+
+    # Wait for sshuttle to start
     local count=0
-    while [ $count -lt 5 ]; do
-        if nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
-            echo "✓ SOCKS tunnel started"
-            set_proxy_vars  # Set proxy vars now that tunnel is running
-            # Also start HTTP bridge
-            start_http_proxy
-            return 0
-        fi
+    while [ $count -lt 10 ]; do
         sleep 1
         count=$((count + 1))
+        if pgrep -f sshuttle >/dev/null 2>&1; then
+            echo "✓ Transparent proxy started"
+            return 0
+        fi
     done
 
-    echo "⚠ SOCKS tunnel failed to start (check ~/.cal-socks.log)"
+    echo "⚠ Transparent proxy may not have started (check ~/.cal-proxy.log)"
     return 1
 }
 
-# Stop SOCKS tunnel
-stop_socks() {
-    local pid=$(lsof -ti :${SOCKS_PORT} 2>/dev/null)
-    if [ -n "$pid" ]; then
-        echo "Stopping SOCKS tunnel (PID: $pid)..."
-        kill "$pid" 2>/dev/null
-        echo "✓ SOCKS tunnel stopped"
-        unset_proxy_vars  # Unset proxy vars since tunnel is stopped
-    else
-        echo "SOCKS tunnel not running"
+# Stop transparent proxy
+proxy-stop() {
+    # Try PID file first
+    if [ -f ~/.cal-proxy.pid ]; then
+        local pid=$(cat ~/.cal-proxy.pid)
+        if kill "$pid" 2>/dev/null; then
+            rm ~/.cal-proxy.pid
+            echo "✓ Transparent proxy stopped"
+            return 0
+        fi
+        rm ~/.cal-proxy.pid 2>/dev/null
     fi
 
-    # Also stop HTTP bridge
-    stop_http_proxy
+    # Fallback: kill by process name
+    if pkill -f sshuttle 2>/dev/null; then
+        echo "✓ Transparent proxy stopped"
+    else
+        echo "Transparent proxy not running"
+    fi
 }
 
-# Restart SOCKS tunnel
-restart_socks() {
-    stop_socks
+# Restart transparent proxy
+proxy-restart() {
+    proxy-stop
     sleep 1
-    start_socks
+    proxy-start
 }
 
-# Check SOCKS tunnel status
-socks_status() {
-    echo "SOCKS Tunnel Status:"
-    echo "  Mode: ${SOCKS_MODE}"
-    echo "  SOCKS port: ${SOCKS_PORT}"
-    echo "  HTTP proxy port: ${HTTP_PROXY_PORT}"
+# Check transparent proxy status
+proxy-status() {
+    echo "Transparent Proxy Status:"
+    echo "  Mode: ${PROXY_MODE:-auto}"
     echo "  Host: ${HOST_USER}@${HOST_GATEWAY}"
     echo ""
 
-    if nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
-        local pid=$(lsof -ti :${SOCKS_PORT} 2>/dev/null)
+    if pgrep -f sshuttle >/dev/null 2>&1; then
+        local pid=$(pgrep -f sshuttle | head -1)
         echo "  Status: ✓ Running (PID: $pid)"
 
         # Test connectivity
-        if curl -s --connect-timeout 5 --socks5-hostname localhost:${SOCKS_PORT} -I https://www.google.com 2>&1 | grep -q '200'; then
+        if curl -s --connect-timeout 5 -I https://www.google.com 2>&1 | grep -q 'HTTP'; then
             echo "  Connectivity: ✓ Working"
         else
             echo "  Connectivity: ⚠ Not working"
         fi
-        
-        # Show current proxy vars
-        if [ -n "$HTTP_PROXY" ]; then
-            echo "  Proxy vars: ✓ Set"
-        else
-            echo "  Proxy vars: ⚠ Not set (run: source ~/.zshrc)"
-        fi
     else
         echo "  Status: ✗ Not running"
-    fi
-
-    echo ""
-    if nc -z localhost ${HTTP_PROXY_PORT} 2>/dev/null; then
-        local http_pid=$(lsof -ti :${HTTP_PROXY_PORT} 2>/dev/null)
-        echo "  HTTP Bridge: ✓ Running (PID: $http_pid)"
-    else
-        echo "  HTTP Bridge: ✗ Not running"
-    fi
-}
-
-# Start HTTP-to-SOCKS bridge (for Node.js tools like opencode)
-start_http_proxy() {
-    # Check if bridge is already running
-    if nc -z localhost ${HTTP_PROXY_PORT} 2>/dev/null; then
-        return 0
-    fi
-
-    # Check if gost is installed
-    if ! command -v gost >/dev/null 2>&1; then
-        return 1
-    fi
-
-    # Start gost bridge (silent, with PID tracking for cleaner management)
-    nohup gost -L "http://:${HTTP_PROXY_PORT}" -F "socks5://localhost:${SOCKS_PORT}" >>~/.cal-http-proxy.log 2>&1 &
-    local gost_pid=$!
-    echo "$gost_pid" > ~/.cal-http-proxy.pid
-    disown
-    sleep 1
-}
-
-# Stop HTTP-to-SOCKS bridge
-stop_http_proxy() {
-    # Try PID file first (cleaner), fall back to port-based detection
-    if [ -f ~/.cal-http-proxy.pid ]; then
-        local pid=$(cat ~/.cal-http-proxy.pid)
-        if kill "$pid" 2>/dev/null; then
-            rm ~/.cal-http-proxy.pid
-            return 0
+        
+        # Test direct connectivity
+        if curl -s --connect-timeout 5 -I https://www.google.com 2>&1 | grep -q 'HTTP'; then
+            echo "  Direct network: ✓ Working (proxy not needed)"
+        else
+            echo "  Direct network: ✗ Not working"
+            echo "  → Run: proxy-start"
         fi
-        # PID file stale, remove it
-        rm ~/.cal-http-proxy.pid
-    fi
-
-    # Fallback: find by port (handles cases where PID file is missing)
-    local pid=$(lsof -ti :${HTTP_PROXY_PORT} 2>/dev/null)
-    if [ -n "$pid" ]; then
-        kill "$pid" 2>/dev/null
     fi
 }
 
-# Auto-start SOCKS tunnel on shell initialization (if mode=on or mode=auto with failed connectivity test)
+# View proxy logs
+proxy-log() {
+    if [ -f ~/.cal-proxy.log ]; then
+        tail -50 ~/.cal-proxy.log
+    else
+        echo "No proxy log file found"
+    fi
+}
+
+# Auto-start proxy on shell initialization (if mode=on or mode=auto with failed connectivity)
 # NOTE: Errors are intentionally suppressed during auto-start to avoid spamming shell startup
-# If SOCKS fails to start automatically, users can manually run:
-#   start_socks        - to see error messages
-#   socks_status       - to check current state
-#   ~/.cal-socks.log   - to view error logs
-if [ "$SOCKS_MODE" = "on" ] || [ "$SOCKS_MODE" = "auto" ]; then
+if [ "$PROXY_MODE" = "on" ] || [ "$PROXY_MODE" = "auto" ]; then
     # Don't spam output - check silently
-    if ! nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
-        # SOCKS not running - should we start it?
-        if [ "$SOCKS_MODE" = "on" ]; then
-            start_socks >/dev/null 2>&1  # Silent: errors logged to ~/.cal-socks.log
-        elif [ "$SOCKS_MODE" = "auto" ]; then
+    if ! pgrep -f sshuttle >/dev/null 2>&1; then
+        # Proxy not running - should we start it?
+        if [ "$PROXY_MODE" = "on" ]; then
+            proxy-start >/dev/null 2>&1
+        elif [ "$PROXY_MODE" = "auto" ]; then
             # Test if we can reach github.com directly (quietly)
             if ! curl -s --connect-timeout 5 -I https://github.com 2>&1 | grep -q 'HTTP'; then
-                # Network restricted - start SOCKS
-                start_socks >/dev/null 2>&1  # Silent: errors logged to ~/.cal-socks.log
+                # Network restricted - start proxy
+                proxy-start >/dev/null 2>&1
             fi
         fi
-    else
-        # Tunnel is running, make sure proxy vars are set
-        set_proxy_vars
     fi
 fi
 EOF
-        echo "  ✓ SOCKS tunnel functions added to ~/.zshrc"
+        echo "  ✓ Transparent proxy functions added to ~/.zshrc"
     else
-        echo "  ✓ SOCKS tunnel functions already in ~/.zshrc"
+        echo "  ✓ Transparent proxy functions already in ~/.zshrc"
     fi
 
     # Source the configuration
     if source ~/.zshrc 2>/dev/null; then
-        echo "  ✓ Shell configuration reloaded with SOCKS support"
+        echo "  ✓ Shell configuration reloaded with proxy support"
     else
         echo "  ⚠ Could not reload shell config (restart shell manually)"
     fi
+fi
+
+# Clean up bootstrap proxy settings (sshuttle is transparent, doesn't need git proxy)
+if [ "$USING_BOOTSTRAP_PROXY" = "true" ]; then
+    echo ""
+    echo "🧹 Cleaning up bootstrap proxy settings..."
+    git config --global --unset http.proxy 2>/dev/null || true
+    git config --global --unset https.proxy 2>/dev/null || true
+    echo "  ✓ Git proxy settings removed (sshuttle is transparent)"
 fi
 
 echo ""
@@ -642,16 +506,13 @@ echo "📋 Next steps:"
 echo "  1. Reload shell configuration: source ~/.zshrc"
 echo "  2. Authenticate with GitHub: gh auth login"
 echo "  3. Authenticate agents: claude, opencode auth login, agent"
-if [ "$SOCKS_TUNNEL_AVAILABLE" = "true" ]; then
-    echo "  4. Check SOCKS tunnel: socks_status"
-fi
 echo ""
 echo "💡 Notes:"
 echo "  • Auto-login is enabled - VM will boot to desktop for Screen Sharing"
 echo "  • Login keychain is unlocked - enables agent authentication via SSH"
-if [ "$SOCKS_TUNNEL_AVAILABLE" = "true" ]; then
-    echo "  • SOCKS tunnel configured - provides reliable network access"
-    echo "  • SOCKS commands: start_socks, stop_socks, restart_socks, socks_status"
+if [ -n "$HOST_USER" ]; then
+    echo "  • Transparent proxy configured (sshuttle) - no app config needed"
+    echo "  • Proxy commands: proxy-start, proxy-stop, proxy-status, proxy-log"
 fi
 echo "  • Helper scripts available in ~/scripts/:"
 echo "    - vm-setup.sh: Re-run this setup script"
