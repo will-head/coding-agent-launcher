@@ -17,7 +17,28 @@ if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
     echo "🌐 Network: Using SOCKS proxy"
     echo "   HTTP_PROXY=$HTTP_PROXY"
     echo "   HTTPS_PROXY=$HTTPS_PROXY"
+    echo "   ALL_PROXY=$ALL_PROXY"
     echo ""
+    
+    # Export lowercase versions too (some tools need lowercase)
+    export http_proxy="$HTTP_PROXY"
+    export https_proxy="$HTTPS_PROXY"
+    export all_proxy="$ALL_PROXY"
+    
+    # Also set NO_PROXY to avoid proxying localhost/internal addresses
+    export NO_PROXY="localhost,127.0.0.1,::1,192.168.64.0/24"
+    export no_proxy="$NO_PROXY"
+    
+    # Test if proxy is actually working
+    echo "  Testing proxy connectivity..."
+    if curl -s --connect-timeout 5 -I https://github.com 2>&1 | head -1 | grep -q "HTTP"; then
+        echo "  ✓ Proxy is working (github.com reachable)"
+        echo ""
+    else
+        echo "  ⚠ Proxy test failed - installations may not work"
+        echo "    Check: nc -z localhost ${SOCKS_PORT:-1080}"
+        echo ""
+    fi
 else
     echo "🌐 Network: Direct connection"
     echo ""
@@ -42,10 +63,15 @@ command_exists() {
 
 # Update homebrew
 echo "📦 Updating Homebrew..."
-if brew update &>/dev/null; then
+brew_output=$(brew update 2>&1)
+brew_exit=$?
+if [ $brew_exit -eq 0 ]; then
     echo "  ✓ Homebrew updated"
 else
-    echo "  ⚠ Homebrew update skipped (may already be running)"
+    echo "  ⚠ Homebrew update failed (exit code: $brew_exit)"
+    echo "  Error output:"
+    echo "$brew_output" | grep -i "error\|fatal\|failed" | head -5 | sed 's/^/    /'
+    echo "  → Continuing anyway, but package installs may fail"
 fi
 
 # Install Homebrew dependencies

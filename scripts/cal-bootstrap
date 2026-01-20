@@ -324,8 +324,10 @@ run_vm_setup() {
     local env_vars="HOST_USER='${HOST_USER}' SOCKS_MODE='${SOCKS_MODE}' SOCKS_PORT='${SOCKS_PORT}' HTTP_PROXY_PORT='${HTTP_PROXY_PORT}' HOST_GATEWAY='${HOST_GATEWAY}'"
     
     # If SOCKS tunnel is running, also export proxy variables so tools can use them
+    # During init, gost (HTTP bridge) isn't installed yet, so use SOCKS5 directly
+    # Most modern tools (curl, git, npm, brew) support socks5:// in HTTP_PROXY
     if [ "$use_proxy" = "true" ]; then
-        env_vars="${env_vars} ALL_PROXY='socks5://localhost:${SOCKS_PORT}' HTTP_PROXY='http://localhost:${HTTP_PROXY_PORT}' HTTPS_PROXY='http://localhost:${HTTP_PROXY_PORT}'"
+        env_vars="${env_vars} ALL_PROXY='socks5://localhost:${SOCKS_PORT}' HTTP_PROXY='socks5://localhost:${SOCKS_PORT}' HTTPS_PROXY='socks5://localhost:${SOCKS_PORT}'"
     fi
     
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
