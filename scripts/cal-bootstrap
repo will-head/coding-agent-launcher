@@ -443,6 +443,74 @@ unlock_keychain() {
 # to reduce duplication of: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 # However, this would trade off code clarity for DRYness - evaluate trade-offs
 
+# Check VM for uncommitted or unpushed git changes
+# Always returns 0 (success) unless critical failure
+# Outputs warnings to stdout, sets global variables:
+#   - has_uncommitted, has_unpushed (true/false)
+#   - uncommitted_check, unpushed_check (repo paths with changes)
+check_vm_git_changes() {
+    local vm_name="$1"
+    local vm_ip="$2"
+
+    has_uncommitted=false
+    has_unpushed=false
+    uncommitted_check=""
+    unpushed_check=""
+
+    if [ -z "$vm_ip" ]; then
+        echo "  ⚠ No VM IP provided for git check"
+        return 0  # Non-fatal, allow script to continue
+    fi
+
+    echo "Checking for git changes in $vm_name..."
+
+    # Check for uncommitted changes (search common dev directories + home with depth limit)
+    uncommitted_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d 2>/dev/null; find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null | sort -u); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); done' 2>/dev/null || echo "")
+
+    if [ -n "$uncommitted_check" ]; then
+        has_uncommitted=true
+    fi
+
+    # Check for unpushed commits (requires upstream tracking to be set)
+    unpushed_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d 2>/dev/null; find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null | sort -u); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); done' 2>/dev/null || echo "")
+
+    if [ -n "$unpushed_check" ]; then
+        has_unpushed=true
+    fi
+
+    # Show warnings
+    if [ "$has_uncommitted" = true ] || [ "$has_unpushed" = true ]; then
+        echo ""
+        echo "⚠️  WARNING: Found git changes that will be lost!"
+        echo ""
+
+        if [ "$has_uncommitted" = true ]; then
+            echo "Uncommitted changes in:"
+            echo "$uncommitted_check" | while read -r repo; do
+                [ -n "$repo" ] && echo "  - $repo"
+            done
+            echo ""
+        fi
+
+        if [ "$has_unpushed" = true ]; then
+            echo "Unpushed commits in:"
+            echo "$unpushed_check" | while read -r repo; do
+                [ -n "$repo" ] && echo "  - $repo"
+            done
+            echo ""
+        fi
+
+        echo "These changes will be lost if you continue."
+    else
+        echo "  ✓ No uncommitted or unpushed changes found"
+    fi
+
+    # Always return 0 for set -e compatibility
+    return 0
+}
+
 # Test if VM can reach github.com (for auto mode)
 test_vm_connectivity() {
     local vm_ip="$1"
@@ -749,7 +817,102 @@ do_init() {
     echo "CAL Bootstrap - Initialize"
     echo "==========================="
     echo ""
-    
+
+    # Check upfront if we'll be deleting existing VMs
+    local dev_exists=false
+    local init_exists=false
+
+    if vm_exists "$VM_DEV"; then
+        dev_exists=true
+    fi
+
+    if vm_exists "$VM_INIT"; then
+        init_exists=true
+    fi
+
+    # If either exists, warn and check git before proceeding
+    if [ "$dev_exists" = true ] || [ "$init_exists" = true ]; then
+        echo "⚠️  WARNING: Existing VMs will be deleted!"
+        echo ""
+
+        if [ "$dev_exists" = true ] && [ "$init_exists" = true ]; then
+            echo "Initializing will DELETE both $VM_DEV and $VM_INIT."
+        elif [ "$dev_exists" = true ]; then
+            echo "Initializing will DELETE $VM_DEV."
+        else
+            echo "Initializing will DELETE $VM_INIT."
+        fi
+
+        echo "All data and changes will be permanently lost."
+        echo ""
+
+        # Check for git changes in cal-dev if it exists
+        if [ "$dev_exists" = true ]; then
+            local we_started_vm=false
+            local vm_ip=""
+
+            # Start VM if not running to check for changes
+            if ! vm_running "$VM_DEV"; then
+                echo "Starting $VM_DEV to check for uncommitted changes..."
+                if start_vm_background "$VM_DEV"; then
+                    we_started_vm=true
+                    vm_ip="$VM_IP"
+                else
+                    echo "  ⚠ Could not start VM to check for git changes"
+                    echo "  Proceeding without git check..."
+                fi
+            else
+                vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
+            fi
+
+            # Check for git changes if VM is running
+            if [ -n "$vm_ip" ]; then
+                check_vm_git_changes "$VM_DEV" "$vm_ip"
+            fi
+
+            # Stop VM if we started it just for the git check
+            if [ "$we_started_vm" = true ]; then
+                echo ""
+                echo "Stopping $VM_DEV..."
+                stop_vm "$VM_DEV"
+                CLEANUP_VM=false
+            fi
+        fi
+
+        # Get confirmation for the entire operation
+        if [ "$SKIP_CONFIRM" = false ]; then
+            echo ""
+            if [ "$dev_exists" = true ] && [ "$init_exists" = true ]; then
+                echo "Delete $VM_DEV and $VM_INIT, then re-initialize? (y/N)"
+            elif [ "$dev_exists" = true ]; then
+                echo "Delete $VM_DEV and re-initialize? (y/N)"
+            else
+                echo "Delete $VM_INIT and re-initialize? (y/N)"
+            fi
+            read -r -k 1 reply
+            echo ""
+            if [[ ! $reply =~ ^[Yy]$ ]]; then
+                echo "Aborted initialization"
+                exit 1
+            fi
+        fi
+
+        # Delete existing VMs
+        if [ "$dev_exists" = true ]; then
+            stop_vm "$VM_DEV"
+            echo "  Deleting $VM_DEV..."
+            "$TART" delete "$VM_DEV"
+        fi
+
+        if [ "$init_exists" = true ]; then
+            stop_vm "$VM_INIT"
+            echo "  Deleting $VM_INIT..."
+            "$TART" delete "$VM_INIT"
+        fi
+
+        echo ""
+    fi
+
     # Step 1: Create cal-clean from base image
     echo "Step 1: Create $VM_CLEAN"
     if vm_exists "$VM_CLEAN"; then
@@ -762,17 +925,13 @@ do_init() {
         "$TART" set "$VM_CLEAN" --cpu 4 --memory 8192 --disk-size 80
         echo "  $VM_CLEAN created"
     fi
-    
+
     # Step 2: Create cal-dev from cal-clean
     echo ""
     echo "Step 2: Create $VM_DEV"
-    if vm_exists "$VM_DEV"; then
-        echo "  $VM_DEV already exists, skipping"
-    else
-        echo "  Cloning from $VM_CLEAN..."
-        "$TART" clone "$VM_CLEAN" "$VM_DEV"
-        echo "  $VM_DEV created"
-    fi
+    echo "  Cloning from $VM_CLEAN..."
+    "$TART" clone "$VM_CLEAN" "$VM_DEV"
+    echo "  $VM_DEV created"
     
     # Step 3: Start cal-dev and setup
     echo ""
@@ -858,33 +1017,15 @@ do_init() {
     # Step 9: Create cal-init
     echo ""
     echo "Step 9: Create $VM_INIT snapshot"
-    
+
     # Stop VM first
     CLEANUP_VM=false
     echo "  Stopping $VM_DEV..."
     "$TART" stop "$VM_DEV" 2>/dev/null || true
     kill "$TART_PID" 2>/dev/null || true
     sleep 2
-    
-    # Delete existing if present
-    if vm_exists "$VM_INIT"; then
-        if [ "$SKIP_CONFIRM" = true ]; then
-            "$TART" delete "$VM_INIT"
-        else
-            echo "  $VM_INIT already exists. Replace it? (y/N)"
-            read -r -k 1 reply
-            echo ""
-            if [[ $reply =~ ^[Yy]$ ]]; then
-                "$TART" delete "$VM_INIT"
-            else
-                echo "  Keeping existing $VM_INIT"
-                echo ""
-                echo "Bootstrap complete!"
-                return 0
-            fi
-        fi
-    fi
-    
+
+    # Create cal-init (already deleted upfront if it existed)
     echo "  Creating $VM_INIT from $VM_DEV..."
     "$TART" clone "$VM_DEV" "$VM_INIT"
     echo "  $VM_INIT created"
@@ -1163,73 +1304,26 @@ do_snapshot() {
             fi
 
             # Always check for git changes - boot VM if needed
-            local has_uncommitted=false
-            local has_unpushed=false
-            local uncommitted_check=""
-            local unpushed_check=""
             local we_started_vm=false
+            local vm_ip=""
 
             # Start VM if not running
             if ! vm_running "$VM_DEV"; then
                 echo "Starting $VM_DEV to check for uncommitted changes..."
                 if start_vm_background "$VM_DEV"; then
                     we_started_vm=true
+                    vm_ip="$VM_IP"
                 else
                     echo "  ⚠ Could not start VM to check for git changes"
                     echo "  Proceeding without git check..."
                 fi
+            else
+                vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
             fi
 
             # Check for git changes if VM is running
-            if vm_running "$VM_DEV"; then
-                echo "Checking for git changes in $VM_DEV..."
-                local vm_ip
-                vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
-
-                if [ -n "$vm_ip" ]; then
-                    # Check for uncommitted changes (search common dev directories + home with depth limit)
-                    uncommitted_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d 2>/dev/null; find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null) | sort -u; do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); done' 2>/dev/null || echo "")
-
-                    if [ -n "$uncommitted_check" ]; then
-                        has_uncommitted=true
-                    fi
-
-                    # Check for unpushed commits (requires upstream tracking to be set)
-                    unpushed_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d 2>/dev/null; find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null) | sort -u; do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); done' 2>/dev/null || echo "")
-
-                    if [ -n "$unpushed_check" ]; then
-                        has_unpushed=true
-                    fi
-
-                    # Show warnings
-                    if [ "$has_uncommitted" = true ] || [ "$has_unpushed" = true ]; then
-                        echo ""
-                        echo "⚠️  WARNING: Found git changes that will be lost!"
-                        echo ""
-
-                        if [ "$has_uncommitted" = true ]; then
-                            echo "Uncommitted changes in:"
-                            echo "$uncommitted_check" | while read -r repo; do
-                                [ -n "$repo" ] && echo "  - $repo"
-                            done
-                            echo ""
-                        fi
-
-                        if [ "$has_unpushed" = true ]; then
-                            echo "Unpushed commits in:"
-                            echo "$unpushed_check" | while read -r repo; do
-                                [ -n "$repo" ] && echo "  - $repo"
-                            done
-                            echo ""
-                        fi
-
-                        echo "These changes will be lost if you restore from snapshot."
-                    else
-                        echo "  ✓ No uncommitted or unpushed changes found"
-                    fi
-                fi
+            if [ -n "$vm_ip" ]; then
+                check_vm_git_changes "$VM_DEV" "$vm_ip"
             fi
 
             # Stop VM if we started it just for the git check
@@ -1386,7 +1480,41 @@ do_snapshot() {
             
             # Stop if running
             stop_vm "$vm_to_delete"
-            
+
+            # Check for git changes before deleting (skip only for cal-clean base image)
+            if [ "$vm_to_delete" != "$VM_CLEAN" ]; then
+                local we_started_vm=false
+                local vm_ip=""
+
+                # Start VM if not running to check for changes
+                if ! vm_running "$vm_to_delete"; then
+                    echo "Starting $vm_to_delete to check for uncommitted changes..."
+                    if start_vm_background "$vm_to_delete"; then
+                        we_started_vm=true
+                        vm_ip="$VM_IP"
+                    else
+                        echo "  ⚠ Could not start VM to check for git changes"
+                        echo "  Proceeding without git check..."
+                    fi
+                else
+                    vm_ip=$("$TART" ip "$vm_to_delete" 2>/dev/null || echo "")
+                fi
+
+                # Check for git changes if VM is running
+                if [ -n "$vm_ip" ]; then
+                    check_vm_git_changes "$vm_to_delete" "$vm_ip"
+                    echo ""
+                fi
+
+                # Stop VM if we started it just for the git check
+                if [ "$we_started_vm" = true ]; then
+                    echo "Stopping $vm_to_delete..."
+                    stop_vm "$vm_to_delete"
+                    CLEANUP_VM=false
+                    echo ""
+                fi
+            fi
+
             # Confirm (with extra warning for system VMs)
             if [ "$SKIP_CONFIRM" = false ]; then
                 if [ "$vm_to_delete" = "$VM_DEV" ]; then

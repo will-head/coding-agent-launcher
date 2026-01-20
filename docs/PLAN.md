@@ -77,15 +77,20 @@
        - Note: Cursor CLI issues tracked separately (see Phase 0.8 line 39)
        - Note: Claude Code authentication working correctly - do not modify
      - [x] Renamed cal-initialised to cal-init (shorter, clearer naming)
-     - [ ] Make `--init` safer: delete existing cal-dev and cal-init as first step
-       - Warn user before deletion
-       - Check for uncommitted/unpushed git changes
-       - Provide abort option with no changes made
-       - Only proceed after user confirmation
+     - [x] Make `--init` safer: delete existing cal-dev and cal-init as first step
+       - [x] Warn user before deletion
+       - [x] Check for uncommitted/unpushed git changes
+       - [x] Provide abort option with no changes made
+       - [x] Only proceed after user confirmation
+       - [x] Check both cal-dev and cal-init upfront (not at Step 9)
+       - [x] Single confirmation for entire init operation
      - [x] Create code directory in user home during --init
-     - [ ] Add git change checks to all destructive operations (delete VM, restore snapshot, etc)
-       - Currently only implemented for --snapshot restore
-       - Should also check for: --snapshot delete, manual VM deletion warnings
+     - [x] Add git change checks to all destructive operations (delete VM, restore snapshot, etc)
+       - [x] Implemented for --snapshot restore (refactored to use reusable function)
+       - [x] Implemented for --snapshot delete (checks all VMs except cal-clean)
+       - [x] Implemented for --init (checks cal-dev before deleting both VMs)
+       - [x] Created reusable check_vm_git_changes() function to reduce duplication
+       - Note: Checks skip cal-clean (base image with no expected work)
      - [ ] Install all packages required for full Go development in cal-dev during --init (follow best practice)
        - Research and install in vm-setup.sh: golangci-lint (linters runner), goimports, delve (debugger), mockgen (test mocking), air (hot reload)
        - Note: Core Go tools already included (go fmt, go vet, go test, go mod)

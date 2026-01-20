@@ -58,6 +58,43 @@ The `cal-bootstrap` script automates VM setup and management.
 ./scripts/cal-bootstrap -y -S restore cal-init
 ```
 
+### Git Safety Features
+
+CAL automatically checks for uncommitted changes and unpushed commits before destructive operations to prevent data loss.
+
+**Protected operations:**
+- `--init` - Checks cal-dev before deleting and recreating
+- `--snapshot restore` - Checks cal-dev before replacing with snapshot
+- `--snapshot delete` - Checks VM being deleted (except cal-clean base image)
+
+**What is checked:**
+- **Uncommitted changes** - Modified files not yet committed
+- **Unpushed commits** - Commits not yet pushed to remote (requires upstream tracking)
+
+**Search locations:**
+- `~/workspace`, `~/projects`, `~/repos`, `~/code` (recursive)
+- `~` (home directory, depth 2 only)
+
+**Example warning:**
+```
+⚠️  WARNING: Found git changes that will be lost!
+
+Uncommitted changes in:
+  - /Users/admin/code/my-project
+
+These changes will be lost if you continue.
+
+Continue? (y/N)
+```
+
+**Behavior:**
+- VM is automatically started if needed for the check
+- VM is stopped again after check if it wasn't running before
+- You can abort the operation (type `n`) to preserve your work
+- Git warnings are shown even with `--yes` flag (only confirmation is skipped)
+
+**Note:** Unpushed commit detection requires proper upstream tracking (`git branch -u origin/main`). Repos cloned from GitHub automatically have this set up.
+
 ### Transparent Proxy (Optional)
 
 For corporate environments with restrictive network proxies, CAL supports transparent proxying via sshuttle to enable reliable VM network access.
