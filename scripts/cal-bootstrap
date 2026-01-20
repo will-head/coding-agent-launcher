@@ -641,15 +641,17 @@ start_socks_tunnel() {
     echo "  Starting SOCKS tunnel (VM→Host on port ${SOCKS_PORT})..."
 
     # Start the SSH SOCKS tunnel in background
-    # Uses StrictHostKeyChecking=yes since we pre-populated known_hosts
+    # Use StrictHostKeyChecking=no for reliability (minimal security risk on localhost network)
+    # The tunnel command runs inside the VM and connects back to the host
     local tunnel_result
     tunnel_result=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "ssh -D ${SOCKS_PORT} -f -N -o StrictHostKeyChecking=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes ${HOST_USER}@${HOST_GATEWAY} 2>&1" 2>> "$CAL_LOG")
+        "${VM_USER}@${vm_ip}" "ssh -D ${SOCKS_PORT} -f -N -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes ${HOST_USER}@${HOST_GATEWAY} >/dev/null 2>&1" 2>> "$CAL_LOG")
 
     local ssh_exit=$?
     if [ $ssh_exit -ne 0 ]; then
-        echo "  ⚠ SSH tunnel command failed"
+        echo "  ⚠ SSH tunnel command failed (exit code: $ssh_exit)"
         echo "[$(date)] Tunnel SSH failed (exit $ssh_exit): $tunnel_result" >> "$CAL_LOG"
+        echo "  Tunnel output: $tunnel_result"
     fi
 
     # Wait for tunnel to be ready (max 10s - SSH tunnel typically ready in 1-2s)
@@ -798,6 +800,29 @@ do_init() {
     # Step 7: Run vm-setup from ~/scripts (with proxy if SOCKS is enabled)
     echo ""
     echo "Step 7: Install tools"
+    
+    # If SOCKS was enabled, verify tunnel is still running before vm-setup
+    if [ "$socks_enabled" = "true" ]; then
+        echo "  Verifying SOCKS tunnel is still active..."
+        local tunnel_check
+        tunnel_check=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${VM_IP}" "nc -z localhost ${SOCKS_PORT} 2>/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+        
+        if [ "$tunnel_check" = "yes" ]; then
+            echo "  ✓ SOCKS tunnel confirmed active"
+        else
+            echo "  ⚠ SOCKS tunnel died! Attempting to restart..."
+            if start_socks_tunnel "$VM_IP"; then
+                echo "  ✓ SOCKS tunnel restarted"
+                socks_enabled=true
+            else
+                echo "  ✗ Could not restart SOCKS tunnel"
+                echo "  → Continuing without proxy (installations may fail)"
+                socks_enabled=false
+            fi
+        fi
+    fi
+    
     run_vm_setup "$VM_IP" "$socks_enabled"
 
     # Step 8: Prompt user for manual setup
