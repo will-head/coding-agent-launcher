@@ -79,42 +79,36 @@ if [ "$USING_SOCKS_PROXY" = "true" ]; then
     # Homebrew is slow with SOCKS5, so we need the HTTP bridge running
     echo "📦 Installing gost (HTTP-to-SOCKS bridge) first..."
     echo "   (Required for Homebrew to work properly with SOCKS proxy)"
-    echo "   (This may take 30-60 seconds with SOCKS5...)"
+    echo "   ⚠️  This may take 5-10 minutes with SOCKS5 - please be patient!"
+    echo ""
     
-    # Install gost using Homebrew with ALL_PROXY
+    # TODO: Investigate why gost install is so slow/hangs with SOCKS5
+    # See SOCKS_ISSUES.md for details and attempted solutions
+    
+    # Install gost using Homebrew with ALL_PROXY (no timeout - let it complete)
     if ! command_exists gost; then
-        echo "  → Installing gost via Homebrew (please wait)..."
+        echo "  → Installing gost via Homebrew..."
+        echo "     (Downloading through SOCKS5 proxy - this is slow but works)"
         
-        # Set a reasonable timeout and show progress
-        # Use timeout command to prevent hanging forever
-        brew_output=$(timeout 120 env ALL_PROXY="$ALL_PROXY" brew install gost 2>&1 || echo "TIMEOUT")
-        brew_exit=$?
-        
-        if echo "$brew_output" | grep -q "TIMEOUT"; then
-            echo "  ✗ gost install timed out after 2 minutes"
-            echo "  ⚠ Continuing without HTTP bridge (Homebrew will be very slow)"
-        elif [ $brew_exit -eq 0 ]; then
+        # Simple approach - just run it and wait
+        # User can Ctrl+C if they want to abort
+        if env ALL_PROXY="$ALL_PROXY" brew install gost 2>&1 | grep -E "Downloaded|Pouring|Installed|Error|Failed" | sed 's/^/     /'; then
+            # Check if gost is now available
+            hash -r 2>/dev/null || true  # Rehash PATH
             if command_exists gost; then
                 echo "  ✓ gost installed successfully"
             else
                 echo "  ⚠ gost install completed but command not found"
-                # Try rehashing PATH
-                hash -r 2>/dev/null || true
-                if command_exists gost; then
-                    echo "  ✓ gost found after rehash"
-                else
-                    echo "  ✗ gost still not found"
-                fi
+                echo "     Continuing without HTTP bridge"
             fi
         else
-            echo "  ✗ gost install failed (exit code: $brew_exit)"
-            echo "  Error output:"
-            echo "$brew_output" | grep -i "error\|fail" | head -3 | sed 's/^/    /'
-            echo "  ⚠ Continuing without HTTP bridge (Homebrew will be very slow)"
+            echo "  ✗ gost install failed"
+            echo "     Continuing without HTTP bridge"
         fi
     else
         echo "  ✓ gost already installed"
     fi
+    echo ""
     
     # Start HTTP-to-SOCKS bridge NOW (before other installations)
     if command_exists gost; then
