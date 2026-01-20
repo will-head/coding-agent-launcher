@@ -123,6 +123,10 @@
          - [x] Merge duplicate Command Execution Policy sections
          - [x] Review for inconsistencies (fixed Step numbering in documentation-only exception)
          - [x] Add TDD (Test-Driven Development) to 8-step workflow Step 1
+       - [x] Restructure docs for progressive disclosure and token optimization
+         - [x] Create docs/WORKFLOW.md for detailed git workflow procedures
+         - [x] Slim AGENTS.md to core rules only (445→76 lines, 86% reduction)
+         - [x] Move detailed procedures to WORKFLOW.md (read on-demand when committing)
 
 **Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. Transparent proxy (sshuttle) for reliable network access in corporate environments. Improved init workflow with better safety and automation.
 

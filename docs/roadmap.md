@@ -62,6 +62,7 @@ Automated Tart setup for immediate safe agent use.
    - [ ] Implement constant context state persistence for seamless recovery
  - [x] **Documentation Cleanup**
    - [x] Clean up AGENTS.md (fix refs, merge duplicates, add TDD to Step 1)
+   - [x] Restructure for progressive disclosure (AGENTS.md 86% smaller, WORKFLOW.md for details)
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.
