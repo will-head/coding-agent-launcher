@@ -4,6 +4,11 @@
 eval "$(/opt/homebrew/bin/brew shellenv)"
 export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/go/bin:/opt/homebrew/bin:$PATH"
 
+# Load proxy configuration if available
+if [ -f ~/.cal-proxy-config ]; then
+    source ~/.cal-proxy-config
+fi
+
 clear
 echo ""
 echo "============================================"
@@ -25,6 +30,36 @@ test_network() {
     fi
 }
 
+# Function to start proxy (standalone, doesn't require .zshrc functions)
+start_proxy_standalone() {
+    if [ -z "$HOST_USER" ] || [ -z "$HOST_GATEWAY" ]; then
+        echo "  ⚠ Proxy not configured (missing HOST_USER or HOST_GATEWAY)"
+        return 1
+    fi
+
+    if ! command -v sshuttle >/dev/null 2>&1; then
+        echo "  ⚠ sshuttle not installed"
+        return 1
+    fi
+
+    echo "  Starting transparent proxy (sshuttle)..."
+    nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.cal-proxy.log 2>&1 &
+    
+    # Wait for it to start
+    local count=0
+    while [ $count -lt 10 ]; do
+        sleep 1
+        count=$((count + 1))
+        if pgrep -f sshuttle >/dev/null 2>&1; then
+            echo "  ✓ Proxy started"
+            return 0
+        fi
+    done
+
+    echo "  ⚠ Proxy failed to start (check ~/.cal-proxy.log)"
+    return 1
+}
+
 if test_network; then
     echo "  ✓ Network connectivity working"
     echo ""
@@ -36,15 +71,36 @@ else
     if pgrep -f sshuttle >/dev/null 2>&1; then
         echo "  → Proxy is running but connectivity failed"
         echo "  → Check ~/.cal-proxy.log for errors"
+        echo ""
+        echo "  ⚠ Authentication may fail without network"
+        echo ""
     else
-        echo "  → Proxy not running"
-        echo "  → Start with: proxy-start"
-        echo "  → Or restart VM with: cal-bootstrap --restart"
+        echo "  → Proxy not running, attempting to start..."
+        echo ""
+        
+        if start_proxy_standalone; then
+            # Re-test network after starting proxy
+            sleep 2
+            if test_network; then
+                echo "  ✓ Network now working via proxy"
+                echo ""
+            else
+                echo "  ⚠ Proxy started but network still not working"
+                echo "  → Check ~/.cal-proxy.log for errors"
+                echo ""
+                echo "  ⚠ Authentication may fail without network"
+                echo ""
+            fi
+        else
+            echo ""
+            echo "  ⚠ Could not start proxy automatically"
+            echo "  → Try manually: proxy-start"
+            echo "  → Or restart VM with: cal-bootstrap --restart"
+            echo ""
+            echo "  ⚠ Authentication may fail without network"
+            echo ""
+        fi
     fi
-
-    echo ""
-    echo "  ⚠ Authentication may fail without network"
-    echo ""
 fi
 
 echo "💡 tmux: Ctrl+b d to detach if needed"
