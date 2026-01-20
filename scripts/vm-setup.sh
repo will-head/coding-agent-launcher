@@ -4,27 +4,24 @@ echo "🚀 CAL VM Setup Script"
 echo "======================"
 echo ""
 
-# SOCKS tunnel settings
+# SOCKS tunnel settings (passed from cal-bootstrap)
 SOCKS_PORT="${SOCKS_PORT:-1080}"
-HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-8080}"  # HTTP-to-SOCKS bridge for Node.js tools
+HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-8080}"
 HOST_GATEWAY="${HOST_GATEWAY:-192.168.64.1}"
-SOCKS_MODE="${SOCKS_MODE:-auto}"  # on, off, or auto
+SOCKS_MODE="${SOCKS_MODE:-auto}"
+HOST_USER="${HOST_USER:-}"
 
-# HOST_USER must be passed from cal-bootstrap (no sensible default in VM context)
-if [ -z "$HOST_USER" ]; then
-    echo "⚠️  HOST_USER not set - SOCKS tunnel will not be configured"
-    echo "   Re-run via cal-bootstrap to set up networking properly"
-    SOCKS_TUNNEL_AVAILABLE=false
+# Check if we have proxy environment variables set (indicating SOCKS is active)
+# These are passed by cal-bootstrap when SOCKS tunnel was started before vm-setup.sh
+if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
+    echo "🌐 Network: Using SOCKS proxy"
+    echo "   HTTP_PROXY=$HTTP_PROXY"
+    echo "   HTTPS_PROXY=$HTTPS_PROXY"
+    echo ""
 else
-    SOCKS_TUNNEL_AVAILABLE=true
+    echo "🌐 Network: Direct connection"
+    echo ""
 fi
-
-# Log file for debugging (errors logged here instead of suppressed)
-SOCKS_LOG="${HOME}/.cal-socks.log"
-
-# PID files for tunnel management
-SOCKS_PID_FILE="${HOME}/.cal-socks.pid"
-HTTP_PROXY_PID_FILE="${HOME}/.cal-http-proxy.pid"
 
 # Ensure Homebrew is in PATH (needed for non-interactive SSH)
 if [ -x /opt/homebrew/bin/brew ]; then
@@ -78,6 +75,9 @@ echo "🤖 Installing Claude Code..."
 if command_exists claude; then
     echo "  ✓ Claude Code already installed"
 else
+    # Ensure node/npm is in PATH (reload brew environment)
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    
     if npm install -g @anthropic-ai/claude-code; then
         echo "  ✓ Claude Code installed"
     else
@@ -99,42 +99,14 @@ else
 fi
 
 # Install opencode
-# TODO: Investigate if opencode install location has changed (see PLAN.md section 0.8)
 echo ""
 echo "🐹 Installing opencode..."
 if command_exists opencode; then
     echo "  ✓ opencode already installed"
 else
-    # Ensure Go is available for installation
-    if ! command_exists go; then
-        echo "  → Installing Go first..."
-        if brew install go; then
-            echo "  ✓ Go installed"
-        else
-            echo "  ✗ Failed to install Go"
-        fi
-    fi
-
-    # Try shell script install first
-    if curl -fsSL https://opencode.ai/install | bash; then
-        # Add to PATH immediately for verification
-        export PATH="$HOME/.opencode/bin:$PATH"
-        if command_exists opencode; then
-            echo "  ✓ opencode installed"
-        else
-            # Fallback: try Go install
-            echo "  → Shell install failed, trying Go install..."
-            if go install github.com/opencode-ai/opencode@latest; then
-                export PATH="$HOME/go/bin:$PATH"
-                if command_exists opencode; then
-                    echo "  ✓ opencode installed via Go"
-                else
-                    echo "  ✗ Failed to install opencode"
-                fi
-            else
-                echo "  ✗ Failed to install opencode"
-            fi
-        fi
+    # Install via Homebrew (more reliable than shell script)
+    if brew install anomalyco/tap/opencode; then
+        echo "  ✓ opencode installed"
     else
         echo "  ✗ Failed to install opencode"
     fi
@@ -160,21 +132,6 @@ if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' ~/.zshrc; then
     echo "  ✓ Added .local/bin to PATH"
 else
     echo "  ✓ .local/bin already in PATH"
-fi
-
-# Add .opencode/bin and go/bin to PATH if not already present (for opencode)
-if ! grep -q 'export PATH="$HOME/.opencode/bin:$PATH"' ~/.zshrc; then
-    echo 'export PATH="$HOME/.opencode/bin:$PATH"' >> ~/.zshrc
-    echo "  ✓ Added .opencode/bin to PATH"
-else
-    echo "  ✓ .opencode/bin already in PATH"
-fi
-
-if ! grep -q 'export PATH="$HOME/go/bin:$PATH"' ~/.zshrc; then
-    echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.zshrc
-    echo "  ✓ Added go/bin to PATH"
-else
-    echo "  ✓ go/bin already in PATH"
 fi
 
 # Fix terminal TERM setting
@@ -294,7 +251,7 @@ echo ""
 echo "🔍 Verifying installations..."
 
 # Reload PATH for verification
-export PATH="$HOME/.opencode/bin:$HOME/go/bin:$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 if command_exists claude; then
     CLAUDE_VERSION=$(claude --version 2>/dev/null | head -n1)
@@ -315,7 +272,6 @@ if command_exists opencode; then
     echo "  ✓ opencode: $OPENCODE_VERSION"
 else
     echo "  ✗ opencode: not found (may need to restart shell)"
-    echo "    Try: export PATH=\"$HOME/.opencode/bin:$PATH\" or opencode may not be installed correctly"
 fi
 
 if command_exists gh; then
@@ -340,11 +296,13 @@ else
 fi
 
 # Configure SOCKS tunnel for reliable network access
-if [ "$SOCKS_TUNNEL_AVAILABLE" = "true" ]; then
+# (Only configure for future use - tunnel should already be running if needed)
+if [ -n "$HOST_USER" ]; then
     echo ""
     echo "🌐 Configuring SOCKS tunnel for network access..."
 
-    # Save SOCKS configuration
+    # Save SOCKS configuration (but NOT the proxy environment variables yet)
+    # Proxy vars will only be set when SOCKS tunnel is actually running
     cat > ~/.cal-socks-config <<EOF
 # CAL SOCKS Configuration
 export SOCKS_PORT="${SOCKS_PORT}"
@@ -352,9 +310,10 @@ export HTTP_PROXY_PORT="${HTTP_PROXY_PORT}"
 export HOST_GATEWAY="${HOST_GATEWAY}"
 export HOST_USER="${HOST_USER}"
 export SOCKS_MODE="${SOCKS_MODE}"
-export ALL_PROXY="socks5://localhost:${SOCKS_PORT}"
-export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT}"
-export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT}"
+# Proxy environment variables are set dynamically when SOCKS tunnel starts
+# export ALL_PROXY="socks5://localhost:${SOCKS_PORT}"
+# export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT}"
+# export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT}"
 EOF
     echo "  ✓ SOCKS configuration saved to ~/.cal-socks-config"
 
@@ -370,11 +329,24 @@ if [ -f ~/.cal-socks-config ]; then
     source ~/.cal-socks-config
 fi
 
+# Set proxy environment variables (only when SOCKS is running)
+set_proxy_vars() {
+    export ALL_PROXY="socks5://localhost:${SOCKS_PORT}"
+    export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT}"
+    export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT}"
+}
+
+# Unset proxy environment variables
+unset_proxy_vars() {
+    unset ALL_PROXY HTTP_PROXY HTTPS_PROXY
+}
+
 # Start SOCKS tunnel (VM→Host for network access)
 start_socks() {
     # Check if tunnel is already running
     if nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
         echo "SOCKS tunnel already running on port ${SOCKS_PORT}"
+        set_proxy_vars  # Ensure proxy vars are set
         return 0
     fi
 
@@ -391,6 +363,7 @@ start_socks() {
     while [ $count -lt 5 ]; do
         if nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
             echo "✓ SOCKS tunnel started"
+            set_proxy_vars  # Set proxy vars now that tunnel is running
             # Also start HTTP bridge
             start_http_proxy
             return 0
@@ -410,6 +383,7 @@ stop_socks() {
         echo "Stopping SOCKS tunnel (PID: $pid)..."
         kill "$pid" 2>/dev/null
         echo "✓ SOCKS tunnel stopped"
+        unset_proxy_vars  # Unset proxy vars since tunnel is stopped
     else
         echo "SOCKS tunnel not running"
     fi
@@ -443,6 +417,13 @@ socks_status() {
             echo "  Connectivity: ✓ Working"
         else
             echo "  Connectivity: ⚠ Not working"
+        fi
+        
+        # Show current proxy vars
+        if [ -n "$HTTP_PROXY" ]; then
+            echo "  Proxy vars: ✓ Set"
+        else
+            echo "  Proxy vars: ⚠ Not set (run: source ~/.zshrc)"
         fi
     else
         echo "  Status: ✗ Not running"
@@ -516,6 +497,9 @@ if [ "$SOCKS_MODE" = "on" ] || [ "$SOCKS_MODE" = "auto" ]; then
                 start_socks >/dev/null 2>&1  # Silent: errors logged to ~/.cal-socks.log
             fi
         fi
+    else
+        # Tunnel is running, make sure proxy vars are set
+        set_proxy_vars
     fi
 fi
 EOF

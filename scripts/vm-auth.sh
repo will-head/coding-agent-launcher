@@ -1,8 +1,8 @@
 #!/bin/zsh
 
-# Initialize environment with all paths (same as old .cal-welcome.sh)
+# Initialize environment with all paths
 eval "$(/opt/homebrew/bin/brew shellenv)"
-export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/go/bin:/opt/homebrew/bin:$PATH"
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
 
 clear
 echo ""
@@ -11,28 +11,103 @@ echo "  CAL VM Setup - Authenticate Agents"
 echo "============================================"
 echo ""
 
-# Check if we need SOCKS proxy for network access
-# Only load proxy config if direct connection fails
-# Use nc (netcat) to test TCP connectivity - more reliable than curl
-if nc -z -w 5 github.com 443 2>/dev/null; then
-    echo "💡 Network: Direct connection OK"
-    # Unset any proxy vars inherited from parent shell (.zshrc may have set them)
-    unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+# Network connectivity detection and proxy setup
+# Strategy: Try direct connection first, only use SOCKS if direct fails
+
+echo "🌐 Checking network connectivity..."
+
+# Function to test network connectivity
+test_network() {
+    # Test with timeout - if curl or nc work, we have connectivity
+    if curl -s --connect-timeout 3 -I https://github.com 2>&1 | grep -q 'HTTP'; then
+        return 0
+    elif nc -z -w 3 github.com 443 2>/dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# ALWAYS start with NO proxy vars set - test direct connection first
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+
+if test_network; then
+    # Direct connection works - use it!
+    echo "  ✓ Direct connection working"
+    echo ""
 else
-    echo "⚠️  Network: Direct connection failed, checking SOCKS proxy..."
+    # Direct connection failed - try SOCKS proxy
+    echo "  ⚠ Direct connection failed"
+    echo "  → Checking for SOCKS proxy..."
+    
+    # Load SOCKS configuration if available
     if [ -f ~/.cal-socks-config ]; then
         source ~/.cal-socks-config
-        # Verify proxy is actually working
-        if nc -z -w 5 github.com 443 2>/dev/null; then
-            echo "💡 Network: Using SOCKS proxy (HTTP_PROXY=$HTTP_PROXY)"
+        
+        # Check if SOCKS tunnel is running
+        if nc -z localhost ${SOCKS_PORT:-1080} 2>/dev/null; then
+            echo "  → SOCKS tunnel detected on port ${SOCKS_PORT:-1080}"
+            
+            # Set proxy environment variables
+            export ALL_PROXY="socks5://localhost:${SOCKS_PORT:-1080}"
+            export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
+            export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
+            
+            # Test connectivity with proxy
+            if test_network; then
+                echo "  ✓ Using SOCKS proxy successfully"
+                echo "     HTTP_PROXY=$HTTP_PROXY"
+                echo ""
+            else
+                echo "  ⚠ SOCKS proxy not working"
+                echo "     Authentication may fail"
+                echo ""
+                # Unset proxy since it's not helping
+                unset HTTP_PROXY HTTPS_PROXY ALL_PROXY
+            fi
         else
-            echo "⚠️  Network: SOCKS proxy not working - authentication may fail"
-            echo "   Try running: start_socks && start_http_proxy"
-            # Unset proxy since it's not working
-            unset HTTP_PROXY HTTPS_PROXY ALL_PROXY
+            # SOCKS not running - try to start it
+            echo "  → SOCKS tunnel not running, attempting to start..."
+            
+            # Try to start SOCKS if functions are available
+            if type start_socks &>/dev/null; then
+                if start_socks >/dev/null 2>&1; then
+                    # Wait a moment for tunnel to stabilize
+                    sleep 2
+                    
+                    # Set proxy vars and test again
+                    export ALL_PROXY="socks5://localhost:${SOCKS_PORT:-1080}"
+                    export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
+                    export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
+                    
+                    if test_network; then
+                        echo "  ✓ SOCKS tunnel started and working"
+                        echo "     HTTP_PROXY=$HTTP_PROXY"
+                        echo ""
+                    else
+                        echo "  ⚠ SOCKS started but not working"
+                        echo "     Authentication may fail"
+                        echo ""
+                        unset HTTP_PROXY HTTPS_PROXY ALL_PROXY
+                    fi
+                else
+                    echo "  ✗ Failed to start SOCKS tunnel"
+                    echo "     Try manually: start_socks"
+                    echo "     Authentication may fail"
+                    echo ""
+                fi
+            else
+                echo "  ✗ SOCKS functions not available"
+                echo "     Try manually: source ~/.zshrc && start_socks"
+                echo "     Authentication may fail"
+                echo ""
+            fi
         fi
     else
-        echo "⚠️  Network: No SOCKS config found - authentication may fail"
+        echo "  ✗ No SOCKS configuration found"
+        echo "     Direct connection failed and no proxy available"
+        echo "     Authentication will likely fail"
+        echo ""
     fi
 fi
 

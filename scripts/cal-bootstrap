@@ -316,11 +316,20 @@ setup_ssh_keys() {
 # Run vm-setup script from ~/scripts folder
 run_vm_setup() {
     local vm_ip="$1"
+    local use_proxy="${2:-false}"
 
     echo "  Running ~/scripts/vm-setup.sh..."
-    # Pass HOST_USER, SOCKS_MODE, SOCKS_PORT, HTTP_PROXY_PORT, and HOST_GATEWAY so vm-setup.sh can configure the tunnel
+    
+    # Build environment variables
+    local env_vars="HOST_USER='${HOST_USER}' SOCKS_MODE='${SOCKS_MODE}' SOCKS_PORT='${SOCKS_PORT}' HTTP_PROXY_PORT='${HTTP_PROXY_PORT}' HOST_GATEWAY='${HOST_GATEWAY}'"
+    
+    # If SOCKS tunnel is running, also export proxy variables so tools can use them
+    if [ "$use_proxy" = "true" ]; then
+        env_vars="${env_vars} ALL_PROXY='socks5://localhost:${SOCKS_PORT}' HTTP_PROXY='http://localhost:${HTTP_PROXY_PORT}' HTTPS_PROXY='http://localhost:${HTTP_PROXY_PORT}'"
+    fi
+    
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "HOST_USER='${HOST_USER}' SOCKS_MODE='${SOCKS_MODE}' SOCKS_PORT='${SOCKS_PORT}' HTTP_PROXY_PORT='${HTTP_PROXY_PORT}' HOST_GATEWAY='${HOST_GATEWAY}' ~/scripts/vm-setup.sh"
+        "${VM_USER}@${vm_ip}" "${env_vars} ~/scripts/vm-setup.sh"
 }
 
 # Setup scripts folder in VM with helper scripts
@@ -767,9 +776,14 @@ do_init() {
     # Step 5: Setup SOCKS tunnel (VM→Host for network access)
     echo ""
     echo "Step 5: Setup SOCKS tunnel for network access"
+    local socks_enabled=false
     if should_enable_socks "$VM_IP"; then
-        setup_vm_ssh_key "$VM_IP"
-        start_socks_tunnel "$VM_IP"
+        if setup_vm_ssh_key "$VM_IP" && start_socks_tunnel "$VM_IP"; then
+            socks_enabled=true
+            echo "  ✓ SOCKS tunnel ready for tool installation"
+        else
+            echo "  ⚠ SOCKS tunnel setup failed, continuing anyway"
+        fi
     else
         echo "  ✓ SOCKS tunnel skipped (not needed)"
     fi
@@ -779,10 +793,10 @@ do_init() {
     echo "Step 6: Setup scripts folder"
     setup_scripts_folder "$VM_IP"
 
-    # Step 7: Run vm-setup from ~/scripts
+    # Step 7: Run vm-setup from ~/scripts (with proxy if SOCKS is enabled)
     echo ""
     echo "Step 7: Install tools"
-    run_vm_setup "$VM_IP"
+    run_vm_setup "$VM_IP" "$socks_enabled"
 
     # Step 8: Prompt user for manual setup
     echo ""
