@@ -275,6 +275,21 @@ opencode    # opencode
 gh          # GitHub CLI
 ```
 
+### VM Detection
+
+Agents can detect they're running in a CAL VM using:
+
+```bash
+# Check environment variable
+echo $CAL_VM              # Outputs: true
+
+# Use helper functions
+is-cal-vm && echo "VM"    # Outputs: VM
+cal-vm-info               # Display VM metadata
+```
+
+See [VM Detection Guide](vm-detection.md) for complete documentation and integration examples.
+
 ## Snapshots and Rollback
 
 ```bash

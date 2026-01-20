@@ -187,6 +187,61 @@ else
     echo "  ⚠ Could not reload shell config (restart shell manually)"
 fi
 
+# Configure VM detection for coding agents
+echo ""
+echo "🔍 Configuring VM detection..."
+
+# Create VM info file
+# NOTE: CAL_VERSION should be updated when making significant changes to CAL.
+# Version format: MAJOR.MINOR.PATCH (semver)
+# - MAJOR: Breaking changes to VM detection API or structure
+# - MINOR: New features or enhancements (backward compatible)
+# - PATCH: Bug fixes and minor improvements
+cat > ~/.cal-vm-info <<EOF
+# CAL VM Information
+# This file indicates this system is running inside a CAL VM
+# Coding agents can check for this file to detect VM environment
+
+CAL_VM=true
+CAL_VM_NAME=${CAL_VM_NAME:-cal-dev}
+CAL_VM_CREATED=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+CAL_VERSION=0.1.0
+EOF
+echo "  ✓ Created VM info file at ~/.cal-vm-info"
+
+# Add CAL_VM environment variable to .zshrc
+if ! grep -q 'export CAL_VM=' ~/.zshrc; then
+    cat >> ~/.zshrc <<'EOF'
+
+# CAL VM Detection
+# Indicates this system is running inside a CAL VM
+export CAL_VM=true
+export CAL_VM_INFO="$HOME/.cal-vm-info"
+
+# Helper function to display VM info
+cal-vm-info() {
+    if [ -f ~/.cal-vm-info ]; then
+        cat ~/.cal-vm-info
+    else
+        echo "Not running in a CAL VM"
+        return 1
+    fi
+}
+
+# Helper function to check if running in CAL VM
+is-cal-vm() {
+    [ -f ~/.cal-vm-info ] && [ "$CAL_VM" = "true" ]
+}
+EOF
+    echo "  ✓ Added VM detection to ~/.zshrc"
+else
+    echo "  ✓ VM detection already configured in ~/.zshrc"
+fi
+
+# Reload configuration to make CAL_VM available
+export CAL_VM=true
+export CAL_VM_INFO="$HOME/.cal-vm-info"
+
 # Configure tmux
 echo ""
 echo "🖥️  Configuring tmux..."

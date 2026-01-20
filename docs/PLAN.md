@@ -42,7 +42,7 @@
   - [x] Performance testing and comparison
   - [x] **Conclusion:** SSH is optimal for local VM (excellent performance)
   - [x] **Enhancement:** Added tmux support for session persistence
- - [x] **VM Management Improvements** (Phase 0.8 - 6/10 complete)
+ - [x] **VM Management Improvements** (Phase 0.8 - 7/10 complete)
    - [x] Fix opencode installation in `--init` script (added Go install fallback, improved PATH setup)
    - [x] Simplify `--init` auth flow (removed verification prompt since opencode now works reliably)
    - [x] Add `--restart` option to cal-bootstrap for quick VM restart
@@ -52,7 +52,7 @@
    - [x] Add warning on snapshot restore to check that git is updated in VM (uncommitted/unpushed changes checked)
    - [x] Investigate if uncommitted or unpushed git changes can be automatically checked if they exist in VM before restore (implemented)
    - [x] Remove distinction between clones and snapshots in `--snapshot list` (they're functionally same for our purposes)
-   - [ ] Create method for coding agent to detect if it's running in a VM and add this capability to coding agent's config
+   - [x] Create method for coding agent to detect if running in VM (env var + info file + helper functions, see docs/vm-detection.md)
 - [x] **Transparent Proxy for Network Reliability** (Phase 0.9 - Complete, migrated to sshuttle)
    - [x] Implement transparent proxy via sshuttle (VM→Host)
    - [x] Add bootstrap SOCKS proxy (SSH -D) for --init phase before sshuttle installed

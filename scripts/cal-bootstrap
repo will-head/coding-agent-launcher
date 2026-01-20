@@ -370,7 +370,7 @@ run_vm_setup() {
     echo "  Running ~/scripts/vm-setup.sh..."
 
     # Build environment variables
-    local env_vars="HOST_USER='${HOST_USER}' PROXY_MODE='${PROXY_MODE}' HOST_GATEWAY='${HOST_GATEWAY}'"
+    local env_vars="HOST_USER='${HOST_USER}' PROXY_MODE='${PROXY_MODE}' HOST_GATEWAY='${HOST_GATEWAY}' CAL_VM_NAME='${VM_DEV}'"
 
     # If using proxy during init (bootstrap SOCKS), set proxy env vars
     # socks5h:// tells curl to resolve DNS through the proxy too
