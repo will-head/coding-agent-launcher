@@ -64,7 +64,8 @@ Create new ADR to supersede if needed.
 
 1. Ask approval, then run `git status` and `git fetch`
 2. Read `docs/PLAN.md` for TODOs and current phase
-3. Report status and suggest next steps
+3. Acknowledge the Git Workflow (8-step process) to confirm understanding
+4. Report status and suggest next steps
 
 ---
 
