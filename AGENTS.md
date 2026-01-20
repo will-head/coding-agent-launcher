@@ -11,7 +11,7 @@ Project context for AI coding agents (Claude Code, Cursor, opencode).
 At the start of EVERY new session, the agent MUST:
 
 1. **Read and Understand Workflow**
-   - Read this entire CLAUDE.md file
+   - Read this entire AGENTS.md file
    - Understand the mandatory Git workflow
    - Internalize all absolute prohibitions
 
@@ -100,34 +100,6 @@ golangci-lint run
 - [Bootstrap](docs/bootstrap.md) - manual Tart setup
 - [Plugins](docs/plugins.md) - environment system
 - [Roadmap](docs/roadmap.md) - implementation phases (derived from PLAN.md)
-
----
-
-## Command Execution Policy
-
-🚨 **CRITICAL: NEVER RUN COMMANDS WITHOUT USER APPROVAL** 🚨
-
-**Before executing ANY command:**
-1. **Explain what the command does** and why it's needed
-2. **Show the exact command** that will be executed
-3. **Wait for explicit user approval** (e.g., "yes", "approved", "go ahead")
-4. **Only then execute** the command
-
-**This applies to ALL commands:**
-- ✅ Git commands (status, fetch, commit, push, etc.)
-- ✅ Build commands (go build, go test, etc.)
-- ✅ Shell scripts (./scripts/*, etc.)
-- ✅ File operations via command line
-- ✅ Package installations
-- ✅ System commands
-
-**Exception:** Reading files and searching code with Read, Grep, Glob tools is allowed without approval.
-
-**Why this matters:**
-- User maintains full control over their system
-- Prevents unexpected or destructive operations
-- Ensures user understands what's happening
-- Builds trust through transparency
 
 ---
 
@@ -254,11 +226,12 @@ If changes are **ONLY** to documentation files (.md files, code comments), you m
 - ❌ Step 2: Run All Tests
 - ❌ Step 3: Build the Project
 - ❌ Step 4: Conduct Code Review
-- ❌ Step 6: Present Code Review (unless user requests it)
+- ❌ Step 5: Present Code Review (unless user requests it)
 
 **Still REQUIRED for documentation-only changes:**
-- ✅ Step 5: Ask for User Approval - **ALWAYS REQUIRED**
-- ✅ Step 7: Update ALL Documentation
+- ✅ Step 1: Implement Changes (update documentation)
+- ✅ User Approval - **ALWAYS REQUIRED** (ask before committing)
+- ✅ Step 7: Update ALL Documentation (if needed)
 - ✅ Step 8: Commit and Push (only after approval)
 
 **Qualifying documentation files:**
@@ -274,6 +247,10 @@ If changes are **ONLY** to documentation files (.md files, code comments), you m
 Each step is a **BLOCKING CHECKPOINT**. You MUST complete each step fully before proceeding to the next.
 
 ### Step 1: Implement Changes
+- **Test-Driven Development (TDD):** Write tests first, then implement code to pass them
+  - For new features: Write failing test → Implement feature → Verify test passes
+  - For bug fixes: Write test that reproduces bug → Fix bug → Verify test passes
+  - For refactoring: Ensure tests exist first → Refactor → Verify tests still pass
 - Write code following best practices
 - Make minimum changes to achieve the goal
 - Follow Go conventions and project structure

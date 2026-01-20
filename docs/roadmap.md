@@ -60,8 +60,8 @@ Automated Tart setup for immediate safe agent use.
    - [ ] Allow `--snapshot delete` to accept multiple VM names
  - [ ] **Session State Management** (Phase 0.11 - Future)
    - [ ] Implement constant context state persistence for seamless recovery
- - [ ] **Documentation Cleanup**
-   - [ ] Clean up AGENTS.md (fix refs, merge duplicates, add TDD to Step 1)
+ - [x] **Documentation Cleanup**
+   - [x] Clean up AGENTS.md (fix refs, merge duplicates, add TDD to Step 1)
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.

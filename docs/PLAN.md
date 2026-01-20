@@ -117,12 +117,12 @@
        - [ ] Write context to file after every operation
        - [ ] Enable seamless session recovery on crash or usage limits
        - [ ] Allow session continuation across Claude Code restarts
-     - [ ] **Documentation Cleanup**
-       - [ ] Clean up AGENTS.md (CLAUDE.md symlinks to it)
-         - [ ] Change internal refs from CLAUDE.md to AGENTS.md
-         - [ ] Merge duplicate Command Execution Policy sections
-         - [ ] Review for inconsistencies
-         - [ ] Add TDD (Test-Driven Development) to 8-step workflow Step 1
+     - [x] **Documentation Cleanup**
+       - [x] Clean up AGENTS.md (CLAUDE.md symlinks to it)
+         - [x] Change internal refs from CLAUDE.md to AGENTS.md
+         - [x] Merge duplicate Command Execution Policy sections
+         - [x] Review for inconsistencies (fixed Step numbering in documentation-only exception)
+         - [x] Add TDD (Test-Driven Development) to 8-step workflow Step 1
 
 **Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. Transparent proxy (sshuttle) for reliable network access in corporate environments. Improved init workflow with better safety and automation.
 
