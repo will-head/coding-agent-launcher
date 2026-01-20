@@ -192,41 +192,42 @@ else
     fi
 fi
 
-# 3. Cursor Agent
-echo ""
-echo "3. Cursor Agent"
-echo "---------------"
-if cursor_authenticated; then
-    echo "  ✓ Already authenticated"
-    echo -n "  Re-authenticate? [y/N] "
-    read -r -k 1 reply
-    echo ""
-    if [[ "$reply" =~ ^[Yy]$ ]]; then
-        echo "  ⚠ OAuth over SSH may require Screen Sharing for browser auth"
-        echo "  → Use: open vnc://$(hostname -I | awk '{print $1}')"
-        agent
-    else
-        echo "  → Skipped"
-    fi
-else
-    if command_exists agent; then
-        echo "  ⚠ Not authenticated"
-        echo ""
-        echo "  ⚠ OAuth requires browser access and keychain unlock"
-        echo "  → For GUI access use: open vnc://$(hostname -I | awk '{print $1}')"
-        echo ""
-        echo -n "  Authenticate now? [Y/n] "
-        read -r -k 1 reply
-        echo ""
-        if [[ ! "$reply" =~ ^[Nn]$ ]]; then
-            agent
-        else
-            echo "  → Skipped"
-        fi
-    else
-        echo "  ✗ agent not installed"
-    fi
-fi
+# 3. Cursor Agent (DISABLED - OAuth polling fails in VM environments)
+# See PLAN.md Phase 0.8 line 39 for details
+# echo ""
+# echo "3. Cursor Agent"
+# echo "---------------"
+# if cursor_authenticated; then
+#     echo "  ✓ Already authenticated"
+#     echo -n "  Re-authenticate? [y/N] "
+#     read -r -k 1 reply
+#     echo ""
+#     if [[ "$reply" =~ ^[Yy]$ ]]; then
+#         echo "  ⚠ OAuth over SSH may require Screen Sharing for browser auth"
+#         echo "  → Use: open vnc://$(hostname -I | awk '{print $1}')"
+#         agent
+#     else
+#         echo "  → Skipped"
+#     fi
+# else
+#     if command_exists agent; then
+#         echo "  ⚠ Not authenticated"
+#         echo ""
+#         echo "  ⚠ OAuth requires browser access and keychain unlock"
+#         echo "  → For GUI access use: open vnc://$(hostname -I | awk '{print $1}')"
+#         echo ""
+#         echo -n "  Authenticate now? [Y/n] "
+#         read -r -k 1 reply
+#         echo ""
+#         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+#             agent
+#         else
+#             echo "  → Skipped"
+#         fi
+#     else
+#         echo "  ✗ agent not installed"
+#     fi
+# fi
 
 # 4. Claude Code (LAST - takes over screen)
 echo ""
