@@ -15,9 +15,9 @@ HOST_USER="${HOST_USER:-}"
 # These are passed by cal-bootstrap when SOCKS tunnel was started before vm-setup.sh
 if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
     echo "🌐 Network: Using SOCKS proxy"
+    echo "   ALL_PROXY=$ALL_PROXY"
     echo "   HTTP_PROXY=$HTTP_PROXY"
     echo "   HTTPS_PROXY=$HTTPS_PROXY"
-    echo "   ALL_PROXY=$ALL_PROXY"
     echo ""
     
     # Export lowercase versions too (some tools need lowercase)
@@ -29,14 +29,31 @@ if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
     export NO_PROXY="localhost,127.0.0.1,::1,192.168.64.0/24"
     export no_proxy="$NO_PROXY"
     
+    # Git needs special config for SOCKS proxy
+    git config --global http.proxy "$ALL_PROXY"
+    git config --global https.proxy "$ALL_PROXY"
+    
     # Test if proxy is actually working
     echo "  Testing proxy connectivity..."
-    if curl -s --connect-timeout 5 -I https://github.com 2>&1 | head -1 | grep -q "HTTP"; then
-        echo "  ✓ Proxy is working (github.com reachable)"
+    
+    # First, verify SOCKS tunnel is accessible
+    if nc -z localhost ${SOCKS_PORT:-1080} 2>/dev/null; then
+        echo "  ✓ SOCKS tunnel is listening on port ${SOCKS_PORT:-1080}"
+    else
+        echo "  ✗ SOCKS tunnel NOT accessible on port ${SOCKS_PORT:-1080}"
+        echo "    This will cause all installations to fail!"
+        echo ""
+    fi
+    
+    # Test actual connectivity through proxy using curl with explicit --socks5 flag
+    # (More reliable than relying on HTTP_PROXY env var)
+    echo "  → Testing https://github.com through proxy..."
+    if curl --socks5-hostname localhost:${SOCKS_PORT:-1080} --connect-timeout 10 -s -I https://github.com 2>&1 | head -1 | grep -q "HTTP"; then
+        echo "  ✓ SOCKS proxy is working (github.com reachable)"
         echo ""
     else
-        echo "  ⚠ Proxy test failed - installations may not work"
-        echo "    Check: nc -z localhost ${SOCKS_PORT:-1080}"
+        echo "  ✗ SOCKS proxy test failed"
+        echo "  ⚠ Installations will likely fail!"
         echo ""
     fi
 else
