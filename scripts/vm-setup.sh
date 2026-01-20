@@ -56,6 +56,57 @@ if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
         echo "  ⚠ Installations will likely fail!"
         echo ""
     fi
+    
+    # CRITICAL: Install gost FIRST (it's needed for HTTP-to-SOCKS bridge)
+    # Homebrew is slow with SOCKS5, so we need the HTTP bridge running
+    echo "📦 Installing gost (HTTP-to-SOCKS bridge) first..."
+    echo "   (Required for Homebrew to work properly with SOCKS proxy)"
+    
+    # Install gost using curl (which supports SOCKS5 well)
+    if ! command_exists gost; then
+        # Try Homebrew install with just ALL_PROXY (most reliable for brew)
+        if ALL_PROXY="$ALL_PROXY" brew install gost 2>&1 | grep -v "^==>" | grep -v "^Pouring" || true; then
+            if command_exists gost; then
+                echo "  ✓ gost installed"
+            else
+                echo "  ⚠ gost install may have failed"
+            fi
+        fi
+    else
+        echo "  ✓ gost already installed"
+    fi
+    
+    # Start HTTP-to-SOCKS bridge NOW (before other installations)
+    if command_exists gost; then
+        echo "  Starting HTTP-to-SOCKS bridge..."
+        # Kill any existing gost process
+        pkill -f "gost -L" 2>/dev/null || true
+        # Start gost in background
+        nohup gost -L "http://:${HTTP_PROXY_PORT:-8080}" -F "socks5://localhost:${SOCKS_PORT:-1080}" >/dev/null 2>&1 &
+        echo $! > ~/.cal-http-proxy.pid
+        disown
+        sleep 2
+        
+        # Verify it's running
+        if nc -z localhost ${HTTP_PROXY_PORT:-8080} 2>/dev/null; then
+            echo "  ✓ HTTP bridge running on port ${HTTP_PROXY_PORT:-8080}"
+            
+            # Now switch to HTTP proxy (much faster for Homebrew)
+            export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
+            export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
+            export http_proxy="$HTTP_PROXY"
+            export https_proxy="$HTTPS_PROXY"
+            
+            echo "  ✓ Switched to HTTP proxy for better performance"
+            echo ""
+        else
+            echo "  ⚠ HTTP bridge failed to start, staying with SOCKS5"
+            echo ""
+        fi
+    else
+        echo "  ⚠ gost not available, Homebrew will be slow with SOCKS5"
+        echo ""
+    fi
 else
     echo "🌐 Network: Direct connection"
     echo ""
@@ -94,7 +145,7 @@ fi
 # Install Homebrew dependencies
 echo ""
 echo "📦 Installing/upgrading Homebrew packages..."
-for pkg in node gh tmux gost; do
+for pkg in node gh tmux; do
     if brew_installed "$pkg"; then
         echo "  → Upgrading $pkg..."
         if brew upgrade "$pkg" 2>/dev/null; then
