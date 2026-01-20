@@ -550,5 +550,8 @@ if [ "$SOCKS_TUNNEL_AVAILABLE" = "true" ]; then
     echo "  • SOCKS tunnel configured - provides reliable network access"
     echo "  • SOCKS commands: start_socks, stop_socks, restart_socks, socks_status"
 fi
+echo "  • Helper scripts available in ~/scripts/:"
+echo "    - vm-setup.sh: Re-run this setup script"
+echo "    - vm-auth.sh: Re-authenticate all agents"
 echo "  • If any commands show 'not found', restart your shell with: exec zsh"
 echo "  • Auto-login takes effect on next VM reboot"

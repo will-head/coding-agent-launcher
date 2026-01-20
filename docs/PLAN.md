@@ -8,7 +8,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Mostly complete (4 TODOs in 0.8, 11 TODOs in 0.10)
+**Phase 0 (Bootstrap):** Mostly complete (3 TODOs in 0.8, 4 TODOs in 0.10, 6 future enhancements)
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -85,17 +85,25 @@
        - Research and install in vm-setup.sh: golangci-lint (linters runner), goimports, delve (debugger), mockgen (test mocking), air (hot reload)
        - Note: Core Go tools already included (go fmt, go vet, go test, go mod)
        - Reference: https://golangci-lint.run/ and Go community best practices
-     - [ ] Create auth script to easily re-run agent authentication
-       - Create vm-auth.sh script that runs: gh auth login, claude auth login, agent (Cursor auth), opencode auth login
-       - Provide convenient way to re-authenticate all agents without manual steps
-       - Make script idempotent (skip if already authenticated)
-       - Install in cal-dev during --init
-     - [ ] Add vm-setup.sh and vm-auth.sh to ~/scripts folder in cal-dev during --init
-       - Create ~/scripts directory in cal-dev if it doesn't exist
-       - Copy vm-setup.sh and vm-auth.sh from host to VM during --init
-       - Add ~/scripts to PATH in .zshrc for easy access
-       - Reference scripts from ~/scripts in .zshrc instead of ~
+     - [x] Create auth script to easily re-run agent authentication
+       - [x] Create vm-auth.sh script that runs: gh auth login, claude auth login, agent (Cursor auth), opencode auth login
+       - [x] Provide convenient way to re-authenticate all agents without manual steps
+       - [x] Make script idempotent (skip if already authenticated, smart defaults)
+       - [x] Install in cal-dev during --init
+       - [x] Detect network connectivity and use SOCKS proxy only when needed
+     - [x] Add vm-setup.sh and vm-auth.sh to ~/scripts folder in cal-dev during --init
+       - [x] Create ~/scripts directory in cal-dev if it doesn't exist
+       - [x] Copy vm-setup.sh and vm-auth.sh from host to VM during --init
+       - [x] Add ~/scripts to PATH in .zshrc for easy access
+       - [x] Run vm-setup.sh from ~/scripts (no duplication in ~)
      - [x] Update README.md Quick Start to match bootstrap.md (correct Quick Start instructions)
+     - [ ] **vm-auth.sh Improvements** (Future enhancements - low priority)
+       - [ ] Reduce network check timeout from 5s to 3s for faster feedback
+       - [ ] Use `gh api user -q .login` for more robust username extraction
+       - [ ] Add explicit error handling for scp failures in setup_scripts_folder
+       - [ ] Check for specific opencode auth token file if documented
+       - [ ] Add Ctrl+C trap handlers during authentication flows
+       - [ ] Ensure gh username parsing works in non-English locales
 
 **Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. SOCKS tunneling for reliable network access in corporate environments. Improved init workflow with better safety and automation.
 

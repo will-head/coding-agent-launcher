@@ -313,23 +313,54 @@ setup_ssh_keys() {
     echo "  SSH key copied"
 }
 
-# Copy and run vm-setup script
+# Run vm-setup script from ~/scripts folder
 run_vm_setup() {
     local vm_ip="$1"
-    
-    if [ ! -f "$SCRIPT_DIR/vm-setup.sh" ]; then
-        echo "  vm-setup.sh not found at $SCRIPT_DIR/vm-setup.sh"
-        return 1
-    fi
-    
-    echo "  Copying vm-setup.sh to VM..."
-    scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "$SCRIPT_DIR/vm-setup.sh" "${VM_USER}@${vm_ip}":~/ 2>> "$CAL_LOG"
 
-    echo "  Running vm-setup.sh..."
+    echo "  Running ~/scripts/vm-setup.sh..."
     # Pass HOST_USER, SOCKS_MODE, SOCKS_PORT, HTTP_PROXY_PORT, and HOST_GATEWAY so vm-setup.sh can configure the tunnel
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "chmod +x ~/vm-setup.sh && HOST_USER='${HOST_USER}' SOCKS_MODE='${SOCKS_MODE}' SOCKS_PORT='${SOCKS_PORT}' HTTP_PROXY_PORT='${HTTP_PROXY_PORT}' HOST_GATEWAY='${HOST_GATEWAY}' ~/vm-setup.sh"
+        "${VM_USER}@${vm_ip}" "HOST_USER='${HOST_USER}' SOCKS_MODE='${SOCKS_MODE}' SOCKS_PORT='${SOCKS_PORT}' HTTP_PROXY_PORT='${HTTP_PROXY_PORT}' HOST_GATEWAY='${HOST_GATEWAY}' ~/scripts/vm-setup.sh"
+}
+
+# Setup scripts folder in VM with helper scripts
+setup_scripts_folder() {
+    local vm_ip="$1"
+
+    echo "  Creating ~/scripts directory in VM..."
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "mkdir -p ~/scripts" 2>> "$CAL_LOG"
+
+    echo "  Copying scripts to ~/scripts..."
+
+    # Copy vm-setup.sh
+    if [ -f "$SCRIPT_DIR/vm-setup.sh" ]; then
+        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SCRIPT_DIR/vm-setup.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"
+        echo "    ✓ vm-setup.sh"
+    else
+        echo "    ⚠ vm-setup.sh not found"
+    fi
+
+    # Copy vm-auth.sh
+    if [ -f "$SCRIPT_DIR/vm-auth.sh" ]; then
+        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SCRIPT_DIR/vm-auth.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"
+        echo "    ✓ vm-auth.sh"
+    else
+        echo "    ⚠ vm-auth.sh not found"
+    fi
+
+    # Make scripts executable
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "chmod +x ~/scripts/*.sh" 2>> "$CAL_LOG"
+
+    # Add ~/scripts to PATH in .zshrc if not already present
+    echo "  Adding ~/scripts to PATH in .zshrc..."
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "if ! grep -q 'export PATH=\"\$HOME/scripts:\$PATH\"' ~/.zshrc; then echo 'export PATH=\"\$HOME/scripts:\$PATH\"' >> ~/.zshrc; echo '    ✓ Added to PATH'; else echo '    ✓ Already in PATH'; fi" 2>> "$CAL_LOG"
+
+    echo "  ✓ Scripts folder configured"
 }
 
 # Unlock keychain for SSH sessions (enables agent authentication)
@@ -743,111 +774,35 @@ do_init() {
         echo "  ✓ SOCKS tunnel skipped (not needed)"
     fi
 
-    # Step 6: Run vm-setup
+    # Step 6: Setup scripts folder first
     echo ""
-    echo "Step 6: Install tools"
+    echo "Step 6: Setup scripts folder"
+    setup_scripts_folder "$VM_IP"
+
+    # Step 7: Run vm-setup from ~/scripts
+    echo ""
+    echo "Step 7: Install tools"
     run_vm_setup "$VM_IP"
 
-    # Step 7: Prompt user for manual setup
+    # Step 8: Prompt user for manual setup
     echo ""
     echo "============================================"
     echo "Manual setup required in VM"
     echo "============================================"
     echo ""
-    echo "Opening tmux session in VM..."
+    echo "Opening tmux session in VM to run authentication..."
     echo ""
-    
-    # Create an interactive authentication script on the VM
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${VM_USER}@${VM_IP}" 'cat > ~/.cal-welcome.sh << '\''WELCOME'\''
-#!/bin/zsh
 
-# Initialize environment with all paths
-eval "$(/opt/homebrew/bin/brew shellenv)"
-export PATH="/Users/admin/.local/bin:/Users/admin/.opencode/bin:/Users/admin/go/bin:/opt/homebrew/bin:$PATH"
-
-clear
-echo ""
-echo "============================================"
-echo "  CAL VM Setup - Authenticate Agents"
-echo "============================================"
-echo ""
-echo "💡 tmux: Ctrl+b d to detach if needed"
-echo ""
-
-# GitHub CLI
-echo ""
-echo -n "Authenticate GitHub CLI? [Y/n] "
-read -r -k 1 reply
-echo ""
-if [[ ! "$reply" =~ ^[Nn]$ ]]; then
-    echo "Starting GitHub CLI authentication..."
-    echo "----------------------------------------"
-    gh auth login
-    echo "----------------------------------------"
-    echo "✓ GitHub CLI complete"
-fi
-
-# Opencode
-echo ""
-echo -n "Authenticate Opencode? [Y/n] "
-read -r -k 1 reply
-echo ""
-if [[ ! "$reply" =~ ^[Nn]$ ]]; then
-    echo "Starting Opencode authentication..."
-    echo "----------------------------------------"
-    opencode auth login
-    echo "----------------------------------------"
-    echo "✓ Opencode complete"
-fi
-
-# Cursor Agent
-echo ""
-echo -n "Authenticate Cursor Agent? [Y/n] "
-read -r -k 1 reply
-echo ""
-if [[ ! "$reply" =~ ^[Nn]$ ]]; then
-    echo "Starting Cursor Agent authentication..."
-    echo "----------------------------------------"
-    agent
-    echo "----------------------------------------"
-    echo "✓ Cursor Agent complete"
-fi
-
-# Claude Code (last)
-echo ""
-echo -n "Authenticate Claude Code? [Y/n] "
-read -r -k 1 reply
-echo ""
-if [[ ! "$reply" =~ ^[Nn]$ ]]; then
-    echo "Starting Claude Code..."
-    echo "Press Ctrl+C to exit when done."
-    echo "----------------------------------------"
-    claude
-    echo "----------------------------------------"
-    echo "✓ Claude Code complete"
-fi
-
-echo ""
-echo "============================================"
-echo "  ✅ Setup Complete!"
-echo "============================================"
-echo ""
-echo "All authentications done."
-echo "Press Ctrl+C or type exit to continue."
-echo ""
-WELCOME
-chmod +x ~/.cal-welcome.sh'
-
-    # Automatically SSH into the VM with tmux and show welcome message
+    # Automatically SSH into the VM with tmux and run vm-auth.sh
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s setup 'zsh ~/.cal-welcome.sh'"
+        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s setup 'zsh ~/scripts/vm-auth.sh'"
 
     echo ""
     echo "Continuing with setup..."
 
-    # Step 8: Create cal-init
+    # Step 9: Create cal-init
     echo ""
-    echo "Step 8: Create $VM_INIT snapshot"
+    echo "Step 9: Create $VM_INIT snapshot"
     
     # Stop VM first
     CLEANUP_VM=false

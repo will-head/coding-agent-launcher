@@ -110,7 +110,7 @@ The `--init` command performs these steps:
 4. Sets up SSH keys (host→VM, generates if needed)
 5. Sets up SOCKS tunnel (VM→Host, if needed - see `--socks` mode)
 6. Runs `vm-setup.sh` to install tools (node, gh, tmux, gost, claude, agent, opencode)
-7. Opens tmux session with interactive authentication prompts (gh, claude, opencode, agent)
+7. Opens tmux session running `vm-auth.sh` for agent authentication (gh, opencode, agent, claude)
 8. Creates `cal-init` snapshot
 
 ### VMs Created
@@ -120,6 +120,20 @@ The `--init` command performs these steps:
 | `cal-clean` | Base macOS image (pristine) |
 | `cal-dev` | Development VM (use this) |
 | `cal-init` | Snapshot with tools and auth configured |
+
+### Helper Scripts in VM
+
+The init process installs helper scripts in `~/scripts/` (added to PATH):
+
+- **`vm-auth.sh`** - Re-authenticate all agents (gh, opencode, agent, claude)
+  - Detects which agents are already authenticated
+  - Smart defaults: skip if authenticated, prompt if not
+  - Automatically uses SOCKS proxy if direct connection fails
+  - Run anytime: `vm-auth.sh`
+
+- **`vm-setup.sh`** - Re-run tool installation and configuration
+  - Useful for resetting VM or installing missing tools
+  - Run: `~/scripts/vm-setup.sh`
 
 ## Manual Setup (Alternative)
 
