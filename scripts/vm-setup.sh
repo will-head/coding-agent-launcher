@@ -11,9 +11,27 @@ HOST_GATEWAY="${HOST_GATEWAY:-192.168.64.1}"
 SOCKS_MODE="${SOCKS_MODE:-auto}"
 HOST_USER="${HOST_USER:-}"
 
+# Ensure Homebrew is in PATH (needed for non-interactive SSH)
+if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+# Helper function to check if a command exists
+command_exists() {
+    command -v "$1" &>/dev/null
+}
+
+# Store whether we're using SOCKS proxy (check early before helper functions)
+USING_SOCKS_PROXY=false
+if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
+    USING_SOCKS_PROXY=true
+fi
+
 # Check if we have proxy environment variables set (indicating SOCKS is active)
 # These are passed by cal-bootstrap when SOCKS tunnel was started before vm-setup.sh
-if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
+if [ "$USING_SOCKS_PROXY" = "true" ]; then
     echo "🌐 Network: Using SOCKS proxy"
     echo "   ALL_PROXY=$ALL_PROXY"
     echo "   HTTP_PROXY=$HTTP_PROXY"
@@ -37,10 +55,10 @@ if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
     echo "  Testing proxy connectivity..."
     
     # First, verify SOCKS tunnel is accessible
-    if nc -z localhost ${SOCKS_PORT:-1080} 2>/dev/null; then
-        echo "  ✓ SOCKS tunnel is listening on port ${SOCKS_PORT:-1080}"
+    if nc -z localhost ${SOCKS_PORT} 2>/dev/null; then
+        echo "  ✓ SOCKS tunnel is listening on port ${SOCKS_PORT}"
     else
-        echo "  ✗ SOCKS tunnel NOT accessible on port ${SOCKS_PORT:-1080}"
+        echo "  ✗ SOCKS tunnel NOT accessible on port ${SOCKS_PORT}"
         echo "    This will cause all installations to fail!"
         echo ""
     fi
@@ -48,7 +66,7 @@ if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
     # Test actual connectivity through proxy using curl with explicit --socks5 flag
     # (More reliable than relying on HTTP_PROXY env var)
     echo "  → Testing https://github.com through proxy..."
-    if curl --socks5-hostname localhost:${SOCKS_PORT:-1080} --connect-timeout 10 -s -I https://github.com 2>&1 | head -1 | grep -q "HTTP"; then
+    if curl --socks5-hostname localhost:${SOCKS_PORT} --connect-timeout 10 -s -I https://github.com 2>&1 | head -1 | grep -q "HTTP"; then
         echo "  ✓ SOCKS proxy is working (github.com reachable)"
         echo ""
     else
@@ -62,14 +80,14 @@ if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
     echo "📦 Installing gost (HTTP-to-SOCKS bridge) first..."
     echo "   (Required for Homebrew to work properly with SOCKS proxy)"
     
-    # Install gost using curl (which supports SOCKS5 well)
+    # Install gost using Homebrew with ALL_PROXY
     if ! command_exists gost; then
-        # Try Homebrew install with just ALL_PROXY (most reliable for brew)
-        if ALL_PROXY="$ALL_PROXY" brew install gost 2>&1 | grep -v "^==>" | grep -v "^Pouring" || true; then
+        echo "  → Installing gost via Homebrew..."
+        if ALL_PROXY="$ALL_PROXY" brew install gost 2>&1 | grep -E "Downloaded|Pouring|Installed" || true; then
             if command_exists gost; then
                 echo "  ✓ gost installed"
             else
-                echo "  ⚠ gost install may have failed"
+                echo "  ⚠ gost install may have failed, continuing anyway"
             fi
         fi
     else
@@ -82,18 +100,18 @@ if [ -n "$HTTP_PROXY" ] && [ -n "$HTTPS_PROXY" ]; then
         # Kill any existing gost process
         pkill -f "gost -L" 2>/dev/null || true
         # Start gost in background
-        nohup gost -L "http://:${HTTP_PROXY_PORT:-8080}" -F "socks5://localhost:${SOCKS_PORT:-1080}" >/dev/null 2>&1 &
+        nohup gost -L "http://:${HTTP_PROXY_PORT}" -F "socks5://localhost:${SOCKS_PORT}" >/dev/null 2>&1 &
         echo $! > ~/.cal-http-proxy.pid
-        disown
+        disown 2>/dev/null || true
         sleep 2
         
         # Verify it's running
-        if nc -z localhost ${HTTP_PROXY_PORT:-8080} 2>/dev/null; then
-            echo "  ✓ HTTP bridge running on port ${HTTP_PROXY_PORT:-8080}"
+        if nc -z localhost ${HTTP_PROXY_PORT} 2>/dev/null; then
+            echo "  ✓ HTTP bridge running on port ${HTTP_PROXY_PORT}"
             
             # Now switch to HTTP proxy (much faster for Homebrew)
-            export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
-            export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT:-8080}"
+            export HTTP_PROXY="http://localhost:${HTTP_PROXY_PORT}"
+            export HTTPS_PROXY="http://localhost:${HTTP_PROXY_PORT}"
             export http_proxy="$HTTP_PROXY"
             export https_proxy="$HTTPS_PROXY"
             
@@ -112,21 +130,9 @@ else
     echo ""
 fi
 
-# Ensure Homebrew is in PATH (needed for non-interactive SSH)
-if [ -x /opt/homebrew/bin/brew ]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-elif [ -x /usr/local/bin/brew ]; then
-    eval "$(/usr/local/bin/brew shellenv)"
-fi
-
 # Helper function to check if a brew package is installed
 brew_installed() {
     brew list "$1" &>/dev/null
-}
-
-# Helper function to check if a command exists
-command_exists() {
-    command -v "$1" &>/dev/null
 }
 
 # Update homebrew
