@@ -36,7 +36,7 @@
   - [x] Verify credential persistence (works after SSH reconnect)
   - [x] Test across VM reboots (credentials persist with keychain unlock + .zshrc)
   - [x] Verify auto-unlock on connection
-  - [ ] **TODO: Fix Cursor agent login reliability** - Sometimes fails to authenticate even with keychain unlocked. Needs investigation of Cursor credential storage mechanism.
+  - [x] **NOT FIXABLE: Cursor agent authentication in VMs** - OAuth polling fails to detect browser completion in VM environments. API key authentication requires OAuth config to exist first (dependency cycle). Cursor CLI is not currently compatible with VM/SSH-only environments. Testing confirmed (Jan 2026) that both OAuth and API key methods fail in Tart VMs.
 - [x] **SSH Alternatives Investigation** (Phase 0.8 - Complete)
   - [x] Research alternatives (Mosh, Eternal Terminal, console access, tmux)
   - [x] Performance testing and comparison
@@ -67,7 +67,7 @@
   - [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
      - [ ] Add option to sync git repos on init (clone specified repos into VM automatically)
      - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
-     - [ ] Add Cursor API key auth login support (https://cursor.com/docs/cli/reference/authentication)
+     - [x] **NOT FIXABLE: Cursor API key auth support** - API keys require OAuth-downloaded user configuration to function. Since OAuth polling fails in VMs (see Phase 0.8), API keys cannot work either. Cursor CLI authentication not possible in VM environments.
      - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
      - [ ] Verify opencode login flow is fixed (test authentication reliability)
      - [ ] Add Codex GitHub CLI Antigravity tools installation in init

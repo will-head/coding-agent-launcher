@@ -17,9 +17,9 @@ SCRIPT_DIR="${0:A:h}"
 #   --yes, -y       Skip confirmation prompts
 #
 # Environment variables:
-#   TART_PATH     - Path to tart binary
-#   VM_USER       - VM username (default: admin)
-#   VM_PASSWORD   - VM password (default: admin)
+#   TART_PATH       - Path to tart binary
+#   VM_USER         - VM username (default: admin)
+#   VM_PASSWORD     - VM password (default: admin)
 
 # VM names
 VM_CLEAN="cal-clean"

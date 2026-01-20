@@ -202,6 +202,8 @@ if cursor_authenticated; then
     read -r -k 1 reply
     echo ""
     if [[ "$reply" =~ ^[Yy]$ ]]; then
+        echo "  ⚠ OAuth over SSH may require Screen Sharing for browser auth"
+        echo "  → Use: open vnc://$(hostname -I | awk '{print $1}')"
         agent
     else
         echo "  → Skipped"
@@ -209,6 +211,10 @@ if cursor_authenticated; then
 else
     if command_exists agent; then
         echo "  ⚠ Not authenticated"
+        echo ""
+        echo "  ⚠ OAuth requires browser access and keychain unlock"
+        echo "  → For GUI access use: open vnc://$(hostname -I | awk '{print $1}')"
+        echo ""
         echo -n "  Authenticate now? [Y/n] "
         read -r -k 1 reply
         echo ""
