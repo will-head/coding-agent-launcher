@@ -115,7 +115,8 @@
        - [ ] Add Ctrl+C trap handlers during authentication flows
        - [ ] Ensure gh username parsing works in non-English locales
      - [ ] **cal-bootstrap Script Enhancements**
-       - [ ] Show VM/snapshot sizes in `--snapshot list` output
+       - [x] Show VM/snapshot sizes in `--snapshot list` output (uses JSON API, displays actual size with GB units, includes total)
+       - [x] Remove cal-dev prefix from snapshot names (snapshots now use exact names specified by user)
        - [ ] Allow `--snapshot delete` to accept multiple VM names
      - [ ] **Session State Management** (Phase 0.11 - Future)
        - [ ] Implement constant context state persistence

@@ -56,7 +56,8 @@ Automated Tart setup for immediate safe agent use.
    - [ ] Make `--init` safer with pre-deletion checks and warnings
    - [ ] Install all packages required for full Go development in cal-dev during --init
  - [ ] **cal-bootstrap Script Enhancements**
-   - [ ] Show VM/snapshot sizes in `--snapshot list`
+   - [x] Show VM/snapshot sizes in `--snapshot list` (actual size in GB, with total)
+   - [x] Remove cal-dev prefix from snapshot names (use exact names)
    - [ ] Allow `--snapshot delete` to accept multiple VM names
  - [ ] **Session State Management** (Phase 0.11 - Future)
    - [ ] Implement constant context state persistence for seamless recovery

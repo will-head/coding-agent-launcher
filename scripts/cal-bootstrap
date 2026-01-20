@@ -1233,9 +1233,9 @@ do_snapshot() {
             
             # Stop VM if running
             stop_vm "$VM_DEV"
-            
-            local snapshot_name="${VM_DEV}-${name}"
-            
+
+            local snapshot_name="$name"
+
             if vm_exists "$snapshot_name"; then
                 if [ "$SKIP_CONFIRM" = true ]; then
                     "$TART" delete "$snapshot_name"
@@ -1271,11 +1271,6 @@ do_snapshot() {
             # Resolve short name to full name
             local restore_from
             restore_from=$(resolve_vm_name "$name")
-
-            if [ -z "$restore_from" ]; then
-                # Try with prefix
-                restore_from=$(resolve_vm_name "${VM_DEV}-${name}")
-            fi
 
             if [ -z "$restore_from" ]; then
                 echo "VM '$name' not found"
@@ -1393,9 +1388,18 @@ do_snapshot() {
             ;;
             
         list)
-            # Check for short name collisions
+            # Check if jq is available (required for JSON parsing)
+            if ! command -v jq &>/dev/null; then
+                echo "Error: jq is required for listing VMs with size information"
+                echo ""
+                echo "Install with: brew install jq"
+                echo ""
+                exit 1
+            fi
+
+            # Check for short name collisions (use text output for this)
             local collision_check
-            collision_check=$("$TART" list | awk 'NR==1 {next} {
+            collision_check=$("$TART" list 2>/dev/null | awk 'NR==1 {next} {
                 full_name = $2
                 source = $1
 
@@ -1417,20 +1421,47 @@ do_snapshot() {
                 echo ""
             fi
 
-            # List VMs (simplified output - show all VMs/snapshots together)
-            "$TART" list | awk -v collisions="$collision_check" '
+            # List VMs using JSON for accurate size data
+            local json_output
+            json_output=$("$TART" list --format json 2>&1)
+
+            if [ $? -ne 0 ] || [ -z "$json_output" ]; then
+                echo "Error: Failed to get VM list from tart"
+                echo ""
+                echo "Try running: tart list"
+                echo ""
+                exit 1
+            fi
+
+            local parsed_data
+            parsed_data=$(echo "$json_output" | jq -r '.[] | "\(.Name)|\(.Source)|\(.Size)|\(.State)"' 2>&1)
+
+            if [ $? -ne 0 ]; then
+                echo "Error: Failed to parse VM data"
+                echo ""
+                echo "This may indicate a problem with tart or jq."
+                echo "Try running: tart list --format json"
+                echo ""
+                exit 1
+            fi
+
+            echo "$parsed_data" | awk -F'|' -v collisions="$collision_check" '
                 BEGIN {
                     # Build collision map
                     split(collisions, coll_array, "\n")
                     for (i in coll_array) {
                         collision_map[coll_array[i]] = 1
                     }
+                    total_size = 0
                 }
-                NR==1 {next}
                 {
-                    full_name = $2
-                    source = $1
-                    state = $NF
+                    full_name = $1
+                    source = $2
+                    size = $3
+                    state = $4
+
+                    # Add to total
+                    total_size += size
 
                     # Create short name for display
                     short_name = full_name
@@ -1441,15 +1472,25 @@ do_snapshot() {
                         }
                     }
 
-                    # Show full name if collision
-                    if (short_name in collision_map) {
-                        printf "  %s (%s)\n", full_name, state
+                    # Determine which name to show
+                    display_name = (short_name in collision_map) ? full_name : short_name
+
+                    # Format size with GB suffix and space
+                    size_str = size " GB"
+
+                    # If name is too long, put it on its own line
+                    if (length(display_name) > 40) {
+                        printf "  %s\n", display_name
+                        printf "  %-40s %-10s (%s)\n", "", size_str, state
                     } else {
-                        printf "  %s (%s)\n", short_name, state
+                        printf "  %-40s %-10s (%s)\n", display_name, size_str, state
                     }
+                }
+                END {
+                    print ""
+                    printf "Total: %d GB\n", total_size
                 }'
-            echo ""
-            echo "💡 All VMs and snapshots are listed. Use short names unless collision detected."
+
             echo ""
             exit 0
             ;;
@@ -1465,12 +1506,7 @@ do_snapshot() {
             # Resolve short name to full name
             local vm_to_delete
             vm_to_delete=$(resolve_vm_name "$name")
-            
-            if [ -z "$vm_to_delete" ]; then
-                # Try with prefix
-                vm_to_delete=$(resolve_vm_name "${VM_DEV}-${name}")
-            fi
-            
+
             if [ -z "$vm_to_delete" ]; then
                 echo "VM '$name' not found"
                 echo ""
