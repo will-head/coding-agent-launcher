@@ -1,6 +1,6 @@
 # Pull Requests
 
-> Track PRs created via GLM workflow. Move entries between sections as status changes.
+> Track PRs created via Create PR workflow. Move entries between sections as status changes.
 
 ---
 

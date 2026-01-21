@@ -5,12 +5,12 @@
 
 ## Workflow Modes
 
-User specifies workflow at session start. **Default is Standard** unless GLM or Documentation is specified.
+User specifies workflow at session start. **Default is Standard** unless Create PR or Documentation is specified.
 
 | Mode | Use Case | Approvals | Target |
 |------|----------|-----------|--------|
 | **Standard** | Default for code changes | Required | main branch |
-| **GLM** | PR-based development | Not required | `glm/` branch → PR |
+| **Create PR** | PR-based development | Not required | `create-pr/` branch → PR |
 | **Documentation** | Docs-only changes | Commit only | main or PR |
 
 ---
@@ -87,7 +87,7 @@ Sync TODOs:
 
 ---
 
-## GLM Workflow (5-Step)
+## Create PR Workflow (5-Step)
 
 **Purpose:** PR-based development with automated checks. All changes go through pull requests.
 
@@ -99,15 +99,15 @@ Sync TODOs:
 
 ### Branch Naming
 
-Use `glm/feature-name` format:
+Use `create-pr/feature-name` format:
 ```bash
-git checkout -b glm/add-snapshot-validation
-git checkout -b glm/fix-ssh-timeout
+git checkout -b create-pr/add-snapshot-validation
+git checkout -b create-pr/fix-ssh-timeout
 ```
 
 ### Step 1: Implement (TDD)
 
-1. Create feature branch: `git checkout -b glm/feature-name`
+1. Create feature branch: `git checkout -b create-pr/feature-name`
 2. Write failing test first
 3. Implement minimum code to pass test
 4. Refactor if needed
@@ -163,7 +163,7 @@ go build -o cal ./cmd/cal
 2. Include PR number, branch, description, and creation date
 3. Move to next task
 
-### GLM Pre-PR Checklist
+### Create PR Pre-PR Checklist
 
 Before creating PR:
 - [ ] Tests pass

@@ -21,12 +21,12 @@ scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 
 ### Workflow Modes
 
-User specifies workflow at session start. Default is **Standard** unless GLM or Documentation is specified.
+User specifies workflow at session start. Default is **Standard** unless Create PR or Documentation is specified.
 
 | Mode | Use Case | Details |
 |------|----------|---------|
 | **Standard** | Default for code changes | 8-step with approvals |
-| **GLM** | PR-based development | 5-step, no approvals, all changes via PR |
+| **Create PR** | PR-based development | 5-step, no approvals, all changes via PR |
 | **Documentation** | Docs-only changes | Skip tests/build/review |
 
 See `docs/WORKFLOW.md` for detailed procedures.
@@ -44,12 +44,12 @@ Exception: Read/Grep/Glob tools for searching code.
 6. **Update Docs** - Update affected docs, sync TODOs to PLAN.md
 7. **Commit** - Ask approval, use Co-Authored-By line
 
-### GLM Workflow (5-Step)
+### Create PR Workflow (5-Step)
 
 **No permission needed** for tests/builds/PR creation. **No destructive operations.**
-**Never commit to main** - all changes via PR on `glm/feature-name` branch.
+**Never commit to main** - all changes via PR on `create-pr/feature-name` branch.
 
-1. **Implement** - TDD: write test first, then code (on `glm/` branch)
+1. **Implement** - TDD: write test first, then code (on `create-pr/` branch)
 2. **Test** - Run `go test ./...`, must pass
 3. **Build** - Run `go build -o cal ./cmd/cal`, must pass
 4. **Create PR** - Push branch, create PR with manual testing instructions
@@ -59,7 +59,7 @@ Exception: Read/Grep/Glob tools for searching code.
 
 For changes **only** to `.md` files or code comments:
 - Skip tests, build, and code review
-- Still require user approval to commit (Standard) or create PR (GLM)
+- Still require user approval to commit (Standard) or create PR (Create PR)
 
 ### TODOs
 - **`docs/PLAN.md` is the single source of truth** for all TODOs
@@ -90,7 +90,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 **Never:**
 - Run commands without user approval (Standard workflow)
 - Commit without user approval (Standard workflow)
-- Commit to main branch (GLM workflow)
+- Commit to main branch (Create PR workflow)
 - Perform destructive operations without approval (all workflows)
 - Commit with failing tests or build
 - Skip code review for code/script changes (Standard workflow)
@@ -112,7 +112,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 **Planning (read for tasks):**
 - [PLAN.md](docs/PLAN.md) - TODOs and implementation tasks **(source of truth)**
-- [PRS.md](PRS.md) - Pull requests tracking (GLM workflow)
+- [PRS.md](PRS.md) - Pull requests tracking (Create PR workflow)
 
 **Operational:**
 - [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) - Comprehensive operational guide
