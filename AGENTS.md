@@ -44,7 +44,7 @@ Exception: Read/Grep/Glob tools for searching code.
 3. **Build** - Ask approval, run `go build -o cal ./cmd/cal`, stop if fail
 4. **Code Review** - Review quality, security, conventions
 5. **Present Review** - Show findings, **STOP for user approval**
-6. **Update Docs** - Update affected docs, sync TODOs to PLAN.md
+6. **Update Docs** - Update affected docs, update PLAN.md with current project status
 7. **Commit** - Ask approval, use Co-Authored-By line
 
 ### Create PR Workflow (6-Step)
@@ -57,7 +57,7 @@ Exception: Read/Grep/Glob tools for searching code.
 3. **Test** - Run `go test ./...`, must pass
 4. **Build** - Run `go build -o cal ./cmd/cal`, must pass
 5. **Create PR** - Push branch, create PR with manual testing instructions
-6. **Update PRS.md** - Add PR to "Awaiting Review" section, move to next task
+6. **Update Docs** - Add PR to PRS.md "Awaiting Review", update PLAN.md with current status
 
 ### Review PR Workflow (6-Step)
 
@@ -68,7 +68,7 @@ Exception: Read/Grep/Glob tools for searching code.
 3. **Review Code** - Comprehensive review of quality, architecture, security, best practices
 4. **Update Standards** - Add recurring error patterns to CODING_STANDARDS.md
 5. **Submit Review** - Use `gh pr review` to APPROVE or REQUEST_CHANGES
-6. **Update PRS.md** - Switch to main, move PR to "Reviewed" or "Awaiting Changes"
+6. **Update Docs** - Switch to main, update PRS.md status, update PLAN.md if PR relates to tracked work
 
 ### Update PR Workflow (8-Step)
 
@@ -82,7 +82,7 @@ Exception: Read/Grep/Glob tools for searching code.
 5. **Implement Changes** - Apply fixes based on review feedback, TDD if needed
 6. **Test** - Run `go test ./...`, must pass
 7. **Build** - Run `go build -o cal ./cmd/cal`, must pass
-8. **Push and Update PRS.md** - Push changes, switch to main, move PR to "Awaiting Review"
+8. **Update Docs** - Push changes, switch to main, update PRS.md and PLAN.md with current status
 
 ### Merge PR Workflow (8-Step)
 
@@ -95,7 +95,7 @@ Exception: Read/Grep/Glob tools for searching code.
 4. **Update Local Main** - Ask approval, switch to main and run `git pull` to update
 5. **Delete Branch** - Ask approval, delete local and remote PR branch
 6. **Update PRS.md** - Move PR to "Merged" section with merge date
-7. **Update PLAN.md** - Mark related TODOs as complete if applicable
+7. **Update PLAN.md** - Mark completed TODOs as [x], update phase status and current project status
 8. **Commit Docs** - Ask approval, commit updated documentation with Co-Authored-By line
 
 ### Documentation Workflow
