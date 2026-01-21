@@ -1,6 +1,6 @@
 # Pull Requests
 
-> Track PRs created via Create PR workflow. Move entries between sections as status changes.
+> Track PRs created via Create PR workflow, reviewed via Review PR workflow, and updated via Update PR workflow. Move entries between sections as status changes.
 
 ---
 
@@ -9,6 +9,14 @@
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
 | *No PRs awaiting review* | | | |
+
+---
+
+## Awaiting Changes
+
+| PR | Branch | Description | Requested | Reason |
+|----|--------|-------------|-----------|--------|
+| *No PRs awaiting changes* | | | | |
 
 ---
 

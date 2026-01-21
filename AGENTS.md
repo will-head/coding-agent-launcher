@@ -27,6 +27,8 @@ User specifies workflow at session start. Default is **Standard** unless Create 
 |------|----------|---------|
 | **Standard** | Default for code changes | 8-step with approvals |
 | **Create PR** | PR-based development | 5-step, no approvals, all changes via PR |
+| **Review PR** | Code review of PRs | 6-step, no approvals, autonomous review |
+| **Update PR** | Address PR feedback | 7-step, no approvals, autonomous fixes |
 | **Documentation** | Docs-only changes | Skip tests/build/review |
 
 See `docs/WORKFLOW.md` for detailed procedures.
@@ -54,6 +56,30 @@ Exception: Read/Grep/Glob tools for searching code.
 3. **Build** - Run `go build -o cal ./cmd/cal`, must pass
 4. **Create PR** - Push branch, create PR with manual testing instructions
 5. **Update PRS.md** - Add PR to "Awaiting Review" section, move to next task
+
+### Review PR Workflow (6-Step)
+
+**No permission needed** for review operations. **Autonomous code review and PR updates.**
+
+1. **Read PRS.md** - Get first PR from "Awaiting Review" section
+2. **Fetch PR** - Use `gh pr checkout <PR#>` to review locally
+3. **Review Code** - Comprehensive review of quality, architecture, security, best practices
+4. **Update Standards** - Add recurring error patterns to CODING_STANDARDS.md
+5. **Submit Review** - Use `gh pr review` to APPROVE or REQUEST_CHANGES
+6. **Update PRS.md** - Switch to main, move PR to "Reviewed" or "Awaiting Changes"
+
+### Update PR Workflow (7-Step)
+
+**No permission needed** for fixes/tests/builds/push. **Autonomous implementation of review feedback.**
+**Never commit to main** - work on existing PR branches.
+
+1. **Read PRS.md** - Get first PR from "Awaiting Changes" section
+2. **Fetch PR** - Use `gh pr checkout <PR#>` to check out branch
+3. **Analyze Review** - Use `gh pr view <PR#>` to understand feedback
+4. **Implement Changes** - Apply fixes based on review feedback, TDD if needed
+5. **Test** - Run `go test ./...`, must pass
+6. **Build** - Run `go build -o cal ./cmd/cal`, must pass
+7. **Push and Update PRS.md** - Push changes, switch to main, move PR to "Awaiting Review"
 
 ### Documentation Workflow
 
