@@ -179,8 +179,13 @@ clone_git_repos() {
     echo "  Your repositories (top 50, sorted by last push):"
     echo ""
 
-    echo "$repos" | jq -r '.[] | "  \(.owner.login)/\(.name) (⭐ \(.stargazerCount))"' 2>/dev/null || \
+    # Check if jq is available for pretty formatting and sorting
+    if command_exists jq; then
+        echo "$repos" | jq -r 'sort_by(.pushedAt) | reverse | .[] | "  \(.owner.login)/\(.name) (⭐ \(.stargazerCount))"'
+    else
+        # Fallback without jq (no sorting or formatting)
         gh repo list --limit 50 | sed 's/^/  /'
+    fi
 
     echo ""
     echo "  Enter repos to clone (comma-separated, e.g., repo1,repo2)"
@@ -211,8 +216,7 @@ clone_git_repos() {
         owner=$(echo "$repo" | cut -d'/' -f1)
         repo_name=$(echo "$repo" | cut -d'/' -f2)
 
-        local clone_path="~/code/github.com/$owner/$repo_name"
-        clone_path=$(eval echo "$clone_path")
+        local clone_path="${HOME}/code/github.com/$owner/$repo_name"
 
         echo -n "    Cloning $repo... "
 
@@ -221,11 +225,21 @@ clone_git_repos() {
             continue
         fi
 
-        if mkdir -p "$(dirname "$clone_path")" && git clone "git@github.com:$repo.git" "$clone_path" &>/dev/null; then
+        # Capture stderr for better error reporting
+        local clone_error
+        clone_error=$(git clone "git@github.com:$repo.git" "$clone_path" 2>&1)
+        local clone_status=$?
+
+        if [ $clone_status -eq 0 ]; then
             echo "  ✓ Done"
             success_count=$((success_count + 1))
         else
             echo "  ✗ Failed"
+            # Show first line of error for context
+            local error_msg=$(echo "$clone_error" | head -1 | sed 's/^/      /')
+            if [ -n "$error_msg" ]; then
+                echo "$error_msg"
+            fi
             failed_repos="$failed_repos $repo"
         fi
     done
