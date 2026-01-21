@@ -8,7 +8,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| *No PRs awaiting review* | | | |
+| [PR#1](https://github.com/will-head/coding-agent-launcher/pull/1) | glm/git-repo-sync-init | Add Git Repo Sync on Init Feature | 2026-01-21 |
 
 ---
 

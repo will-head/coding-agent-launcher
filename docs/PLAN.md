@@ -65,8 +65,8 @@
    - [x] Auto-start in vm-auth.sh if network fails
    - [x] Check host SSH server and Python availability
    - [x] Comprehensive documentation (docs/proxy.md, updated bootstrap.md and architecture.md)
-  - [ ] **Init Improvements and Enhancements** (Phase 0.10 - Pending)
-     - [ ] Add option to sync git repos on init (clone specified repos into VM automatically)
+   - [ ] **Init Improvements and Enhancements** (Phase 0.10 - In Progress)
+      - [x] Add option to sync git repos on init (clone specified repos into VM automatically) - PR#1
      - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
      - [x] **NOT FIXABLE: Cursor API key auth support** - API keys require OAuth-downloaded user configuration to function. Since OAuth polling fails in VMs (see Phase 0.8), API keys cannot work either. Cursor CLI authentication not possible in VM environments.
      - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
