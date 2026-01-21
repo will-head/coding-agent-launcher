@@ -72,11 +72,24 @@
      - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
      - [ ] Verify opencode login flow is fixed (test authentication reliability)
      - [ ] Add Codex GitHub CLI Antigravity tools installation in init
-     - [ ] **Check and fix authentication flows**
-       - [ ] GH CLI: Fix PAT login flow (currently fails, token may be issue)
-       - [ ] opencode: Works but reports not authenticated in check (investigate status check)
-       - Note: Cursor CLI issues tracked separately (see Phase 0.8 line 39)
-       - Note: Claude Code authentication working correctly - do not modify
+      - [ ] **Check and fix authentication flows**
+        - [ ] GH CLI: Fix PAT login flow (currently fails, token may be issue)
+        - [ ] opencode: Works but reports not authenticated in check (investigate status check)
+        - Note: Cursor CLI issues tracked separately (see Phase 0.8 line 39)
+        - Note: Claude Code authentication working correctly - do not modify
+      - [ ] **Clone GitHub repos in vm-auth** - after gh authentication
+        - [ ] Prompt user to select repos to clone (present list of user's repos)
+        - [ ] Clone selected repos to ~/code/[github server]/[username]/[repo]
+        - [ ] Support multiple GitHub servers (github.com, enterprise)
+      - [ ] **First login git updates in cal-init**
+        - [ ] vm-setup.sh sets flag variable for first login
+        - [ ] Login script checks flag and scans ~/code for git updates
+        - [ ] Prompt user to pull if updates found
+        - [ ] Unset flag variable after first login scan complete
+      - [ ] **Logout git status check**
+        - [ ] On logout (exit, Ctrl-D, Ctrl-C) scan ~/code directories for git changes
+        - [ ] Prompt user to push before exit if uncommitted/unpushed changes found
+        - [ ] Allow user to abort logout or continue despite changes
      - [x] Renamed cal-initialised to cal-init (shorter, clearer naming)
      - [x] Make `--init` safer: delete existing cal-dev and cal-init as first step
        - [x] Warn user before deletion
