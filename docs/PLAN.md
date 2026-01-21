@@ -157,6 +157,15 @@
         - [x] Document 8-step merge procedure in CLAUDE.md
         - [x] Add to WORKFLOW.md with detailed procedures
         - [x] Update session start workflow lists
+      - [x] Add Test PR workflow (7-step manual testing gate)
+        - [x] Add to workflow mode table in CLAUDE.md and AGENTS.md
+        - [x] Document 7-step test procedure in CLAUDE.md and AGENTS.md
+        - [x] Add to WORKFLOW.md with detailed procedures
+        - [x] Update session start workflow lists
+        - [x] Add "Tested" section to PRS.md between "Reviewed" and "Merged"
+        - [x] Update Merge PR workflow to read from "Tested" instead of "Reviewed"
+        - [x] Create comprehensive PR workflow diagram (PR-WORKFLOW-DIAGRAM.md)
+        - [x] Verify all workflows update PLAN.md and return to main branch
 
 **Deliverable:** Core Phase 0 implementation documented in [ADR-002](adr/ADR-002-tart-vm-operational-guide.md). Three-tier VM architecture, automated setup, transparent proxy, git safety checks, and VM detection. Outstanding items in 0.8/0.10/0.11 tracked above.
 

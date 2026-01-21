@@ -29,7 +29,8 @@ User specifies workflow at session start. Default is **Standard** unless Create 
 | **Create PR** | PR-based development | 6-step, no approvals, all changes via PR |
 | **Review PR** | Code review of PRs | 6-step, no approvals, autonomous review |
 | **Update PR** | Address PR feedback | 8-step, no approvals, autonomous fixes |
-| **Merge PR** | Merge reviewed PRs | 8-step with approvals, merge to main |
+| **Test PR** | Manual testing gate | 7-step, test confirmation required |
+| **Merge PR** | Merge tested PRs | 8-step with approvals, merge to main |
 | **Documentation** | Docs-only changes | Skip tests/build/review |
 
 See `docs/WORKFLOW.md` for detailed procedures.
@@ -84,12 +85,25 @@ Exception: Read/Grep/Glob tools for searching code.
 7. **Build** - Run `go build -o cal ./cmd/cal`, must pass
 8. **Update Docs** - Push changes, switch to main, update PRS.md and PLAN.md with current status
 
-### Merge PR Workflow (8-Step)
+### Test PR Workflow (7-Step)
 
-**Ask user approval before running ANY command.** Merge reviewed PRs into main branch.
-**Use merge commit strategy** to preserve full PR history.
+**Autonomous until presenting test instructions, then require user approval.**
+**Manual testing gate before merge.**
 
 1. **Read PRS.md** - Get first PR from "Reviewed" section
+2. **Fetch PR** - Use `gh pr view <PR#>` to get manual testing instructions
+3. **Present Tests** - Show test plan, **STOP for user confirmation**
+4. **Evaluate** - Determine pass/fail based on user response
+5. **Success Path** - Move to PRS.md "Tested" section if passed
+6. **Failure Path** - Add PR comment with feedback, move to "Awaiting Changes" if failed
+7. **Update Docs** - Switch to main, update PLAN.md with current status
+
+### Merge PR Workflow (8-Step)
+
+**Ask user approval before running ANY command.** Merge tested PRs into main branch.
+**Use merge commit strategy** to preserve full PR history.
+
+1. **Read PRS.md** - Get first PR from "Tested" section
 2. **Fetch PR Details** - Use `gh pr view <PR#>` to verify PR is ready to merge
 3. **Merge PR** - Ask approval, run `gh pr merge <PR#> --merge` to merge into main
 4. **Update Local Main** - Ask approval, switch to main and run `git pull` to update
@@ -149,6 +163,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
    - Create PR (6-step, autonomous, PR-based)
    - Review PR (6-step, autonomous review)
    - Update PR (8-step, autonomous fixes)
+   - Test PR (7-step, manual testing gate)
    - Merge PR (8-step with approvals)
    - Documentation (docs-only)
 2. Ask approval, then run `git status` and `git fetch`
@@ -170,6 +185,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 **Reference:**
 - [WORKFLOW.md](docs/WORKFLOW.md) - Git workflow details
+- [PR-WORKFLOW-DIAGRAM.md](docs/PR-WORKFLOW-DIAGRAM.md) - Visual PR workflow diagram (Create/Review/Update/Test/Merge)
 - [architecture.md](docs/architecture.md) - System design
 - [cli.md](docs/cli.md) - Command reference
 - [SPEC.md](docs/SPEC.md) - Technical specification

@@ -28,6 +28,14 @@
 
 ---
 
+## Tested
+
+| PR | Branch | Description | Tested By | Tested Date |
+|----|--------|-------------|-----------|-------------|
+| *No tested PRs* | | | | |
+
+---
+
 ## Merged
 
 | PR | Branch | Description | Merged |

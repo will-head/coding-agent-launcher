@@ -2,6 +2,8 @@
 
 > Detailed procedures for commits, code review, and documentation updates.
 > Read this when performing git operations.
+>
+> 📊 **Visual Diagram:** See [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) for complete flow from Create PR to Merge PR with all cycles and branch management.
 
 ## Workflow Modes
 
@@ -13,6 +15,7 @@ User specifies workflow at session start. **Default is Standard** unless Create 
 | **Create PR** | PR-based development (6-step) | Not required | `create-pr/` branch → PR |
 | **Review PR** | Code review of PRs (6-step) | Not required | PR review + PRS.md update |
 | **Update PR** | Address PR feedback (8-step) | Not required | Existing PR branch → resubmit |
+| **Test PR** | Manual testing of reviewed PRs (7-step) | Required for test confirmation | Manual test + PRS.md update |
 | **Merge PR** | Merge reviewed PRs (8-step) | Required | PR → main branch |
 | **Documentation** | Docs-only changes | Commit only | main or PR |
 
@@ -27,6 +30,7 @@ On new session:
    - Create PR (6-step, autonomous, PR-based)
    - Review PR (6-step, autonomous review)
    - Update PR (8-step, autonomous fixes)
+   - Test PR (7-step, manual testing gate)
    - Merge PR (8-step with approvals)
    - Documentation (docs-only)
 3. Ask user approval, then run `git status` and `git fetch`
@@ -355,8 +359,6 @@ Before completing review:
 - [ ] PRS.md updated with correct section and details
 - [ ] PLAN.md updated if PR relates to tracked work
 
----
-
 ## Update PR Workflow (8-Step)
 
 **Purpose:** Address review feedback on PRs that need changes. Autonomously implements fixes and resubmits for review.
@@ -474,10 +476,141 @@ Before pushing updates:
 - [ ] PLAN.md updated with current project status
 
 ---
+---
 
+## Test PR Workflow (7-Step)
+
+**Purpose:** Manual testing gate before merge. Agent presents test instructions and waits for user confirmation of test results.
+
+**Key Principles:**
+- **Autonomous until test presentation** - no permission needed to fetch PR details
+- **User approval required** - must wait for manual test results confirmation
+- **PR comments for feedback** - add comment with failure details if tests fail
+- **Update PRS.md status** - move to "Tested" on success or "Awaiting Changes" on failure
+- **Clean workspace** - return to main branch after testing workflow
+
+### Step 1: Read Test Queue
+
+Read `PRS.md` to find the first PR in "Reviewed" section:
+```bash
+# Example entry format
+| #42 | create-pr/add-validation | Add input validation | Claude Sonnet 4.5 | 2026-01-21 |
+```
+
+If no PRs in "Reviewed", report completion and exit workflow.
+
+### Step 2: Fetch PR Details
+
+Fetch PR details to retrieve manual testing instructions (no permission needed):
+```bash
+gh pr view <PR#>
+```
+
+Extract the "Manual Testing Instructions" section from the PR description. This was created during the Create PR workflow.
+
+### Step 3: Present Test Instructions
+
+Present the full manual testing instructions to the user in clear, actionable format:
+
+**Format:**
+```
+Manual Testing Required for PR #<number>: <title>
+
+## Test Instructions
+[Full test plan from PR description]
+
+## Expected Outcomes
+[Expected results for each test step]
+
+Please run these tests and respond with:
+- "tests passed" or "pass" - if all tests succeed
+- "tests failed: [details]" - if any tests fail, include what went wrong
+```
+
+**STOP and wait for user response.** Do not proceed until user confirms test results.
+
+### Step 4: Evaluate Test Results
+
+Based on user response:
+
+**If tests passed:**
+- Proceed to Step 5 (Update PRS.md - Success Path)
+
+**If tests failed:**
+- Proceed to Step 6 (Add Failure Comment)
+
+### Step 5: Update PRS.md - Success Path
+
+If manual tests passed, update PRS.md to move PR to "Tested" section:
+
+1. Switch to main branch (if not already):
+   ```bash
+   git checkout main
+   ```
+
+2. Remove from "Reviewed" section
+3. Add to "Tested" section (create if it doesn't exist):
+   ```markdown
+   ## Tested
+
+   | PR | Branch | Description | Tested By | Tested Date |
+   |----|--------|-------------|-----------|-------------|
+   | #42 | create-pr/add-validation | Add input validation | User Name | 2026-01-21 |
+   ```
+
+Then proceed to Step 7 (Update PLAN.md).
+
+### Step 6: Add Failure Comment and Update PRS.md
+
+If manual tests failed:
+
+1. Add comment to PR with failure details (no permission needed):
+   ```bash
+   gh pr comment <PR#> --body "Manual testing failed.
+
+   ## Test Failure Details
+   [User's failure description]
+
+   Please address these issues and resubmit for review."
+   ```
+
+2. Switch to main branch:
+   ```bash
+   git checkout main
+   ```
+
+3. Remove from "Reviewed" section
+4. Add back to "Awaiting Changes" section with feedback:
+   ```markdown
+   | #42 | create-pr/add-validation | Add input validation | 2026-01-21 | Manual testing failed: [brief summary] |
+   ```
+
+Then proceed to Step 7 (Update PLAN.md).
+
+### Step 7: Update PLAN.md
+
+Update PLAN.md with current project status:
+- Mark any completed TODOs as [x] if the PR relates to tracked work
+- Update phase status if applicable
+- Note testing outcome in relevant sections
+
+**Always update PLAN.md** to keep project status current, even if just confirming no changes needed.
+
+### Test PR Pre-Test Checklist
+
+Before completing workflow:
+- [ ] PR details fetched from "Reviewed" section
+- [ ] Manual testing instructions presented to user
+- [ ] User confirmation received (passed or failed)
+- [ ] PR comment added if tests failed
+- [ ] Switched back to main branch
+- [ ] PRS.md updated ("Tested" if passed, "Awaiting Changes" if failed)
+- [ ] PLAN.md updated with current project status
+
+---
 ## Merge PR Workflow (8-Step)
 
-**Purpose:** Merge reviewed and approved PRs into the main branch. Integrates completed work and updates documentation.
+**Purpose:** Merge tested PRs into the main branch. Integrates completed work and updates documentation.
 
 **Key Principles:**
 - **User approval required** - ask permission before all commands
@@ -488,13 +621,13 @@ Before pushing updates:
 
 ### Step 1: Read Merge Queue
 
-Read `PRS.md` to find the first PR in "Reviewed" section:
+Read `PRS.md` to find the first PR in "Tested" section:
 ```bash
 # Example entry format
-| #42 | create-pr/add-validation | Add input validation | Claude Sonnet 4.5 | 2026-01-21 |
+| #42 | create-pr/add-validation | Add input validation | User Name | 2026-01-21 |
 ```
 
-If no PRs in "Reviewed", report completion and exit workflow.
+If no PRs in "Tested", report completion and exit workflow.
 
 ### Step 2: Fetch PR Details
 
@@ -545,11 +678,11 @@ Only delete after successful merge confirmation. If branch deletion fails, it ma
 
 ### Step 6: Update PRS.md
 
-Move PR entry from "Reviewed" to "Merged" section with merge date:
+Move PR entry from "Tested" to "Merged" section with merge date:
 
-**Remove from "Reviewed":**
+**Remove from "Tested":**
 ```markdown
-| #42 | create-pr/add-validation | Add input validation | Claude Sonnet 4.5 | 2026-01-21 |
+| #42 | create-pr/add-validation | Add input validation | User Name | 2026-01-21 |
 ```
 
 **Add to "Merged" section:**
