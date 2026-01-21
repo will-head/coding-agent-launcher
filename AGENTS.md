@@ -26,9 +26,9 @@ User specifies workflow at session start. Default is **Standard** unless Create 
 | Mode | Use Case | Details |
 |------|----------|---------|
 | **Standard** | Default for code changes | 8-step with approvals |
-| **Create PR** | PR-based development | 5-step, no approvals, all changes via PR |
+| **Create PR** | PR-based development | 6-step, no approvals, all changes via PR |
 | **Review PR** | Code review of PRs | 6-step, no approvals, autonomous review |
-| **Update PR** | Address PR feedback | 7-step, no approvals, autonomous fixes |
+| **Update PR** | Address PR feedback | 8-step, no approvals, autonomous fixes |
 | **Documentation** | Docs-only changes | Skip tests/build/review |
 
 See `docs/WORKFLOW.md` for detailed procedures.
@@ -46,16 +46,17 @@ Exception: Read/Grep/Glob tools for searching code.
 6. **Update Docs** - Update affected docs, sync TODOs to PLAN.md
 7. **Commit** - Ask approval, use Co-Authored-By line
 
-### Create PR Workflow (5-Step)
+### Create PR Workflow (6-Step)
 
 **No permission needed** for tests/builds/PR creation. **No destructive operations.**
 **Never commit to main** - all changes via PR on `create-pr/feature-name` branch.
 
-1. **Implement** - TDD: write test first, then code (on `create-pr/` branch)
-2. **Test** - Run `go test ./...`, must pass
-3. **Build** - Run `go build -o cal ./cmd/cal`, must pass
-4. **Create PR** - Push branch, create PR with manual testing instructions
-5. **Update PRS.md** - Add PR to "Awaiting Review" section, move to next task
+1. **Read Coding Standards** - Review CODING_STANDARDS.md to avoid past mistakes
+2. **Implement** - TDD: write test first, then code (on `create-pr/` branch)
+3. **Test** - Run `go test ./...`, must pass
+4. **Build** - Run `go build -o cal ./cmd/cal`, must pass
+5. **Create PR** - Push branch, create PR with manual testing instructions
+6. **Update PRS.md** - Add PR to "Awaiting Review" section, move to next task
 
 ### Review PR Workflow (6-Step)
 
@@ -68,18 +69,19 @@ Exception: Read/Grep/Glob tools for searching code.
 5. **Submit Review** - Use `gh pr review` to APPROVE or REQUEST_CHANGES
 6. **Update PRS.md** - Switch to main, move PR to "Reviewed" or "Awaiting Changes"
 
-### Update PR Workflow (7-Step)
+### Update PR Workflow (8-Step)
 
 **No permission needed** for fixes/tests/builds/push. **Autonomous implementation of review feedback.**
 **Never commit to main** - work on existing PR branches.
 
-1. **Read PRS.md** - Get first PR from "Awaiting Changes" section
-2. **Fetch PR** - Use `gh pr checkout <PR#>` to check out branch
-3. **Analyze Review** - Use `gh pr view <PR#>` to understand feedback
-4. **Implement Changes** - Apply fixes based on review feedback, TDD if needed
-5. **Test** - Run `go test ./...`, must pass
-6. **Build** - Run `go build -o cal ./cmd/cal`, must pass
-7. **Push and Update PRS.md** - Push changes, switch to main, move PR to "Awaiting Review"
+1. **Read Coding Standards** - Review CODING_STANDARDS.md to avoid past mistakes
+2. **Read PRS.md** - Get first PR from "Awaiting Changes" section
+3. **Fetch PR** - Use `gh pr checkout <PR#>` to check out branch
+4. **Analyze Review** - Use `gh pr view <PR#>` to understand feedback
+5. **Implement Changes** - Apply fixes based on review feedback, TDD if needed
+6. **Test** - Run `go test ./...`, must pass
+7. **Build** - Run `go build -o cal ./cmd/cal`, must pass
+8. **Push and Update PRS.md** - Push changes, switch to main, move PR to "Awaiting Review"
 
 ### Documentation Workflow
 
@@ -127,10 +129,16 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 ## Session Start
 
-1. Ask approval, then run `git status` and `git fetch`
-2. Read `docs/PLAN.md` for TODOs and current phase
-3. Acknowledge the active workflow mode to confirm understanding
-4. Report status and suggest next steps
+1. **Determine workflow** - If user hasn't specified or it's unclear which workflow to use, ask explicitly:
+   - Standard (8-step with approvals)
+   - Create PR (6-step, autonomous, PR-based)
+   - Review PR (6-step, autonomous review)
+   - Update PR (8-step, autonomous fixes)
+   - Documentation (docs-only)
+2. Ask approval, then run `git status` and `git fetch`
+3. Read `docs/PLAN.md` for TODOs and current phase
+4. Acknowledge the active workflow mode to confirm understanding
+5. Report status and suggest next steps
 
 ---
 

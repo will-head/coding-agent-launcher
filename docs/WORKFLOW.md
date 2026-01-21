@@ -9,10 +9,10 @@ User specifies workflow at session start. **Default is Standard** unless Create 
 
 | Mode | Use Case | Approvals | Target |
 |------|----------|-----------|--------|
-| **Standard** | Default for code changes | Required | main branch |
-| **Create PR** | PR-based development | Not required | `create-pr/` branch → PR |
-| **Review PR** | Code review of PRs | Not required | PR review + PRS.md update |
-| **Update PR** | Address PR feedback | Not required | Existing PR branch → resubmit |
+| **Standard** | Default for code changes (8-step) | Required | main branch |
+| **Create PR** | PR-based development (6-step) | Not required | `create-pr/` branch → PR |
+| **Review PR** | Code review of PRs (6-step) | Not required | PR review + PRS.md update |
+| **Update PR** | Address PR feedback (8-step) | Not required | Existing PR branch → resubmit |
 | **Documentation** | Docs-only changes | Commit only | main or PR |
 
 ---
@@ -21,10 +21,16 @@ User specifies workflow at session start. **Default is Standard** unless Create 
 
 On new session:
 1. Read AGENTS.md (core rules)
-2. Ask user approval, then run `git status` and `git fetch`
-3. Read `docs/PLAN.md` for current TODOs and phase status
-4. Acknowledge the active workflow mode
-5. Report status and suggest next steps from PLAN.md
+2. **Determine workflow** - If user hasn't specified or it's unclear which workflow to use, ask explicitly:
+   - Standard (8-step with approvals)
+   - Create PR (6-step, autonomous, PR-based)
+   - Review PR (6-step, autonomous review)
+   - Update PR (8-step, autonomous fixes)
+   - Documentation (docs-only)
+3. Ask user approval, then run `git status` and `git fetch`
+4. Read `docs/PLAN.md` for current TODOs and phase status
+5. Acknowledge the active workflow mode
+6. Report status and suggest next steps from PLAN.md
 
 ---
 
@@ -89,7 +95,7 @@ Sync TODOs:
 
 ---
 
-## Create PR Workflow (5-Step)
+## Create PR Workflow (6-Step)
 
 **Purpose:** PR-based development with automated checks. All changes go through pull requests.
 
@@ -107,14 +113,24 @@ git checkout -b create-pr/add-snapshot-validation
 git checkout -b create-pr/fix-ssh-timeout
 ```
 
-### Step 1: Implement (TDD)
+### Step 1: Read Coding Standards
+
+Read `CODING_STANDARDS.md` to review best practices and avoid past mistakes:
+- Review mandatory quality standards
+- Understand common error patterns to avoid
+- Reference security best practices
+- Follow language-specific conventions
+
+This ensures all code meets project standards from the start.
+
+### Step 2: Implement (TDD)
 
 1. Create feature branch: `git checkout -b create-pr/feature-name`
 2. Write failing test first
 3. Implement minimum code to pass test
 4. Refactor if needed
 
-### Step 2: Test
+### Step 3: Test
 
 Run automated tests (no permission needed):
 ```bash
@@ -123,7 +139,7 @@ go test ./...
 - **Must pass** before proceeding
 - Fix any failures before continuing
 
-### Step 3: Build
+### Step 4: Build
 
 Run build (no permission needed):
 ```bash
@@ -132,7 +148,7 @@ go build -o cal ./cmd/cal
 - **Must succeed** before proceeding
 - Fix any build errors before continuing
 
-### Step 4: Create PR
+### Step 5: Create PR
 
 1. Push branch to remote:
    ```bash
@@ -159,7 +175,7 @@ go build -o cal ./cmd/cal
 - [ ] Build succeeds (`go build -o cal ./cmd/cal`)
 ```
 
-### Step 5: Update PRS.md
+### Step 6: Update PRS.md
 
 1. Add new entry to `PRS.md` under "Awaiting Review" section
 2. Include PR number, branch, description, and creation date
@@ -168,6 +184,7 @@ go build -o cal ./cmd/cal
 ### Create PR Pre-PR Checklist
 
 Before creating PR:
+- [ ] Coding standards reviewed
 - [ ] Tests pass
 - [ ] Build succeeds
 - [ ] Manual testing instructions included
@@ -322,7 +339,7 @@ Before completing review:
 
 ---
 
-## Update PR Workflow (7-Step)
+## Update PR Workflow (8-Step)
 
 **Purpose:** Address review feedback on PRs that need changes. Autonomously implements fixes and resubmits for review.
 
@@ -333,7 +350,17 @@ Before completing review:
 - **Skip code review** - changes already went through PR review process
 - **Clean workspace** - return to main branch after updates
 
-### Step 1: Read Changes Queue
+### Step 1: Read Coding Standards
+
+Read `CODING_STANDARDS.md` to review best practices and avoid past mistakes:
+- Review mandatory quality standards
+- Understand common error patterns to avoid
+- Reference security best practices
+- Follow language-specific conventions
+
+This ensures fixes meet project standards and don't repeat known issues.
+
+### Step 2: Read Changes Queue
 
 Read `PRS.md` to find the first PR in "Awaiting Changes" section:
 ```bash
@@ -343,7 +370,7 @@ Read `PRS.md` to find the first PR in "Awaiting Changes" section:
 
 If no PRs in "Awaiting Changes", report completion and exit workflow.
 
-### Step 2: Fetch PR Branch
+### Step 3: Fetch PR Branch
 
 Checkout the PR branch locally:
 ```bash
@@ -352,7 +379,7 @@ gh pr checkout <PR#>
 
 Verify branch is checked out successfully before proceeding.
 
-### Step 3: Analyze Review Feedback
+### Step 4: Analyze Review Feedback
 
 Read and understand the review feedback:
 ```bash
@@ -365,7 +392,7 @@ Analyze the review comments to understand:
 - What the expected outcome should be
 - Any security or quality concerns raised
 
-### Step 4: Implement Changes
+### Step 5: Implement Changes
 
 Apply the fixes based on review feedback:
 - Address each requested change systematically
@@ -373,7 +400,7 @@ Apply the fixes based on review feedback:
 - Make minimum changes needed to address feedback
 - Ensure changes align with coding standards
 
-### Step 5: Test
+### Step 6: Test
 
 Run automated tests (no permission needed):
 ```bash
@@ -382,7 +409,7 @@ go test ./...
 - **Must pass** before proceeding
 - Fix any failures before continuing
 
-### Step 6: Build
+### Step 7: Build
 
 Run build (no permission needed):
 ```bash
@@ -391,7 +418,7 @@ go build -o cal ./cmd/cal
 - **Must succeed** before proceeding
 - Fix any build errors before continuing
 
-### Step 7: Push Changes and Update PRS.md
+### Step 8: Push Changes and Update PRS.md
 
 1. Push updated branch to remote:
    ```bash
@@ -413,6 +440,7 @@ go build -o cal ./cmd/cal
 ### Update PR Pre-Push Checklist
 
 Before pushing updates:
+- [ ] Coding standards reviewed
 - [ ] Review feedback fully analyzed
 - [ ] All requested changes implemented
 - [ ] Tests pass
