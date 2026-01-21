@@ -70,6 +70,19 @@ For changes **only** to `.md` files or code comments:
 **Never modify `docs/adr/*`** - ADRs are immutable historical records.
 Create new ADR to supersede if needed.
 
+### Coding Standards
+**All code must meet mandatory quality standards.** Common errors to avoid:
+- **Code duplication** - Never leave copy-paste artifacts
+- **Missing dependency checks** - Always verify external tools before use
+- **Documentation mismatches** - Code must match what docs claim
+- **Silent error suppression** - Never hide errors with `&>/dev/null`
+- **Missing validation** - Check preconditions before operations
+- **Dangerous constructs** - Avoid `eval` and injection risks
+
+**Must test all scenarios:** valid inputs, invalid inputs, missing dependencies, auth failures, existing state, network failures.
+
+See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and patterns.
+
 ---
 
 ## Prohibitions
