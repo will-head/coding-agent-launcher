@@ -86,9 +86,12 @@ Update if affected:
 
 **Never modify `docs/adr/*`** - ADRs are immutable.
 
-Sync TODOs:
-- Code TODOs must have PLAN.md entries
-- Phase status must reflect actual completion
+Update PLAN.md with current project status:
+- Mark completed TODOs as [x]
+- Add new TODOs discovered during implementation
+- Update phase status to reflect actual completion
+- Update "Current Status" section if phase completion changed
+- Ensure code TODOs have PLAN.md entries
 
 #### Step 7: Commit and Push
 - Ask user approval
@@ -177,11 +180,15 @@ go build -o cal ./cmd/cal
 - [ ] Build succeeds (`go build -o cal ./cmd/cal`)
 ```
 
-### Step 6: Update PRS.md
+### Step 6: Update Documentation
 
 1. Add new entry to `PRS.md` under "Awaiting Review" section
 2. Include PR number, branch, description, and creation date
-3. Move to next task
+3. Update PLAN.md with current project status:
+   - Mark any completed TODOs as [x]
+   - Add new TODOs discovered during implementation
+   - Update phase status if applicable
+4. Move to next task
 
 ### Create PR Pre-PR Checklist
 
@@ -191,7 +198,8 @@ Before creating PR:
 - [ ] Build succeeds
 - [ ] Manual testing instructions included
 - [ ] Documentation updated if needed
-- [ ] TODOs synced to PLAN.md
+- [ ] PRS.md updated with PR entry
+- [ ] PLAN.md updated with current project status
 
 ---
 
@@ -304,14 +312,16 @@ gh pr review --request-changes --body "Code review findings require updates befo
 Please address these findings and update the PR."
 ```
 
-### Step 6: Update PRS.md and Return to Main
+### Step 6: Update Documentation and Return to Main
 
 **First, switch back to main branch:**
 ```bash
 git checkout main
 ```
 
-**Then move PR entry based on review outcome:**
+**Then update documentation based on review outcome:**
+
+**Update PRS.md:**
 
 **If approved (no changes required):**
 - Remove from "Awaiting Review" section
@@ -327,6 +337,11 @@ git checkout main
 | #42 | create-pr/add-validation | Add input validation | 2026-01-21 | Needs validation improvements |
 ```
 
+**Update PLAN.md if PR relates to tracked work:**
+- Mark any completed TODOs as [x]
+- Update phase status if applicable
+- Note any issues discovered that need follow-up
+
 ### Review PR Pre-Review Checklist
 
 Before completing review:
@@ -338,6 +353,7 @@ Before completing review:
 - [ ] Review submitted via `gh pr review` (APPROVE or REQUEST_CHANGES)
 - [ ] Switched back to main branch
 - [ ] PRS.md updated with correct section and details
+- [ ] PLAN.md updated if PR relates to tracked work
 
 ---
 
@@ -420,7 +436,7 @@ go build -o cal ./cmd/cal
 - **Must succeed** before proceeding
 - Fix any build errors before continuing
 
-### Step 8: Push Changes and Update PRS.md
+### Step 8: Push Changes and Update Documentation
 
 1. Push updated branch to remote:
    ```bash
@@ -439,6 +455,11 @@ go build -o cal ./cmd/cal
    | #42 | create-pr/add-validation | Add input validation | 2026-01-21 |
    ```
 
+4. Update PLAN.md with current project status:
+   - Mark any completed TODOs as [x]
+   - Add new TODOs discovered during fixes
+   - Update phase status if applicable
+
 ### Update PR Pre-Push Checklist
 
 Before pushing updates:
@@ -450,6 +471,7 @@ Before pushing updates:
 - [ ] Changes pushed to PR branch
 - [ ] Switched back to main branch
 - [ ] PRS.md updated (moved from "Awaiting Changes" to "Awaiting Review")
+- [ ] PLAN.md updated with current project status
 
 ---
 
@@ -545,12 +567,14 @@ Create "Merged" section if it doesn't exist:
 
 ### Step 7: Update PLAN.md
 
-Review merged PR to identify related TODOs in PLAN.md:
+Update PLAN.md to reflect current project status after merge:
 - Mark completed tasks as `[x]`
 - Update phase status if phase is now complete
+- Update "Current Status" section if phase completion changed
 - Remove obsolete TODOs if applicable
+- Add any new follow-up TODOs discovered during merge
 
-If the PR doesn't relate to any PLAN.md TODOs, skip this step.
+Always update PLAN.md to keep project status current, even if just confirming no changes needed.
 
 ### Step 8: Commit Documentation
 
@@ -578,7 +602,7 @@ Before merging PR:
 - [ ] Local main branch updated
 - [ ] PR branch deleted (local and remote)
 - [ ] PRS.md updated (moved to "Merged" section)
-- [ ] PLAN.md updated if applicable
+- [ ] PLAN.md updated with current project status
 - [ ] Documentation changes committed and pushed
 
 ---
@@ -639,5 +663,5 @@ Before every commit:
 - [ ] Build succeeds
 - [ ] Code review presented and approved (for code changes)
 - [ ] Documentation updated
-- [ ] TODOs synced to PLAN.md
+- [ ] PLAN.md updated with current project status
 - [ ] User approved commit
