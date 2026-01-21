@@ -29,6 +29,7 @@ User specifies workflow at session start. Default is **Standard** unless Create 
 | **Create PR** | PR-based development | 6-step, no approvals, all changes via PR |
 | **Review PR** | Code review of PRs | 6-step, no approvals, autonomous review |
 | **Update PR** | Address PR feedback | 8-step, no approvals, autonomous fixes |
+| **Merge PR** | Merge reviewed PRs | 8-step with approvals, merge to main |
 | **Documentation** | Docs-only changes | Skip tests/build/review |
 
 See `docs/WORKFLOW.md` for detailed procedures.
@@ -83,6 +84,20 @@ Exception: Read/Grep/Glob tools for searching code.
 7. **Build** - Run `go build -o cal ./cmd/cal`, must pass
 8. **Push and Update PRS.md** - Push changes, switch to main, move PR to "Awaiting Review"
 
+### Merge PR Workflow (8-Step)
+
+**Ask user approval before running ANY command.** Merge reviewed PRs into main branch.
+**Use merge commit strategy** to preserve full PR history.
+
+1. **Read PRS.md** - Get first PR from "Reviewed" section
+2. **Fetch PR Details** - Use `gh pr view <PR#>` to verify PR is ready to merge
+3. **Merge PR** - Ask approval, run `gh pr merge <PR#> --merge` to merge into main
+4. **Update Local Main** - Ask approval, switch to main and run `git pull` to update
+5. **Delete Branch** - Ask approval, delete local and remote PR branch
+6. **Update PRS.md** - Move PR to "Merged" section with merge date
+7. **Update PLAN.md** - Mark related TODOs as complete if applicable
+8. **Commit Docs** - Ask approval, commit updated documentation with Co-Authored-By line
+
 ### Documentation Workflow
 
 For changes **only** to `.md` files or code comments:
@@ -134,6 +149,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
    - Create PR (6-step, autonomous, PR-based)
    - Review PR (6-step, autonomous review)
    - Update PR (8-step, autonomous fixes)
+   - Merge PR (8-step with approvals)
    - Documentation (docs-only)
 2. Ask approval, then run `git status` and `git fetch`
 3. Read `docs/PLAN.md` for TODOs and current phase

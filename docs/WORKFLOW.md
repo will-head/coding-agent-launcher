@@ -13,6 +13,7 @@ User specifies workflow at session start. **Default is Standard** unless Create 
 | **Create PR** | PR-based development (6-step) | Not required | `create-pr/` branch → PR |
 | **Review PR** | Code review of PRs (6-step) | Not required | PR review + PRS.md update |
 | **Update PR** | Address PR feedback (8-step) | Not required | Existing PR branch → resubmit |
+| **Merge PR** | Merge reviewed PRs (8-step) | Required | PR → main branch |
 | **Documentation** | Docs-only changes | Commit only | main or PR |
 
 ---
@@ -26,6 +27,7 @@ On new session:
    - Create PR (6-step, autonomous, PR-based)
    - Review PR (6-step, autonomous review)
    - Update PR (8-step, autonomous fixes)
+   - Merge PR (8-step with approvals)
    - Documentation (docs-only)
 3. Ask user approval, then run `git status` and `git fetch`
 4. Read `docs/PLAN.md` for current TODOs and phase status
@@ -448,6 +450,136 @@ Before pushing updates:
 - [ ] Changes pushed to PR branch
 - [ ] Switched back to main branch
 - [ ] PRS.md updated (moved from "Awaiting Changes" to "Awaiting Review")
+
+---
+
+## Merge PR Workflow (8-Step)
+
+**Purpose:** Merge reviewed and approved PRs into the main branch. Integrates completed work and updates documentation.
+
+**Key Principles:**
+- **User approval required** - ask permission before all commands
+- **Use merge commit** - preserves full PR history with `--merge` flag
+- **Delete branches after merge** - clean up both local and remote
+- **Track merged PRs** - move to "Merged" section in PRS.md
+- **Clean workspace** - ensure main is up to date after merge
+
+### Step 1: Read Merge Queue
+
+Read `PRS.md` to find the first PR in "Reviewed" section:
+```bash
+# Example entry format
+| #42 | create-pr/add-validation | Add input validation | Claude Sonnet 4.5 | 2026-01-21 |
+```
+
+If no PRs in "Reviewed", report completion and exit workflow.
+
+### Step 2: Fetch PR Details
+
+Ask user approval, then verify PR is ready to merge:
+```bash
+gh pr view <PR#>
+```
+
+Check that:
+- PR is approved
+- All checks pass
+- No merge conflicts
+- Target branch is main
+
+### Step 3: Merge PR
+
+Ask user approval, then merge with merge commit strategy:
+```bash
+gh pr merge <PR#> --merge
+```
+
+The `--merge` flag creates a merge commit that preserves the full PR history.
+
+If merge fails:
+- Check for conflicts and resolve if needed
+- Verify PR is in mergeable state
+- Check GitHub permissions
+
+### Step 4: Update Local Main
+
+Ask user approval, then update local main branch:
+```bash
+git checkout main
+git pull
+```
+
+Verify the merge commit appears in local history.
+
+### Step 5: Delete Branch
+
+Ask user approval, then delete both local and remote PR branch:
+```bash
+git branch -d <branch-name>
+git push origin --delete <branch-name>
+```
+
+Only delete after successful merge confirmation. If branch deletion fails, it may have already been deleted by GitHub auto-delete feature.
+
+### Step 6: Update PRS.md
+
+Move PR entry from "Reviewed" to "Merged" section with merge date:
+
+**Remove from "Reviewed":**
+```markdown
+| #42 | create-pr/add-validation | Add input validation | Claude Sonnet 4.5 | 2026-01-21 |
+```
+
+**Add to "Merged" section:**
+```markdown
+| #42 | create-pr/add-validation | Add input validation | 2026-01-21 |
+```
+
+Create "Merged" section if it doesn't exist:
+```markdown
+## Merged
+
+| PR# | Branch | Description | Merged Date |
+|-----|--------|-------------|-------------|
+```
+
+### Step 7: Update PLAN.md
+
+Review merged PR to identify related TODOs in PLAN.md:
+- Mark completed tasks as `[x]`
+- Update phase status if phase is now complete
+- Remove obsolete TODOs if applicable
+
+If the PR doesn't relate to any PLAN.md TODOs, skip this step.
+
+### Step 8: Commit Documentation
+
+Ask user approval, then commit the updated PRS.md and PLAN.md:
+```bash
+git add PRS.md docs/PLAN.md
+git commit -m "$(cat <<'EOF'
+Update documentation after merging PR #<number>
+
+Moved PR #<number> to Merged section in PRS.md.
+Updated PLAN.md to reflect completed work.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+EOF
+)"
+git push
+```
+
+### Merge PR Pre-Merge Checklist
+
+Before merging PR:
+- [ ] PR fetched and verified as ready to merge
+- [ ] User approved merge operation
+- [ ] PR merged successfully with `--merge` flag
+- [ ] Local main branch updated
+- [ ] PR branch deleted (local and remote)
+- [ ] PRS.md updated (moved to "Merged" section)
+- [ ] PLAN.md updated if applicable
+- [ ] Documentation changes committed and pushed
 
 ---
 

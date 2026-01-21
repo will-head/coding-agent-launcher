@@ -152,6 +152,11 @@
          - [x] Simplify existing docs for progressive disclosure
          - [x] Note Cursor CLI VM incompatibility throughout
          - [x] Update README, SPEC, architecture, bootstrap, cli, proxy, roadmap, vm-detection, AGENTS, PLAN
+      - [x] Add Merge PR workflow (8-step with approvals)
+        - [x] Add to workflow mode table in CLAUDE.md
+        - [x] Document 8-step merge procedure in CLAUDE.md
+        - [x] Add to WORKFLOW.md with detailed procedures
+        - [x] Update session start workflow lists
 
 **Deliverable:** Core Phase 0 implementation documented in [ADR-002](adr/ADR-002-tart-vm-operational-guide.md). Three-tier VM architecture, automated setup, transparent proxy, git safety checks, and VM detection. Outstanding items in 0.8/0.10/0.11 tracked above.
 
