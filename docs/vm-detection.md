@@ -1,5 +1,7 @@
 # VM Detection for Coding Agents
 
+> See also: [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) § VM Detection
+
 CAL provides a simple, reliable method for coding agents to detect if they're running inside a CAL VM. This enables agents to adjust their behavior based on the execution environment.
 
 ## Detection Methods

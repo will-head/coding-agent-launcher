@@ -71,16 +71,18 @@ Create new ADR to supersede if needed.
 
 ## Documentation
 
-**Immutable (never modify):**
-- [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Design decisions
-
 **Planning (read for tasks):**
 - [PLAN.md](docs/PLAN.md) - TODOs and implementation tasks **(source of truth)**
-- [SPEC.md](docs/SPEC.md) - Technical requirements
+
+**Operational:**
+- [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) - Comprehensive operational guide
+- [bootstrap.md](docs/bootstrap.md) - Quick start VM setup
 
 **Reference:**
 - [WORKFLOW.md](docs/WORKFLOW.md) - Git workflow details
 - [architecture.md](docs/architecture.md) - System design
 - [cli.md](docs/cli.md) - Command reference
-- [bootstrap.md](docs/bootstrap.md) - VM setup
-- [roadmap.md](docs/roadmap.md) - Phase summary
+- [SPEC.md](docs/SPEC.md) - Technical specification
+
+**Historical (immutable):**
+- [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Original design decisions

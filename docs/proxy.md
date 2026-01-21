@@ -390,6 +390,6 @@ export HOST_GATEWAY=192.168.64.1
 
 ## See Also
 
+- [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) - Comprehensive operational guide
 - [Bootstrap Documentation](bootstrap.md) - VM setup and management
 - [Architecture Documentation](architecture.md) - Overall CAL design
-- [ADR-001](adr/ADR-001-cal-isolation.md) - Original design decisions

@@ -1,6 +1,6 @@
 # Architecture
 
-> Extracted from [ADR-001](adr/ADR-001-cal-isolation.md) for quick reference.
+> Quick reference. See [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) for comprehensive operational details.
 
 ## System Overview
 

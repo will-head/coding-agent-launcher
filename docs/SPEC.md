@@ -1,10 +1,10 @@
 # CAL Technical Specification
 
-> Derived from [ADR-001](adr/ADR-001-cal-isolation.md) - the authoritative source of truth.
+> Quick reference derived from [ADR-001](adr/ADR-001-cal-isolation.md) (design) and [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) (operations).
 
 ## Overview
 
-CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code, Cursor CLI, opencode) in isolated Tart macOS VMs, protecting the host filesystem while providing a seamless developer experience.
+CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code, opencode) in isolated Tart macOS VMs, protecting the host filesystem while providing a seamless developer experience.
 
 ## Core Components
 
@@ -15,17 +15,19 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 **Responsibilities:**
 - Tart VM lifecycle management (create, start, stop, delete)
 - Snapshot management for instant rollback
-- SSH tunnel establishment
-- Build artifact synchronization
+- SSH/tmux session management
+- Git safety checks before destructive operations
 
 ### 2. Agent Integration
 
 **Supported Agents:**
-| Agent | Install Command | Config Dir |
-|-------|-----------------|------------|
-| Claude Code | `npm install -g @anthropic-ai/claude-code` | `~/.claude` |
-| opencode | `go install github.com/opencode-ai/opencode@latest` | `~/.opencode` |
-| Cursor CLI | `curl -fsSL https://cursor.com/install \| bash` | `~/.cursor` |
+| Agent | Install Command | Config Dir | Status |
+|-------|-----------------|------------|--------|
+| Claude Code | `npm install -g @anthropic-ai/claude-code` | `~/.claude` | Working |
+| opencode | `brew install anomalyco/tap/opencode` | `~/.opencode` | Working |
+| Cursor CLI | `curl -fsSL https://cursor.com/install \| bash` | `~/.cursor` | Not compatible with VMs* |
+
+*Cursor CLI OAuth polling fails in VM/SSH environments. See ADR-002 Known Limitations.
 
 ### 3. Environment Plugin System
 
@@ -212,8 +214,8 @@ During session: [S]napshot, [C]ommit, [P]R, [R]ollback, [Q]uit, ?:Help
 
 ## References
 
-- [ADR-001](adr/ADR-001-cal-isolation.md) - Complete design (source of truth)
+- [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) - Operational guide (comprehensive reference)
+- [ADR-001](adr/ADR-001-cal-isolation.md) - Original design decisions (immutable)
 - [Architecture](architecture.md) - System design summary
 - [CLI Reference](cli.md) - Command documentation
-- [Bootstrap Guide](bootstrap.md) - Manual setup
-- [Plugins](plugins.md) - Environment system
+- [Bootstrap Guide](bootstrap.md) - VM setup and management

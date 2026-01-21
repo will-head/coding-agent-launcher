@@ -1,6 +1,6 @@
 # CLI Reference
 
-> Extracted from [ADR-001](adr/ADR-001-cal-isolation.md) for quick reference.
+> Future CLI commands. Current bootstrap commands are in [Bootstrap Guide](bootstrap.md).
 
 ```bash
 cal isolation <command>    # or: cal iso <command>

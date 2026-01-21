@@ -4,11 +4,12 @@
 >
 > - Phase completion is determined by checkboxes below
 > - All TODOs must be tracked here (code TODOs should reference this file)
-> - Design decisions are in [ADR-001](adr/ADR-001-cal-isolation.md) (immutable)
+> - Operational guide: [ADR-002](adr/ADR-002-tart-vm-operational-guide.md)
+> - Original design: [ADR-001](adr/ADR-001-cal-isolation.md) (immutable)
 
 ## Current Status
 
-**Phase 0 (Bootstrap):** Mostly complete (4 TODOs in 0.8, multiple improvements pending in 0.10/0.11)
+**Phase 0 (Bootstrap): Mostly Complete** - Core functionality documented in [ADR-002](adr/ADR-002-tart-vm-operational-guide.md). Outstanding TODOs in 0.8, 0.10, 0.11 below.
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -133,8 +134,13 @@
          - [x] Create docs/WORKFLOW.md for detailed git workflow procedures
          - [x] Slim AGENTS.md to core rules only (445→76 lines, 86% reduction)
          - [x] Move detailed procedures to WORKFLOW.md (read on-demand when committing)
+       - [x] Comprehensive documentation update based on ADR-002
+         - [x] Update all docs to reference ADR-002 as operational guide
+         - [x] Simplify existing docs for progressive disclosure
+         - [x] Note Cursor CLI VM incompatibility throughout
+         - [x] Update README, SPEC, architecture, bootstrap, cli, proxy, roadmap, vm-detection, AGENTS, PLAN
 
-**Deliverable:** Enhanced VM management with better safety checks, clearer UX, and agent VM detection. Transparent proxy (sshuttle) for reliable network access in corporate environments. Improved init workflow with better safety and automation.
+**Deliverable:** Core Phase 0 implementation documented in [ADR-002](adr/ADR-002-tart-vm-operational-guide.md). Three-tier VM architecture, automated setup, transparent proxy, git safety checks, and VM detection. Outstanding items in 0.8/0.10/0.11 tracked above.
 
 **Testing Issues Found & Fixed:**
 - [x] vm_exists() initially used grep -qw which didn't work reliably - fixed with awk column match

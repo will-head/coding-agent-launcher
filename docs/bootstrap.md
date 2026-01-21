@@ -1,6 +1,6 @@
 # Bootstrap Guide
 
-> Extracted from [ADR-001](adr/ADR-001-cal-isolation.md) for quick reference.
+> Quick start guide. See [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) for comprehensive operational details.
 
 ## Quick Start
 
@@ -332,13 +332,11 @@ tart clone <src> <dst>       # Clone/snapshot
 - **SSH refused**: VM still booting - wait or check System Preferences → Sharing → Remote Login
 - **Agent not found**: Restart shell with `exec zsh` or check PATH
 - **Disk full**: `rm -rf ~/Library/Caches/* ~/.npm/_cacache`
-- **Delete key not working**: Already fixed in vm-setup.sh (TERM=xterm-256color)
-- **Up arrow history broken**: Already fixed in vm-setup.sh (bindkey)
-- **Cursor Agent login fails**: Fixed via keychain unlock (see [cursor-login-fix.md](cursor-login-fix.md)). Use Screen Sharing to complete initial login: `open vnc://$(tart ip cal-dev)` then run `agent` in Terminal.
-- **Agent login fails**: If SSH agent login fails, use Screen Sharing (standard mode, not High Performance) to authenticate: `open vnc://$(tart ip cal-dev)` → authenticate agent → return to terminal
-- **Screen Sharing shows lock screen**: Auto-login is configured by vm-setup.sh but requires VM reboot to activate. Stop and restart the VM, then Screen Sharing will show the desktop.
-- **opencode not found**: Try `export PATH="$HOME/.opencode/bin:$PATH"` or `export PATH="$HOME/go/bin:$PATH"` - opencode may have installed to a different location. Use Go install if shell script fails.
-- **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host (admin privileges). Network issues in VM may be resolved by enabling proxy: `./scripts/cal-bootstrap --restart --proxy on`
+- **Cursor CLI not working**: Cursor CLI is not compatible with VM environments due to OAuth polling limitations. Use Claude Code or opencode instead. See ADR-002 Known Limitations.
+- **Agent login fails**: Use Screen Sharing (standard mode, not High Performance) to authenticate: `open vnc://$(tart ip cal-dev)` → authenticate agent → return to terminal
+- **Screen Sharing shows lock screen**: Auto-login requires VM reboot to activate. Stop and restart the VM.
+- **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
+- **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host
 
 ## Terminal Keybinding Testing
 
