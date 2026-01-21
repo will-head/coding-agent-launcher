@@ -229,7 +229,7 @@ fi
 #     fi
 # fi
 
-# 4. Claude Code (LAST - takes over screen)
+# 4. Claude Code
 echo ""
 echo "4. Claude Code"
 echo "--------------"
@@ -261,6 +261,116 @@ else
     fi
 fi
 
+# 5. Clone Git Repositories
+clone_git_repos() {
+    echo ""
+    echo "5. Clone Git Repositories"
+    echo "------------------------"
+
+    if ! command_exists gh; then
+        echo "  ✗ gh not installed, skipping git clone"
+        return 0
+    fi
+
+    if ! gh auth status &>/dev/null; then
+        echo "  ⚠ gh not authenticated, skipping git clone"
+        return 0
+    fi
+
+    echo -n "  Clone repositories from GitHub? [Y/n] "
+    read -r -k 1 reply
+    echo ""
+
+    if [[ "$reply" =~ ^[Nn]$ ]]; then
+        echo "  → Skipped"
+        return 0
+    fi
+
+    echo ""
+    echo "  Fetching your repositories..."
+    echo ""
+
+    local gh_user
+    gh_user=$(gh api user -q .login 2>/dev/null || echo "")
+
+    if [ -z "$gh_user" ]; then
+        echo "  ✗ Could not get GitHub username"
+        return 1
+    fi
+
+    local repos
+    repos=$(gh repo list --limit 50 --json name,owner,stargazerCount,pushedAt 2>/dev/null)
+
+    if [ -z "$repos" ]; then
+        echo "  ✗ No repositories found"
+        return 1
+    fi
+
+    echo "  Your repositories (top 50, sorted by last push):"
+    echo ""
+
+    echo "$repos" | jq -r '.[] | "  \(.owner.login)/\(.name) (⭐ \(.stargazerCount))"' 2>/dev/null || \
+        gh repo list --limit 50 | sed 's/^/  /'
+
+    echo ""
+    echo "  Enter repos to clone (comma-separated, e.g., repo1,repo2)"
+    echo "  Or press Enter to skip"
+    echo -n "  Repos: "
+    read -r repos_input
+
+    if [ -z "$repos_input" ]; then
+        echo "  → Skipped"
+        return 0
+    fi
+
+    echo ""
+    echo "  Cloning repositories to ~/code/github.com/..."
+
+    local failed_repos=""
+    local success_count=0
+
+    IFS=',' read -ra REPO_ARRAY <<< "$repos_input"
+    for repo in "${REPO_ARRAY[@]}"; do
+        repo=$(echo "$repo" | xargs)
+
+        if [[ "$repo" != */* ]]; then
+            repo="$gh_user/$repo"
+        fi
+
+        local owner repo_name
+        owner=$(echo "$repo" | cut -d'/' -f1)
+        repo_name=$(echo "$repo" | cut -d'/' -f2)
+
+        local clone_path="~/code/github.com/$owner/$repo_name"
+        clone_path=$(eval echo "$clone_path")
+
+        echo -n "    Cloning $repo... "
+
+        if [ -d "$clone_path" ]; then
+            echo "  ⚠ Already exists"
+            continue
+        fi
+
+        if mkdir -p "$(dirname "$clone_path")" && git clone "git@github.com:$repo.git" "$clone_path" &>/dev/null; then
+            echo "  ✓ Done"
+            success_count=$((success_count + 1))
+        else
+            echo "  ✗ Failed"
+            failed_repos="$failed_repos $repo"
+        fi
+    done
+
+    echo ""
+    echo "  ✓ Cloned $success_count repositories"
+
+    if [ -n "$failed_repos" ]; then
+        echo "  ✗ Failed to clone:$failed_repos"
+        echo "  💡 Check your SSH keys: ssh -T git@github.com"
+    fi
+}
+
+clone_git_repos
+
 echo ""
 echo "============================================"
 echo "  ✅ Setup Complete!"
@@ -274,4 +384,7 @@ echo "   proxy-log     - View proxy logs"
 echo ""
 echo "💡 To re-authenticate agents later, run:"
 echo "   ~/scripts/vm-auth.sh"
+echo ""
+echo "💡 Git repositories are cloned to:"
+echo "   ~/code/github.com/<username>/<repo>/"
 echo ""
