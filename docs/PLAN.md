@@ -133,6 +133,8 @@
        - [x] Show VM/snapshot sizes in `--snapshot list` output (uses JSON API, displays actual size with GB units, includes total)
        - [x] Remove cal-dev prefix from snapshot names (snapshots now use exact names specified by user)
        - [ ] Allow `--snapshot delete` to accept multiple VM names
+       - [ ] Add `--snapshot delete --force` option to skip git checks and avoid booting VM (for unresponsive VMs)
+       - [ ] When cal-init exists and user runs `--init`, offer to replace cal-init with current cal-dev before proceeding with init
      - [ ] **Session State Management** (Phase 0.11 - Future)
        - [ ] Implement constant context state persistence
        - [ ] Write context to file after every operation
@@ -167,6 +169,21 @@
         - [x] Update Merge PR workflow to read from "Tested" instead of "Reviewed"
         - [x] Create comprehensive PR workflow diagram (PR-WORKFLOW-DIAGRAM.md)
         - [x] Verify all workflows update PLAN.md and return to main branch
+      - [ ] **Workflow Documentation Improvements**
+        - [ ] Rename "Standard" workflow to "Interactive" throughout all documentation
+        - [ ] Rename PRS.md section headings: "Awaiting Review" → "Needs Review", "Awaiting Changes" → "Needs Changes", "Reviewed" → "Needs Testing", "Tested" → "Needs Merging"
+        - [ ] Split workflow documentation into separate files for each workflow
+          - [ ] Create docs/WORKFLOW-CREATE-PR.md for Create PR workflow details
+          - [ ] Create docs/WORKFLOW-REVIEW-PR.md for Review PR workflow details
+          - [ ] Create docs/WORKFLOW-UPDATE-PR.md for Update PR workflow details
+          - [ ] Create docs/WORKFLOW-TEST-PR.md for Test PR workflow details
+          - [ ] Create docs/WORKFLOW-MERGE-PR.md for Merge PR workflow details
+          - [ ] Create docs/WORKFLOW-INTERACTIVE.md for Interactive workflow details
+          - [ ] Create docs/WORKFLOW-DOCUMENTATION.md for Documentation workflow details
+          - [ ] Create docs/WORKFLOWS.md as index listing all workflows with references to detail files
+          - [ ] Update CLAUDE.md to reference new workflow detail files
+        - [ ] Emphasize in all workflow docs: PLAN.md and PRS.md changes must be done on main branch, not PR branch
+        - [ ] Emphasize in all workflow docs: PR comments must use heredoc format to preserve formatting (gh pr comment/review --body "$(cat <<'EOF' ... EOF)")
 
 **Deliverable:** Core Phase 0 implementation documented in [ADR-002](adr/ADR-002-tart-vm-operational-guide.md). Three-tier VM architecture, automated setup, transparent proxy, git safety checks, and VM detection. Outstanding items in 0.8/0.10/0.11 tracked above.
 
