@@ -66,7 +66,8 @@
    - [x] Check host SSH server and Python availability
    - [x] Comprehensive documentation (docs/proxy.md, updated bootstrap.md and architecture.md)
    - [ ] **Init Improvements and Enhancements** (Phase 0.10 - In Progress)
-      - [x] Add option to sync git repos on init (clone specified repos into VM automatically) - PR#1
+       - [ ] Add option to sync git repos on init (clone specified repos into VM automatically) - PR#1 awaiting fixes
+         - Testing found: zsh syntax error (read -ra), wrong clone method, unclear prompt format
      - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
      - [x] **NOT FIXABLE: Cursor API key auth support** - API keys require OAuth-downloaded user configuration to function. Since OAuth polling fails in VMs (see Phase 0.8), API keys cannot work either. Cursor CLI authentication not possible in VM environments.
      - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
@@ -132,6 +133,8 @@
        - [x] Show VM/snapshot sizes in `--snapshot list` output (uses JSON API, displays actual size with GB units, includes total)
        - [x] Remove cal-dev prefix from snapshot names (snapshots now use exact names specified by user)
        - [ ] Allow `--snapshot delete` to accept multiple VM names
+       - [ ] Add `--snapshot delete --force` option to skip git checks and avoid booting VM (for unresponsive VMs)
+       - [ ] When cal-init exists and user runs `--init`, offer to replace cal-init with current cal-dev before proceeding with init
      - [ ] **Session State Management** (Phase 0.11 - Future)
        - [ ] Implement constant context state persistence
        - [ ] Write context to file after every operation
@@ -152,6 +155,35 @@
          - [x] Simplify existing docs for progressive disclosure
          - [x] Note Cursor CLI VM incompatibility throughout
          - [x] Update README, SPEC, architecture, bootstrap, cli, proxy, roadmap, vm-detection, AGENTS, PLAN
+      - [x] Add Merge PR workflow (8-step with approvals)
+        - [x] Add to workflow mode table in CLAUDE.md
+        - [x] Document 8-step merge procedure in CLAUDE.md
+        - [x] Add to WORKFLOW.md with detailed procedures
+        - [x] Update session start workflow lists
+      - [x] Add Test PR workflow (7-step manual testing gate)
+        - [x] Add to workflow mode table in CLAUDE.md and AGENTS.md
+        - [x] Document 7-step test procedure in CLAUDE.md and AGENTS.md
+        - [x] Add to WORKFLOW.md with detailed procedures
+        - [x] Update session start workflow lists
+        - [x] Add "Tested" section to PRS.md between "Reviewed" and "Merged"
+        - [x] Update Merge PR workflow to read from "Tested" instead of "Reviewed"
+        - [x] Create comprehensive PR workflow diagram (PR-WORKFLOW-DIAGRAM.md)
+        - [x] Verify all workflows update PLAN.md and return to main branch
+      - [ ] **Workflow Documentation Improvements**
+        - [ ] Rename "Standard" workflow to "Interactive" throughout all documentation
+        - [ ] Rename PRS.md section headings: "Awaiting Review" → "Needs Review", "Awaiting Changes" → "Needs Changes", "Reviewed" → "Needs Testing", "Tested" → "Needs Merging"
+        - [ ] Split workflow documentation into separate files for each workflow
+          - [ ] Create docs/WORKFLOW-CREATE-PR.md for Create PR workflow details
+          - [ ] Create docs/WORKFLOW-REVIEW-PR.md for Review PR workflow details
+          - [ ] Create docs/WORKFLOW-UPDATE-PR.md for Update PR workflow details
+          - [ ] Create docs/WORKFLOW-TEST-PR.md for Test PR workflow details
+          - [ ] Create docs/WORKFLOW-MERGE-PR.md for Merge PR workflow details
+          - [ ] Create docs/WORKFLOW-INTERACTIVE.md for Interactive workflow details
+          - [ ] Create docs/WORKFLOW-DOCUMENTATION.md for Documentation workflow details
+          - [ ] Create docs/WORKFLOWS.md as index listing all workflows with references to detail files
+          - [ ] Update CLAUDE.md to reference new workflow detail files
+        - [ ] Emphasize in all workflow docs: PLAN.md and PRS.md changes must be done on main branch, not PR branch
+        - [ ] Emphasize in all workflow docs: PR comments must use heredoc format to preserve formatting (gh pr comment/review --body "$(cat <<'EOF' ... EOF)")
 
 **Deliverable:** Core Phase 0 implementation documented in [ADR-002](adr/ADR-002-tart-vm-operational-guide.md). Three-tier VM architecture, automated setup, transparent proxy, git safety checks, and VM detection. Outstanding items in 0.8/0.10/0.11 tracked above.
 
