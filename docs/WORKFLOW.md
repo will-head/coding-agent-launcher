@@ -7,11 +7,11 @@
 
 ## Workflow Modes
 
-User specifies workflow at session start. **Default is Standard** unless Create PR or Documentation is specified.
+User specifies workflow at session start. **Default is Interactive** unless Create PR or Documentation is specified.
 
 | Mode | Use Case | Approvals | Target |
 |------|----------|-----------|--------|
-| **Standard** | Default for code changes (8-step) | Required | main branch |
+| **Interactive** | Default for code changes (8-step) | Required | main branch |
 | **Create PR** | PR-based development (6-step) | Not required | `create-pr/` branch → PR |
 | **Review PR** | Code review of PRs (6-step) | Not required | PR review + PRS.md update |
 | **Update PR** | Address PR feedback (8-step) | Not required | Existing PR branch → resubmit |
@@ -26,7 +26,7 @@ User specifies workflow at session start. **Default is Standard** unless Create 
 On new session:
 1. Read AGENTS.md (core rules)
 2. **Determine workflow** - If user hasn't specified or it's unclear which workflow to use, ask explicitly:
-   - Standard (8-step with approvals)
+   - Interactive (8-step with approvals)
    - Create PR (6-step, autonomous, PR-based)
    - Review PR (6-step, autonomous review)
    - Update PR (8-step, autonomous fixes)
@@ -40,7 +40,7 @@ On new session:
 
 ---
 
-## Standard Workflow (8-Step)
+## Interactive Workflow (8-Step)
 
 ### Documentation-Only Changes
 
@@ -186,7 +186,7 @@ go build -o cal ./cmd/cal
 
 ### Step 6: Update Documentation
 
-1. Add new entry to `PRS.md` under "Awaiting Review" section
+1. Add new entry to `PRS.md` under "Needs Review" section
 2. Include PR number, branch, description, and creation date
 3. Update PLAN.md with current project status:
    - Mark any completed TODOs as [x]
@@ -221,13 +221,13 @@ Before creating PR:
 
 ### Step 1: Read Review Queue
 
-Read `PRS.md` to find the first PR in "Awaiting Review" section:
+Read `PRS.md` to find the first PR in "Needs Review" section:
 ```bash
 # Example entry format
 | #42 | create-pr/add-validation | Add input validation | 2026-01-20 |
 ```
 
-If no PRs in "Awaiting Review", report completion and exit workflow.
+If no PRs in "Needs Review", report completion and exit workflow.
 
 ### Step 2: Fetch PR Branch
 
@@ -328,15 +328,15 @@ git checkout main
 **Update PRS.md:**
 
 **If approved (no changes required):**
-- Remove from "Awaiting Review" section
-- Add to "Reviewed" section with reviewer and date
+- Remove from "Needs Review" section
+- Add to "Needs Testing" section with reviewer and date
 ```markdown
 | #42 | create-pr/add-validation | Add input validation | Claude Sonnet 4.5 | 2026-01-21 |
 ```
 
 **If changes requested:**
-- Remove from "Awaiting Review" section
-- Add to "Awaiting Changes" section (create if not exists)
+- Remove from "Needs Review" section
+- Add to "Needs Changes" section (create if not exists)
 ```markdown
 | #42 | create-pr/add-validation | Add input validation | 2026-01-21 | Needs validation improvements |
 ```
@@ -382,13 +382,13 @@ This ensures fixes meet project standards and don't repeat known issues.
 
 ### Step 2: Read Changes Queue
 
-Read `PRS.md` to find the first PR in "Awaiting Changes" section:
+Read `PRS.md` to find the first PR in "Needs Changes" section:
 ```bash
 # Example entry format
 | #42 | create-pr/add-validation | Add input validation | 2026-01-20 | Needs validation improvements |
 ```
 
-If no PRs in "Awaiting Changes", report completion and exit workflow.
+If no PRs in "Needs Changes", report completion and exit workflow.
 
 ### Step 3: Fetch PR Branch
 
@@ -451,8 +451,8 @@ go build -o cal ./cmd/cal
    ```
 
 3. Update `PRS.md`:
-   - Remove from "Awaiting Changes" section
-   - Add back to "Awaiting Review" section
+   - Remove from "Needs Changes" section
+   - Add back to "Needs Review" section
    ```markdown
    | #42 | create-pr/add-validation | Add input validation | 2026-01-21 |
    ```
@@ -472,7 +472,7 @@ Before pushing updates:
 - [ ] Build succeeds
 - [ ] Changes pushed to PR branch
 - [ ] Switched back to main branch
-- [ ] PRS.md updated (moved from "Awaiting Changes" to "Awaiting Review")
+- [ ] PRS.md updated (moved from "Needs Changes" to "Needs Review")
 - [ ] PLAN.md updated with current project status
 
 ---
@@ -486,18 +486,18 @@ Before pushing updates:
 - **Autonomous until test presentation** - no permission needed to fetch PR details
 - **User approval required** - must wait for manual test results confirmation
 - **PR comments for feedback** - add comment with failure details if tests fail
-- **Update PRS.md status** - move to "Tested" on success or "Awaiting Changes" on failure
+- **Update PRS.md status** - move to "Needs Merging" on success or "Needs Changes" on failure
 - **Clean workspace** - return to main branch after testing workflow
 
 ### Step 1: Read Test Queue
 
-Read `PRS.md` to find the first PR in "Reviewed" section:
+Read `PRS.md` to find the first PR in "Needs Testing" section:
 ```bash
 # Example entry format
 | #42 | create-pr/add-validation | Add input validation | Claude Sonnet 4.5 | 2026-01-21 |
 ```
 
-If no PRs in "Reviewed", report completion and exit workflow.
+If no PRs in "Needs Testing", report completion and exit workflow.
 
 ### Step 2: Fetch PR Details
 
@@ -541,19 +541,19 @@ Based on user response:
 
 ### Step 5: Update PRS.md - Success Path
 
-If manual tests passed, update PRS.md to move PR to "Tested" section:
+If manual tests passed, update PRS.md to move PR to "Needs Merging" section:
 
 1. Switch to main branch (if not already):
    ```bash
    git checkout main
    ```
 
-2. Remove from "Reviewed" section
-3. Add to "Tested" section (create if it doesn't exist):
+2. Remove from "Needs Testing" section
+3. Add to "Needs Merging" section (create if it doesn't exist):
    ```markdown
-   ## Tested
+   ## Needs Merging
 
-   | PR | Branch | Description | Tested By | Tested Date |
+   | PR | Branch | Description | Needs Merging By | Needs Merging Date |
    |----|--------|-------------|-----------|-------------|
    | #42 | create-pr/add-validation | Add input validation | User Name | 2026-01-21 |
    ```
@@ -579,8 +579,8 @@ If manual tests failed:
    git checkout main
    ```
 
-3. Remove from "Reviewed" section
-4. Add back to "Awaiting Changes" section with feedback:
+3. Remove from "Needs Testing" section
+4. Add back to "Needs Changes" section with feedback:
    ```markdown
    | #42 | create-pr/add-validation | Add input validation | 2026-01-21 | Manual testing failed: [brief summary] |
    ```
@@ -599,12 +599,12 @@ Update PLAN.md with current project status:
 ### Test PR Pre-Test Checklist
 
 Before completing workflow:
-- [ ] PR details fetched from "Reviewed" section
+- [ ] PR details fetched from "Needs Testing" section
 - [ ] Manual testing instructions presented to user
 - [ ] User confirmation received (passed or failed)
 - [ ] PR comment added if tests failed
 - [ ] Switched back to main branch
-- [ ] PRS.md updated ("Tested" if passed, "Awaiting Changes" if failed)
+- [ ] PRS.md updated ("Needs Merging" if passed, "Needs Changes" if failed)
 - [ ] PLAN.md updated with current project status
 
 ---
@@ -621,13 +621,13 @@ Before completing workflow:
 
 ### Step 1: Read Merge Queue
 
-Read `PRS.md` to find the first PR in "Tested" section:
+Read `PRS.md` to find the first PR in "Needs Merging" section:
 ```bash
 # Example entry format
 | #42 | create-pr/add-validation | Add input validation | User Name | 2026-01-21 |
 ```
 
-If no PRs in "Tested", report completion and exit workflow.
+If no PRs in "Needs Merging", report completion and exit workflow.
 
 ### Step 2: Fetch PR Details
 
@@ -678,9 +678,9 @@ Only delete after successful merge confirmation. If branch deletion fails, it ma
 
 ### Step 6: Update PRS.md
 
-Move PR entry from "Tested" to "Merged" section with merge date:
+Move PR entry from "Needs Merging" to "Merged" section with merge date:
 
-**Remove from "Tested":**
+**Remove from "Needs Merging":**
 ```markdown
 | #42 | create-pr/add-validation | Add input validation | User Name | 2026-01-21 |
 ```

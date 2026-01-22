@@ -4,7 +4,7 @@
 
 ---
 
-## Awaiting Review
+## Needs Review
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
@@ -12,7 +12,7 @@
 
 ---
 
-## Awaiting Changes
+## Needs Changes
 
 | PR | Branch | Description | Requested | Reason |
 |----|--------|-------------|-----------|--------|
@@ -20,7 +20,7 @@
 
 ---
 
-## Reviewed
+## Needs Testing
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
@@ -28,7 +28,7 @@
 
 ---
 
-## Tested
+## Needs Merging
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|

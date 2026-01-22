@@ -7,19 +7,19 @@
 ```
 Create PR
     ↓
-Awaiting Review ←─────────────────┐
+Needs Review ←─────────────────┐
     ↓                             │
 Review PR                         │
     ├──────────────┐              │
     ↓              ↓              │
-Reviewed   ┌─► Awaiting Changes   │
+Needs Testing   ┌─► Needs Changes   │
     ↓      │       ↓              │
     │      │  Update PR ──────────┘
     │      │
     ↓      │
 Test PR ───┘
     ↓
-Tested
+Needs Merging
     ↓
 Merge PR
     ↓
@@ -40,15 +40,15 @@ Start
   ├─ Step 3: Test (go test ./...)
   ├─ Step 4: Build (go build)
   ├─ Step 5: Create PR (push branch, gh pr create)
-  │           └─ PR moves to: Awaiting Review
+  │           └─ PR moves to: Needs Review
   └─ Step 6: Update Documentation
               ├─ Switch to main ✓
-              ├─ Update PRS.md (add to Awaiting Review) ✓
+              ├─ Update PRS.md (add to Needs Review) ✓
               └─ Update PLAN.md ✓
 End (on main)
 ```
 
-**PRS.md Update:** Add to **Awaiting Review** section
+**PRS.md Update:** Add to **Needs Review** section
 
 ---
 
@@ -59,26 +59,26 @@ End (on main)
 ```
 Start (on main)
   │
-  ├─ Step 1: Read PRS.md (Awaiting Review section)
+  ├─ Step 1: Read PRS.md (Needs Review section)
   ├─ Step 2: Fetch PR (gh pr checkout <PR#>)
   │           └─ Now on: create-pr/* branch
   ├─ Step 3: Review Code (comprehensive review)
   ├─ Step 4: Update Standards (CODING_STANDARDS.md if needed)
   ├─ Step 5: Submit Review (gh pr review)
-  │           ├─ APPROVE → moves to: Reviewed
-  │           └─ REQUEST_CHANGES → moves to: Awaiting Changes
+  │           ├─ APPROVE → moves to: Needs Testing
+  │           └─ REQUEST_CHANGES → moves to: Needs Changes
   └─ Step 6: Update Documentation
               ├─ Switch to main ✓
               ├─ Update PRS.md ✓
-              │   ├─ If approved: move to Reviewed
-              │   └─ If changes: move to Awaiting Changes
+              │   ├─ If approved: move to Needs Testing
+              │   └─ If changes: move to Needs Changes
               └─ Update PLAN.md ✓
 End (on main)
 ```
 
-**PRS.md Update:** Move from **Awaiting Review** to:
-- **Reviewed** (if approved), OR
-- **Awaiting Changes** (if changes requested)
+**PRS.md Update:** Move from **Needs Review** to:
+- **Needs Testing** (if approved), OR
+- **Needs Changes** (if changes requested)
 
 ---
 
@@ -90,7 +90,7 @@ End (on main)
 Start (on main)
   │
   ├─ Step 1: Read Coding Standards (on main)
-  ├─ Step 2: Read PRS.md (Awaiting Changes section)
+  ├─ Step 2: Read PRS.md (Needs Changes section)
   ├─ Step 3: Fetch PR (gh pr checkout <PR#>)
   │           └─ Now on: create-pr/* branch
   ├─ Step 4: Analyze Review (gh pr view)
@@ -100,12 +100,12 @@ Start (on main)
   └─ Step 8: Update Documentation
               ├─ Push changes (on create-pr/* branch)
               ├─ Switch to main ✓
-              ├─ Update PRS.md (move to Awaiting Review) ✓
+              ├─ Update PRS.md (move to Needs Review) ✓
               └─ Update PLAN.md ✓
 End (on main)
 ```
 
-**PRS.md Update:** Move from **Awaiting Changes** to **Awaiting Review**
+**PRS.md Update:** Move from **Needs Changes** to **Needs Review**
 
 **Loop:** This sends the PR back through Review PR workflow
 
@@ -118,7 +118,7 @@ End (on main)
 ```
 Start (on main)
   │
-  ├─ Step 1: Read PRS.md (Reviewed section)
+  ├─ Step 1: Read PRS.md (Needs Testing section)
   ├─ Step 2: Fetch PR Details (gh pr view <PR#>)
   ├─ Step 3: Present Test Instructions
   │           └─ ⏸️  WAIT for user confirmation
@@ -127,19 +127,19 @@ Start (on main)
   │           └─ Tests failed → Step 6
   ├─ Step 5: Update PRS.md - Success Path
   │           ├─ Switch to main (if needed) ✓
-  │           └─ Move PR to: Tested
+  │           └─ Move PR to: Needs Merging
   ├─ Step 6: Add Failure Comment & Update PRS.md
   │           ├─ Add gh pr comment with failure details
   │           ├─ Switch to main (if needed) ✓
-  │           └─ Move PR to: Awaiting Changes
+  │           └─ Move PR to: Needs Changes
   └─ Step 7: Update Documentation
               └─ Update PLAN.md ✓
 End (on main)
 ```
 
-**PRS.md Update:** Move from **Reviewed** to:
-- **Tested** (if tests pass), OR
-- **Awaiting Changes** (if tests fail) → triggers Update PR workflow
+**PRS.md Update:** Move from **Needs Testing** to:
+- **Needs Merging** (if tests pass), OR
+- **Needs Changes** (if tests fail) → triggers Update PR workflow
 
 ---
 
@@ -150,7 +150,7 @@ End (on main)
 ```
 Start (on main)
   │
-  ├─ Step 1: Read PRS.md (Tested section)
+  ├─ Step 1: Read PRS.md (Needs Merging section)
   ├─ Step 2: Fetch PR Details (gh pr view <PR#>)
   │           └─ 🔒 Ask approval
   ├─ Step 3: Merge PR (gh pr merge <PR#> --merge)
@@ -172,7 +172,7 @@ Start (on main)
 End (on main)
 ```
 
-**PRS.md Update:** Move from **Tested** to **Merged**
+**PRS.md Update:** Move from **Needs Merging** to **Merged**
 
 ---
 
@@ -180,11 +180,11 @@ End (on main)
 
 | Workflow   | Start Branch | Working Branch      | End Branch | PRS.md From         | PRS.md To            | PLAN.md | Branch Switch |
 |------------|--------------|---------------------|------------|---------------------|----------------------|---------|---------------|
-| Create PR  | main         | create-pr/*         | main       | —                   | Awaiting Review      | ✓       | ✓             |
-| Review PR  | main         | create-pr/* (read)  | main       | Awaiting Review     | Reviewed/Changes     | ✓       | ✓             |
-| Update PR  | main         | create-pr/* (write) | main       | Awaiting Changes    | Awaiting Review      | ✓       | ✓             |
-| Test PR    | main         | main (stays)        | main       | Reviewed            | Tested/Changes       | ✓       | ✓ (already)   |
-| Merge PR   | main         | main (stays)        | main       | Tested              | Merged               | ✓       | ✓ (already)   |
+| Create PR  | main         | create-pr/*         | main       | —                   | Needs Review      | ✓       | ✓             |
+| Review PR  | main         | create-pr/* (read)  | main       | Needs Review     | Needs Testing/Changes     | ✓       | ✓             |
+| Update PR  | main         | create-pr/* (write) | main       | Needs Changes    | Needs Review      | ✓       | ✓             |
+| Test PR    | main         | main (stays)        | main       | Needs Testing            | Needs Merging/Changes       | ✓       | ✓ (already)   |
+| Merge PR   | main         | main (stays)        | main       | Needs Merging              | Merged               | ✓       | ✓ (already)   |
 
 ---
 
@@ -193,21 +193,21 @@ End (on main)
 ### PRS.md Sections (PR States)
 
 ```
-1. Awaiting Review  ──Review PR──► 2. Reviewed
-                    ──Review PR──► 3. Awaiting Changes
+1. Needs Review  ──Review PR──► 2. Needs Testing
+                    ──Review PR──► 3. Needs Changes
                          │                    │
                          │                    │
                          │            Update PR
                          │                    │
                          │                    ▼
-                         │            1. Awaiting Review (loop)
+                         │            1. Needs Review (loop)
                          │
                     Test PR
                          │
-                         ├──► 4. Tested
-                         └──► 3. Awaiting Changes ──Update PR──► 1. (loop)
+                         ├──► 4. Needs Merging
+                         └──► 3. Needs Changes ──Update PR──► 1. (loop)
 
-4. Tested           ──Merge PR──► 5. Merged (final)
+4. Needs Merging           ──Merge PR──► 5. Merged (final)
 ```
 
 ---
@@ -242,7 +242,7 @@ Day 1: Create PR
 ├─ Agent creates create-pr/add-validation branch
 ├─ Agent implements with TDD, tests pass, build succeeds
 ├─ Agent creates PR with test instructions
-├─ Agent updates PRS.md → Awaiting Review
+├─ Agent updates PRS.md → Needs Review
 ├─ Agent updates PLAN.md
 └─ Agent switches to main ✓
 
@@ -250,7 +250,7 @@ Day 2: Review PR
 ├─ Developer: "Review PR"
 ├─ Agent checks out PR branch, reviews code
 ├─ Agent finds issue, gh pr review --request-changes
-├─ Agent updates PRS.md → Awaiting Changes
+├─ Agent updates PRS.md → Needs Changes
 ├─ Agent updates PLAN.md
 └─ Agent switches to main ✓
 
@@ -259,7 +259,7 @@ Day 2: Update PR
 ├─ Agent checks out PR branch
 ├─ Agent reads review feedback, implements fixes
 ├─ Agent runs tests, build succeeds, pushes changes
-├─ Agent updates PRS.md → Awaiting Review
+├─ Agent updates PRS.md → Needs Review
 ├─ Agent updates PLAN.md
 └─ Agent switches to main ✓
 
@@ -267,7 +267,7 @@ Day 3: Review PR (again)
 ├─ Developer: "Review PR"
 ├─ Agent checks out PR branch, reviews fixes
 ├─ Agent approves, gh pr review --approve
-├─ Agent updates PRS.md → Reviewed
+├─ Agent updates PRS.md → Needs Testing
 ├─ Agent updates PLAN.md
 └─ Agent switches to main ✓
 
@@ -275,7 +275,7 @@ Day 3: Test PR
 ├─ Developer: "Test PR"
 ├─ Agent presents manual test instructions
 ├─ Developer runs tests manually: "tests passed"
-├─ Agent updates PRS.md → Tested
+├─ Agent updates PRS.md → Needs Merging
 ├─ Agent updates PLAN.md
 └─ Agent already on main ✓
 
@@ -297,25 +297,25 @@ Result: Feature fully integrated into main branch
 ## Example: Path with Multiple Review Cycles
 
 ```
-Create PR → Awaiting Review
+Create PR → Needs Review
          ↓
-Review PR → Awaiting Changes (Issue #1 found)
+Review PR → Needs Changes (Issue #1 found)
          ↓
-Update PR → Awaiting Review (Issue #1 fixed)
+Update PR → Needs Review (Issue #1 fixed)
          ↓
-Review PR → Awaiting Changes (Issue #2 found)
+Review PR → Needs Changes (Issue #2 found)
          ↓
-Update PR → Awaiting Review (Issue #2 fixed)
+Update PR → Needs Review (Issue #2 fixed)
          ↓
-Review PR → Reviewed (approved)
+Review PR → Needs Testing (approved)
          ↓
-Test PR → Awaiting Changes (manual tests failed)
+Test PR → Needs Changes (manual tests failed)
          ↓
-Update PR → Awaiting Review (test failures fixed)
+Update PR → Needs Review (test failures fixed)
          ↓
-Review PR → Reviewed (re-approved)
+Review PR → Needs Testing (re-approved)
          ↓
-Test PR → Tested (tests passed)
+Test PR → Needs Merging (tests passed)
          ↓
 Merge PR → Merged ✓
 ```

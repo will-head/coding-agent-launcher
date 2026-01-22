@@ -21,102 +21,31 @@ scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 
 ### Workflow Modes
 
-User specifies workflow at session start. Default is **Standard** unless Create PR or Documentation is specified.
+## Quick Reference
 
-| Mode | Use Case | Details |
-|------|----------|---------|
-| **Standard** | Default for code changes | 8-step with approvals |
-| **Create PR** | PR-based development | 6-step, no approvals, all changes via PR |
-| **Review PR** | Code review of PRs | 6-step, no approvals, autonomous review |
-| **Update PR** | Address PR feedback | 8-step, no approvals, autonomous fixes |
-| **Test PR** | Manual testing gate | 7-step, test confirmation required |
-| **Merge PR** | Merge tested PRs | 8-step with approvals, merge to main |
-| **Documentation** | Docs-only changes | Skip tests/build/review |
+| Workflow | Steps | Approvals | Target | Use Case |
+|----------|-------|-----------|--------|----------|
+| [Interactive](docs/WORKFLOW-INTERACTIVE.md) | 8 | Required | main branch | Default for code changes |
+| [Create PR](docs/WORKFLOW-CREATE-PR.md) | 6 | Not required | PR branch | PR-based development |
+| [Review PR](docs/WORKFLOW-REVIEW-PR.md) | 6 | Not required | PR review | Code review of PRs |
+| [Update PR](docs/WORKFLOW-UPDATE-PR.md) | 8 | Not required | PR branch | Address review feedback |
+| [Test PR](docs/WORKFLOW-TEST-PR.md) | 7 | Test confirmation | PR testing | Manual testing gate |
+| [Merge PR](docs/WORKFLOW-MERGE-PR.md) | 8 | Required | main branch | Merge tested PRs |
+| [Documentation](docs/WORKFLOW-DOCUMENTATION.md) | 3 | Depends on mode | main or PR | Docs-only changes |
 
-See `docs/WORKFLOW.md` for detailed procedures.
+## Default Workflow
 
-### Standard Workflow (8-Step)
+**Interactive** is the default workflow unless:
+- User specifies "create PR" → use Create PR workflow
+- User specifies "review PR" → use Review PR workflow
+- User specifies "update PR" → use Update PR workflow
+- User specifies "test PR" → use Test PR workflow
+- User specifies "merge PR" → use Merge PR workflow
+- Changes are documentation-only → use Documentation workflow
 
-**Ask user approval before running ANY command** (git, build, scripts, installs).
-Exception: Read/Grep/Glob tools for searching code.
+**If unclear, ask user explicitly which workflow to use.**
 
-1. **Implement** - TDD: write test first, then code
-2. **Test** - Ask approval, run `go test ./...`, stop if fail
-3. **Build** - Ask approval, run `go build -o cal ./cmd/cal`, stop if fail
-4. **Code Review** - Review quality, security, conventions
-5. **Present Review** - Show findings, **STOP for user approval**
-6. **Update Docs** - Update affected docs, update PLAN.md with current project status
-7. **Commit** - Ask approval, use Co-Authored-By line
-
-### Create PR Workflow (6-Step)
-
-**No permission needed** for tests/builds/PR creation. **No destructive operations.**
-**Never commit to main** - all changes via PR on `create-pr/feature-name` branch.
-
-1. **Read Coding Standards** - Review CODING_STANDARDS.md to avoid past mistakes
-2. **Implement** - TDD: write test first, then code (on `create-pr/` branch)
-3. **Test** - Run `go test ./...`, must pass
-4. **Build** - Run `go build -o cal ./cmd/cal`, must pass
-5. **Create PR** - Push branch, create PR with manual testing instructions
-6. **Update Docs** - Add PR to PRS.md "Awaiting Review", update PLAN.md with current status
-
-### Review PR Workflow (6-Step)
-
-**No permission needed** for review operations. **Autonomous code review and PR updates.**
-
-1. **Read PRS.md** - Get first PR from "Awaiting Review" section
-2. **Fetch PR** - Use `gh pr checkout <PR#>` to review locally
-3. **Review Code** - Comprehensive review of quality, architecture, security, best practices
-4. **Update Standards** - Add recurring error patterns to CODING_STANDARDS.md
-5. **Submit Review** - Use `gh pr review` to APPROVE or REQUEST_CHANGES
-6. **Update Docs** - Switch to main, update PRS.md status, update PLAN.md if PR relates to tracked work
-
-### Update PR Workflow (8-Step)
-
-**No permission needed** for fixes/tests/builds/push. **Autonomous implementation of review feedback.**
-**Never commit to main** - work on existing PR branches.
-
-1. **Read Coding Standards** - Review CODING_STANDARDS.md to avoid past mistakes
-2. **Read PRS.md** - Get first PR from "Awaiting Changes" section
-3. **Fetch PR** - Use `gh pr checkout <PR#>` to check out branch
-4. **Analyze Review** - Use `gh pr view <PR#>` to understand feedback
-5. **Implement Changes** - Apply fixes based on review feedback, TDD if needed
-6. **Test** - Run `go test ./...`, must pass
-7. **Build** - Run `go build -o cal ./cmd/cal`, must pass
-8. **Update Docs** - Push changes, switch to main, update PRS.md and PLAN.md with current status
-
-### Test PR Workflow (7-Step)
-
-**Autonomous until presenting test instructions, then require user approval.**
-**Manual testing gate before merge.**
-
-1. **Read PRS.md** - Get first PR from "Reviewed" section
-2. **Fetch PR** - Use `gh pr view <PR#>` to get manual testing instructions
-3. **Present Tests** - Show test plan, **STOP for user confirmation**
-4. **Evaluate** - Determine pass/fail based on user response
-5. **Success Path** - Move to PRS.md "Tested" section if passed
-6. **Failure Path** - Add PR comment with feedback, move to "Awaiting Changes" if failed
-7. **Update Docs** - Switch to main, update PLAN.md with current status
-
-### Merge PR Workflow (8-Step)
-
-**Ask user approval before running ANY command.** Merge tested PRs into main branch.
-**Use merge commit strategy** to preserve full PR history.
-
-1. **Read PRS.md** - Get first PR from "Tested" section
-2. **Fetch PR Details** - Use `gh pr view <PR#>` to verify PR is ready to merge
-3. **Merge PR** - Ask approval, run `gh pr merge <PR#> --merge` to merge into main
-4. **Update Local Main** - Ask approval, switch to main and run `git pull` to update
-5. **Delete Branch** - Ask approval, delete local and remote PR branch
-6. **Update PRS.md** - Move PR to "Merged" section with merge date
-7. **Update PLAN.md** - Mark completed TODOs as [x], update phase status and current project status
-8. **Commit Docs** - Ask approval, commit updated documentation with Co-Authored-By line
-
-### Documentation Workflow
-
-For changes **only** to `.md` files or code comments:
-- Skip tests, build, and code review
-- Still require user approval to commit (Standard) or create PR (Create PR)
+See `docs/WORKFLOWS.md` for complete index and `docs/WORKFLOW-*.md` for detailed procedures.
 
 ### TODOs
 - **`docs/PLAN.md` is the single source of truth** for all TODOs
@@ -145,12 +74,12 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 ## Prohibitions
 
 **Never:**
-- Run commands without user approval (Standard workflow)
-- Commit without user approval (Standard workflow)
+- Run commands without user approval (Interactive workflow)
+- Commit without user approval (Interactive workflow)
 - Commit to main branch (Create PR workflow)
 - Perform destructive operations without approval (all workflows)
 - Commit with failing tests or build
-- Skip code review for code/script changes (Standard workflow)
+- Skip code review for code/script changes (Interactive workflow)
 - Modify ADR files
 - Mark phase complete with unchecked TODOs
 
@@ -159,7 +88,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 ## Session Start
 
 1. **Determine workflow** - If user hasn't specified or it's unclear which workflow to use, ask explicitly:
-   - Standard (8-step with approvals)
+   - Interactive (8-step with approvals)
    - Create PR (6-step, autonomous, PR-based)
    - Review PR (6-step, autonomous review)
    - Update PR (8-step, autonomous fixes)
@@ -184,8 +113,10 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 - [bootstrap.md](docs/bootstrap.md) - Quick start VM setup
 
 **Reference:**
-- [WORKFLOW.md](docs/WORKFLOW.md) - Git workflow details
-- [PR-WORKFLOW-DIAGRAM.md](docs/PR-WORKFLOW-DIAGRAM.md) - Visual PR workflow diagram (Create/Review/Update/Test/Merge)
+- [WORKFLOWS.md](docs/WORKFLOWS.md) - Index of all workflows with quick reference
+- [WORKFLOW.md](docs/WORKFLOW.md) - Complete git workflow reference
+- [WORKFLOW-*.md](docs/) - Detailed workflow files (Interactive, Create PR, Review PR, Update PR, Test PR, Merge PR, Documentation)
+- [PR-WORKFLOW-DIAGRAM.md](docs/PR-WORKFLOW-DIAGRAM.md) - Visual PR workflow diagram
 - [architecture.md](docs/architecture.md) - System design
 - [cli.md](docs/cli.md) - Command reference
 - [SPEC.md](docs/SPEC.md) - Technical specification
