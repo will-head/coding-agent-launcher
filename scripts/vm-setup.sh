@@ -152,6 +152,51 @@ else
     echo "  ✓ ~/code directory already exists"
 fi
 
+# Save VM credentials for login scripts
+echo ""
+echo "🔑 Saving VM credentials..."
+cat > ~/.cal-vm-config <<EOF
+# CAL VM Configuration (restricted permissions)
+VM_PASSWORD="${VM_PASSWORD:-admin}"
+EOF
+chmod 600 ~/.cal-vm-config
+echo "  ✓ Saved to ~/.cal-vm-config (mode 600)"
+
+# Add keychain auto-unlock to .zshrc (runs on every login)
+if ! grep -q '# CAL Keychain Auto-Unlock' ~/.zshrc; then
+    cat >> ~/.zshrc <<'KEYCHAIN_EOF'
+
+# CAL Keychain Auto-Unlock
+# Ensures keychain is unlocked for SSH access on every login
+if [ -f ~/.cal-vm-config ]; then
+    source ~/.cal-vm-config
+    echo "🔐 Configuring keychain for SSH access..."
+    if security unlock-keychain -p "${VM_PASSWORD:-admin}" login.keychain 2>/dev/null; then
+        echo "  ✓ Login keychain unlocked"
+    else
+        echo "  ⚠ Could not unlock keychain (may need manual unlock)"
+    fi
+fi
+
+# CAL First-Run Authentication
+# Runs vm-auth.sh on first login after setup, then clears the flag
+if [ -f ~/.cal-first-run ]; then
+    rm -f ~/.cal-first-run
+    if [ -f ~/scripts/vm-auth.sh ]; then
+        echo ""
+        echo "🚀 First run detected - starting agent authentication..."
+        echo ""
+        CAL_FIRST_RUN=1 zsh ~/scripts/vm-auth.sh
+        # Exit shell to close tmux session and continue cal-bootstrap
+        exit 0
+    fi
+fi
+KEYCHAIN_EOF
+    echo "  ✓ Added keychain auto-unlock to ~/.zshrc"
+else
+    echo "  ✓ Keychain auto-unlock already in ~/.zshrc"
+fi
+
 # Configure shell environment
 echo ""
 echo "⚙️  Configuring shell environment..."
@@ -385,7 +430,6 @@ fi
 if [ -n "$HOST_USER" ]; then
     echo ""
     echo "🌐 Configuring transparent proxy (sshuttle)..."
-
     # Save proxy configuration
     cat > ~/.cal-proxy-config <<EOF
 # CAL Transparent Proxy Configuration
@@ -554,6 +598,10 @@ if [ "$USING_BOOTSTRAP_PROXY" = "true" ]; then
     echo "  ✓ Git proxy settings removed (sshuttle is transparent)"
 fi
 
+# Create first-run flag for automatic vm-auth on next login
+touch ~/.cal-first-run
+echo "  ✓ First-run flag set (vm-auth will run on next login)"
+
 echo ""
 echo "✅ Setup complete!"
 echo ""
@@ -563,7 +611,7 @@ echo "  2. Authenticate with GitHub: gh auth login"
 echo "  3. Authenticate agents:"
 echo "     • Claude Code: claude"
 echo "     • Opencode: opencode auth login"
-echo "     • Cursor: Not supported in VMs (use Claude Code or Opencode instead)"
+echo "     • Cursor: agent"
 echo ""
 echo "💡 Notes:"
 echo "  • Auto-login is enabled - VM will boot to desktop for Screen Sharing"

@@ -370,7 +370,7 @@ run_vm_setup() {
     echo "  Running ~/scripts/vm-setup.sh..."
 
     # Build environment variables
-    local env_vars="HOST_USER='${HOST_USER}' PROXY_MODE='${PROXY_MODE}' HOST_GATEWAY='${HOST_GATEWAY}' CAL_VM_NAME='${VM_DEV}'"
+    local env_vars="HOST_USER='${HOST_USER}' PROXY_MODE='${PROXY_MODE}' HOST_GATEWAY='${HOST_GATEWAY}' CAL_VM_NAME='${VM_DEV}' VM_PASSWORD='${VM_PASSWORD}'"
 
     # If using proxy during init (bootstrap SOCKS), set proxy env vars
     # socks5h:// tells curl to resolve DNS through the proxy too
@@ -715,10 +715,10 @@ start_transparent_proxy() {
         return 0
     fi
 
-    # Check if sshuttle is installed
+    # Check if sshuttle is installed (source Homebrew for PATH)
     local has_sshuttle
     has_sshuttle=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "command -v sshuttle >/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
+        "${VM_USER}@${vm_ip}" "eval \"\$(/opt/homebrew/bin/brew shellenv)\" 2>/dev/null; command -v sshuttle >/dev/null && echo yes || echo no" 2>> "$CAL_LOG")
 
     if [ "$has_sshuttle" != "yes" ]; then
         echo "  ⚠ sshuttle not installed in VM"
@@ -729,11 +729,11 @@ start_transparent_proxy() {
 
     echo "  Starting transparent proxy (sshuttle)..."
 
-    # Start sshuttle in background
+    # Start sshuttle in background (source Homebrew for PATH)
     # Routes all traffic (0.0.0.0/0) through host, handles DNS
     # Excludes local/VM network to prevent routing loops
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.cal-proxy.log 2>&1 &" 2>> "$CAL_LOG"
+        "${VM_USER}@${vm_ip}" "eval \"\$(/opt/homebrew/bin/brew shellenv)\" 2>/dev/null; nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.cal-proxy.log 2>&1 &" 2>> "$CAL_LOG"
 
     # Wait for sshuttle to start
     local count=0
@@ -998,25 +998,49 @@ do_init() {
         start_transparent_proxy "$VM_IP" || echo "  ⚠ sshuttle start failed (see logs)"
     fi
 
-    # Step 8: Prompt user for manual setup
+    # Step 8: Reboot VM to apply .zshrc configuration
+    echo ""
+    echo "Step 8: Reboot VM to apply configuration"
+    echo "  Stopping VM..."
+    "$TART" stop "$VM_DEV" 2>/dev/null || true
+    kill "$TART_PID" 2>/dev/null || true
+    sleep 2
+    
+    echo "  Restarting VM..."
+    if ! start_vm_background "$VM_DEV"; then
+        echo "  Failed to restart VM"
+        exit 1
+    fi
+
+    # Restart proxy after reboot if it was enabled
+    if [ "$proxy_enabled" = "true" ] || [ "$bootstrap_proxy_started" = "true" ]; then
+        echo "  Restarting transparent proxy..."
+        start_transparent_proxy "$VM_IP" || echo "  ⚠ Proxy restart failed"
+    fi
+
+    # Step 9: Open login shell for agent authentication
+    # The .zshrc first-run check will automatically run vm-auth.sh
     echo ""
     echo "============================================"
-    echo "Manual setup required in VM"
+    echo "Agent Authentication"
     echo "============================================"
     echo ""
-    echo "Opening tmux session in VM to run authentication..."
+    echo "Opening login shell in VM (vm-auth.sh will run automatically)..."
     echo ""
 
-    # Automatically SSH into the VM with tmux and run vm-auth.sh
+    # SSH into VM with login shell - .zshrc will:
+    # 1. Unlock keychain
+    # 2. Detect first-run flag and run vm-auth.sh
+    # 3. Clear first-run flag
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s setup 'zsh ~/scripts/vm-auth.sh'"
+        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s setup"
 
     echo ""
     echo "Continuing with setup..."
 
-    # Step 9: Create cal-init
+    # Step 10: Create cal-init
     echo ""
-    echo "Step 9: Create $VM_INIT snapshot"
+    echo "Step 10: Create $VM_INIT snapshot"
 
     # Stop VM first
     CLEANUP_VM=false
