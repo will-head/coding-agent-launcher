@@ -85,6 +85,30 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 ---
 
+## Quick Workflow Selection
+
+**When user enters a single `.` as their prompt:**
+
+1. Read `docs/WORKFLOWS.md`
+2. Present a numbered list of available workflows:
+   ```
+   Select a workflow:
+
+   1. Interactive - Default for code changes (8-step with approvals)
+   2. Create PR - PR-based development (6-step, autonomous)
+   3. Review PR - Code review of PRs (6-step, autonomous)
+   4. Update PR - Address review feedback (8-step, autonomous)
+   5. Test PR - Manual testing gate (7-step, test confirmation)
+   6. Merge PR - Merge tested PRs (8-step with approvals)
+   7. Documentation - Docs-only changes (3-step, depends on mode)
+
+   Enter number (1-7):
+   ```
+3. Wait for user to select a number
+4. Run the chosen workflow following its standard procedure
+
+---
+
 ## Session Start
 
 1. **Determine workflow** - If user hasn't specified or it's unclear which workflow to use, ask explicitly:
