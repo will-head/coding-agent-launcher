@@ -1,10 +1,11 @@
-# Create PR Workflow (6-Step)
+# Create PR Workflow (7-Step)
 
-> Autonomous PR-based development with automated checks and no user approvals
+> Autonomous PR-based development starting from refined TODOs
 
-**Use When:** Creating new pull requests for code review before merging to main
+**Use When:** Creating new pull requests from refined TODOs in STATUS.md
 
 **Key Principles:**
+- **Start with refined TODOs** - read STATUS.md "Refined" section first
 - **No permission needed** - fully autonomous operation for tests, builds, and PR creation
 - **Never commit to main** - all changes via PR on `create-pr/feature-name` branch
 - **No destructive operations** - no force pushes, branch deletions, or dangerous git operations
@@ -15,11 +16,11 @@
 
 ## Overview
 
-The Create PR workflow enables autonomous PR-based development. The agent creates a feature branch, implements changes with TDD, runs tests and build, creates a PR with manual testing instructions, and updates documentation—all without requiring user approval.
+The Create PR workflow enables autonomous PR-based development starting from refined TODOs. The agent reads the "Refined" section in STATUS.md, picks the first item, reads coding standards, implements changes with TDD, runs tests and build, creates a PR with manual testing instructions, and updates documentation—all without requiring user approval.
 
 **Target:** `create-pr/` branch → PR (will merge to main later)
 **Approvals:** Not required (autonomous)
-**Steps:** 6 (streamlined for autonomy)
+**Steps:** 7 (streamlined for autonomy)
 
 ---
 
@@ -42,7 +43,29 @@ git checkout -b create-pr/refactor-config-loading
 
 ## Step-by-Step Process
 
-### Step 1: Read Coding Standards
+### Step 1: Read Refined Queue
+
+Read `STATUS.md` to find the first TODO in "Refined" section:
+
+```markdown
+## Refined
+
+| TODO | Location | Description | Refined Date | Notes |
+|------|----------|-------------|--------------|-------|
+| Add git repo sync on init | PLAN.md Phase 0.10 | Prompt for repos during --init and clone using gh CLI | 2026-01-23 | Requires gh auth |
+```
+
+**If no refined TODOs:**
+- Report completion: "No refined TODOs available for implementation"
+- Exit workflow or ask user for specific task
+
+**If refined TODO found:**
+- Note the TODO description and location in PLAN.md
+- Read the full refined TODO from PLAN.md to get complete requirements
+- Use this information to guide implementation
+- Proceed to Step 2
+
+### Step 2: Read Coding Standards
 
 **Always read `CODING_STANDARDS.md` before implementing** to review:
 - Mandatory quality standards
@@ -52,7 +75,7 @@ git checkout -b create-pr/refactor-config-loading
 
 This ensures all code meets project standards from the start and avoids recurring mistakes.
 
-### Step 2: Implement (TDD)
+### Step 3: Implement (TDD)
 
 1. **Create feature branch:**
    ```bash
@@ -78,7 +101,7 @@ This ensures all code meets project standards from the start and avoids recurrin
    - Improve code quality while keeping tests passing
    - Avoid over-engineering
 
-### Step 3: Test
+### Step 4: Test
 
 Run automated tests (no permission needed):
 
@@ -97,7 +120,7 @@ go test ./...
 - Network failures
 - Edge cases
 
-### Step 4: Build
+### Step 5: Build
 
 Run build (no permission needed):
 
@@ -107,7 +130,7 @@ go build -o cal ./cmd/cal
 
 **Must succeed before proceeding.** Fix any build errors before continuing.
 
-### Step 5: Create PR
+### Step 6: Create PR
 
 1. **Push branch to remote:**
    ```bash
@@ -149,7 +172,7 @@ EOF
 - Automated Tests checklist
 - Claude Code attribution
 
-### Step 6: Update Documentation
+### Step 7: Update Documentation
 
 **IMPORTANT: All documentation updates must be done on main branch, NOT the PR branch.**
 
@@ -214,6 +237,8 @@ EOF
 ## Pre-PR Creation Checklist
 
 Before creating PR:
+- [ ] Refined TODO read from STATUS.md "Refined" section
+- [ ] Full TODO details read from PLAN.md
 - [ ] Coding standards reviewed (`CODING_STANDARDS.md`)
 - [ ] Tests written (TDD approach)
 - [ ] Tests pass (`go test ./...`)

@@ -11,13 +11,13 @@
 | Workflow | Steps | Approvals | Target | Use Case |
 |----------|-------|-----------|--------|----------|
 | [Interactive](#interactive-workflow) | 8 | Required | main branch | Default for code changes |
+| [Documentation](#documentation-workflow) | 3 | Required | main branch | Docs-only changes |
 | [Refinement](#refinement-workflow) | 6 | Required | main branch | Refine PLAN.md TODOs |
-| [Create PR](#create-pr-workflow) | 6 | Not required | PR branch | PR-based development |
+| [Create PR](#create-pr-workflow) | 7 | Not required | PR branch | PR-based development |
 | [Review PR](#review-pr-workflow) | 6 | Not required | PR review | Code review of PRs |
 | [Update PR](#update-pr-workflow) | 8 | Not required | PR branch | Address review feedback |
 | [Test PR](#test-pr-workflow) | 7 | Test confirmation | PR testing | Manual testing gate |
 | [Merge PR](#merge-pr-workflow) | 8 | Required | main branch | Merge tested PRs |
-| [Documentation](#documentation-workflow) | 3 | Depends on mode | main or PR | Docs-only changes |
 
 ---
 
@@ -55,6 +55,23 @@ Default workflow for direct code changes to main branch with user approvals at e
 
 ---
 
+### Documentation Workflow
+
+**[📖 Full Documentation](WORKFLOW-DOCUMENTATION.md)**
+
+Simplified Interactive workflow for documentation-only changes on main branch.
+
+**When to use:** Making changes exclusively to `.md` files or code comments
+**Key features:**
+- Always on main branch
+- User approval required
+- Skip tests, build, and code review
+- Simplified 3-step process
+
+**Steps:** Make Changes → Ask Approval → Commit
+
+---
+
 ### Refinement Workflow
 
 **[📖 Full Documentation](WORKFLOW-REFINEMENT.md)**
@@ -76,16 +93,17 @@ Refine TODOs in PLAN.md with comprehensive requirements gathering and user appro
 
 **[📖 Full Documentation](WORKFLOW-CREATE-PR.md)**
 
-Autonomous PR-based development with automated checks and no user approvals.
+Autonomous PR-based development starting from refined TODOs.
 
-**When to use:** Creating new pull requests for code review before merging to main
+**When to use:** Creating new pull requests from refined TODOs in STATUS.md
 **Key features:**
+- Start with refined TODOs from STATUS.md
 - No permission needed (autonomous)
 - Never commit to main (all changes via PR)
 - TDD required
 - Manual testing instructions in PR
 
-**Steps:** Read Standards → Implement (TDD) → Test → Build → Create PR → Update Docs
+**Steps:** Read Refined Queue → Read Standards → Implement (TDD) → Test → Build → Create PR → Update Docs
 
 **Branch format:** `create-pr/feature-name`
 
@@ -160,22 +178,6 @@ Merge tested PRs into main with user approvals.
 
 ---
 
-### Documentation Workflow
-
-**[📖 Full Documentation](WORKFLOW-DOCUMENTATION.md)**
-
-Simplified workflow for documentation-only changes.
-
-**When to use:** Changes only to `.md` files or code comments
-**Key features:**
-- Skip tests, build, and code review
-- Approval required (Interactive) or not (Create PR)
-- Can use either Interactive or Create PR mode
-
-**Steps:** Make Changes → Ask Approval (if Interactive) → Commit
-
----
-
 ## PR Workflow Cycle
 
 Complete flow from creation to merge:
@@ -230,25 +232,25 @@ Project status is tracked in these sections:
 1. **Does a TODO in PLAN.md need clarification?**
    - → Use **Refinement** workflow
 
-2. **Are you creating a new feature/fix?**
-   - → Use **Create PR** workflow
-
-3. **Is there a PR in "Needs Review"?**
-   - → Use **Review PR** workflow
-
-4. **Is there a PR in "Needs Changes"?**
-   - → Use **Update PR** workflow
-
-5. **Is there a PR in "Needs Testing"?**
-   - → Use **Test PR** workflow
-
-6. **Is there a PR in "Needs Merging"?**
-   - → Use **Merge PR** workflow
-
-7. **Are you making docs-only changes?**
+2. **Are you making docs-only changes?**
    - → Use **Documentation** workflow
 
-8. **Are you making direct changes to main?**
+3. **Is there a refined TODO in STATUS.md ready for implementation?**
+   - → Use **Create PR** workflow
+
+4. **Is there a PR in "Needs Review"?**
+   - → Use **Review PR** workflow
+
+5. **Is there a PR in "Needs Changes"?**
+   - → Use **Update PR** workflow
+
+6. **Is there a PR in "Needs Testing"?**
+   - → Use **Test PR** workflow
+
+7. **Is there a PR in "Needs Merging"?**
+   - → Use **Merge PR** workflow
+
+8. **Are you making direct code changes to main?**
    - → Use **Interactive** workflow
 
 ---

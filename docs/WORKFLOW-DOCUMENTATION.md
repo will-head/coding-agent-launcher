@@ -1,22 +1,23 @@
-# Documentation Workflow
+# Documentation Workflow (3-Step)
 
-> Simplified workflow for documentation-only changes
+> Simplified Interactive workflow for documentation-only changes on main branch
 
 **Use When:** Making changes **only** to `.md` files or code comments
 
 **Key Principles:**
+- **Always on main branch** - direct commits, no PRs
+- **User approval required** - must approve before commit
 - **Skip tests, build, and code review** - not needed for docs
-- **Still require approval to commit** - depends on parent workflow mode
-- **Can use Interactive or Create PR** - choose based on preference
+- **Simplified Interactive** - like Interactive workflow but only 3 steps
 
 ---
 
 ## Overview
 
-The Documentation workflow provides a streamlined process for documentation-only changes. It skips automated testing, build verification, and code review steps since these aren't applicable to markdown files or comments.
+The Documentation workflow is a simplified version of the Interactive workflow for documentation-only changes. It commits directly to main with user approval but skips automated testing, build verification, and code review steps since these aren't applicable to markdown files or comments.
 
-**Target:** main branch (Interactive) or PR (Create PR)
-**Approvals:** Required (Interactive) or Not required (Create PR)
+**Target:** main branch (direct commits)
+**Approvals:** Required
 **Steps:** 3 (simplified)
 
 ---
@@ -37,7 +38,7 @@ Use Documentation workflow for changes **exclusively** to:
 
 ---
 
-## Interactive Mode (Direct to Main)
+## Step-by-Step Process
 
 ### Step 1: Make Changes
 
@@ -85,70 +86,6 @@ git push
 
 ---
 
-## Create PR Mode (Via Pull Request)
-
-### Step 1: Create Branch and Make Changes
-
-```bash
-git checkout -b create-pr/update-docs-[topic]
-```
-
-Edit documentation files as needed.
-
-### Step 2: Create PR
-
-```bash
-git push -u origin HEAD
-
-gh pr create --title "Update documentation: [topic]" --body "$(cat <<'EOF'
-## Summary
-- Documentation changes for [topic]
-- Fixed typos and improved clarity
-- Added missing examples
-
-## Changes
-- Updated docs/[file].md
-- Fixed broken links
-- Improved formatting
-
-## Manual Testing
-- [x] All internal links work
-- [x] Code examples are accurate
-- [x] Formatting renders correctly
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-EOF
-)"
-```
-
-### Step 3: Update Documentation
-
-```bash
-git checkout main
-
-# Update STATUS.md
-# Add to "Needs Review" section
-
-# Update PLAN.md
-# Mark documentation TODOs as complete
-
-git add STATUS.md docs/PLAN.md
-git commit -m "$(cat <<'EOF'
-Update documentation for PR #[number]
-
-Added documentation PR to Needs Review.
-Updated PLAN.md with current status.
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-EOF
-)"
-git push
-```
-
-**Note:** Documentation PRs still go through Review/Test/Merge workflows but those workflows will be faster since code review focuses on documentation quality only.
-
----
-
 ## Documentation Quality Checklist
 
 Before committing:
@@ -183,7 +120,7 @@ Before committing:
 ### When in Doubt
 
 If you're unsure whether changes are documentation-only:
-- **Use full workflow** (Interactive or Create PR)
+- **Use full Interactive workflow** instead
 - Better safe than sorry
 - Tests and build won't hurt
 
@@ -244,6 +181,5 @@ Even for docs-only changes:
 ## Related Documentation
 
 - [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Full Interactive workflow
-- [WORKFLOW-CREATE-PR.md](WORKFLOW-CREATE-PR.md) - Full Create PR workflow
+- [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Full Interactive workflow (8-step)
 - [PLAN.md](PLAN.md) - Project status
