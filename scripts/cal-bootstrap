@@ -985,6 +985,9 @@ do_init() {
     echo "Step 7: Install tools"
     run_vm_setup "$VM_IP" "$bootstrap_proxy_started"
 
+    # Allow time for filesystem sync before reboot
+    sleep 2
+
     # Step 7.5: Clean up bootstrap proxy and start sshuttle
     if [ "$bootstrap_proxy_started" = "true" ]; then
         echo ""
@@ -1033,7 +1036,7 @@ do_init() {
     # 2. Detect first-run flag and run vm-auth.sh
     # 3. Clear first-run flag
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s setup"
+        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s setup 'zsh -l'"
 
     echo ""
     echo "Continuing with setup..."

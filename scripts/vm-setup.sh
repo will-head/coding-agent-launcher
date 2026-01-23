@@ -600,6 +600,7 @@ fi
 
 # Create first-run flag for automatic vm-auth on next login
 touch ~/.cal-first-run
+sync  # Ensure filesystem writes are flushed before VM reboot
 echo "  ✓ First-run flag set (vm-auth will run on next login)"
 
 echo ""
