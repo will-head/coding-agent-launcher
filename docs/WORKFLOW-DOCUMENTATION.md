@@ -126,13 +126,13 @@ EOF
 ```bash
 git checkout main
 
-# Update PRS.md
+# Update STATUS.md
 # Add to "Needs Review" section
 
 # Update PLAN.md
 # Mark documentation TODOs as complete
 
-git add PRS.md docs/PLAN.md
+git add STATUS.md docs/PLAN.md
 git commit -m "$(cat <<'EOF'
 Update documentation for PR #[number]
 

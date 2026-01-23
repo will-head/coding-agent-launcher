@@ -9,7 +9,7 @@
 - **Never commit to main** - all changes via PR on `create-pr/feature-name` branch
 - **No destructive operations** - no force pushes, branch deletions, or dangerous git operations
 - **TDD required** - write test first, then implementation
-- **PLAN.md and PRS.md updates must be done on main branch**, not PR branch
+- **PLAN.md and STATUS.md updates must be done on main branch**, not PR branch
 
 ---
 
@@ -158,7 +158,7 @@ EOF
    git checkout main
    ```
 
-2. **Add new entry to `PRS.md`** under "Needs Review" section:
+2. **Add new entry to `STATUS.md`** under "Needs Review" section:
    ```markdown
    | [#42](link) | create-pr/add-validation | Add input validation | 2026-01-22 |
    ```
@@ -171,11 +171,11 @@ EOF
 
 4. **Commit documentation updates** (on main):
    ```bash
-   git add PRS.md docs/PLAN.md
+   git add STATUS.md docs/PLAN.md
    git commit -m "$(cat <<'EOF'
    Update documentation for PR #42
 
-   Added PR #42 to Needs Review section in PRS.md.
+   Added PR #42 to Needs Review section in STATUS.md.
    Updated PLAN.md to reflect current project status.
 
    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
@@ -222,7 +222,7 @@ Before creating PR:
 - [ ] PR body uses heredoc format for proper formatting
 - [ ] Documentation updated if user-facing changes
 - [ ] Switched to main branch for doc updates
-- [ ] PRS.md updated with PR entry (on main)
+- [ ] STATUS.md updated with PR entry (on main)
 - [ ] PLAN.md updated with current project status (on main)
 - [ ] Documentation changes committed and pushed (on main)
 
@@ -267,10 +267,10 @@ EOF
 
 ### Documentation Updates on Main
 
-**CRITICAL:** PLAN.md and PRS.md updates must be done on the main branch:
+**CRITICAL:** PLAN.md and STATUS.md updates must be done on the main branch:
 1. Create PR on feature branch
 2. Switch to main: `git checkout main`
-3. Update PRS.md and PLAN.md
+3. Update STATUS.md and PLAN.md
 4. Commit and push to main
 5. Do NOT include these doc changes in the PR
 
@@ -282,4 +282,4 @@ EOF
 - [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Next step: PR review
 - [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
 - [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards
-- [PRS.md](../PRS.md) - PR tracking
+- [STATUS.md](../STATUS.md) - PR tracking

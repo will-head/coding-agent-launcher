@@ -180,13 +180,13 @@
         - [x] Document 7-step test procedure in CLAUDE.md and AGENTS.md
         - [x] Add to WORKFLOW.md with detailed procedures
         - [x] Update session start workflow lists
-        - [x] Add "Tested" section to PRS.md between "Reviewed" and "Merged"
+        - [x] Add "Tested" section to STATUS.md between "Reviewed" and "Merged"
         - [x] Update Merge PR workflow to read from "Tested" instead of "Reviewed"
         - [x] Create comprehensive PR workflow diagram (PR-WORKFLOW-DIAGRAM.md)
         - [x] Verify all workflows update PLAN.md and return to main branch
       - [x] **Workflow Documentation Improvements**
         - [x] Rename "Standard" workflow to "Interactive" throughout all documentation
-        - [x] Rename PRS.md section headings: "Awaiting Review" → "Needs Review", "Awaiting Changes" → "Needs Changes", "Reviewed" → "Needs Testing", "Tested" → "Needs Merging"
+        - [x] Rename STATUS.md section headings: "Awaiting Review" → "Needs Review", "Awaiting Changes" → "Needs Changes", "Reviewed" → "Needs Testing", "Tested" → "Needs Merging"
         - [x] Split workflow documentation into separate files for each workflow
           - [x] Create docs/WORKFLOW-CREATE-PR.md for Create PR workflow details
           - [x] Create docs/WORKFLOW-REVIEW-PR.md for Review PR workflow details
@@ -197,24 +197,24 @@
           - [x] Create docs/WORKFLOW-DOCUMENTATION.md for Documentation workflow details
           - [x] Create docs/WORKFLOWS.md as index listing all workflows with references to detail files
           - [x] Update CLAUDE.md to reference new workflow detail files
-        - [x] Emphasize in all workflow docs: PLAN.md and PRS.md changes must be done on main branch, not PR branch
+        - [x] Emphasize in all workflow docs: PLAN.md and STATUS.md changes must be done on main branch, not PR branch
         - [x] Emphasize in all workflow docs: PR comments must use heredoc format to preserve formatting (gh pr comment/review --body "$(cat <<'EOF' ... EOF)")
         - [x] Consolidate useful content from old WORKFLOW.md into WORKFLOWS.md, then remove WORKFLOW.md
           - [x] Read WORKFLOW.md and identify useful content not yet in WORKFLOWS.md
           - [x] Incorporate useful items into WORKFLOWS.md
           - [x] If conflicts exist, WORKFLOWS.md is the source of truth
           - [x] Remove WORKFLOW.md after consolidation is complete
-      - [ ] **Add Refinement Workflow** (New workflow type - refine PLAN.md TODOs for implementation)
-        - [ ] Create docs/WORKFLOW-REFINEMENT.md documenting the Refinement workflow
+      - [x] **Add Refinement Workflow** (New workflow type - refine PLAN.md TODOs for implementation)
+        - [x] Create docs/WORKFLOW-REFINEMENT.md documenting the Refinement workflow
           - Purpose: Refine TODOs in PLAN.md to ensure implementation-ready
           - Process: Read TODO, ask clarifying questions, gather all requirements
           - Outcome: Prefix TODO with "REFINED" once user confirms completeness
           - Target: TODOs in PLAN.md that need detailed requirements before coding
-        - [ ] Add Refinement workflow to WORKFLOWS.md index and quick reference table
-        - [ ] Add Refinement workflow to CLAUDE.md workflow mode table and session start checklist
-        - [ ] Rename PRS.md to STATUS.md (Refinement workflow uses STATUS.md to track refined items)
-        - [ ] Update all references from PRS.md to STATUS.md throughout documentation
-        - [ ] Update STATUS.md structure to support tracking refined TODOs (add "Refined" section)
+        - [x] Add Refinement workflow to WORKFLOWS.md index and quick reference table
+        - [x] Add Refinement workflow to CLAUDE.md workflow mode table and session start checklist
+        - [x] Rename PRS.md to STATUS.md (Refinement workflow uses STATUS.md to track refined items)
+        - [x] Update all references from PRS.md to STATUS.md throughout documentation
+        - [x] Update STATUS.md structure to support tracking refined TODOs (add "Refined" section)
 
 **Deliverable:** Core Phase 0 implementation documented in [ADR-002](adr/ADR-002-tart-vm-operational-guide.md). Three-tier VM architecture, automated setup, transparent proxy, git safety checks, and VM detection. Outstanding items in 0.8/0.10/0.11 tracked above.
 

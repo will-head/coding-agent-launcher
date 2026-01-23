@@ -26,6 +26,7 @@ scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 | Workflow | Steps | Approvals | Target | Use Case |
 |----------|-------|-----------|--------|----------|
 | [Interactive](docs/WORKFLOW-INTERACTIVE.md) | 8 | Required | main branch | Default for code changes |
+| [Refinement](docs/WORKFLOW-REFINEMENT.md) | 6 | Required | main branch | Refine PLAN.md TODOs |
 | [Create PR](docs/WORKFLOW-CREATE-PR.md) | 6 | Not required | PR branch | PR-based development |
 | [Review PR](docs/WORKFLOW-REVIEW-PR.md) | 6 | Not required | PR review | Code review of PRs |
 | [Update PR](docs/WORKFLOW-UPDATE-PR.md) | 8 | Not required | PR branch | Address review feedback |
@@ -36,6 +37,7 @@ scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 ## Default Workflow
 
 **Interactive** is the default workflow unless:
+- User specifies "refine" or "refinement" → use Refinement workflow
 - User specifies "create PR" → use Create PR workflow
 - User specifies "review PR" → use Review PR workflow
 - User specifies "update PR" → use Update PR workflow
@@ -95,14 +97,15 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
    Select a workflow:
 
    1. Interactive - Default for code changes (8-step with approvals)
-   2. Create PR - PR-based development (6-step, autonomous)
-   3. Review PR - Code review of PRs (6-step, autonomous)
-   4. Update PR - Address review feedback (8-step, autonomous)
-   5. Test PR - Manual testing gate (7-step, test confirmation)
-   6. Merge PR - Merge tested PRs (8-step with approvals)
-   7. Documentation - Docs-only changes (3-step, depends on mode)
+   2. Refinement - Refine PLAN.md TODOs (6-step with approvals)
+   3. Create PR - PR-based development (6-step, autonomous)
+   4. Review PR - Code review of PRs (6-step, autonomous)
+   5. Update PR - Address review feedback (8-step, autonomous)
+   6. Test PR - Manual testing gate (7-step, test confirmation)
+   7. Merge PR - Merge tested PRs (8-step with approvals)
+   8. Documentation - Docs-only changes (3-step, depends on mode)
 
-   Enter number (1-7):
+   Enter number (1-8):
    ```
 3. Wait for user to select a number
 4. Run the chosen workflow following its standard procedure
@@ -113,6 +116,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 1. **Determine workflow** - If user hasn't specified or it's unclear which workflow to use, ask explicitly:
    - Interactive (8-step with approvals)
+   - Refinement (6-step with approvals, refine TODOs)
    - Create PR (6-step, autonomous, PR-based)
    - Review PR (6-step, autonomous review)
    - Update PR (8-step, autonomous fixes)
@@ -130,7 +134,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 **Planning (read for tasks):**
 - [PLAN.md](docs/PLAN.md) - TODOs and implementation tasks **(source of truth)**
-- [PRS.md](PRS.md) - Pull requests tracking (Create PR workflow)
+- [STATUS.md](STATUS.md) - Project status tracking (refined TODOs and PRs)
 
 **Operational:**
 - [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) - Comprehensive operational guide
@@ -138,7 +142,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 **Reference:**
 - [WORKFLOWS.md](docs/WORKFLOWS.md) - Index of all workflows with quick reference
-- [WORKFLOW-*.md](docs/) - Detailed workflow files (Interactive, Create PR, Review PR, Update PR, Test PR, Merge PR, Documentation)
+- [WORKFLOW-*.md](docs/) - Detailed workflow files (Interactive, Refinement, Create PR, Review PR, Update PR, Test PR, Merge PR, Documentation)
 - [PR-WORKFLOW-DIAGRAM.md](docs/PR-WORKFLOW-DIAGRAM.md) - Visual PR workflow diagram
 - [architecture.md](docs/architecture.md) - System design
 - [cli.md](docs/cli.md) - Command reference

@@ -11,6 +11,7 @@
 | Workflow | Steps | Approvals | Target | Use Case |
 |----------|-------|-----------|--------|----------|
 | [Interactive](#interactive-workflow) | 8 | Required | main branch | Default for code changes |
+| [Refinement](#refinement-workflow) | 6 | Required | main branch | Refine PLAN.md TODOs |
 | [Create PR](#create-pr-workflow) | 6 | Not required | PR branch | PR-based development |
 | [Review PR](#review-pr-workflow) | 6 | Not required | PR review | Code review of PRs |
 | [Update PR](#update-pr-workflow) | 8 | Not required | PR branch | Address review feedback |
@@ -23,6 +24,7 @@
 ## Default Workflow
 
 **Interactive** is the default workflow unless:
+- User specifies "refine" or "refinement" → use Refinement workflow
 - User specifies "create PR" → use Create PR workflow
 - User specifies "review PR" → use Review PR workflow
 - User specifies "update PR" → use Update PR workflow
@@ -50,6 +52,23 @@ Default workflow for direct code changes to main branch with user approvals at e
 - Documentation-only exception available
 
 **Steps:** Implement → Test → Build → Code Review → Present Review → Update Docs → Commit
+
+---
+
+### Refinement Workflow
+
+**[📖 Full Documentation](WORKFLOW-REFINEMENT.md)**
+
+Refine TODOs in PLAN.md with comprehensive requirements gathering and user approvals.
+
+**When to use:** Clarifying and detailing TODOs before implementation begins
+**Key features:**
+- User approval required before commit
+- Gather complete requirements through Q&A
+- Prefix TODOs with "REFINED" in PLAN.md
+- Track in STATUS.md "Refined" section
+
+**Steps:** Read PLAN.md → Ask Questions → Update PLAN.md → Update STATUS.md → Ask Approval → Commit
 
 ---
 
@@ -188,12 +207,13 @@ Merged
 
 ---
 
-## PRS.md Sections
+## STATUS.md Sections
 
-PRs move through these sections:
+Project status is tracked in these sections:
 
 | Section | Description | Next Workflow |
 |---------|-------------|---------------|
+| **Refined** | TODOs refined and ready for implementation | Interactive or Create PR |
 | **Needs Review** | PRs awaiting code review | Review PR |
 | **Needs Changes** | PRs with review feedback | Update PR |
 | **Needs Testing** | Approved PRs needing manual tests | Test PR |
@@ -207,25 +227,28 @@ PRs move through these sections:
 
 ### Ask Yourself:
 
-1. **Are you creating a new feature/fix?**
+1. **Does a TODO in PLAN.md need clarification?**
+   - → Use **Refinement** workflow
+
+2. **Are you creating a new feature/fix?**
    - → Use **Create PR** workflow
 
-2. **Is there a PR in "Needs Review"?**
+3. **Is there a PR in "Needs Review"?**
    - → Use **Review PR** workflow
 
-3. **Is there a PR in "Needs Changes"?**
+4. **Is there a PR in "Needs Changes"?**
    - → Use **Update PR** workflow
 
-4. **Is there a PR in "Needs Testing"?**
+5. **Is there a PR in "Needs Testing"?**
    - → Use **Test PR** workflow
 
-5. **Is there a PR in "Needs Merging"?**
+6. **Is there a PR in "Needs Merging"?**
    - → Use **Merge PR** workflow
 
-6. **Are you making docs-only changes?**
+7. **Are you making docs-only changes?**
    - → Use **Documentation** workflow
 
-7. **Are you making direct changes to main?**
+8. **Are you making direct changes to main?**
    - → Use **Interactive** workflow
 
 ---
@@ -234,10 +257,10 @@ PRs move through these sections:
 
 ### Documentation Updates on Main
 
-**CRITICAL:** PLAN.md and PRS.md updates must ALWAYS be done on main branch:
+**CRITICAL:** PLAN.md and STATUS.md updates must ALWAYS be done on main branch:
 - Create/update PR on feature branch
 - Switch to main: `git checkout main`
-- Update PRS.md and PLAN.md
+- Update STATUS.md and PLAN.md
 - Commit and push to main
 - Do NOT include these doc changes in the PR
 
@@ -269,6 +292,7 @@ EOF
 
 **Workflow Detail Files:**
 - [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Interactive workflow (8-step)
+- [WORKFLOW-REFINEMENT.md](WORKFLOW-REFINEMENT.md) - Refinement workflow (6-step)
 - [WORKFLOW-CREATE-PR.md](WORKFLOW-CREATE-PR.md) - Create PR workflow (6-step)
 - [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Review PR workflow (6-step)
 - [WORKFLOW-UPDATE-PR.md](WORKFLOW-UPDATE-PR.md) - Update PR workflow (8-step)
@@ -278,5 +302,5 @@ EOF
 
 **Project Management:**
 - [PLAN.md](PLAN.md) - TODOs and implementation tasks (source of truth)
-- [PRS.md](../PRS.md) - Pull requests tracking
+- [STATUS.md](../STATUS.md) - Project status tracking (refined TODOs and PRs)
 - [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards

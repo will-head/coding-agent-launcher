@@ -10,7 +10,7 @@
 - **Comprehensive review** - assess quality, architecture, security, best practices
 - **Submit formal review** - REQUEST_CHANGES or APPROVE via `gh pr review`
 - **Update standards** - add new patterns to CODING_STANDARDS.md when recurring issues found
-- **PLAN.md and PRS.md updates must be done on main branch**, not PR branch
+- **PLAN.md and STATUS.md updates must be done on main branch**, not PR branch
 
 ---
 
@@ -18,7 +18,7 @@
 
 The Review PR workflow performs autonomous, comprehensive code reviews of PRs in the review queue. The agent checks out the PR branch, reviews code quality and architecture, identifies issues, optionally updates coding standards, submits a formal GitHub review, and updates documentation.
 
-**Target:** PR review + PRS.md update
+**Target:** PR review + STATUS.md update
 **Approvals:** Not required (autonomous)
 **Steps:** 6 (streamlined for autonomous review)
 
@@ -28,7 +28,7 @@ The Review PR workflow performs autonomous, comprehensive code reviews of PRs in
 
 ### Step 1: Read Review Queue
 
-Read `PRS.md` to find the first PR in "Needs Review" section:
+Read `STATUS.md` to find the first PR in "Needs Review" section:
 
 ```markdown
 | #42 | create-pr/add-validation | Add input validation | 2026-01-20 |
@@ -228,7 +228,7 @@ git checkout main
 
 **Then update documentation based on review outcome:**
 
-**Update PRS.md:**
+**Update STATUS.md:**
 
 **If approved (no changes required):**
 - Remove from "Needs Review" section
@@ -251,11 +251,11 @@ git checkout main
 
 **Commit documentation updates:**
 ```bash
-git add PRS.md docs/PLAN.md
+git add STATUS.md docs/PLAN.md
 git commit -m "$(cat <<'EOF'
 Update documentation after reviewing PR #42
 
-Moved PR #42 to [Needs Testing/Needs Changes] in PRS.md.
+Moved PR #42 to [Needs Testing/Needs Changes] in STATUS.md.
 Updated PLAN.md with current project status.
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
@@ -276,7 +276,7 @@ Before completing review:
 - [ ] CLAUDE.md updated if new standard categories added
 - [ ] Review submitted via `gh pr review` with heredoc format
 - [ ] Switched back to main branch
-- [ ] PRS.md updated with correct section and details
+- [ ] STATUS.md updated with correct section and details
 - [ ] PLAN.md updated if PR relates to tracked work
 - [ ] Documentation changes committed and pushed
 
@@ -306,10 +306,10 @@ EOF
 
 ### Documentation Updates on Main
 
-All PRS.md and PLAN.md updates must be done on main branch:
+All STATUS.md and PLAN.md updates must be done on main branch:
 1. Finish review on PR branch
 2. Switch to main: `git checkout main`
-3. Update PRS.md and PLAN.md
+3. Update STATUS.md and PLAN.md
 4. Commit and push to main
 
 ---
@@ -321,4 +321,4 @@ All PRS.md and PLAN.md updates must be done on main branch:
 - [WORKFLOW-TEST-PR.md](WORKFLOW-TEST-PR.md) - Next step if approved
 - [UPDATE_CODING_STANDARDS.md](UPDATE_CODING_STANDARDS.md) - How to update standards
 - [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards
-- [PRS.md](../PRS.md) - PR tracking
+- [STATUS.md](../STATUS.md) - PR tracking

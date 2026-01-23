@@ -8,7 +8,7 @@
 - **Autonomous until test presentation** - no permission to fetch PR details
 - **User approval required** - must wait for manual test results confirmation
 - **PR comments for feedback** - add comment with failure details if tests fail
-- **Update PRS.md status** - move to "Needs Merging" on success or "Needs Changes" on failure
+- **Update STATUS.md status** - move to "Needs Merging" on success or "Needs Changes" on failure
 - **PLAN.md updates must be done on main branch**
 
 ---
@@ -17,7 +17,7 @@
 
 The Test PR workflow provides a manual testing gate before merge. The agent fetches PR details, presents manual testing instructions to the user, waits for confirmation, and updates documentation based on test results.
 
-**Target:** Manual test + PRS.md update
+**Target:** Manual test + STATUS.md update
 **Approvals:** Required for test confirmation only
 **Steps:** 7 (includes conditional paths)
 
@@ -27,7 +27,7 @@ The Test PR workflow provides a manual testing gate before merge. The agent fetc
 
 ### Step 1: Read Test Queue
 
-Read `PRS.md` to find the first PR in "Needs Testing" section:
+Read `STATUS.md` to find the first PR in "Needs Testing" section:
 
 ```markdown
 | #42 | create-pr/add-validation | Add input validation | Claude Sonnet 4.5 | 2026-01-21 |
@@ -87,15 +87,15 @@ Based on user response:
 
 **If tests passed:**
 - User said: "tests passed", "pass", "all good", "works", "success", etc.
-- Proceed to Step 5 (Update PRS.md - Success Path)
+- Proceed to Step 5 (Update STATUS.md - Success Path)
 
 **If tests failed:**
 - User said: "tests failed", "fail", "doesn't work", "error", etc.
 - Proceed to Step 6 (Add Failure Comment)
 
-### Step 5: Update PRS.md - Success Path
+### Step 5: Update STATUS.md - Success Path
 
-If manual tests passed, update PRS.md to move PR to "Needs Merging" section.
+If manual tests passed, update STATUS.md to move PR to "Needs Merging" section.
 
 1. **Switch to main branch** (if not already):
    ```bash
@@ -115,7 +115,7 @@ If manual tests passed, update PRS.md to move PR to "Needs Merging" section.
 
 4. **Proceed to Step 7** (Update PLAN.md)
 
-### Step 6: Add Failure Comment and Update PRS.md
+### Step 6: Add Failure Comment and Update STATUS.md
 
 If manual tests failed:
 
@@ -161,11 +161,11 @@ Update PLAN.md with current project status:
 
 **Commit documentation updates:**
 ```bash
-git add PRS.md docs/PLAN.md
+git add STATUS.md docs/PLAN.md
 git commit -m "$(cat <<'EOF'
 Update documentation after testing PR #42
 
-Moved PR #42 to [Needs Merging/Needs Changes] in PRS.md.
+Moved PR #42 to [Needs Merging/Needs Changes] in STATUS.md.
 Updated PLAN.md with current project status.
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
@@ -184,7 +184,7 @@ Before completing workflow:
 - [ ] User confirmation received (passed or failed)
 - [ ] PR comment added if tests failed (with heredoc format)
 - [ ] Switched back to main branch
-- [ ] PRS.md updated ("Needs Merging" if passed, "Needs Changes" if failed)
+- [ ] STATUS.md updated ("Needs Merging" if passed, "Needs Changes" if failed)
 - [ ] PLAN.md updated with current project status
 - [ ] Documentation changes committed and pushed
 
@@ -230,9 +230,9 @@ EOF
 
 ### Documentation Updates on Main
 
-All PRS.md and PLAN.md updates must be done on main branch:
+All STATUS.md and PLAN.md updates must be done on main branch:
 1. Stay on main throughout workflow (no branch checkout needed)
-2. Update PRS.md based on test results
+2. Update STATUS.md based on test results
 3. Update PLAN.md
 4. Commit and push to main
 
@@ -255,4 +255,4 @@ If tests fail, PR goes back through the workflow:
 - [WORKFLOW-MERGE-PR.md](WORKFLOW-MERGE-PR.md) - Next step if tests pass
 - [WORKFLOW-UPDATE-PR.md](WORKFLOW-UPDATE-PR.md) - Next step if tests fail
 - [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
-- [PRS.md](../PRS.md) - PR tracking
+- [STATUS.md](../STATUS.md) - PR tracking

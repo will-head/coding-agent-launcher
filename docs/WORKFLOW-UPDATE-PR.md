@@ -9,7 +9,7 @@
 - **Never commit to main** - work on existing PR branches
 - **Autonomous fixes** - analyze feedback and implement changes
 - **Skip code review step** - changes already went through PR review
-- **PLAN.md and PRS.md updates must be done on main branch**, not PR branch
+- **PLAN.md and STATUS.md updates must be done on main branch**, not PR branch
 
 ---
 
@@ -37,7 +37,7 @@ This ensures fixes meet project standards and don't repeat known issues.
 
 ### Step 2: Read Changes Queue
 
-Read `PRS.md` to find the first PR in "Needs Changes" section:
+Read `STATUS.md` to find the first PR in "Needs Changes" section:
 
 ```markdown
 | #42 | create-pr/add-validation | Add input validation | 2026-01-20 | Security and quality issues |
@@ -143,7 +143,7 @@ go build -o cal ./cmd/cal
    git checkout main
    ```
 
-3. **Update `PRS.md`:**
+3. **Update `STATUS.md`:**
    - Remove from "Needs Changes" section
    - Add back to "Needs Review" section:
    ```markdown
@@ -157,11 +157,11 @@ go build -o cal ./cmd/cal
 
 5. **Commit documentation updates:**
    ```bash
-   git add PRS.md docs/PLAN.md
+   git add STATUS.md docs/PLAN.md
    git commit -m "$(cat <<'EOF'
    Update documentation after addressing PR #42 feedback
 
-   Moved PR #42 back to Needs Review in PRS.md.
+   Moved PR #42 back to Needs Review in STATUS.md.
    Updated PLAN.md with current project status.
 
    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
@@ -183,7 +183,7 @@ Before pushing updates:
 - [ ] Build succeeds (`go build -o cal ./cmd/cal`)
 - [ ] Changes pushed to PR branch
 - [ ] Switched back to main branch
-- [ ] PRS.md updated (moved to "Needs Review")
+- [ ] STATUS.md updated (moved to "Needs Review")
 - [ ] PLAN.md updated with current project status
 - [ ] Documentation changes committed and pushed
 
@@ -210,10 +210,10 @@ Only address issues raised in review:
 
 ### Documentation Updates on Main
 
-**CRITICAL:** PLAN.md and PRS.md updates must be done on main branch:
+**CRITICAL:** PLAN.md and STATUS.md updates must be done on main branch:
 1. Push PR updates on feature branch
 2. Switch to main: `git checkout main`
-3. Update PRS.md and PLAN.md
+3. Update STATUS.md and PLAN.md
 4. Commit and push to main
 
 ### PR Comments Format
@@ -273,4 +273,4 @@ EOF
 - [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Previous step: PR review
 - [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
 - [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards
-- [PRS.md](../PRS.md) - PR tracking
+- [STATUS.md](../STATUS.md) - PR tracking

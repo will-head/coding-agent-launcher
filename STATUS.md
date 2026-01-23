@@ -1,6 +1,16 @@
-# Pull Requests
+# Project Status
 
-> Track PRs created via Create PR workflow, reviewed via Review PR workflow, and updated via Update PR workflow. Move entries between sections as status changes.
+> Track refined TODOs (via Refinement workflow) and PRs (via Create/Review/Update/Test/Merge PR workflows). Move entries between sections as status changes.
+
+---
+
+## Refined
+
+> TODOs that have been refined via the Refinement workflow and are ready for implementation
+
+| TODO | Location | Description | Refined Date | Notes |
+|------|----------|-------------|--------------|-------|
+| *No refined TODOs* | | | | |
 
 ---
 

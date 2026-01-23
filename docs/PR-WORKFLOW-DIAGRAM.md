@@ -43,12 +43,12 @@ Start
   │           └─ PR moves to: Needs Review
   └─ Step 6: Update Documentation
               ├─ Switch to main ✓
-              ├─ Update PRS.md (add to Needs Review) ✓
+              ├─ Update STATUS.md (add to Needs Review) ✓
               └─ Update PLAN.md ✓
 End (on main)
 ```
 
-**PRS.md Update:** Add to **Needs Review** section
+**STATUS.md Update:** Add to **Needs Review** section
 
 ---
 
@@ -59,7 +59,7 @@ End (on main)
 ```
 Start (on main)
   │
-  ├─ Step 1: Read PRS.md (Needs Review section)
+  ├─ Step 1: Read STATUS.md (Needs Review section)
   ├─ Step 2: Fetch PR (gh pr checkout <PR#>)
   │           └─ Now on: create-pr/* branch
   ├─ Step 3: Review Code (comprehensive review)
@@ -69,14 +69,14 @@ Start (on main)
   │           └─ REQUEST_CHANGES → moves to: Needs Changes
   └─ Step 6: Update Documentation
               ├─ Switch to main ✓
-              ├─ Update PRS.md ✓
+              ├─ Update STATUS.md ✓
               │   ├─ If approved: move to Needs Testing
               │   └─ If changes: move to Needs Changes
               └─ Update PLAN.md ✓
 End (on main)
 ```
 
-**PRS.md Update:** Move from **Needs Review** to:
+**STATUS.md Update:** Move from **Needs Review** to:
 - **Needs Testing** (if approved), OR
 - **Needs Changes** (if changes requested)
 
@@ -90,7 +90,7 @@ End (on main)
 Start (on main)
   │
   ├─ Step 1: Read Coding Standards (on main)
-  ├─ Step 2: Read PRS.md (Needs Changes section)
+  ├─ Step 2: Read STATUS.md (Needs Changes section)
   ├─ Step 3: Fetch PR (gh pr checkout <PR#>)
   │           └─ Now on: create-pr/* branch
   ├─ Step 4: Analyze Review (gh pr view)
@@ -100,12 +100,12 @@ Start (on main)
   └─ Step 8: Update Documentation
               ├─ Push changes (on create-pr/* branch)
               ├─ Switch to main ✓
-              ├─ Update PRS.md (move to Needs Review) ✓
+              ├─ Update STATUS.md (move to Needs Review) ✓
               └─ Update PLAN.md ✓
 End (on main)
 ```
 
-**PRS.md Update:** Move from **Needs Changes** to **Needs Review**
+**STATUS.md Update:** Move from **Needs Changes** to **Needs Review**
 
 **Loop:** This sends the PR back through Review PR workflow
 
@@ -118,17 +118,17 @@ End (on main)
 ```
 Start (on main)
   │
-  ├─ Step 1: Read PRS.md (Needs Testing section)
+  ├─ Step 1: Read STATUS.md (Needs Testing section)
   ├─ Step 2: Fetch PR Details (gh pr view <PR#>)
   ├─ Step 3: Present Test Instructions
   │           └─ ⏸️  WAIT for user confirmation
   ├─ Step 4: Evaluate Test Results
   │           ├─ Tests passed → Step 5
   │           └─ Tests failed → Step 6
-  ├─ Step 5: Update PRS.md - Success Path
+  ├─ Step 5: Update STATUS.md - Success Path
   │           ├─ Switch to main (if needed) ✓
   │           └─ Move PR to: Needs Merging
-  ├─ Step 6: Add Failure Comment & Update PRS.md
+  ├─ Step 6: Add Failure Comment & Update STATUS.md
   │           ├─ Add gh pr comment with failure details
   │           ├─ Switch to main (if needed) ✓
   │           └─ Move PR to: Needs Changes
@@ -137,7 +137,7 @@ Start (on main)
 End (on main)
 ```
 
-**PRS.md Update:** Move from **Needs Testing** to:
+**STATUS.md Update:** Move from **Needs Testing** to:
 - **Needs Merging** (if tests pass), OR
 - **Needs Changes** (if tests fail) → triggers Update PR workflow
 
@@ -150,7 +150,7 @@ End (on main)
 ```
 Start (on main)
   │
-  ├─ Step 1: Read PRS.md (Needs Merging section)
+  ├─ Step 1: Read STATUS.md (Needs Merging section)
   ├─ Step 2: Fetch PR Details (gh pr view <PR#>)
   │           └─ 🔒 Ask approval
   ├─ Step 3: Merge PR (gh pr merge <PR#> --merge)
@@ -159,26 +159,26 @@ Start (on main)
   │           └─ 🔒 Ask approval
   ├─ Step 5: Delete Branch (local + remote)
   │           └─ 🔒 Ask approval
-  ├─ Step 6: Update PRS.md
+  ├─ Step 6: Update STATUS.md
   │           └─ Move PR to: Merged
   ├─ Step 7: Update PLAN.md
   │           ├─ Mark completed TODOs as [x]
   │           └─ Update phase status
   └─ Step 8: Commit Documentation
-              ├─ git add PRS.md docs/PLAN.md
+              ├─ git add STATUS.md docs/PLAN.md
               ├─ git commit (with Co-Authored-By)
               └─ git push
               └─ 🔒 Ask approval
 End (on main)
 ```
 
-**PRS.md Update:** Move from **Needs Merging** to **Merged**
+**STATUS.md Update:** Move from **Needs Merging** to **Merged**
 
 ---
 
 ## Complete Flow Matrix
 
-| Workflow   | Start Branch | Working Branch      | End Branch | PRS.md From         | PRS.md To            | PLAN.md | Branch Switch |
+| Workflow   | Start Branch | Working Branch      | End Branch | STATUS.md From         | STATUS.md To            | PLAN.md | Branch Switch |
 |------------|--------------|---------------------|------------|---------------------|----------------------|---------|---------------|
 | Create PR  | main         | create-pr/*         | main       | —                   | Needs Review      | ✓       | ✓             |
 | Review PR  | main         | create-pr/* (read)  | main       | Needs Review     | Needs Testing/Changes     | ✓       | ✓             |
@@ -190,7 +190,7 @@ End (on main)
 
 ## State Transition Summary
 
-### PRS.md Sections (PR States)
+### STATUS.md Sections (PR States)
 
 ```
 1. Needs Review  ──Review PR──► 2. Needs Testing
@@ -215,7 +215,7 @@ End (on main)
 ## Key Principles (All Workflows)
 
 ### ✅ Documentation Updates (Required)
-- **PRS.md**: Updated in every workflow to track PR state
+- **STATUS.md**: Updated in every workflow to track PR state
 - **PLAN.md**: Updated in every workflow to track project status
 
 ### ✅ Branch Management (Required)
@@ -242,7 +242,7 @@ Day 1: Create PR
 ├─ Agent creates create-pr/add-validation branch
 ├─ Agent implements with TDD, tests pass, build succeeds
 ├─ Agent creates PR with test instructions
-├─ Agent updates PRS.md → Needs Review
+├─ Agent updates STATUS.md → Needs Review
 ├─ Agent updates PLAN.md
 └─ Agent switches to main ✓
 
@@ -250,7 +250,7 @@ Day 2: Review PR
 ├─ Developer: "Review PR"
 ├─ Agent checks out PR branch, reviews code
 ├─ Agent finds issue, gh pr review --request-changes
-├─ Agent updates PRS.md → Needs Changes
+├─ Agent updates STATUS.md → Needs Changes
 ├─ Agent updates PLAN.md
 └─ Agent switches to main ✓
 
@@ -259,7 +259,7 @@ Day 2: Update PR
 ├─ Agent checks out PR branch
 ├─ Agent reads review feedback, implements fixes
 ├─ Agent runs tests, build succeeds, pushes changes
-├─ Agent updates PRS.md → Needs Review
+├─ Agent updates STATUS.md → Needs Review
 ├─ Agent updates PLAN.md
 └─ Agent switches to main ✓
 
@@ -267,7 +267,7 @@ Day 3: Review PR (again)
 ├─ Developer: "Review PR"
 ├─ Agent checks out PR branch, reviews fixes
 ├─ Agent approves, gh pr review --approve
-├─ Agent updates PRS.md → Needs Testing
+├─ Agent updates STATUS.md → Needs Testing
 ├─ Agent updates PLAN.md
 └─ Agent switches to main ✓
 
@@ -275,7 +275,7 @@ Day 3: Test PR
 ├─ Developer: "Test PR"
 ├─ Agent presents manual test instructions
 ├─ Developer runs tests manually: "tests passed"
-├─ Agent updates PRS.md → Needs Merging
+├─ Agent updates STATUS.md → Needs Merging
 ├─ Agent updates PLAN.md
 └─ Agent already on main ✓
 
@@ -284,7 +284,7 @@ Day 4: Merge PR
 ├─ Agent merges PR with user approval
 ├─ Agent updates local main with git pull
 ├─ Agent deletes PR branch
-├─ Agent updates PRS.md → Merged
+├─ Agent updates STATUS.md → Merged
 ├─ Agent updates PLAN.md (marks TODOs complete)
 ├─ Agent commits docs with user approval
 └─ Agent already on main ✓
@@ -322,5 +322,5 @@ Merge PR → Merged ✓
 
 **All workflows:**
 - ✅ Updated PLAN.md before completion
-- ✅ Updated PRS.md before completion
+- ✅ Updated STATUS.md before completion
 - ✅ Returned to main branch before completion

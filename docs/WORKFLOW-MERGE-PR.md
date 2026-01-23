@@ -8,7 +8,7 @@
 - **User approval required** - ask permission before all commands
 - **Use merge commit** - preserves full PR history with `--merge` flag
 - **Delete branches after merge** - clean up both local and remote
-- **Track merged PRs** - move to "Merged" section in PRS.md
+- **Track merged PRs** - move to "Merged" section in STATUS.md
 - **Update PLAN.md** - mark completed TODOs, update phase status
 
 ---
@@ -27,7 +27,7 @@ The Merge PR workflow integrates tested PRs into the main branch. With user appr
 
 ### Step 1: Read Merge Queue
 
-Read `PRS.md` to find the first PR in "Needs Merging" section:
+Read `STATUS.md` to find the first PR in "Needs Merging" section:
 
 ```markdown
 | #42 | create-pr/add-validation | Add input validation | User Name | 2026-01-21 |
@@ -115,7 +115,7 @@ Only delete after successful merge confirmation.
 - Remote delete may fail if GitHub auto-deleted (not an error)
 - If deletion fails, report but continue workflow
 
-### Step 6: Update PRS.md
+### Step 6: Update STATUS.md
 
 Move PR entry from "Needs Merging" to "Merged" section with merge date.
 
@@ -161,14 +161,14 @@ Update PLAN.md to reflect current project status after merge:
 
 ### Step 8: Commit Documentation
 
-**Ask user approval**, then commit the updated PRS.md and PLAN.md:
+**Ask user approval**, then commit the updated STATUS.md and PLAN.md:
 
 ```bash
-git add PRS.md docs/PLAN.md
+git add STATUS.md docs/PLAN.md
 git commit -m "$(cat <<'EOF'
 Update documentation after merging PR #42
 
-Moved PR #42 to Merged section in PRS.md.
+Moved PR #42 to Merged section in STATUS.md.
 Updated PLAN.md: marked snapshot validation complete.
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
@@ -189,7 +189,7 @@ Before merging PR:
 - [ ] PR merged successfully with `--merge` flag
 - [ ] Local main branch updated (`git pull`)
 - [ ] PR branch deleted (local and remote)
-- [ ] PRS.md updated (moved to "Merged" section)
+- [ ] STATUS.md updated (moved to "Merged" section)
 - [ ] PLAN.md updated with current project status
 - [ ] Documentation changes committed with Co-Authored-By
 - [ ] Documentation changes pushed to remote
@@ -275,5 +275,5 @@ EOF
 - [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
 - [WORKFLOW-TEST-PR.md](WORKFLOW-TEST-PR.md) - Previous step: PR testing
 - [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
-- [PRS.md](../PRS.md) - PR tracking
+- [STATUS.md](../STATUS.md) - PR tracking
 - [PLAN.md](PLAN.md) - Project status
