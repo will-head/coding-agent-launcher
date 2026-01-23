@@ -98,6 +98,8 @@
         - [ ] Login script checks flag and scans ~/code for git updates
         - [ ] Prompt user to pull if updates found
         - [ ] Unset flag variable after first login scan complete
+        - [ ] Set cal-init back to first-run mode (reset first-run flag)
+        - [ ] In vm-auth: prompt to update GitHub repos if existing repos found
       - [ ] **Logout git status check**
         - [ ] On logout (exit, Ctrl-D, Ctrl-C) scan ~/code directories for git changes
         - [ ] Prompt user to push before exit if uncommitted/unpushed changes found
@@ -134,6 +136,8 @@
        - [x] Run vm-setup.sh from ~/scripts (no duplication in ~)
      - [x] Update README.md Quick Start to match bootstrap.md (correct Quick Start instructions)
      - [ ] **vm-auth.sh Improvements** (Future enhancements - low priority)
+       - [ ] Refactor auth flow: check auth status first, prompt for update (Y/N), then run standard auth flow
+       - [ ] Add GitHub repo sync after authentication: prompt user to enter repos by name for cloning
        - [ ] Reduce network check timeout from 5s to 3s for faster feedback
        - [ ] Use `gh api user -q .login` for more robust username extraction
        - [ ] Add explicit error handling for scp failures in setup_scripts_folder
@@ -195,7 +199,22 @@
           - [x] Update CLAUDE.md to reference new workflow detail files
         - [x] Emphasize in all workflow docs: PLAN.md and PRS.md changes must be done on main branch, not PR branch
         - [x] Emphasize in all workflow docs: PR comments must use heredoc format to preserve formatting (gh pr comment/review --body "$(cat <<'EOF' ... EOF)")
-        - [ ] Consolidate useful content from old WORKFLOW.md into WORKFLOWS.md, consider deprecating or removing WORKFLOW.md
+        - [ ] Consolidate useful content from old WORKFLOW.md into WORKFLOWS.md, then remove WORKFLOW.md
+          - Read WORKFLOW.md and identify useful content not yet in WORKFLOWS.md
+          - Incorporate useful items into WORKFLOWS.md
+          - If conflicts exist, WORKFLOWS.md is the source of truth
+          - Remove WORKFLOW.md after consolidation is complete
+      - [ ] **Add Refinement Workflow** (New workflow type - refine PLAN.md TODOs for implementation)
+        - [ ] Create docs/WORKFLOW-REFINEMENT.md documenting the Refinement workflow
+          - Purpose: Refine TODOs in PLAN.md to ensure implementation-ready
+          - Process: Read TODO, ask clarifying questions, gather all requirements
+          - Outcome: Prefix TODO with "REFINED" once user confirms completeness
+          - Target: TODOs in PLAN.md that need detailed requirements before coding
+        - [ ] Add Refinement workflow to WORKFLOWS.md index and quick reference table
+        - [ ] Add Refinement workflow to CLAUDE.md workflow mode table and session start checklist
+        - [ ] Rename PRS.md to STATUS.md (Refinement workflow uses STATUS.md to track refined items)
+        - [ ] Update all references from PRS.md to STATUS.md throughout documentation
+        - [ ] Update STATUS.md structure to support tracking refined TODOs (add "Refined" section)
 
 **Deliverable:** Core Phase 0 implementation documented in [ADR-002](adr/ADR-002-tart-vm-operational-guide.md). Three-tier VM architecture, automated setup, transparent proxy, git safety checks, and VM detection. Outstanding items in 0.8/0.10/0.11 tracked above.
 
