@@ -136,9 +136,9 @@
      - [x] Update README.md Quick Start to match bootstrap.md (correct Quick Start instructions)
      - [ ] **vm-auth.sh Improvements** (Future enhancements - low priority)
        - [x] Refactor auth flow: check auth status first, prompt for update (Y/N), then run standard auth flow
-       - [ ] Add GitHub repo sync after authentication: prompt user to enter repos by name for cloning
+       - [x] Add GitHub repo sync after authentication: prompt user to enter repos by name for cloning
        - [ ] Reduce network check timeout from 5s to 3s for faster feedback
-       - [ ] Use `gh api user -q .login` for more robust username extraction
+       - [x] Use `gh api user -q .login` for more robust username extraction
        - [ ] Add explicit error handling for scp failures in setup_scripts_folder
        - [ ] Check for specific opencode auth token file if documented
        - [ ] Add Ctrl+C trap handlers during authentication flows

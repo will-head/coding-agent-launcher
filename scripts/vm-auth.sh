@@ -184,41 +184,32 @@ if [ "$all_authenticated" = true ]; then
     read -r -k 1 proceed
     echo ""
     if [[ ! "$proceed" =~ ^[Yy]$ ]]; then
-        echo ""
-        echo "============================================"
-        echo "  Setup Complete - No Changes Made"
-        echo "============================================"
-        echo ""
-        echo "💡 To authenticate later, run:"
-        echo "   ~/scripts/vm-auth.sh"
-        echo ""
-        exit 0
+        skip_auth=true
+    else
+        skip_auth=false
     fi
 else
     echo -n "Do you want to authenticate services? [Y/n] "
     read -r -k 1 proceed
     echo ""
     if [[ "$proceed" =~ ^[Nn]$ ]]; then
-        echo ""
-        echo "============================================"
-        echo "  Setup Complete - No Changes Made"
-        echo "============================================"
-        echo ""
-        echo "💡 To authenticate later, run:"
-        echo "   ~/scripts/vm-auth.sh"
-        echo ""
-        exit 0
+        skip_auth=true
+    else
+        skip_auth=false
     fi
 fi
 
-echo ""
+if [ "$skip_auth" = true ]; then
+    echo "  → Skipping authentication"
+else
+    # Run all authentication steps
 
 # 1. GitHub CLI
 echo ""
 echo "1. GitHub CLI (gh)"
 echo "-------------------"
 if gh_authenticated; then
-    GH_USER=$(gh auth status 2>&1 | grep "Logged in" | head -1 | awk '{print $NF}')
+    GH_USER=$(gh api user -q .login 2>/dev/null || gh auth status 2>&1 | grep "Logged in" | head -1 | sed 's/.*as \([^ ]*\).*/\1/')
     echo "  ✓ Already authenticated as $GH_USER"
     echo -n "  Re-authenticate? [y/N] "
     read -r -k 1 reply
@@ -333,6 +324,107 @@ else
         fi
     else
         echo "  ✗ claude not installed"
+    fi
+fi
+
+fi  # End of authentication block
+
+# GitHub Repository Sync (after all authentications)
+echo ""
+echo "📦 GitHub Repository Sync"
+echo "-------------------------"
+
+if gh_authenticated; then
+    # Get authenticated username
+    GH_USER=$(gh api user -q .login 2>/dev/null || gh auth status 2>&1 | grep "Logged in" | head -1 | sed 's/.*as \([^ ]*\).*/\1/')
+
+    echo "  Clone repositories to ~/code/github.com/[owner]/[repo]"
+    echo ""
+    echo -n "  Do you want to clone repositories? [Y/n] "
+    read -r -k 1 clone_reply
+    echo ""
+
+    if [[ ! "$clone_reply" =~ ^[Nn]$ ]]; then
+        echo ""
+        echo "  Enter repository names (one per line):"
+        echo "  - Format: 'owner/repo' or just 'repo' (assumes your account)"
+        echo "  - Press Enter on empty line when done"
+        echo ""
+
+        repo_count=0
+        success_count=0
+        skip_count=0
+        fail_count=0
+
+        while true; do
+            echo -n "  Repository: "
+            read -r repo_input
+
+            # Empty input means done
+            if [ -z "$repo_input" ]; then
+                break
+            fi
+
+            # Parse repo input
+            if [[ "$repo_input" == *"/"* ]]; then
+                # Full owner/repo format
+                repo_full="$repo_input"
+                repo_owner=$(echo "$repo_input" | cut -d'/' -f1)
+                repo_name=$(echo "$repo_input" | cut -d'/' -f2)
+            else
+                # Just repo name, use authenticated user
+                repo_full="${GH_USER}/${repo_input}"
+                repo_owner="$GH_USER"
+                repo_name="$repo_input"
+            fi
+
+            repo_count=$((repo_count + 1))
+
+            # Target directory
+            target_dir="$HOME/code/github.com/${repo_owner}/${repo_name}"
+
+            # Check if already exists
+            if [ -d "$target_dir" ]; then
+                echo "    ⊘ Already exists: $target_dir"
+                skip_count=$((skip_count + 1))
+                continue
+            fi
+
+            # Create parent directory
+            mkdir -p "$(dirname "$target_dir")"
+
+            # Clone repository
+            echo "    → Cloning ${repo_full}..."
+            if gh repo clone "$repo_full" "$target_dir" 2>&1; then
+                echo "    ✓ Cloned to: $target_dir"
+                success_count=$((success_count + 1))
+            else
+                echo "    ✗ Failed to clone ${repo_full}"
+                fail_count=$((fail_count + 1))
+            fi
+        done
+
+        # Summary
+        if [ $repo_count -gt 0 ]; then
+            echo ""
+            echo "  Summary: $success_count cloned, $skip_count skipped, $fail_count failed"
+        else
+            echo "  → No repositories entered"
+        fi
+    else
+        echo "  → Skipped repository cloning"
+    fi
+else
+    echo "  ⚠ GitHub CLI not authenticated"
+    echo ""
+    echo -n "  Do you want to clone repositories? [y/N] "
+    read -r -k 1 clone_reply
+    echo ""
+
+    if [[ "$clone_reply" =~ ^[Yy]$ ]]; then
+        echo "  ✗ Cannot clone - please authenticate GitHub CLI first"
+    else
+        echo "  → Skipped repository cloning"
     fi
 fi
 
