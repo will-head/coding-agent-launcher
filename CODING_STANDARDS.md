@@ -195,6 +195,6 @@ These standards are **mandatory**. Code reviews will reject changes that violate
 
 ## References
 
-- See `docs/WORKFLOW.md` for workflow procedures
+- See `docs/WORKFLOWS.md` for workflow procedures
 - See `CLAUDE.md` for agent-specific instructions
 - See `docs/SPEC.md` for technical specifications

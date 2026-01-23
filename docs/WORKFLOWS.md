@@ -265,7 +265,6 @@ EOF
 
 **Core Documentation:**
 - [CLAUDE.md](../CLAUDE.md) - Agent instructions and core rules
-- [WORKFLOW.md](WORKFLOW.md) - Complete git workflow reference
 - [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
 
 **Workflow Detail Files:**

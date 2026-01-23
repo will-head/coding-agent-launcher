@@ -199,11 +199,11 @@
           - [x] Update CLAUDE.md to reference new workflow detail files
         - [x] Emphasize in all workflow docs: PLAN.md and PRS.md changes must be done on main branch, not PR branch
         - [x] Emphasize in all workflow docs: PR comments must use heredoc format to preserve formatting (gh pr comment/review --body "$(cat <<'EOF' ... EOF)")
-        - [ ] Consolidate useful content from old WORKFLOW.md into WORKFLOWS.md, then remove WORKFLOW.md
-          - Read WORKFLOW.md and identify useful content not yet in WORKFLOWS.md
-          - Incorporate useful items into WORKFLOWS.md
-          - If conflicts exist, WORKFLOWS.md is the source of truth
-          - Remove WORKFLOW.md after consolidation is complete
+        - [x] Consolidate useful content from old WORKFLOW.md into WORKFLOWS.md, then remove WORKFLOW.md
+          - [x] Read WORKFLOW.md and identify useful content not yet in WORKFLOWS.md
+          - [x] Incorporate useful items into WORKFLOWS.md
+          - [x] If conflicts exist, WORKFLOWS.md is the source of truth
+          - [x] Remove WORKFLOW.md after consolidation is complete
       - [ ] **Add Refinement Workflow** (New workflow type - refine PLAN.md TODOs for implementation)
         - [ ] Create docs/WORKFLOW-REFINEMENT.md documenting the Refinement workflow
           - Purpose: Refine TODOs in PLAN.md to ensure implementation-ready

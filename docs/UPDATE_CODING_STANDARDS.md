@@ -297,4 +297,4 @@ Related: #1
 
 - [CODING_STANDARDS.md](../CODING_STANDARDS.md) - The standards document
 - [CLAUDE.md](../CLAUDE.md) - Agent instructions with standards summary
-- [WORKFLOW.md](WORKFLOW.md) - Code review and workflow procedures
+- [WORKFLOWS.md](WORKFLOWS.md) - Code review and workflow procedures

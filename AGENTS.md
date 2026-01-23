@@ -138,7 +138,6 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 **Reference:**
 - [WORKFLOWS.md](docs/WORKFLOWS.md) - Index of all workflows with quick reference
-- [WORKFLOW.md](docs/WORKFLOW.md) - Complete git workflow reference
 - [WORKFLOW-*.md](docs/) - Detailed workflow files (Interactive, Create PR, Review PR, Update PR, Test PR, Merge PR, Documentation)
 - [PR-WORKFLOW-DIAGRAM.md](docs/PR-WORKFLOW-DIAGRAM.md) - Visual PR workflow diagram
 - [architecture.md](docs/architecture.md) - System design

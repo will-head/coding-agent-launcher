@@ -186,6 +186,5 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ## Related Documentation
 
 - [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW.md](WORKFLOW.md) - Complete git workflow reference
 - [PLAN.md](PLAN.md) - Project TODOs and status
 - [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards
