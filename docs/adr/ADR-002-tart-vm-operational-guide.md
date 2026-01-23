@@ -753,8 +753,10 @@ Runs inside VM:
 Interactive authentication:
 - Network connectivity check
 - Auto-start proxy if needed
-- Step through each agent's auth flow
-- Skip already-authenticated agents
+- Shows authentication status summary for all services
+- Single gate prompt with smart defaults ([Y/n] if any not authenticated, [y/N] if all authenticated)
+- Steps through each agent's auth flow if user proceeds
+- Individual prompts for each service (re-authenticate or skip)
 
 ### Script Location
 

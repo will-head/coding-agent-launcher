@@ -77,8 +77,7 @@
    - [x] Check host SSH server and Python availability
    - [x] Comprehensive documentation (docs/proxy.md, updated bootstrap.md and architecture.md)
    - [ ] **Init Improvements and Enhancements** (Phase 0.10 - In Progress)
-       - [ ] Add option to sync git repos on init (clone specified repos into VM automatically) - PR#1 awaiting fixes
-         - Testing found: zsh syntax error (read -ra), wrong clone method, unclear prompt format
+       - [ ] Add option to sync git repos on init (clone specified repos into VM automatically)
      - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
      - [x] **Cursor OAuth authentication working** - OAuth now works with automatic keychain unlock (see Phase 0.8). First-run automation triggers vm-auth.sh on first login to authenticate all agents including Cursor.
      - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
@@ -136,7 +135,7 @@
        - [x] Run vm-setup.sh from ~/scripts (no duplication in ~)
      - [x] Update README.md Quick Start to match bootstrap.md (correct Quick Start instructions)
      - [ ] **vm-auth.sh Improvements** (Future enhancements - low priority)
-       - [ ] Refactor auth flow: check auth status first, prompt for update (Y/N), then run standard auth flow
+       - [x] Refactor auth flow: check auth status first, prompt for update (Y/N), then run standard auth flow
        - [ ] Add GitHub repo sync after authentication: prompt user to enter repos by name for cloning
        - [ ] Reduce network check timeout from 5s to 3s for faster feedback
        - [ ] Use `gh api user -q .login` for more robust username extraction

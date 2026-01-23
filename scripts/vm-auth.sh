@@ -129,6 +129,90 @@ claude_authenticated() {
     command_exists claude && [ -d ~/.claude ] && [ -n "$(ls -A ~/.claude 2>/dev/null)" ]
 }
 
+# Show authentication status summary
+echo "Authentication Status:"
+echo "----------------------"
+
+# Track if all services are authenticated
+all_authenticated=true
+
+# 1. GitHub CLI
+if gh_authenticated; then
+    echo "  1. GitHub CLI (gh)      ✓ Authenticated"
+elif command_exists gh; then
+    echo "  1. GitHub CLI (gh)      ⚠ Not authenticated"
+    all_authenticated=false
+else
+    echo "  1. GitHub CLI (gh)      ✗ Not installed"
+fi
+
+# 2. Opencode
+if opencode_authenticated; then
+    echo "  2. Opencode             ✓ Authenticated"
+elif command_exists opencode; then
+    echo "  2. Opencode             ⚠ Not authenticated"
+    all_authenticated=false
+else
+    echo "  2. Opencode             ✗ Not installed"
+fi
+
+# 3. Cursor Agent
+if cursor_authenticated; then
+    echo "  3. Cursor Agent         ✓ Authenticated"
+elif command_exists agent; then
+    echo "  3. Cursor Agent         ⚠ Not authenticated"
+    all_authenticated=false
+else
+    echo "  3. Cursor Agent         ✗ Not installed"
+fi
+
+# 4. Claude Code
+if claude_authenticated; then
+    echo "  4. Claude Code          ✓ Authenticated"
+elif command_exists claude; then
+    echo "  4. Claude Code          ⚠ Not authenticated"
+    all_authenticated=false
+else
+    echo "  4. Claude Code          ✗ Not installed"
+fi
+
+echo ""
+
+# Adjust default based on authentication status
+if [ "$all_authenticated" = true ]; then
+    echo -n "Do you want to authenticate services? [y/N] "
+    read -r -k 1 proceed
+    echo ""
+    if [[ ! "$proceed" =~ ^[Yy]$ ]]; then
+        echo ""
+        echo "============================================"
+        echo "  Setup Complete - No Changes Made"
+        echo "============================================"
+        echo ""
+        echo "💡 To authenticate later, run:"
+        echo "   ~/scripts/vm-auth.sh"
+        echo ""
+        exit 0
+    fi
+else
+    echo -n "Do you want to authenticate services? [Y/n] "
+    read -r -k 1 proceed
+    echo ""
+    if [[ "$proceed" =~ ^[Nn]$ ]]; then
+        echo ""
+        echo "============================================"
+        echo "  Setup Complete - No Changes Made"
+        echo "============================================"
+        echo ""
+        echo "💡 To authenticate later, run:"
+        echo "   ~/scripts/vm-auth.sh"
+        echo ""
+        exit 0
+    fi
+fi
+
+echo ""
+
 # 1. GitHub CLI
 echo ""
 echo "1. GitHub CLI (gh)"

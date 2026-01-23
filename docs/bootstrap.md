@@ -168,8 +168,9 @@ The init process installs helper scripts in `~/scripts/` (added to PATH):
 
 - **`vm-auth.sh`** - Re-authenticate all agents (gh, claude, agent, opencode)
   - Automatically runs on first login after init
-  - Detects which agents are already authenticated
-  - Smart defaults: skip if authenticated, prompt if not
+  - Shows authentication status summary for all services
+  - Single prompt: "Do you want to authenticate services?"
+  - Smart defaults: [Y/n] if any not authenticated, [y/N] if all authenticated
   - Checks network connectivity before authentication
   - Run anytime: `vm-auth.sh`
 
