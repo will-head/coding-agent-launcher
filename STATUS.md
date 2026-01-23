@@ -26,7 +26,7 @@
 
 | PR | Branch | Description | Requested | Reason |
 |----|--------|-------------|-----------|--------|
-| [#1](https://github.com/will-head/coding-agent-launcher/pull/1) | glm/git-repo-sync-init | Add Git Repo Sync on Init Feature | 2026-01-22 | Script syntax error (read -ra), wrong clone method (git vs gh), unclear prompt |
+| *No PRs needing changes* | | | | |
 
 ---
 
@@ -58,4 +58,4 @@
 
 | PR | Branch | Description | Reason | Closed |
 |----|--------|-------------|--------|--------|
-| *No closed PRs* | | | | |
+| [#1](https://github.com/will-head/coding-agent-launcher/pull/1) | glm/git-repo-sync-init | Add Git Repo Sync on Init Feature | Failed implementation | 2026-01-23 |
