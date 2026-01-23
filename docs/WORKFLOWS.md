@@ -12,7 +12,7 @@
 |----------|-------|-----------|--------|----------|
 | [Interactive](#interactive-workflow) | 8 | Required | main branch | Default for code changes |
 | [Documentation](#documentation-workflow) | 3 | Required | main branch | Docs-only changes |
-| [Refinement](#refinement-workflow) | 6 | Required | main branch | Refine PLAN.md TODOs |
+| [Refine](#refine-workflow) | 6 | Required | main branch | Refine PLAN.md TODOs |
 | [Create PR](#create-pr-workflow) | 7 | Not required | PR branch | PR-based development |
 | [Review PR](#review-pr-workflow) | 6 | Not required | PR review | Code review of PRs |
 | [Update PR](#update-pr-workflow) | 8 | Not required | PR branch | Address review feedback |
@@ -24,7 +24,7 @@
 ## Default Workflow
 
 **Interactive** is the default workflow unless:
-- User specifies "refine" or "refinement" → use Refinement workflow
+- User specifies "refine" or "refinement" → use Refine workflow
 - User specifies "create PR" → use Create PR workflow
 - User specifies "review PR" → use Review PR workflow
 - User specifies "update PR" → use Update PR workflow
@@ -72,9 +72,9 @@ Simplified Interactive workflow for documentation-only changes on main branch.
 
 ---
 
-### Refinement Workflow
+### Refine Workflow
 
-**[📖 Full Documentation](WORKFLOW-REFINEMENT.md)**
+**[📖 Full Documentation](WORKFLOW-REFINE.md)**
 
 Refine TODOs in PLAN.md with comprehensive requirements gathering and user approvals.
 
@@ -230,7 +230,7 @@ Project status is tracked in these sections:
 ### Ask Yourself:
 
 1. **Does a TODO in PLAN.md need clarification?**
-   - → Use **Refinement** workflow
+   - → Use **Refine** workflow
 
 2. **Are you making docs-only changes?**
    - → Use **Documentation** workflow
@@ -294,7 +294,7 @@ EOF
 
 **Workflow Detail Files:**
 - [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Interactive workflow (8-step)
-- [WORKFLOW-REFINEMENT.md](WORKFLOW-REFINEMENT.md) - Refinement workflow (6-step)
+- [WORKFLOW-REFINE.md](WORKFLOW-REFINE.md) - Refine workflow (6-step)
 - [WORKFLOW-CREATE-PR.md](WORKFLOW-CREATE-PR.md) - Create PR workflow (6-step)
 - [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Review PR workflow (6-step)
 - [WORKFLOW-UPDATE-PR.md](WORKFLOW-UPDATE-PR.md) - Update PR workflow (8-step)

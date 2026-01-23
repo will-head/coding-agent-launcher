@@ -1,4 +1,4 @@
-# Refinement Workflow (6-Step)
+# Refine Workflow (6-Step)
 
 > Refine TODOs in PLAN.md to ensure they are implementation-ready with user approvals
 
@@ -14,7 +14,7 @@
 
 ## Overview
 
-The Refinement workflow ensures TODOs in PLAN.md are implementation-ready by gathering complete requirements through clarifying questions. Once refined, TODOs are prefixed with "REFINED" in PLAN.md and tracked in STATUS.md's "Refined" section.
+The Refine workflow ensures TODOs in PLAN.md are implementation-ready by gathering complete requirements through clarifying questions. Once refined, TODOs are prefixed with "REFINED" in PLAN.md and tracked in STATUS.md's "Refined" section.
 
 **Target:** main branch (direct updates)
 **Approvals:** Required (user reviews changes before commit)
@@ -24,7 +24,7 @@ The Refinement workflow ensures TODOs in PLAN.md are implementation-ready by gat
 
 ## When to Use
 
-Use Refinement workflow when:
+Use Refine workflow when:
 - A TODO in PLAN.md lacks sufficient detail for implementation
 - Requirements are unclear or ambiguous
 - Multiple implementation approaches are possible
@@ -42,7 +42,7 @@ Use Refinement workflow when:
 
 ### Step 1: Read PLAN.md
 
-Read `docs/PLAN.md` to identify the TODO needing refinement.
+Read `docs/PLAN.md` to identify the TODO needing refining.
 
 **Identify:**
 - Which TODO the user wants refined
@@ -50,7 +50,7 @@ Read `docs/PLAN.md` to identify the TODO needing refinement.
 - Related TODOs or dependencies
 - Phase and section location
 
-If user hasn't specified which TODO, present a list of candidates that would benefit from refinement.
+If user hasn't specified which TODO, present a list of candidates that would benefit from refining.
 
 ### Step 2: Ask Clarifying Questions
 
@@ -132,7 +132,7 @@ Present changes to user for review:
 
 1. **Show PLAN.md changes** - highlight refined TODO with full details
 2. **Show STATUS.md entry** - display new tracking entry
-3. **Summarize refinement** - explain what was clarified
+3. **Summarize refining** - explain what was clarified
 4. **List affected files** - PLAN.md and STATUS.md
 
 **Wait for explicit user approval** before committing.
@@ -149,9 +149,9 @@ git commit -m "$(cat <<'EOF'
 Refine TODO: [brief description]
 
 Updated PLAN.md with refined requirements for [TODO].
-Added refinement tracking entry to STATUS.md.
+Added refine tracking entry to STATUS.md.
 
-Refinement details:
+Refine details:
 - [Key requirement 1]
 - [Key requirement 2]
 - [Key requirement 3]
@@ -166,7 +166,7 @@ git push
 
 ---
 
-## Refinement Quality Checklist
+## Refine Quality Checklist
 
 Before presenting for approval:
 - [ ] All ambiguity removed from TODO
@@ -193,7 +193,7 @@ A refined TODO should:
 - Specify testing requirements
 - Be ready for immediate implementation
 
-### When to Stop Refining
+### When to Stop Asking Questions
 
 Stop asking questions when:
 - User confirms "that's everything"
@@ -203,18 +203,18 @@ Stop asking questions when:
 
 ### Multiple TODOs
 
-If multiple related TODOs need refinement:
+If multiple related TODOs need refining:
 - Refine one at a time
 - Note dependencies between them
-- Ensure consistency across refinements
+- Ensure consistency across refined TODOs
 - Can run workflow multiple times
 
 ### STATUS.md Tracking
 
 The "Refined" section in STATUS.md:
 - Provides quick overview of refined TODOs
-- Helps avoid duplicate refinement work
-- Tracks when refinement occurred
+- Helps avoid duplicate refine work
+- Tracks when refining occurred
 - Links refined items to PLAN.md location
 
 ---
@@ -228,7 +228,7 @@ The "Refined" section in STATUS.md:
 - [ ] Improve error messages
 ```
 
-**After Refinement (PLAN.md):**
+**After Refining (PLAN.md):**
 ```markdown
 - [ ] **REFINED:** Improve error messages in cal-bootstrap script
   - Add context to all error messages (what failed, why, what to do)
@@ -251,7 +251,7 @@ The "Refined" section in STATUS.md:
 - [ ] Add configuration file support
 ```
 
-**After Refinement (PLAN.md):**
+**After Refining (PLAN.md):**
 ```markdown
 - [ ] **REFINED:** Add configuration file support for cal-bootstrap
   - File location: ~/.config/cal/config.yaml (XDG standard)
@@ -275,7 +275,7 @@ The "Refined" section in STATUS.md:
 - [ ] Auto-sync repos on VM start
 ```
 
-**After Refinement (PLAN.md):**
+**After Refining (PLAN.md):**
 ```markdown
 - [ ] **REFINED:** Auto-sync repos on VM start in cal-bootstrap
   - Prerequisites: Requires "Add git repo sync on init" TODO to be completed first

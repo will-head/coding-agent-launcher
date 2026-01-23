@@ -1,12 +1,12 @@
 # Project Status
 
-> Track refined TODOs (via Refinement workflow) and PRs (via Create/Review/Update/Test/Merge PR workflows). Move entries between sections as status changes.
+> Track refined TODOs (via Refine workflow) and PRs (via Create/Review/Update/Test/Merge PR workflows). Move entries between sections as status changes.
 
 ---
 
 ## Refined
 
-> TODOs that have been refined via the Refinement workflow and are ready for implementation
+> TODOs that have been refined via the Refine workflow and are ready for implementation
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|

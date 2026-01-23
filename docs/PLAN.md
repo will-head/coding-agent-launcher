@@ -204,15 +204,15 @@
           - [x] Incorporate useful items into WORKFLOWS.md
           - [x] If conflicts exist, WORKFLOWS.md is the source of truth
           - [x] Remove WORKFLOW.md after consolidation is complete
-      - [x] **Add Refinement Workflow** (New workflow type - refine PLAN.md TODOs for implementation)
-        - [x] Create docs/WORKFLOW-REFINEMENT.md documenting the Refinement workflow
+      - [x] **Add Refine Workflow** (New workflow type - refine PLAN.md TODOs for implementation)
+        - [x] Create docs/WORKFLOW-REFINE.md documenting the Refine workflow
           - Purpose: Refine TODOs in PLAN.md to ensure implementation-ready
           - Process: Read TODO, ask clarifying questions, gather all requirements
           - Outcome: Prefix TODO with "REFINED" once user confirms completeness
           - Target: TODOs in PLAN.md that need detailed requirements before coding
-        - [x] Add Refinement workflow to WORKFLOWS.md index and quick reference table
-        - [x] Add Refinement workflow to CLAUDE.md workflow mode table and session start checklist
-        - [x] Rename PRS.md to STATUS.md (Refinement workflow uses STATUS.md to track refined items)
+        - [x] Add Refine workflow to WORKFLOWS.md index and quick reference table
+        - [x] Add Refine workflow to CLAUDE.md workflow mode table and session start checklist
+        - [x] Rename PRS.md to STATUS.md (Refine workflow uses STATUS.md to track refined items)
         - [x] Update all references from PRS.md to STATUS.md throughout documentation
         - [x] Update STATUS.md structure to support tracking refined TODOs (add "Refined" section)
 
