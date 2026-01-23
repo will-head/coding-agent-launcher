@@ -1,40 +1,53 @@
 # Cursor Agent Authentication in VMs - Investigation Results
 
-**Status: NOT FIXABLE** - Cursor CLI is not compatible with VM/SSH-only environments.
+**Status: FIXED** - Cursor CLI now works with automatic keychain unlock (January 2026)
 
-## Problem
+## Problem (SOLVED)
 
-The Cursor agent (`agent` command) fails to authenticate in Tart VMs accessed via SSH.
+The Cursor agent (`agent` command) previously failed to authenticate in Tart VMs accessed via SSH.
 
 **Initial hypothesis:** Keychain access issues (exit code 36)
 
-**Actual root cause (confirmed via testing - January 2026):**
-1. **OAuth Polling Failure** - Browser authentication succeeds but CLI never detects completion
-2. **API Key Dependency** - API keys require OAuth-downloaded user configuration to function
-3. **Dependency Cycle** - Cannot get config without OAuth, OAuth doesn't work in VMs
+**Root cause (identified and fixed - January 2026):**
+- OAuth flows require keychain access for browser credential storage
+- SSH sessions don't automatically unlock the macOS keychain
+- Without unlocked keychain, OAuth browser authentication cannot complete
 
-## Attempted Solutions
+**Solution:**
+- Automatic keychain unlock on every SSH login (via .zshrc)
+- First-run automation triggers vm-auth.sh after init
+- VM password stored securely in ~/.cal-vm-config (mode 600)
 
-### Keychain Unlock (Ineffective)
+## Solution Implemented
 
-Based on the [official Tart FAQ](https://tart.run/faq/), we attempted to unlock the login keychain programmatically:
+### Automatic Keychain Unlock (EFFECTIVE)
 
-```bash
-security unlock-keychain -p 'admin' login.keychain
-```
-
-**Result:** Keychain unlock doesn't solve the problem because the issue occurs before keychain access is needed. The OAuth polling mechanism fails to detect browser authentication completion in VM environments.
-
-### API Key Authentication (Ineffective)
-
-We attempted to use Cursor's API key authentication as an alternative:
+Based on the [official Tart FAQ](https://tart.run/faq/), we implemented automatic keychain unlock on every SSH login:
 
 ```bash
-export CURSOR_API_KEY=your_key
-agent -p "test"
+# In .zshrc - runs on every login
+if [ -f ~/.cal-vm-config ]; then
+    source ~/.cal-vm-config
+    security unlock-keychain -p "${VM_PASSWORD:-admin}" login.keychain 2>/dev/null
+fi
 ```
 
-**Result:** API keys require user configuration that only OAuth can provide. Since OAuth fails in VMs, API keys cannot function either.
+**Result:** ✅ OAuth browser authentication now works correctly. The keychain is unlocked before Cursor agent attempts OAuth, allowing browser credentials to be accessed.
+
+### First-Run Automation (EFFECTIVE)
+
+Added automatic vm-auth.sh execution on first login after init:
+
+```bash
+# In .zshrc - runs once after init
+if [ -f ~/.cal-first-run ]; then
+    rm -f ~/.cal-first-run
+    CAL_FIRST_RUN=1 zsh ~/scripts/vm-auth.sh
+    exit 0
+fi
+```
+
+**Result:** ✅ Users no longer need to manually run vm-auth.sh after init - it runs automatically.
 
 ## Implementation Details
 
@@ -154,25 +167,37 @@ This checks:
 3. Agent installation
 4. Agent authentication status
 
-## Confirmed Limitations (January 2026 Testing)
+## Testing Results (January 2026)
 
-**Cursor CLI authentication does not work in Tart VM environments:**
+**Cursor CLI authentication NOW WORKS in Tart VM environments:**
 
-1. **OAuth Browser Flow Fails** - Browser authentication succeeds but CLI cannot detect completion (polling mechanism fails)
-2. **API Key Cannot Function Standalone** - Requires OAuth-downloaded user configuration (~166KB) that only successful OAuth can provide
-3. **No Workaround Available** - Both authentication methods are broken due to fundamental CLI limitations
+1. **OAuth Browser Flow** - ✅ Works with automatic keychain unlock
+2. **Authentication Persistence** - ✅ Survives SSH reconnect and VM reboots
+3. **First-Run Automation** - ✅ vm-auth.sh runs automatically after init
 
 **Environment Details:**
 - Cursor CLI Version: 2026.01.17-d239e66
 - Host: macOS with working authentication
-- VM: Tart macOS VM via SSH
+- VM: Tart macOS VM via SSH with automatic keychain unlock
 - Network: Verified working (can reach api.cursor.com)
 
-## Recommended Alternatives
+## Supported Agents
 
-Since Cursor CLI authentication is not functional in VM environments, use these alternatives:
+All coding agents now work in VM environments with automatic keychain unlock:
 
-### Option A: Claude Code (Recommended)
+### Cursor (agent command)
+
+Cursor CLI authentication works with automatic keychain unlock:
+
+```bash
+# Authenticate (runs automatically on first login)
+agent
+# Works over SSH after initial auth
+```
+
+**Status:** ✅ Working in VMs (as of January 2026)
+
+### Claude Code
 
 Claude Code CLI works reliably in VM environments:
 
@@ -184,7 +209,7 @@ claude
 
 **Status:** ✅ Working in VMs
 
-### Option B: Opencode
+### Opencode
 
 Opencode authentication works in VM environments:
 
@@ -195,16 +220,6 @@ opencode auth login
 ```
 
 **Status:** ✅ Working in VMs
-
-### Option C: Install Cursor Desktop App (Untested)
-
-**Theory:** Installing the full Cursor desktop application in the VM (via Screen Sharing) might allow OAuth to complete successfully, making the CLI usable.
-
-**Status:** ⚠️ Untested - adds complexity and requires GUI access
-
-### Not Viable: Cursor CLI Only
-
-Cursor CLI cannot authenticate in VM-only environments. Both OAuth and API key methods fail.
 
 ## Diagnostic Information
 
@@ -264,8 +279,14 @@ cat ~/.cursor/cli-config.json | grep -i user
 
 ## Conclusion
 
-**Cursor CLI authentication is not compatible with Tart VM environments.** Both OAuth and API key authentication methods fail due to fundamental limitations in the CLI's OAuth polling mechanism.
+**Cursor CLI authentication NOW WORKS in Tart VM environments** with automatic keychain unlock (January 2026).
 
-**Recommendation:** Use Claude Code or Opencode for coding agent workflows in CAL VMs. Both work reliably over SSH after initial authentication.
+**Solution Summary:**
+- Automatic keychain unlock on every SSH login via .zshrc
+- First-run automation triggers vm-auth.sh after init
+- VM password stored securely in ~/.cal-vm-config (mode 600)
+- OAuth flows complete successfully with unlocked keychain
 
-**For Cursor Users:** Consider filing a bug report or voting for existing issues on the Cursor forum to prioritize SSH/VM compatibility.
+**All agents work:** Cursor, Claude Code, and Opencode all authenticate reliably over SSH after initial setup.
+
+**Security Note:** VM password is stored in plaintext (protected by mode 600 permissions). This is an acceptable trade-off given the VM isolation architecture and enables seamless OAuth authentication.

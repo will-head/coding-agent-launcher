@@ -14,6 +14,8 @@ Automated Tart setup for immediate safe agent use.
 - [x] Transparent proxy via sshuttle for corporate networks
 - [x] Git safety checks before destructive operations
 - [x] VM detection for agents (CAL_VM environment variable)
+- [x] Keychain auto-unlock for Cursor OAuth authentication
+- [x] First-run automation (vm-auth.sh runs automatically after init)
 - [x] Documentation (ADR-002 comprehensive operational guide)
 
 **Outstanding (0.8/0.10/0.11):**
@@ -24,8 +26,6 @@ Automated Tart setup for immediate safe agent use.
 - [ ] Fix authentication flows (GH CLI PAT, opencode status)
 - [ ] Full Go development tools in VM
 - [ ] Session state persistence
-
-**Note:** Cursor CLI is not compatible with VM environments. Use Claude Code or opencode.
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.

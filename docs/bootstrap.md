@@ -148,10 +148,11 @@ The `--init` command performs these steps:
 4. Sets up SSH keys (host→VM, generates if needed)
 5. Sets up network access (VM→Host SSH, bootstrap proxy if needed)
 6. Copies helper scripts to `~/scripts/` in VM
-7. Runs `vm-setup.sh` to install tools (node, gh, tmux, sshuttle, claude, agent, opencode)
+7. Runs `vm-setup.sh` to install tools and configure keychain auto-unlock
 8. Switches from bootstrap proxy to sshuttle (if proxy enabled)
-9. Opens tmux session running `vm-auth.sh` for agent authentication
-10. Creates `cal-init` snapshot
+9. Reboots VM to apply .zshrc configuration
+10. Opens login shell - vm-auth.sh runs automatically (first-run detection)
+11. Creates `cal-init` snapshot
 
 ### VMs Created
 
@@ -165,7 +166,8 @@ The `--init` command performs these steps:
 
 The init process installs helper scripts in `~/scripts/` (added to PATH):
 
-- **`vm-auth.sh`** - Re-authenticate all agents (gh, opencode, agent, claude)
+- **`vm-auth.sh`** - Re-authenticate all agents (gh, claude, agent, opencode)
+  - Automatically runs on first login after init
   - Detects which agents are already authenticated
   - Smart defaults: skip if authenticated, prompt if not
   - Checks network connectivity before authentication
@@ -174,6 +176,25 @@ The init process installs helper scripts in `~/scripts/` (added to PATH):
 - **`vm-setup.sh`** - Re-run tool installation and configuration
   - Useful for resetting VM or installing missing tools
   - Run: `~/scripts/vm-setup.sh`
+
+### Keychain Auto-Unlock
+
+The init process configures automatic keychain unlock on every SSH login to support agent OAuth authentication (especially Cursor Agent which requires keychain access for browser-based login).
+
+**How it works:**
+- VM password saved to `~/.cal-vm-config` (mode 600, owner-only access)
+- `.zshrc` unlocks keychain on every login using saved password
+- Enables Cursor Agent OAuth flows to access browser credentials over SSH
+
+**Security trade-off:**
+- Password stored in plaintext (protected by mode 600 permissions)
+- Acceptable given VM isolation architecture (no external network access without proxy)
+- Alternative would require manual keychain unlock on every SSH session
+
+**First-run automation:**
+- Init creates `~/.cal-first-run` flag file
+- On first login after init, .zshrc detects flag and runs vm-auth.sh automatically
+- Flag is deleted after first run to prevent repeated execution
 
 ## Manual Setup (Alternative)
 
@@ -332,10 +353,10 @@ tart clone <src> <dst>       # Clone/snapshot
 - **SSH refused**: VM still booting - wait or check System Preferences → Sharing → Remote Login
 - **Agent not found**: Restart shell with `exec zsh` or check PATH
 - **Disk full**: `rm -rf ~/Library/Caches/* ~/.npm/_cacache`
-- **Cursor CLI not working**: Cursor CLI is not compatible with VM environments due to OAuth polling limitations. Use Claude Code or opencode instead. See ADR-002 Known Limitations.
-- **Agent login fails**: Use Screen Sharing (standard mode, not High Performance) to authenticate: `open vnc://$(tart ip cal-dev)` → authenticate agent → return to terminal
+- **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (standard mode, not High Performance): `open vnc://$(tart ip cal-dev)` → manually unlock keychain → authenticate agent
 - **Screen Sharing shows lock screen**: Auto-login requires VM reboot to activate. Stop and restart the VM.
 - **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
+- **First-run automation didn't trigger**: Check if `~/.cal-first-run` flag exists. If missing, run `vm-auth.sh` manually.
 - **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host
 
 ## Terminal Keybinding Testing

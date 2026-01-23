@@ -2,13 +2,13 @@
 
 > **Status:** Phase 0 (Bootstrap) Mostly Complete | Phase 1 (CLI Foundation) Not Started
 
-VM-based sandbox for running AI coding agents (Claude Code, opencode) safely in isolated Tart macOS VMs.
+VM-based sandbox for running AI coding agents (Claude Code, Cursor, opencode) safely in isolated Tart macOS VMs.
 
 ## Features
 
 - **Complete isolation** - Agents run in VMs with no host filesystem access
 - **GitHub workflow** - Clone → edit → commit → PR, all changes tracked in git
-- **Multi-agent** - Claude Code, opencode (Note: Cursor CLI not compatible with VMs)
+- **Multi-agent** - Claude Code, Cursor, opencode (with automatic keychain unlock for OAuth)
 - **Instant rollback** - Snapshots recover from any mishap in seconds
 - **Transparent proxy** - Works in corporate environments with network restrictions
 

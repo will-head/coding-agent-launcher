@@ -28,7 +28,7 @@
   - [x] Enable auto-login in vm-setup.sh
   - [x] Configure macOS to auto-login admin user
   - [x] Fix Screen Sharing lock screen issue
-- [x] **Keychain Access for Cursor Agent** (Phase 0.8 - Complete with known issues)
+- [x] **Keychain Access for Cursor Agent** (Phase 0.8 - Complete)
   - [x] Research keychain issue from Tart FAQ
   - [x] Implement keychain unlock in vm-setup.sh
   - [x] Implement keychain unlock in cal-bootstrap
@@ -37,7 +37,18 @@
   - [x] Verify credential persistence (works after SSH reconnect)
   - [x] Test across VM reboots (credentials persist with keychain unlock + .zshrc)
   - [x] Verify auto-unlock on connection
-  - [x] **NOT FIXABLE: Cursor agent authentication in VMs** - OAuth polling fails to detect browser completion in VM environments. API key authentication requires OAuth config to exist first (dependency cycle). Cursor CLI is not currently compatible with VM/SSH-only environments. Testing confirmed (Jan 2026) that both OAuth and API key methods fail in Tart VMs.
+  - [x] **FIXED: Cursor agent authentication now works** - Automatic keychain unlock on every SSH login (via .zshrc) enables Cursor OAuth flows to access browser credentials. The keychain must be unlocked for OAuth browser authentication to succeed in VM environments.
+- [x] **Keychain Auto-Unlock and First-Run Automation** (Phase 0.8.5 - Complete)
+  - [x] Save VM password to ~/.cal-vm-config (mode 600) for automated keychain unlock
+  - [x] Add keychain auto-unlock to .zshrc (runs on every SSH login)
+  - [x] Implement first-run flag (~/.cal-first-run) to trigger vm-auth.sh automatically
+  - [x] Add VM reboot step in --init to apply .zshrc configuration
+  - [x] Fix filesystem sync timing (sync + sleep to ensure flag survives VM reboot)
+  - [x] Fix tmux to start login shell ('zsh -l') so .zshrc first-run code executes
+  - [x] Re-enable Cursor Agent authentication in vm-auth.sh
+  - [x] Improve auth detection (use command output vs file existence checks)
+  - [x] Add CAL_FIRST_RUN environment variable for vm-auth.sh continuation prompt
+  - [x] Security trade-off documented: plaintext password stored with mode 600 permissions
 - [x] **SSH Alternatives Investigation** (Phase 0.8 - Complete)
   - [x] Research alternatives (Mosh, Eternal Terminal, console access, tmux)
   - [x] Performance testing and comparison
@@ -69,7 +80,7 @@
        - [ ] Add option to sync git repos on init (clone specified repos into VM automatically) - PR#1 awaiting fixes
          - Testing found: zsh syntax error (read -ra), wrong clone method, unclear prompt format
      - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
-     - [x] **NOT FIXABLE: Cursor API key auth support** - API keys require OAuth-downloaded user configuration to function. Since OAuth polling fails in VMs (see Phase 0.8), API keys cannot work either. Cursor CLI authentication not possible in VM environments.
+     - [x] **Cursor OAuth authentication working** - OAuth now works with automatic keychain unlock (see Phase 0.8). First-run automation triggers vm-auth.sh on first login to authenticate all agents including Cursor.
      - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
      - [ ] Verify opencode login flow is fixed (test authentication reliability)
      - [ ] Add Codex GitHub CLI Antigravity tools installation in init

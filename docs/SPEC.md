@@ -25,9 +25,9 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 |-------|-----------------|------------|--------|
 | Claude Code | `npm install -g @anthropic-ai/claude-code` | `~/.claude` | Working |
 | opencode | `brew install anomalyco/tap/opencode` | `~/.opencode` | Working |
-| Cursor CLI | `curl -fsSL https://cursor.com/install \| bash` | `~/.cursor` | Not compatible with VMs* |
+| Cursor CLI | `curl -fsSL https://cursor.com/install \| bash` | `~/.cursor` | Working* |
 
-*Cursor CLI OAuth polling fails in VM/SSH environments. See ADR-002 Known Limitations.
+*Cursor CLI requires automatic keychain unlock for OAuth. Implemented via .zshrc in Phase 0.8.5.
 
 ### 3. Environment Plugin System
 
