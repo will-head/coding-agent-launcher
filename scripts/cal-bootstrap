@@ -830,6 +830,38 @@ do_init() {
         init_exists=true
     fi
 
+    # Offer to replace cal-init with current cal-dev before proceeding
+    if [ "$init_exists" = true ] && [ "$dev_exists" = true ]; then
+        if [ "$SKIP_CONFIRM" = false ]; then
+            echo "Do you want to replace $VM_INIT with current $VM_DEV? (y/N)"
+            read -r -k 1 reply
+            echo ""
+            if [[ $reply =~ ^[Yy]$ ]]; then
+                echo ""
+                echo "Replacing $VM_INIT with current $VM_DEV..."
+
+                # Stop cal-dev if running
+                stop_vm "$VM_DEV"
+
+                # Delete cal-init
+                echo "  Deleting $VM_INIT..."
+                "$TART" delete "$VM_INIT"
+
+                # Clone cal-dev to cal-init
+                echo "  Creating $VM_INIT from $VM_DEV..."
+                "$TART" clone "$VM_DEV" "$VM_INIT"
+
+                echo "  ✓ $VM_INIT replaced with current $VM_DEV"
+                echo ""
+                echo "Exiting. Run './cal-bootstrap --init' again to reinitialize."
+                exit 0
+            else
+                echo "Aborted. Existing VMs not modified."
+                exit 0
+            fi
+        fi
+    fi
+
     # If either exists, warn and check git before proceeding
     if [ "$dev_exists" = true ] || [ "$init_exists" = true ]; then
         echo "⚠️  WARNING: Existing VMs will be deleted!"

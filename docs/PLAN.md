@@ -148,7 +148,7 @@
        - [x] Remove cal-dev prefix from snapshot names (snapshots now use exact names specified by user)
        - [ ] Allow `--snapshot delete` to accept multiple VM names
        - [ ] Add `--snapshot delete --force` option to skip git checks and avoid booting VM (for unresponsive VMs)
-       - [ ] When cal-init exists and user runs `--init` ask: Do you want to replace cal-init with current cal-dev y/N
+       - [x] When cal-init exists and user runs `--init` ask: Do you want to replace cal-init with current cal-dev y/N
      - [ ] **Session State Management** (Phase 0.11 - Future)
        - [ ] Implement constant context state persistence
        - [ ] Write context to file after every operation
