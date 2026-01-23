@@ -77,20 +77,20 @@
    - [x] Check host SSH server and Python availability
    - [x] Comprehensive documentation (docs/proxy.md, updated bootstrap.md and architecture.md)
    - [ ] **Init Improvements and Enhancements** (Phase 0.10 - In Progress)
-       - [ ] Add option to sync git repos on init (clone specified repos into VM automatically)
+       - [x] Add option to sync git repos on init (clone specified repos into VM automatically)
      - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
      - [x] **Cursor OAuth authentication working** - OAuth now works with automatic keychain unlock (see Phase 0.8). First-run automation triggers vm-auth.sh on first login to authenticate all agents including Cursor.
      - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
      - [ ] Verify opencode login flow is fixed (test authentication reliability)
      - [ ] Add Codex GitHub CLI Antigravity tools installation in init
-      - [ ] **Check and fix authentication flows**
-        - [ ] GH CLI: Fix PAT login flow (currently fails, token may be issue)
-        - [ ] opencode: Works but reports not authenticated in check (investigate status check)
+      - [x] **Check and fix authentication flows**
+        - [x] GH CLI: Fix PAT login flow (currently fails, token may be issue)
+        - [x] opencode: Works but reports not authenticated in check (investigate status check)
         - Note: Cursor CLI issues tracked separately (see Phase 0.8 line 39)
         - Note: Claude Code authentication working correctly - do not modify
-      - [ ] **Clone GitHub repos in vm-auth** - after gh authentication
-        - [ ] Prompt user to select repos to clone (present list of user's repos)
-        - [ ] Clone selected repos to ~/code/[github server]/[username]/[repo]
+      - [x] **Clone GitHub repos in vm-auth** - after gh authentication
+        - [x] Prompt user to select repos to clone (present list of user's repos)
+        - [x] Clone selected repos to ~/code/[github server]/[username]/[repo]
         - [ ] Support multiple GitHub servers (github.com, enterprise)
       - [ ] **First login git updates in cal-init**
         - [ ] vm-setup.sh sets flag variable for first login
