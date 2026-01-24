@@ -303,6 +303,6 @@ EOF
 - [WORKFLOW-DOCUMENTATION.md](WORKFLOW-DOCUMENTATION.md) - Documentation workflow (3-step)
 
 **Project Management:**
-- [PLAN.md](PLAN.md) - TODOs and implementation tasks (source of truth)
+- [PLAN.md](../PLAN.md) - TODOs and implementation tasks (source of truth)
 - [STATUS.md](../STATUS.md) - Project status tracking (refined TODOs and PRs)
 - [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards

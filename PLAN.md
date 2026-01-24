@@ -4,12 +4,12 @@
 >
 > - Phase completion is determined by checkboxes below
 > - All TODOs must be tracked here (code TODOs should reference this file)
-> - Operational guide: [ADR-002](adr/ADR-002-tart-vm-operational-guide.md)
-> - Original design: [ADR-001](adr/ADR-001-cal-isolation.md) (immutable)
+> - Operational guide: [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md)
+> - Original design: [ADR-001](docs/adr/ADR-001-cal-isolation.md) (immutable)
 
 ## Current Status
 
-**Phase 0 (Bootstrap): Mostly Complete** - Core functionality documented in [ADR-002](adr/ADR-002-tart-vm-operational-guide.md). Outstanding TODOs in 0.8, 0.10, 0.11 below.
+**Phase 0 (Bootstrap): Mostly Complete** - Core functionality documented in [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md). Outstanding TODOs in 0.8, 0.10, 0.11 below.
 - [x] Research Tart capabilities
 - [x] Document manual setup process
 - [x] Create automated vm-setup script
@@ -216,7 +216,7 @@
         - [x] Update all references from PRS.md to STATUS.md throughout documentation
         - [x] Update STATUS.md structure to support tracking refined TODOs (add "Refined" section)
 
-**Deliverable:** Core Phase 0 implementation documented in [ADR-002](adr/ADR-002-tart-vm-operational-guide.md). Three-tier VM architecture, automated setup, transparent proxy, git safety checks, and VM detection. Outstanding items in 0.8/0.10/0.11 tracked above.
+**Deliverable:** Core Phase 0 implementation documented in [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md). Three-tier VM architecture, automated setup, transparent proxy, git safety checks, and VM detection. Outstanding items in 0.8/0.10/0.11 tracked above.
 
 **Testing Issues Found & Fixed:**
 - [x] vm_exists() initially used grep -qw which didn't work reliably - fixed with awk column match

@@ -182,7 +182,7 @@ Update PLAN.md to reflect current project status after merge:
 **Ask user approval**, then commit the updated STATUS.md and PLAN.md:
 
 ```bash
-git add STATUS.md docs/PLAN.md
+git add STATUS.md PLAN.md
 git commit -m "$(cat <<'EOF'
 Update documentation after merging PR #42
 
@@ -294,4 +294,4 @@ EOF
 - [WORKFLOW-TEST-PR.md](WORKFLOW-TEST-PR.md) - Previous step: PR testing
 - [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
 - [STATUS.md](../STATUS.md) - PR tracking
-- [PLAN.md](PLAN.md) - Project status
+- [PLAN.md](../PLAN.md) - Project status

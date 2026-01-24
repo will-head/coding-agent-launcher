@@ -269,7 +269,7 @@ git checkout main
 
 **Commit documentation updates:**
 ```bash
-git add STATUS.md docs/PLAN.md
+git add STATUS.md PLAN.md
 git commit -m "$(cat <<'EOF'
 Update documentation after reviewing PR #42
 

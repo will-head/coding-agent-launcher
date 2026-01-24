@@ -123,7 +123,7 @@ All 4 quick tests (or 6 complete tests) pass:
 - ✅ Credentials persist after VM reboot
 
 **Then:**
-1. Update `docs/PLAN.md`:
+1. Update `PLAN.md`:
    - Check all boxes in Phase 0.8 testing section (lines 43-46)
    - Change status to "Phase 0.8: Complete ✅"
 2. Update `docs/roadmap.md`:
@@ -204,7 +204,7 @@ ssh admin@$(tart ip cal-dev) "agent whoami"
 
 When tests complete (pass or fail), update:
 
-### 1. PLAN.md (docs/PLAN.md)
+### 1. PLAN.md (PLAN.md)
 
 **If all tests pass:**
 ```markdown
@@ -231,7 +231,7 @@ Update Phase 0 status to show completion.
 
 ```bash
 # Documentation-only changes, simplified workflow applies
-git add docs/PLAN.md docs/roadmap.md
+git add PLAN.md docs/roadmap.md
 git add docs/TESTING.md docs/TESTING-QUICKSTART.md
 git add docs/cursor-login-fix.md README.md
 git commit -m "Add Phase 0.8 testing documentation and complete testing

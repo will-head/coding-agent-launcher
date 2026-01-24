@@ -175,7 +175,7 @@ go build -o cal ./cmd/cal
 
 5. **Commit documentation updates:**
    ```bash
-   git add STATUS.md docs/PLAN.md
+   git add STATUS.md PLAN.md
    git commit -m "$(cat <<'EOF'
    Update documentation after addressing PR #42 feedback
 

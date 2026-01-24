@@ -181,7 +181,7 @@ ssh admin@$(tart ip cal-dev) "cat /path/to/file" | pbcopy
 2. `scripts/cal-bootstrap` - Added `unlock_keychain()` function
 3. `scripts/test-cursor-login.sh` - New test script
 4. `docs/cursor-login-fix.md` - Complete documentation
-5. `docs/PLAN.md` - Updated status and added Phase 0.8
+5. `PLAN.md` - Updated status and added Phase 0.8
 6. `docs/bootstrap.md` - Updated troubleshooting
 
 ## Next Steps After Testing

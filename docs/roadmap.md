@@ -1,6 +1,6 @@
 # Roadmap
 
-> Quick reference derived from [PLAN.md](PLAN.md) - the authoritative source for status and TODOs.
+> Quick reference derived from [PLAN.md](../PLAN.md) - the authoritative source for status and TODOs.
 >
 > See also: [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) (operational guide) | [SPEC](SPEC.md) (technical spec)
 

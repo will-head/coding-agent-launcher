@@ -1,7 +1,7 @@
 # Phase 0 Reference Document
 
 > ⚠️ **NOTE:** This is a reference snapshot documenting Phase 0 work.
-> **For current status and TODOs, see [PLAN.md](PLAN.md)** - the single source of truth.
+> **For current status and TODOs, see [PLAN.md](../PLAN.md)** - the single source of truth.
 
 **Snapshot Date:** January 17, 2026  
 **Current Status:** See [PLAN.md Current Status section](PLAN.md#current-status)
@@ -97,7 +97,7 @@ These match standard Emacs/readline conventions and work natively in ZSH.
 ### Documentation
 1. `docs/bootstrap.md` - Manual setup guide
 2. `docs/terminal-keybindings-test.md` - Test plan and results
-3. `docs/PLAN.md` - Implementation plan (Phase 0 complete)
+3. `PLAN.md` - Implementation plan (Phase 0 complete)
 4. `docs/roadmap.md` - Phase overview (Phase 0 complete)
 5. `docs/phase0-completion-summary.md` - This document
 
@@ -178,10 +178,10 @@ Goals:
 - Configuration management (`~/.cal/config.yaml`)
 - CLI commands: `init`, `start`, `stop`, `ssh`, `snapshot`
 
-See `docs/PLAN.md` for Phase 1 implementation details.
+See `PLAN.md` for Phase 1 implementation details.
 
 ## Historical Context
 
 This snapshot documents Phase 0 at a point in time. The project evolved with cal-bootstrap providing comprehensive VM management.
 
-**For current status, see [PLAN.md](PLAN.md)**
+**For current status, see [PLAN.md](../PLAN.md)**

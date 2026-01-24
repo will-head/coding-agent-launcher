@@ -24,7 +24,7 @@ Completed Phase 0.8 testing and enhanced cal-bootstrap script with short name su
 - Improved delete operation with cal-dev protection
 - Cleaner VM listing output
 
-### 2. `docs/PLAN.md` 
+### 2. `PLAN.md` 
 
 **Changes:**
 - Marked Phase 0.8 complete with testing checkboxes
@@ -535,6 +535,6 @@ Before committing, verify:
 ```bash
 git diff --name-only
 git diff scripts/cal-bootstrap | less
-git diff docs/PLAN.md | less
+git diff PLAN.md | less
 shellcheck scripts/cal-bootstrap
 ```

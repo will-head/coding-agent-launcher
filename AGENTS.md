@@ -50,7 +50,7 @@ scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 See `docs/WORKFLOWS.md` for complete index and `docs/WORKFLOW-*.md` for detailed procedures.
 
 ### TODOs
-- **`docs/PLAN.md` is the single source of truth** for all TODOs
+- **`PLAN.md` is the single source of truth** for all TODOs
 - Phase complete only when ALL checkboxes are `[x]`
 - Code TODOs must also be in PLAN.md
 
@@ -129,7 +129,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
    - Reiterate the workflow to the user in your own words
    - Confirm understanding of the workflow before proceeding
 3. Ask approval, then run `git status` and `git fetch`
-4. Read `docs/PLAN.md` for TODOs and current phase
+4. Read `PLAN.md` for TODOs and current phase
 5. Report status and suggest next steps
 
 ---
@@ -137,7 +137,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 ## Documentation
 
 **Planning (read for tasks):**
-- [PLAN.md](docs/PLAN.md) - TODOs and implementation tasks **(source of truth)**
+- [PLAN.md](PLAN.md) - TODOs and implementation tasks **(source of truth)**
 - [STATUS.md](STATUS.md) - Project status tracking (refined TODOs and PRs)
 
 **Operational:**

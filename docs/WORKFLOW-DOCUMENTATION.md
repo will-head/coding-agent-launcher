@@ -199,4 +199,4 @@ Even for docs-only changes:
 
 - [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
 - [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Full Interactive workflow (8-step)
-- [PLAN.md](PLAN.md) - Project status
+- [PLAN.md](../PLAN.md) - Project status

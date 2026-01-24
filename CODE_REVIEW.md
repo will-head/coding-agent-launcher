@@ -23,7 +23,7 @@ Reviewed implementation of automatic keychain unlocking to fix Cursor agent logi
 
 ### Modified Documentation (4)
 4. `docs/cursor-login-fix.md` - Comprehensive solution documentation
-5. `docs/PLAN.md` - Phase 0.8 added, testing TODOs, status updates
+5. `PLAN.md` - Phase 0.8 added, testing TODOs, status updates
 6. `docs/bootstrap.md` - Updated troubleshooting section
 7. `TESTING.md` - Step-by-step testing checklist
 

@@ -1,7 +1,7 @@
 # Phase 0 Reference Document
 
 > ⚠️ **NOTE:** This is a historical reference snapshot documenting Phase 0 work.
-> **For current status and TODOs, see [PLAN.md](PLAN.md)** - the single source of truth.
+> **For current status and TODOs, see [PLAN.md](../PLAN.md)** - the single source of truth.
 
 **Snapshot Date:** January 17, 2026  
 **Current Status:** See [PLAN.md Current Status section](PLAN.md#current-status)
@@ -76,5 +76,5 @@ This requires interactive OAuth, which cannot be automated without storing token
 This snapshot documents the completion of Phase 0 at a point in time. The project has since evolved with the cal-bootstrap script providing comprehensive VM management capabilities.
 
 For current project status, see:
-- [PLAN.md](PLAN.md) - Current status and TODOs
+- [PLAN.md](../PLAN.md) - Current status and TODOs
 - [roadmap.md](roadmap.md) - Phase overview

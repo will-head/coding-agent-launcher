@@ -59,7 +59,7 @@ Use Refine workflow when:
 
 ### Step 1: Read PLAN.md
 
-Read `docs/PLAN.md` to identify the TODO needing refining.
+Read `PLAN.md` to identify the TODO needing refining.
 
 **Identify:**
 - Which TODO the user wants refined
@@ -99,7 +99,7 @@ Ask comprehensive questions to gather all requirements. Use the `AskUserQuestion
 
 ### Step 3: Update PLAN.md
 
-Update the TODO in `docs/PLAN.md`:
+Update the TODO in `PLAN.md`:
 
 1. **Prefix with "REFINED"** at the start of the TODO line
 2. **Expand description** with gathered requirements
@@ -161,7 +161,7 @@ If user requests changes, return to Step 2 or Step 3 as needed.
 After user approval, commit changes to main:
 
 ```bash
-git add docs/PLAN.md STATUS.md
+git add PLAN.md STATUS.md
 git commit -m "$(cat <<'EOF'
 Refine TODO: [brief description]
 
@@ -317,5 +317,5 @@ The "Refined" section in STATUS.md:
 - [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
 - [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - For implementing refined TODOs
 - [WORKFLOW-CREATE-PR.md](WORKFLOW-CREATE-PR.md) - For implementing via PR
-- [PLAN.md](PLAN.md) - Source of TODOs to refine
+- [PLAN.md](../PLAN.md) - Source of TODOs to refine
 - [STATUS.md](../STATUS.md) - Tracks refined TODOs

@@ -212,7 +212,7 @@ EOF
 
 4. **Commit documentation updates** (on main):
    ```bash
-   git add STATUS.md docs/PLAN.md
+   git add STATUS.md PLAN.md
    git commit -m "$(cat <<'EOF'
    Update documentation for PR #42
 

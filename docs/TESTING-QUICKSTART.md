@@ -112,7 +112,7 @@ Fill this out:
 
 ## Update PLAN.md After Testing
 
-Once tests pass, update `docs/PLAN.md`:
+Once tests pass, update `PLAN.md`:
 
 ```markdown
 - [x] Test agent login via Screen Sharing
@@ -159,7 +159,7 @@ Change Phase 0.8 status:
 ### If Tests Pass
 1. Mark Phase 0.8 complete in PLAN.md
 2. Update roadmap.md
-3. Commit changes: `git add docs/PLAN.md docs/roadmap.md && git commit`
+3. Commit changes: `git add PLAN.md docs/roadmap.md && git commit`
 4. Move to Phase 0.9 improvements
 
 ### If Tests Fail

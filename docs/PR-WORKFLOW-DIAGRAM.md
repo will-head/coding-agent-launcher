@@ -165,7 +165,7 @@ Start (on main)
   │           ├─ Mark completed TODOs as [x]
   │           └─ Update phase status
   └─ Step 8: Commit Documentation
-              ├─ git add STATUS.md docs/PLAN.md
+              ├─ git add STATUS.md PLAN.md
               ├─ git commit (with Co-Authored-By)
               └─ git push
               └─ 🔒 Ask approval

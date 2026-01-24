@@ -45,7 +45,7 @@ Context for AI coding agents is in `AGENTS.md` with symlinks:
 - [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) - Comprehensive operational guide
 
 **Planning:**
-- [PLAN.md](docs/PLAN.md) - TODOs and status **(source of truth)**
+- [PLAN.md](PLAN.md) - TODOs and status **(source of truth)**
 - [Roadmap](docs/roadmap.md) - Phase overview
 
 **Reference:**
