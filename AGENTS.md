@@ -123,9 +123,13 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
    - Test PR (7-step, manual testing gate)
    - Merge PR (8-step with approvals)
    - Documentation (docs-only)
-2. Ask approval, then run `git status` and `git fetch`
-3. Read `docs/PLAN.md` for TODOs and current phase
-4. Acknowledge the active workflow mode to confirm understanding
+2. **Read and reiterate workflow** - Read the specific workflow file and communicate it to the user:
+   - Read the appropriate `docs/WORKFLOW-*.md` file for the selected workflow
+   - Summarize the workflow steps and key principles
+   - Reiterate the workflow to the user in your own words
+   - Confirm understanding of the workflow before proceeding
+3. Ask approval, then run `git status` and `git fetch`
+4. Read `docs/PLAN.md` for TODOs and current phase
 5. Report status and suggest next steps
 
 ---

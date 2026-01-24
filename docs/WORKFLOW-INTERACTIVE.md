@@ -22,6 +22,23 @@ The Interactive workflow is the default workflow for making code changes directl
 
 ---
 
+## Session Start Procedure
+
+At the start of each new session using this workflow:
+
+1. **Read this workflow file** - Read `docs/WORKFLOW-INTERACTIVE.md` in full
+2. **Reiterate to user** - Summarize the workflow in your own words:
+   - Explain this is the Interactive workflow (8-step with approvals)
+   - List the key principles (user approval required, blocking checkpoints, code review mandatory)
+   - Outline the 8 steps or simplified 3-step process for docs-only
+   - Mention important policies (command approval, PLAN.md tracking, commit format)
+3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
+4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
+
+This ensures both agent and user have shared understanding of the workflow being followed.
+
+---
+
 ## Documentation-Only Changes
 
 For changes **only** to `.md` files or code comments:

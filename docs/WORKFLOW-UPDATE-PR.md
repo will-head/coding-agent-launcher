@@ -23,6 +23,24 @@ The Update PR workflow autonomously addresses review feedback on PRs that need c
 
 ---
 
+## Session Start Procedure
+
+At the start of each new session using this workflow:
+
+1. **Read this workflow file** - Read `docs/WORKFLOW-UPDATE-PR.md` in full
+2. **Reiterate to user** - Summarize the workflow in your own words:
+   - Explain this is the Update PR workflow (8-step autonomous feedback implementation)
+   - List the key principles (no permission needed, never commit to main, autonomous fixes, skip code review)
+   - Outline the 8 steps (Read Standards → Read Queue → Fetch PR → Analyze Review → Implement Changes → Test → Build → Update Docs)
+   - Mention that this addresses review feedback and resubmits for review
+   - Note that STATUS.md updates happen on main branch
+3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
+4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
+
+This ensures both agent and user have shared understanding of the workflow being followed.
+
+---
+
 ## Step-by-Step Process
 
 ### Step 1: Read Coding Standards

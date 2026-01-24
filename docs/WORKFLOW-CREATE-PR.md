@@ -24,6 +24,24 @@ The Create PR workflow enables autonomous PR-based development starting from ref
 
 ---
 
+## Session Start Procedure
+
+At the start of each new session using this workflow:
+
+1. **Read this workflow file** - Read `docs/WORKFLOW-CREATE-PR.md` in full
+2. **Reiterate to user** - Summarize the workflow in your own words:
+   - Explain this is the Create PR workflow (7-step autonomous PR creation)
+   - List the key principles (start with refined TODOs, no permission needed, never commit to main, TDD required)
+   - Outline the 7 steps (Read Refined Queue → Read Standards → Implement → Test → Build → Create PR → Update Docs)
+   - Mention branch naming convention (`create-pr/feature-name`)
+   - Note that PLAN.md/STATUS.md updates happen on main branch
+3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
+4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
+
+This ensures both agent and user have shared understanding of the workflow being followed.
+
+---
+
 ## Branch Naming Convention
 
 Use `create-pr/feature-name` format:

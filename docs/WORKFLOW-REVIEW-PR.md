@@ -24,6 +24,24 @@ The Review PR workflow performs autonomous, comprehensive code reviews of PRs in
 
 ---
 
+## Session Start Procedure
+
+At the start of each new session using this workflow:
+
+1. **Read this workflow file** - Read `docs/WORKFLOW-REVIEW-PR.md` in full
+2. **Reiterate to user** - Summarize the workflow in your own words:
+   - Explain this is the Review PR workflow (6-step autonomous code review)
+   - List the key principles (no permission needed, fetch branch, comprehensive review, submit formal review, update standards)
+   - Outline the 6 steps (Read Queue → Fetch PR → Review Code → Update Standards → Submit Review → Update Docs)
+   - Mention the review areas (10 comprehensive quality areas)
+   - Note that STATUS.md updates happen on main branch
+3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
+4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
+
+This ensures both agent and user have shared understanding of the workflow being followed.
+
+---
+
 ## Step-by-Step Process
 
 ### Step 1: Read Review Queue

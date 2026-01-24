@@ -23,6 +23,24 @@ The Merge PR workflow integrates tested PRs into the main branch. With user appr
 
 ---
 
+## Session Start Procedure
+
+At the start of each new session using this workflow:
+
+1. **Read this workflow file** - Read `docs/WORKFLOW-MERGE-PR.md` in full
+2. **Reiterate to user** - Summarize the workflow in your own words:
+   - Explain this is the Merge PR workflow (8-step with approvals)
+   - List the key principles (user approval required, merge commit strategy, delete branches, track merged PRs, update PLAN.md)
+   - Outline the 8 steps (Read Queue → Fetch PR → Merge PR → Update Local Main → Delete Branch → Update STATUS.md → Update PLAN.md → Commit Docs)
+   - Mention that this integrates tested PRs into main
+   - Note that all commands require user approval
+3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
+4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
+
+This ensures both agent and user have shared understanding of the workflow being followed.
+
+---
+
 ## Step-by-Step Process
 
 ### Step 1: Read Merge Queue

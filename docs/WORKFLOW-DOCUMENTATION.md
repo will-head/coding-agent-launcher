@@ -22,6 +22,23 @@ The Documentation workflow is a simplified version of the Interactive workflow f
 
 ---
 
+## Session Start Procedure
+
+At the start of each new session using this workflow:
+
+1. **Read this workflow file** - Read `docs/WORKFLOW-DOCUMENTATION.md` in full
+2. **Reiterate to user** - Summarize the workflow in your own words:
+   - Explain this is the Documentation workflow (simplified 3-step)
+   - List the key principles (docs-only, main branch, user approval required, skip tests/build/review)
+   - Outline the 3 steps (Make Changes → Ask Approval → Commit and Push)
+   - Clarify what counts as documentation-only vs. not
+3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
+4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
+
+This ensures both agent and user have shared understanding of the workflow being followed.
+
+---
+
 ## When to Use
 
 Use Documentation workflow for changes **exclusively** to:

@@ -23,6 +23,24 @@ The Test PR workflow provides a manual testing gate before merge. The agent fetc
 
 ---
 
+## Session Start Procedure
+
+At the start of each new session using this workflow:
+
+1. **Read this workflow file** - Read `docs/WORKFLOW-TEST-PR.md` in full
+2. **Reiterate to user** - Summarize the workflow in your own words:
+   - Explain this is the Test PR workflow (7-step manual testing gate)
+   - List the key principles (autonomous until test presentation, user approval for confirmation, PR comments for feedback, conditional paths)
+   - Outline the 7 steps (Read Queue → Fetch Details → Present Tests → WAIT → Evaluate → Success/Failure Path → Update Docs)
+   - Emphasize the blocking wait for user test confirmation
+   - Note that STATUS.md updates happen on main branch
+3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
+4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
+
+This ensures both agent and user have shared understanding of the workflow being followed.
+
+---
+
 ## Step-by-Step Process
 
 ### Step 1: Read Test Queue

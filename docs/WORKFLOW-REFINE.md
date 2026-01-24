@@ -22,6 +22,23 @@ The Refine workflow ensures TODOs in PLAN.md are implementation-ready by gatheri
 
 ---
 
+## Session Start Procedure
+
+At the start of each new session using this workflow:
+
+1. **Read this workflow file** - Read `docs/WORKFLOW-REFINE.md` in full
+2. **Reiterate to user** - Summarize the workflow in your own words:
+   - Explain this is the Refine workflow (6-step for refining PLAN.md TODOs)
+   - List the key principles (approval required, main branch, comprehensive requirements, track refinement)
+   - Outline the 6 steps (Read PLAN.md → Ask Questions → Update PLAN.md → Update STATUS.md → Ask Approval → Commit)
+   - Explain the REFINED prefix and STATUS.md tracking
+3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
+4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
+
+This ensures both agent and user have shared understanding of the workflow being followed.
+
+---
+
 ## When to Use
 
 Use Refine workflow when:
