@@ -60,6 +60,7 @@
    - [x] Add `--restart` option to cal-bootstrap for quick VM restart
    - [x] Check VM keyboard layout matches host keyboard layout
    - [x] Auto-configure VM keyboard layout to match host keyboard layout during setup
+   - [ ] Make sure keyboard layout is set on login in case it has changed since last run
    - [x] Add Screen Sharing instructions for agent login failures (displayed on --run)
    - [ ] Investigate High Performance mode issues
    - [x] Add warning on snapshot restore to check that git is updated in VM (uncommitted/unpushed changes checked)
@@ -232,6 +233,10 @@
 - [x] Delete only warned for cal-dev - added warnings for cal-clean and cal-init
 - [x] Argument parsing `shift || true` showed error in zsh - fixed with `[[ $# -gt 0 ]] && shift`
 - [x] Unpushed commits detection requires proper git upstream tracking to be set - working as designed (has prerequisites)
+
+**Known Issues:**
+- [ ] cal-bootstrap snapshot delete unnecessarily stops cal-dev if already running before checking git changes (should skip stop if VM already running)
+- [ ] vm-auth.sh GitHub clone fails with network timeout (needs transparent proxy auto-start before clone attempt)
 
 ---
 
