@@ -853,7 +853,6 @@ do_init() {
 
                 echo "  ✓ $VM_INIT replaced with current $VM_DEV"
                 echo ""
-                echo "Exiting. Run './cal-bootstrap --init' again to reinitialize."
                 exit 0
             else
                 echo "Aborted. Existing VMs not modified."
