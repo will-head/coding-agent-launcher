@@ -152,12 +152,13 @@ else
     echo "  ✓ ~/code directory already exists"
 fi
 
-# Save VM credentials for login scripts
+# Save VM credentials and settings for login scripts
 echo ""
-echo "🔑 Saving VM credentials..."
+echo "🔑 Saving VM configuration..."
 cat > ~/.cal-vm-config <<EOF
 # CAL VM Configuration (restricted permissions)
 VM_PASSWORD="${VM_PASSWORD:-admin}"
+HOST_KEYBOARD_LAYOUT="${HOST_KEYBOARD_LAYOUT:-}"
 EOF
 chmod 600 ~/.cal-vm-config
 echo "  ✓ Saved to ~/.cal-vm-config (mode 600)"
@@ -170,11 +171,10 @@ if ! grep -q '# CAL Keychain Auto-Unlock' ~/.zshrc; then
 # Ensures keychain is unlocked for SSH access on every login
 if [ -f ~/.cal-vm-config ]; then
     source ~/.cal-vm-config
-    echo "🔐 Configuring keychain for SSH access..."
     if security unlock-keychain -p "${VM_PASSWORD:-admin}" login.keychain 2>/dev/null; then
-        echo "  ✓ Login keychain unlocked"
+        echo "🔐 Login keychain: ✓"
     else
-        echo "  ⚠ Could not unlock keychain (may need manual unlock)"
+        echo "🔐 Login keychain: ⚠ Could not unlock (may need manual unlock)"
     fi
 fi
 
@@ -195,6 +195,80 @@ KEYCHAIN_EOF
     echo "  ✓ Added keychain auto-unlock to ~/.zshrc"
 else
     echo "  ✓ Keychain auto-unlock already in ~/.zshrc"
+fi
+
+# Add keyboard layout check to .zshrc (runs on every login)
+# This is always checked separately to avoid duplication
+if ! grep -q '# CAL Keyboard Layout Check' ~/.zshrc; then
+    cat >> ~/.zshrc <<'KEYBOARD_EOF'
+
+# CAL Keyboard Layout Check
+# Checks if VM keyboard layout matches host layout on every login
+if [ -f ~/.cal-vm-config ]; then
+    source ~/.cal-vm-config
+    if [ -n "$HOST_KEYBOARD_LAYOUT" ]; then
+        # Get current VM keyboard layout
+        local plist_path="$HOME/Library/Preferences/com.apple.HIToolbox.plist"
+        local current_layout=""
+
+        if [ -f "$plist_path" ]; then
+            # Try AppleCurrentKeyboardLayoutInputSourceID first (more reliable)
+            local current_id
+            current_id=$(defaults read com.apple.HIToolbox AppleCurrentKeyboardLayoutInputSourceID 2>/dev/null)
+
+            if [ -n "$current_id" ]; then
+                # Extract layout name from ID (e.g., com.apple.keylayout.British -> British)
+                current_layout=$(echo "$current_id" | sed 's/com\.apple\.keylayout\.//')
+            else
+                # Fallback: search AppleSelectedInputSources
+                local array_key="AppleSelectedInputSources"
+                if ! /usr/libexec/PlistBuddy -c "Print :$array_key" "$plist_path" >/dev/null 2>&1; then
+                    array_key="AppleEnabledInputSources"
+                fi
+
+                local i=0
+                while [ $i -lt 20 ]; do
+                    local source_kind
+                    source_kind=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:InputSourceKind" "$plist_path" 2>/dev/null)
+
+                    if [ -z "$source_kind" ]; then
+                        break
+                    fi
+
+                    if [[ "$source_kind" == *"Keyboard Layout"* ]]; then
+                        current_layout=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:'KeyboardLayout Name'" "$plist_path" 2>/dev/null)
+                        if [ -z "$current_layout" ]; then
+                            current_layout=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:'KeyboardLayout ID'" "$plist_path" 2>/dev/null)
+                        fi
+                        if [ -n "$current_layout" ]; then
+                            break
+                        fi
+                    fi
+                    i=$((i + 1))
+                done
+            fi
+        fi
+
+        # Report status
+        if [ -n "$current_layout" ]; then
+            # Normalize layout names for comparison (handle variations)
+            local normalized_current=$(echo "$current_layout" | tr '[:upper:]' '[:lower:]' | sed 's/[- ]//g')
+            local normalized_host=$(echo "$HOST_KEYBOARD_LAYOUT" | tr '[:upper:]' '[:lower:]' | sed 's/[- ]//g')
+
+            if [ "$normalized_current" = "$normalized_host" ] || [ "$current_layout" = "$HOST_KEYBOARD_LAYOUT" ]; then
+                echo "⌨️ Keyboard layout: $current_layout ✓"
+            else
+                echo "⌨️ Keyboard layout: $current_layout (expected: $HOST_KEYBOARD_LAYOUT)"
+                echo "  ⚠ Mismatch detected. To fix:"
+                echo "    System Settings → Keyboard → Input Sources → Add '$HOST_KEYBOARD_LAYOUT'"
+            fi
+        fi
+    fi
+fi
+KEYBOARD_EOF
+    echo "  ✓ Added keyboard layout check to ~/.zshrc"
+else
+    echo "  ✓ Keyboard layout check already in ~/.zshrc"
 fi
 
 # Configure shell environment
@@ -357,6 +431,108 @@ else
     echo "  ✓ tmux configuration already exists"
 fi
 
+# Map keyboard layout name to input source ID
+# Returns input source ID for known layouts, empty string for unknown
+map_layout_to_source_id() {
+    local layout_name="$1"
+
+    case "$layout_name" in
+        "U.S."|"US")
+            echo "com.apple.keylayout.US"
+            ;;
+        "British"|"British - PC"|"ABC - Extended")
+            echo "com.apple.keylayout.British"
+            ;;
+        "Canadian"|"Canadian English")
+            echo "com.apple.keylayout.Canadian"
+            ;;
+        "Canadian - CSA"|"Canadian French - CSA")
+            echo "com.apple.keylayout.Canadian-CSA"
+            ;;
+        "Australian")
+            echo "com.apple.keylayout.Australian"
+            ;;
+        "Irish")
+            echo "com.apple.keylayout.Irish"
+            ;;
+        "German")
+            echo "com.apple.keylayout.German"
+            ;;
+        "French")
+            echo "com.apple.keylayout.French"
+            ;;
+        "Spanish"|"Spanish - ISO")
+            echo "com.apple.keylayout.Spanish"
+            ;;
+        "Italian")
+            echo "com.apple.keylayout.Italian"
+            ;;
+        "Dutch")
+            echo "com.apple.keylayout.Dutch"
+            ;;
+        "Swedish"|"Swedish - Pro")
+            echo "com.apple.keylayout.Swedish"
+            ;;
+        "Norwegian"|"Norwegian Bokmal")
+            echo "com.apple.keylayout.Norwegian"
+            ;;
+        "Danish")
+            echo "com.apple.keylayout.Danish"
+            ;;
+        "Finnish")
+            echo "com.apple.keylayout.Finnish"
+            ;;
+        *)
+            # Unknown layout - return empty string
+            echo ""
+            ;;
+    esac
+}
+
+# Auto-configure keyboard layout to match host
+# Returns 0 on success, 1 on failure
+auto_configure_keyboard_layout() {
+    local expected_layout="$1"
+    local source_id
+    source_id=$(map_layout_to_source_id "$expected_layout")
+
+    if [ -z "$source_id" ]; then
+        echo "  ⚠ Unknown layout '$expected_layout', cannot auto-configure"
+        return 1
+    fi
+
+    echo "  Attempting to auto-configure keyboard layout..."
+    echo "    Target layout ID: $source_id"
+
+    # Use defaults write to set the keyboard layout
+    # This sets the current keyboard layout input source ID
+    if defaults write com.apple.HIToolbox AppleCurrentKeyboardLayoutInputSourceID "$source_id" 2>/dev/null; then
+        echo "  ✓ Keyboard layout preference updated"
+
+        # Restart input management system to apply changes
+        # Note: cfprefsd caches preferences, restart it to pick up changes
+        killall cfprefsd 2>/dev/null || true
+
+        # Wait for cache to clear
+        sleep 1
+
+        # Verify the change
+        local new_layout
+        new_layout=$(defaults read com.apple.HIToolbox AppleCurrentKeyboardLayoutInputSourceID 2>/dev/null)
+        if [ "$new_layout" = "$source_id" ]; then
+            echo "  ✓ Keyboard layout configuration verified"
+            echo "  Changes will take effect on next login or GUI session"
+            return 0
+        else
+            echo "  ⚠ Could not verify keyboard layout change"
+            return 1
+        fi
+    else
+        echo "  ⚠ Failed to update keyboard layout preference"
+        return 1
+    fi
+}
+
 # Check and configure keyboard layout to match host
 echo ""
 echo "⌨️  Checking keyboard layout..."
@@ -418,22 +594,44 @@ if [ -n "$EXPECTED_LAYOUT" ]; then
         if [ "$CURRENT_LAYOUT" = "$EXPECTED_LAYOUT" ]; then
             echo "  ✓ Keyboard layouts match"
         else
-            echo "  ⚠ Keyboard layout mismatch!"
+            echo "  ⚠ Keyboard layout mismatch detected!"
             echo "    Host: $EXPECTED_LAYOUT"
             echo "    VM:   $CURRENT_LAYOUT"
             echo ""
-            echo "  To fix keyboard layout mismatch:"
-            echo "    1. Use Screen Sharing to access VM GUI"
-            echo "    2. Go to System Settings → Keyboard → Input Sources"
-            echo "    3. Add and select the '$EXPECTED_LAYOUT' layout"
-            echo "    4. Remove other layouts if desired"
-            echo ""
-            echo "  Or wait - the layout may sync automatically on first GUI login."
+
+            # Try to auto-configure the layout
+            if auto_configure_keyboard_layout "$EXPECTED_LAYOUT"; then
+                echo ""
+                echo "  ✓ Keyboard layout automatically configured"
+                echo "  The new layout will be active after GUI login or system restart"
+            else
+                echo ""
+                echo "  Automatic configuration failed or unsupported."
+                echo "  To manually fix keyboard layout mismatch:"
+                echo "    1. Use Screen Sharing to access VM GUI"
+                echo "    2. Go to System Settings → Keyboard → Input Sources"
+                echo "    3. Add and select the '$EXPECTED_LAYOUT' layout"
+                echo "    4. Remove other layouts if desired"
+                echo ""
+                echo "  Or wait - the layout may sync automatically on first GUI login."
+            fi
             echo ""
         fi
     else
         echo "  ⚠ Could not detect current keyboard layout"
         echo "    (Layout may not be set until first GUI login)"
+
+        # Still try to auto-configure if we know the expected layout
+        echo ""
+        if auto_configure_keyboard_layout "$EXPECTED_LAYOUT"; then
+            echo ""
+            echo "  ✓ Keyboard layout configured for first login"
+        else
+            echo ""
+            echo "  Could not pre-configure keyboard layout."
+            echo "  The VM may auto-detect the correct layout on first GUI login."
+        fi
+        echo ""
     fi
 else
     echo "  ℹ No host keyboard layout specified (skipping check)"

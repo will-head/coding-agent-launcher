@@ -363,15 +363,13 @@ stop_bootstrap_proxy() {
 }
 
 # Detect host keyboard layout
+# Outputs ONLY the layout name to stdout (for capture)
+# Status messages go to stderr (for user visibility)
 detect_host_keyboard_layout() {
-    echo "  Detecting host keyboard layout..."
-
     local plist_path="$HOME/Library/Preferences/com.apple.HIToolbox.plist"
 
     # Check if preferences file exists
     if [ ! -f "$plist_path" ]; then
-        echo "  ⚠ Keyboard preferences file not found"
-        echo ""
         return 1
     fi
 
@@ -388,7 +386,7 @@ detect_host_keyboard_layout() {
     local i=0
     local layout=""
 
-    while true; do
+    while [ $i -lt 20 ]; do
         # Try to read the input source at index i
         local source_kind
         source_kind=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:InputSourceKind" "$plist_path" 2>/dev/null)
@@ -409,27 +407,20 @@ detect_host_keyboard_layout() {
                 layout=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:'KeyboardLayout ID'" "$plist_path" 2>/dev/null)
             fi
 
-            # If we found a layout, use it
+            # If we found a layout, use it and stop
             if [ -n "$layout" ]; then
                 break
             fi
         fi
 
         i=$((i + 1))
-
-        # Safety limit to avoid infinite loop
-        if [ $i -gt 20 ]; then
-            break
-        fi
     done
 
+    # Output ONLY the layout to stdout (nothing else)
     if [ -n "$layout" ]; then
-        echo "  ✓ Detected host keyboard layout: $layout"
         echo "$layout"
         return 0
     else
-        echo "  ⚠ Could not detect host keyboard layout"
-        echo ""
         return 1
     fi
 }
@@ -442,8 +433,17 @@ run_vm_setup() {
     echo "  Running ~/scripts/vm-setup.sh..."
 
     # Detect host keyboard layout (ignore errors - non-critical feature)
+    echo "  Detecting host keyboard layout..."
     local host_layout
-    host_layout=$(detect_host_keyboard_layout) || true
+    # Get only the LAST line of output (in case of debug pollution)
+    host_layout=$(detect_host_keyboard_layout 2>/dev/null | tail -1 | tr -d '\n\r' | xargs) || true
+
+    # Display status
+    if [ -n "$host_layout" ]; then
+        echo "  ✓ Detected: $host_layout"
+    else
+        echo "  ⚠ Could not detect keyboard layout (skipping)"
+    fi
 
     # Build environment variables
     local env_vars="HOST_USER='${HOST_USER}' PROXY_MODE='${PROXY_MODE}' HOST_GATEWAY='${HOST_GATEWAY}' CAL_VM_NAME='${VM_DEV}' VM_PASSWORD='${VM_PASSWORD}'"
