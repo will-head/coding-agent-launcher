@@ -1652,9 +1652,6 @@ do_snapshot() {
                 do_snapshot list
                 exit 1
             fi
-            
-            # Stop if running
-            stop_vm "$vm_to_delete"
 
             # Check for git changes before deleting (skip only for cal-clean base image)
             if [ "$vm_to_delete" != "$VM_CLEAN" ]; then
@@ -1689,6 +1686,9 @@ do_snapshot() {
                     echo ""
                 fi
             fi
+
+            # Stop the VM before deletion (if still running)
+            stop_vm "$vm_to_delete"
 
             # Confirm (with extra warning for system VMs)
             if [ "$SKIP_CONFIRM" = false ]; then

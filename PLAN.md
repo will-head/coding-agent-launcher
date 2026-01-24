@@ -235,7 +235,7 @@
 - [x] Unpushed commits detection requires proper git upstream tracking to be set - working as designed (has prerequisites)
 
 **Known Issues:**
-- [ ] cal-bootstrap snapshot delete unnecessarily stops cal-dev if already running before checking git changes (should skip stop if VM already running)
+- [x] cal-bootstrap snapshot delete unnecessarily stops cal-dev if already running before checking git changes (should skip stop if VM already running) - **FIXED**: Removed premature stop, git check now intelligently handles VM state
 - [ ] vm-auth.sh GitHub clone fails with network timeout (needs transparent proxy auto-start before clone attempt)
 
 ---
