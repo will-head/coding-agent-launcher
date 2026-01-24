@@ -11,7 +11,6 @@ VM-based sandbox for running AI coding agents (Claude Code, Cursor, opencode) sa
 - **Multi-agent** - Claude Code, Cursor, opencode (with automatic keychain unlock for OAuth)
 - **Instant rollback** - Snapshots recover from any mishap in seconds
 - **Transparent proxy** - Works in corporate environments with network restrictions
-- **Auto-configuration** - Keyboard layout automatically matches your host Mac
 
 ## Requirements
 

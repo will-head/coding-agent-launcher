@@ -136,42 +136,6 @@ proxy-log         # View proxy logs
 
 **See [Proxy Documentation](proxy.md) for complete setup, troubleshooting, and security details.**
 
-### Keyboard Layout Auto-Configuration
-
-CAL automatically detects your host Mac's keyboard layout and configures the VM to match during setup.
-
-**Supported Layouts:**
-- US, British, Canadian, Australian, Irish
-- German, French, Spanish, Italian, Dutch
-- Swedish, Norwegian, Danish, Finnish
-- Canadian French (CSA)
-
-**How it works:**
-1. During `--init`, CAL detects your host keyboard layout
-2. The layout is automatically configured in the VM using `defaults write`
-3. On every SSH login, CAL displays the current keyboard layout status
-
-**Login Status Display:**
-```bash
-🔐 Login keychain: ✓
-⌨️ Keyboard layout: British ✓
-```
-
-**If mismatch detected:**
-```bash
-⌨️ Keyboard layout: U.S. (expected: British)
-  ⚠ Mismatch detected. To fix:
-    System Settings → Keyboard → Input Sources → Add 'British'
-```
-
-**Manual Configuration:**
-If your layout isn't auto-detected or you need to change it:
-1. Access VM via Screen Sharing: `open vnc://[VM-IP]`
-2. Go to System Settings → Keyboard → Input Sources
-3. Add and select your preferred layout
-
-**Note:** Layout changes may require logging out and back in to take full effect in the GUI.
-
 ---
 
 ### Init Workflow
@@ -184,7 +148,7 @@ The `--init` command performs these steps:
 4. Sets up SSH keys (host→VM, generates if needed)
 5. Sets up network access (VM→Host SSH, bootstrap proxy if needed)
 6. Copies helper scripts to `~/scripts/` in VM
-7. Runs `vm-setup.sh` to install tools, configure keyboard layout, and set up keychain auto-unlock
+7. Runs `vm-setup.sh` to install tools and set up keychain auto-unlock
 8. Switches from bootstrap proxy to sshuttle (if proxy enabled)
 9. Reboots VM to apply .zshrc configuration
 10. Opens login shell - vm-auth.sh runs automatically (first-run detection)

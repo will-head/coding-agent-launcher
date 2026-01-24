@@ -362,68 +362,6 @@ stop_bootstrap_proxy() {
     echo "  ✓ Bootstrap proxy stopped"
 }
 
-# Detect host keyboard layout
-# Outputs ONLY the layout name to stdout (for capture)
-# Status messages go to stderr (for user visibility)
-detect_host_keyboard_layout() {
-    local plist_path="$HOME/Library/Preferences/com.apple.HIToolbox.plist"
-
-    # Check if preferences file exists
-    if [ ! -f "$plist_path" ]; then
-        return 1
-    fi
-
-    # Try using PlistBuddy (built into macOS) for reliable parsing
-    # macOS uses either AppleSelectedInputSources or AppleEnabledInputSources
-    local array_key="AppleSelectedInputSources"
-
-    # Check if AppleSelectedInputSources exists, if not try AppleEnabledInputSources
-    if ! /usr/libexec/PlistBuddy -c "Print :$array_key" "$plist_path" >/dev/null 2>&1; then
-        array_key="AppleEnabledInputSources"
-    fi
-
-    # Look through the input sources array for keyboard layout
-    local i=0
-    local layout=""
-
-    while [ $i -lt 20 ]; do
-        # Try to read the input source at index i
-        local source_kind
-        source_kind=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:InputSourceKind" "$plist_path" 2>/dev/null)
-
-        # If we can't read this index, we've reached the end
-        if [ -z "$source_kind" ]; then
-            break
-        fi
-
-        # Check if this is a keyboard layout source
-        # Note: InputSourceKind can be "Keyboard Layout" or "Keyboard Layout Source"
-        if [[ "$source_kind" == *"Keyboard Layout"* ]]; then
-            # Try to get the layout name (note: key has space, must be quoted)
-            layout=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:'KeyboardLayout Name'" "$plist_path" 2>/dev/null)
-
-            # If no name, try to get the layout ID
-            if [ -z "$layout" ]; then
-                layout=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:'KeyboardLayout ID'" "$plist_path" 2>/dev/null)
-            fi
-
-            # If we found a layout, use it and stop
-            if [ -n "$layout" ]; then
-                break
-            fi
-        fi
-
-        i=$((i + 1))
-    done
-
-    # Output ONLY the layout to stdout (nothing else)
-    if [ -n "$layout" ]; then
-        echo "$layout"
-        return 0
-    else
-        return 1
-    fi
-}
 
 # Run vm-setup script from ~/scripts folder
 run_vm_setup() {
@@ -432,26 +370,8 @@ run_vm_setup() {
 
     echo "  Running ~/scripts/vm-setup.sh..."
 
-    # Detect host keyboard layout (ignore errors - non-critical feature)
-    echo "  Detecting host keyboard layout..."
-    local host_layout
-    # Get only the LAST line of output (in case of debug pollution)
-    host_layout=$(detect_host_keyboard_layout 2>/dev/null | tail -1 | tr -d '\n\r' | xargs) || true
-
-    # Display status
-    if [ -n "$host_layout" ]; then
-        echo "  ✓ Detected: $host_layout"
-    else
-        echo "  ⚠ Could not detect keyboard layout (skipping)"
-    fi
-
     # Build environment variables
     local env_vars="HOST_USER='${HOST_USER}' PROXY_MODE='${PROXY_MODE}' HOST_GATEWAY='${HOST_GATEWAY}' CAL_VM_NAME='${VM_DEV}' VM_PASSWORD='${VM_PASSWORD}'"
-
-    # Add keyboard layout if detected
-    if [ -n "$host_layout" ]; then
-        env_vars="${env_vars} HOST_KEYBOARD_LAYOUT='${host_layout}'"
-    fi
 
     # If using proxy during init (bootstrap SOCKS), set proxy env vars
     # socks5h:// tells curl to resolve DNS through the proxy too
@@ -518,6 +438,7 @@ unlock_keychain() {
         return 0
     fi
 }
+
 
 # NOTE: SSH commands throughout this file use similar patterns
 # TODO: Future refactoring opportunity - create ssh_to_vm() helper function
@@ -1261,7 +1182,7 @@ do_run() {
     echo "Connecting via SSH with tmux..."
     echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
     echo ""
-    
+
     # SSH into the VM with tmux (always)
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
         "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s cal"

@@ -60,7 +60,7 @@
    - [x] Add `--restart` option to cal-bootstrap for quick VM restart
    - [x] Check VM keyboard layout matches host keyboard layout
    - [x] Auto-configure VM keyboard layout to match host keyboard layout during setup
-   - [ ] Make sure keyboard layout is set on login in case it has changed since last run
+   - [x] Make sure keyboard layout is set on login in case it has changed since last run (not needed - VM auto-syncs from host)
    - [x] Add Screen Sharing instructions for agent login failures (displayed on --run)
    - [ ] Investigate High Performance mode issues
    - [x] Add warning on snapshot restore to check that git is updated in VM (uncommitted/unpushed changes checked)

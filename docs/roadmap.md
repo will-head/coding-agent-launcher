@@ -19,7 +19,6 @@ Automated Tart setup for immediate safe agent use.
 - [x] Documentation (ADR-002 comprehensive operational guide)
 
 **Outstanding (0.8/0.10/0.11):**
-- [ ] Check VM keyboard layout matches host
 - [ ] Investigate High Performance Screen Sharing issues
 - [ ] Auto-install Tart during init if missing
 - [ ] Sync git repos option on init
