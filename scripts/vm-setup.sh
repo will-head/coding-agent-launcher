@@ -357,6 +357,89 @@ else
     echo "  ✓ tmux configuration already exists"
 fi
 
+# Check and configure keyboard layout to match host
+echo ""
+echo "⌨️  Checking keyboard layout..."
+
+# Get expected layout from environment (passed from host during setup)
+EXPECTED_LAYOUT="${HOST_KEYBOARD_LAYOUT:-}"
+
+if [ -n "$EXPECTED_LAYOUT" ]; then
+    echo "  Expected layout from host: $EXPECTED_LAYOUT"
+
+    # Get current VM keyboard layout using PlistBuddy (reliable plist parsing)
+    local plist_path="$HOME/Library/Preferences/com.apple.HIToolbox.plist"
+    CURRENT_LAYOUT=""
+
+    if [ -f "$plist_path" ]; then
+        # macOS uses either AppleSelectedInputSources or AppleEnabledInputSources
+        local array_key="AppleSelectedInputSources"
+
+        # Check if AppleSelectedInputSources exists, if not try AppleEnabledInputSources
+        if ! /usr/libexec/PlistBuddy -c "Print :$array_key" "$plist_path" >/dev/null 2>&1; then
+            array_key="AppleEnabledInputSources"
+        fi
+
+        # Search through the input sources array
+        local i=0
+        while [ $i -lt 20 ]; do
+            local source_kind
+            source_kind=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:InputSourceKind" "$plist_path" 2>/dev/null)
+
+            # Stop if no more entries
+            if [ -z "$source_kind" ]; then
+                break
+            fi
+
+            # Check if this is a keyboard layout
+            # Note: InputSourceKind can be "Keyboard Layout" or "Keyboard Layout Source"
+            if [[ "$source_kind" == *"Keyboard Layout"* ]]; then
+                # Try to get layout name (note: key has space, must be quoted)
+                CURRENT_LAYOUT=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:'KeyboardLayout Name'" "$plist_path" 2>/dev/null)
+
+                # Fallback to layout ID if no name
+                if [ -z "$CURRENT_LAYOUT" ]; then
+                    CURRENT_LAYOUT=$(/usr/libexec/PlistBuddy -c "Print :$array_key:$i:'KeyboardLayout ID'" "$plist_path" 2>/dev/null)
+                fi
+
+                # If we found a layout, stop searching
+                if [ -n "$CURRENT_LAYOUT" ]; then
+                    break
+                fi
+            fi
+
+            i=$((i + 1))
+        done
+    fi
+
+    if [ -n "$CURRENT_LAYOUT" ]; then
+        echo "  Current VM layout: $CURRENT_LAYOUT"
+
+        if [ "$CURRENT_LAYOUT" = "$EXPECTED_LAYOUT" ]; then
+            echo "  ✓ Keyboard layouts match"
+        else
+            echo "  ⚠ Keyboard layout mismatch!"
+            echo "    Host: $EXPECTED_LAYOUT"
+            echo "    VM:   $CURRENT_LAYOUT"
+            echo ""
+            echo "  To fix keyboard layout mismatch:"
+            echo "    1. Use Screen Sharing to access VM GUI"
+            echo "    2. Go to System Settings → Keyboard → Input Sources"
+            echo "    3. Add and select the '$EXPECTED_LAYOUT' layout"
+            echo "    4. Remove other layouts if desired"
+            echo ""
+            echo "  Or wait - the layout may sync automatically on first GUI login."
+            echo ""
+        fi
+    else
+        echo "  ⚠ Could not detect current keyboard layout"
+        echo "    (Layout may not be set until first GUI login)"
+    fi
+else
+    echo "  ℹ No host keyboard layout specified (skipping check)"
+    echo "  To enable: set HOST_KEYBOARD_LAYOUT environment variable"
+fi
+
 # Enable auto-login for Screen Sharing
 echo ""
 echo "🔓 Enabling auto-login..."

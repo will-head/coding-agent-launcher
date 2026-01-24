@@ -54,11 +54,12 @@
   - [x] Performance testing and comparison
   - [x] **Conclusion:** SSH is optimal for local VM (excellent performance)
   - [x] **Enhancement:** Added tmux support for session persistence
- - [x] **VM Management Improvements** (Phase 0.8 - 7/10 complete)
+ - [x] **VM Management Improvements** (Phase 0.8 - 8/11 complete)
    - [x] Fix opencode installation in `--init` script (added Go install fallback, improved PATH setup)
    - [x] Simplify `--init` auth flow (removed verification prompt since opencode now works reliably)
    - [x] Add `--restart` option to cal-bootstrap for quick VM restart
-   - [ ] Check VM keyboard layout matches host keyboard layout
+   - [x] Check VM keyboard layout matches host keyboard layout
+   - [ ] Auto-configure VM keyboard layout to match host keyboard layout during setup
    - [x] Add Screen Sharing instructions for agent login failures (displayed on --run)
    - [ ] Investigate High Performance mode issues
    - [x] Add warning on snapshot restore to check that git is updated in VM (uncommitted/unpushed changes checked)
