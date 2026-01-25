@@ -121,10 +121,12 @@ fi
 # Configure tart-guest-agent to start automatically (enables clipboard sharing)
 echo ""
 echo "📋 Configuring Tart Guest Agent auto-start..."
-AGENT_PLIST="/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist"
+AGENT_PLIST="$HOME/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist"
+# Ensure user LaunchAgents directory exists
+mkdir -p "$HOME/Library/LaunchAgents"
 if [ ! -f "$AGENT_PLIST" ]; then
     echo "  → Creating launchd configuration..."
-    sudo tee "$AGENT_PLIST" > /dev/null <<'EOF'
+    tee "$AGENT_PLIST" > /dev/null <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -157,9 +159,8 @@ if [ ! -f "$AGENT_PLIST" ]; then
 </plist>
 EOF
 
-    # Set proper permissions
-    sudo chown root:wheel "$AGENT_PLIST"
-    sudo chmod 644 "$AGENT_PLIST"
+    # Set proper permissions for user LaunchAgent
+    chmod 644 "$AGENT_PLIST"
     echo "  ✓ Created launchd configuration at $AGENT_PLIST"
 
     # Load the agent (will start automatically on boot)
@@ -714,7 +715,8 @@ echo ""
 echo "💡 Notes:"
 echo "  • Auto-login is enabled - VM will boot to desktop for Screen Sharing"
 echo "  • Login keychain is unlocked - enables agent authentication via SSH"
-echo "  • Clipboard sharing enabled - copy/paste works in Screen Sharing (Edit → Use Shared Clipboard)"
+echo "  • Clipboard sharing enabled - VM to Host copy works in Screen Sharing (Edit → Use Shared Clipboard)"
+echo "  • WARNING: Do NOT paste from Host to VM - this will crash the VM"
 if [ -n "$HOST_USER" ]; then
     echo "  • Transparent proxy configured (sshuttle) - no app config needed"
     echo "  • Proxy commands: proxy-start, proxy-stop, proxy-status, proxy-log"

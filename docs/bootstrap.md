@@ -370,19 +370,29 @@ macOS Sonoma offers two Screen Sharing modes when connecting. **Only Standard mo
 
 **Features:**
 - ✅ Works with all Tart VMs
-- ✅ Full clipboard sharing (bidirectional copy/paste)
+- ⚠️ Partial clipboard sharing (VM to Host only - see warning below)
 - ✅ Reliable connection
 - ✅ Sufficient performance for GUI tasks
 
 **Clipboard Sharing:**
 
-The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-guest-agent), which enables full clipboard sharing between host and VM:
+The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-guest-agent), which enables one-way clipboard sharing from VM to Host:
 
 1. Connect via `open vnc://$(tart ip cal-dev)`
 2. In Screen Sharing window: **Edit → Use Shared Clipboard** (enable checkmark)
-3. Clipboard sharing now works bidirectionally:
-   - ✅ Copy from Host → Paste in VM
-   - ✅ Copy from VM → Paste in Host
+3. Clipboard sharing works one-way only:
+   - ✅ Copy from VM → Paste in Host (works correctly)
+   - ❌ Copy from Host → Paste in VM (causes VM crash - DO NOT USE)
+
+**⚠️ CRITICAL WARNING - Host to VM Paste:**
+
+**DO NOT paste from Host to VM** - this will crash the VM and require a restart. Only copy from VM to Host is supported.
+
+**Workaround for transferring text to VM:**
+- Type text directly in VM
+- Use SSH to echo text into files: `ssh admin@$(tart ip cal-dev) 'echo "text" > file.txt'`
+- Mount shared folders (if configured)
+- Use git to sync files
 
 **Technical Details:**
 - The guest agent implements the SPICE vdagent protocol for clipboard operations
@@ -415,10 +425,10 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 - Early versions of Tart had a clipboard bug where copy/paste would cause Screen Sharing to disconnect
 - Fixed in [Tart PR #154](https://github.com/cirruslabs/tart/pull/154) - moved VNC to public APIs with clipboard support
 
-**Full Clipboard Support (Current):**
-- Full bidirectional clipboard sharing enabled via [tart-guest-agent](https://github.com/cirruslabs/tart-guest-agent)
+**Partial Clipboard Support (Current):**
+- One-way clipboard sharing (VM → Host only) via [tart-guest-agent](https://github.com/cirruslabs/tart-guest-agent)
 - Implements SPICE vdagent protocol for clipboard operations
-- Works for both macOS and Linux guests
+- Host → VM paste causes VM crash (known limitation)
 - Pre-installed during CAL VM setup
 
 **References:**
@@ -450,7 +460,8 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 - **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (Standard mode): `open vnc://$(tart ip cal-dev)` → manually unlock keychain → authenticate agent
 - **Screen Sharing shows lock screen**: Auto-login requires VM reboot to activate. Stop and restart the VM.
 - **Screen Sharing shows black screen**: You selected High Performance mode - disconnect and reconnect using **Standard mode** instead
-- **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard. If still not working, verify tart-guest-agent is running: `launchctl list | grep tart-guest-agent`. If not running, reload: `launchctl load /Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist`
+- **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard. Only VM → Host copying works; Host → VM pasting crashes the VM. If VM → Host copying fails, verify tart-guest-agent is running: `launchctl list | grep tart-guest-agent`. If not running, reload: `launchctl load ~/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist`
+- **VM crashes when pasting from Host**: This is a known limitation - only VM → Host clipboard works. Do not paste from Host to VM. Use SSH or other methods to transfer text to the VM.
 - **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
 - **First-run automation didn't trigger**: Check if `~/.cal-first-run` flag exists. If missing, run `vm-auth.sh` manually.
 - **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host
