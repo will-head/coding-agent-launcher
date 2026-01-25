@@ -370,14 +370,25 @@ macOS Sonoma offers two Screen Sharing modes when connecting. **Only Standard mo
 
 **Features:**
 - ✅ Works with all Tart VMs
-- ✅ Copy/paste between host and VM (via Edit → Use Shared Clipboard)
+- ✅ Full clipboard sharing (bidirectional copy/paste)
 - ✅ Reliable connection
 - ✅ Sufficient performance for GUI tasks
 
-**Copy/Paste:**
+**Clipboard Sharing:**
+
+The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-guest-agent), which enables full clipboard sharing between host and VM:
+
 1. Connect via `open vnc://$(tart ip cal-dev)`
 2. In Screen Sharing window: **Edit → Use Shared Clipboard** (enable checkmark)
-3. Copy/paste now works between host and VM
+3. Clipboard sharing now works bidirectionally:
+   - ✅ Copy from Host → Paste in VM
+   - ✅ Copy from VM → Paste in Host
+
+**Technical Details:**
+- The guest agent implements the SPICE vdagent protocol for clipboard operations
+- Runs automatically as a launchd service (no manual start required)
+- Pre-installed during VM setup via `vm-setup.sh`
+- Verify status: `launchctl list | grep tart-guest-agent`
 
 #### ❌ High Performance Mode (Incompatible)
 
@@ -398,20 +409,23 @@ macOS Sonoma offers two Screen Sharing modes when connecting. **Only Standard mo
 - [Tart GitHub Issue #818](https://github.com/cirruslabs/tart/issues/818) - Documents High Performance incompatibility
 - [Apple Support: High Performance Screen Sharing](https://support.apple.com/guide/remote-desktop/use-high-performance-screen-sharing-apdf8e09f5a9/mac)
 
-### Historical Issue: Copy/Paste Disconnect (Resolved)
+### Clipboard Support History
 
-**Issue:** Early versions of Tart had a clipboard bug where copy/paste would cause Screen Sharing to disconnect.
+**Early Limitation (Resolved):**
+- Early versions of Tart had a clipboard bug where copy/paste would cause Screen Sharing to disconnect
+- Fixed in [Tart PR #154](https://github.com/cirruslabs/tart/pull/154) - moved VNC to public APIs with clipboard support
 
-**Status:** ✅ **Fixed in Tart PR #154**
-- Original cause: `--vnc` flag used private APIs that disabled clipboard
-- Solution: Tart split into two modes:
-  - `--vnc` uses public APIs with clipboard support (default)
-  - `--experimental-vnc` uses private APIs without clipboard (for recovery mode)
-- CAL uses `--no-graphics` (not `--vnc`), so this issue doesn't affect our setup
+**Full Clipboard Support (Current):**
+- Full bidirectional clipboard sharing enabled via [tart-guest-agent](https://github.com/cirruslabs/tart-guest-agent)
+- Implements SPICE vdagent protocol for clipboard operations
+- Works for both macOS and Linux guests
+- Pre-installed during CAL VM setup
 
 **References:**
-- [Tart GitHub Issue #152](https://github.com/cirruslabs/tart/issues/152) - Original clipboard issue
-- [Tart PR #154](https://github.com/cirruslabs/tart/pull/154) - Fix implementation
+- [Tart GitHub Issue #152](https://github.com/cirruslabs/tart/issues/152) - Original clipboard disconnect issue
+- [Tart GitHub Issue #14](https://github.com/cirruslabs/tart/issues/14) - Host to VM clipboard support request
+- [Tart PR #1046](https://github.com/cirruslabs/tart/pull/1046) - Clipboard sharing implementation
+- [Tart Guest Agent Blog Post](https://tart.run/blog/2025/06/01/bridging-the-gaps-with-the-tart-guest-agent/) - Feature announcement
 
 ### Use Cases
 
@@ -436,7 +450,7 @@ macOS Sonoma offers two Screen Sharing modes when connecting. **Only Standard mo
 - **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (Standard mode): `open vnc://$(tart ip cal-dev)` → manually unlock keychain → authenticate agent
 - **Screen Sharing shows lock screen**: Auto-login requires VM reboot to activate. Stop and restart the VM.
 - **Screen Sharing shows black screen**: You selected High Performance mode - disconnect and reconnect using **Standard mode** instead
-- **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard in the Screen Sharing window
+- **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard. If still not working, verify tart-guest-agent is running: `launchctl list | grep tart-guest-agent`. If not running, reload: `launchctl load /Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist`
 - **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
 - **First-run automation didn't trigger**: Check if `~/.cal-first-run` flag exists. If missing, run `vm-auth.sh` manually.
 - **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host

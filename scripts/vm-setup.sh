@@ -99,6 +99,91 @@ for pkg in node gh tmux sshuttle; do
     fi
 done
 
+# Install tart-guest-agent (enables clipboard sharing)
+echo ""
+echo "📋 Installing Tart Guest Agent (for clipboard support)..."
+if brew_installed "tart-guest-agent"; then
+    echo "  → Upgrading tart-guest-agent..."
+    if brew upgrade cirruslabs/cli/tart-guest-agent 2>/dev/null; then
+        echo "  ✓ tart-guest-agent upgraded"
+    else
+        echo "  ✓ tart-guest-agent already up to date"
+    fi
+else
+    echo "  → Installing tart-guest-agent..."
+    if brew install cirruslabs/cli/tart-guest-agent; then
+        echo "  ✓ tart-guest-agent installed"
+    else
+        echo "  ✗ Failed to install tart-guest-agent"
+    fi
+fi
+
+# Configure tart-guest-agent to start automatically (enables clipboard sharing)
+echo ""
+echo "📋 Configuring Tart Guest Agent auto-start..."
+AGENT_PLIST="/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist"
+if [ ! -f "$AGENT_PLIST" ]; then
+    echo "  → Creating launchd configuration..."
+    sudo tee "$AGENT_PLIST" > /dev/null <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>org.cirruslabs.tart-guest-agent</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/tart-guest-agent</string>
+        <string>--run-agent</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
+        <key>TERM</key>
+        <string>xterm-256color</string>
+    </dict>
+    <key>WorkingDirectory</key>
+    <string>/Users/admin</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/tart-guest-agent.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/tart-guest-agent.log</string>
+</dict>
+</plist>
+EOF
+
+    # Set proper permissions
+    sudo chown root:wheel "$AGENT_PLIST"
+    sudo chmod 644 "$AGENT_PLIST"
+    echo "  ✓ Created launchd configuration at $AGENT_PLIST"
+
+    # Load the agent (will start automatically on boot)
+    if launchctl load "$AGENT_PLIST" 2>/dev/null; then
+        echo "  ✓ Tart Guest Agent started (clipboard sharing enabled)"
+    else
+        echo "  ⚠ Could not start agent now (will start on next boot)"
+    fi
+else
+    echo "  ✓ Tart Guest Agent already configured"
+
+    # Check if running
+    if launchctl list | grep -q "org.cirruslabs.tart-guest-agent"; then
+        echo "  ✓ Tart Guest Agent is running"
+    else
+        echo "  → Starting Tart Guest Agent..."
+        if launchctl load "$AGENT_PLIST" 2>/dev/null; then
+            echo "  ✓ Tart Guest Agent started"
+        else
+            echo "  ⚠ Could not start agent (may need reboot)"
+        fi
+    fi
+fi
+
 # Install Claude Code
 echo ""
 echo "🤖 Installing Claude Code..."
@@ -424,6 +509,19 @@ else
     echo "  ✗ sshuttle: not found"
 fi
 
+if command_exists tart-guest-agent; then
+    TART_AGENT_VERSION=$(tart-guest-agent --version 2>/dev/null | head -n1)
+    echo "  ✓ tart-guest-agent: $TART_AGENT_VERSION"
+    # Check if agent is running
+    if launchctl list | grep -q "org.cirruslabs.tart-guest-agent"; then
+        echo "    → Status: Running (clipboard sharing enabled)"
+    else
+        echo "    → Status: Not running (will start on reboot)"
+    fi
+else
+    echo "  ✗ tart-guest-agent: not found"
+fi
+
 # Configure transparent proxy for reliable network access
 # (Only configure for future use - proxy should already be running if needed)
 if [ -n "$HOST_USER" ]; then
@@ -616,6 +714,7 @@ echo ""
 echo "💡 Notes:"
 echo "  • Auto-login is enabled - VM will boot to desktop for Screen Sharing"
 echo "  • Login keychain is unlocked - enables agent authentication via SSH"
+echo "  • Clipboard sharing enabled - copy/paste works in Screen Sharing (Edit → Use Shared Clipboard)"
 if [ -n "$HOST_USER" ]; then
     echo "  • Transparent proxy configured (sshuttle) - no app config needed"
     echo "  • Proxy commands: proxy-start, proxy-stop, proxy-status, proxy-log"
