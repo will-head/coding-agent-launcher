@@ -284,6 +284,27 @@ EOF
 - Update PLAN.md in every workflow
 - Code TODOs must reference PLAN.md
 
+### TODO → DONE Movement
+
+**Completed items must be moved from TODO files to DONE files:**
+
+**When to move:**
+- **On merge** (Merge PR workflow) - most common scenario
+  - Cut TODO from `PLAN-PHASE-XX-TODO.md`
+  - Paste into `PLAN-PHASE-XX-DONE.md` with PR number and merge date
+  - Example: `- [x] Add validation (PR #42, merged 2026-01-21)`
+
+- **On PR closure** (any workflow where PR is abandoned/superseded)
+  - Move to DONE file with closure reason
+  - Example: `- [x] Add validation (PR #42 closed - filed as known issue)`
+  - Or: `- [x] Add validation (PR #42 closed - superseded by PR #45)`
+
+- **On direct implementation** (Interactive workflow)
+  - Move to DONE file after successful commit
+  - Example: `- [x] Add validation (completed 2026-01-21)`
+
+**Never mark as `[x]` in TODO file - always move to DONE file when complete.**
+
 ---
 
 ## Related Documentation

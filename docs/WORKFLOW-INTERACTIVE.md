@@ -119,7 +119,10 @@ Update affected documentation files:
 **Never modify `docs/adr/*`** - ADRs are immutable historical records.
 
 **Always update PLAN.md and phase TODO files** with current project status:
-- Mark completed TODOs as `[x]` in active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`)
+- **Move completed TODOs** from TODO file to DONE file (e.g., from `docs/PLAN-PHASE-00-TODO.md` to `docs/PLAN-PHASE-00-DONE.md`)
+  - Cut the completed TODO item from TODO file
+  - Paste it into DONE file with `[x]` checkbox and completion note
+  - Example: `- [x] Add snapshot validation (completed 2026-01-21)`
 - Add new TODOs discovered during implementation to appropriate phase TODO file
 - Update PLAN.md phase status to reflect actual completion
 - Update PLAN.md "Current Status" section if phase completion changed
@@ -159,7 +162,9 @@ Before every commit:
 - [ ] Build succeeds (`go build -o cal ./cmd/cal`)
 - [ ] Code review presented and user approved (for code changes)
 - [ ] Documentation updated (affected files)
-- [ ] PLAN.md and active phase TODO file updated with current project status
+- [ ] PLAN.md updated with current project status
+- [ ] Completed TODOs moved from phase TODO file to phase DONE file
+- [ ] New TODOs added to appropriate phase TODO file
 - [ ] User approved commit operation
 
 ---

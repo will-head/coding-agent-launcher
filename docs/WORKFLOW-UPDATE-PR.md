@@ -169,13 +169,14 @@ go build -o cal ./cmd/cal
    ```
 
 4. **Update `PLAN.md` and phase TODO file** with current project status:
-   - Mark any completed TODOs as `[x]` in phase TODO file
+   - Note update status in phase TODO file (e.g., `- [ ] Add validation (PR #42 - updates applied, needs re-review)`)
    - Add new TODOs discovered during fixes to appropriate phase TODO file
    - Update PLAN.md phase status if applicable
+   - **Note:** Do NOT move TODOs to DONE file yet - this happens during Merge PR workflow
 
 5. **Commit documentation updates:**
    ```bash
-   git add STATUS.md PLAN.md docs/PLAN-PHASE-*.md
+   git add STATUS.md PLAN.md docs/PLAN-PHASE-*-TODO.md docs/PLAN-PHASE-*-DONE.md
    git commit -m "$(cat <<'EOF'
    Update documentation after addressing PR #42 feedback
 

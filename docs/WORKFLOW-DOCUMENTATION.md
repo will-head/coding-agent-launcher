@@ -144,8 +144,11 @@ If you're unsure whether changes are documentation-only:
 ### PLAN.md and Phase TODO Updates
 
 Even for docs-only changes:
-- Update phase TODO files if completing TODOs (e.g., `docs/PLAN-PHASE-00-TODO.md`)
-- Mark documentation tasks as complete in phase TODO file
+- **Move completed documentation TODOs** from TODO file to DONE file (e.g., from `docs/PLAN-PHASE-00-TODO.md` to `docs/PLAN-PHASE-00-DONE.md`)
+  - Cut the completed TODO item from TODO file
+  - Paste it into DONE file with `[x]` checkbox and completion note
+  - Example: `- [x] Update bootstrap documentation (completed 2026-01-21)`
+- Add new documentation TODOs discovered to appropriate phase TODO file
 - Update PLAN.md "Current Status" if phase completion changed
 
 ---

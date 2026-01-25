@@ -263,13 +263,14 @@ git checkout main
 ```
 
 **Update PLAN.md and phase TODO files if PR relates to tracked work:**
-- Mark any completed TODOs as `[x]` in phase TODO file
+- Note review status in phase TODO file (e.g., `- [ ] Add validation (PR #42 - approved, needs testing)`)
 - Update PLAN.md phase status if applicable
-- Note any issues discovered that need follow-up in phase TODO file
+- Add any issues discovered that need follow-up to phase TODO file
+- **Note:** Do NOT move TODOs to DONE file yet - this happens during Merge PR workflow
 
 **Commit documentation updates:**
 ```bash
-git add STATUS.md PLAN.md docs/PLAN-PHASE-*.md
+git add STATUS.md PLAN.md docs/PLAN-PHASE-*-TODO.md docs/PLAN-PHASE-*-DONE.md
 git commit -m "$(cat <<'EOF'
 Update documentation after reviewing PR #42
 

@@ -171,20 +171,31 @@ If manual tests failed:
 ### Step 7: Update PLAN.md and Phase TODO Files
 
 Update PLAN.md and phase TODO files with current project status:
-- Mark any completed TODOs as `[x]` in phase TODO file if the PR relates to tracked work
+
+**If tests passed (moving to "Needs Merging"):**
+- Note testing outcome in phase TODO file (e.g., `- [ ] Add validation (PR #42 - tested, needs merge)`)
+- **Note:** Do NOT move TODOs to DONE file yet - this happens during Merge PR workflow
+
+**If tests failed (moving to "Needs Changes"):**
+- Note testing outcome in phase TODO file (e.g., `- [ ] Add validation (PR #42 - test failed, needs fixes)`)
+- **Note:** Do NOT move TODOs to DONE file yet - wait for fixes or closure
+
+**If PR is being closed/abandoned (not proceeding):**
+- **Move TODO from TODO file to DONE file** with closure note
+- Example: `- [x] Add validation (PR #42 closed - test failures, filed as known issue)`
 - Update PLAN.md phase status if applicable
-- Note testing outcome in relevant sections
 
 **Always update** to keep project status current.
 
 **Commit documentation updates:**
 ```bash
-git add STATUS.md PLAN.md docs/PLAN-PHASE-*.md
+git add STATUS.md PLAN.md docs/PLAN-PHASE-*-TODO.md docs/PLAN-PHASE-*-DONE.md
 git commit -m "$(cat <<'EOF'
 Update documentation after testing PR #42
 
 Moved PR #42 to [Needs Merging/Needs Changes] in STATUS.md.
 Updated phase TODO file and PLAN.md with current project status.
+[Moved TODO to DONE file if PR was closed]
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 EOF

@@ -205,19 +205,20 @@ EOF
    ```
 
 3. **Update `PLAN.md` and phase TODO file** with current project status:
-   - Mark any completed TODOs as `[x]` in phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`)
+   - Note PR number in relevant TODO items in phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`)
+   - Example: `- [ ] Add snapshot validation (PR #42 - awaiting merge)`
    - Add new TODOs discovered during implementation to appropriate phase TODO file
    - Update PLAN.md phase status if applicable
-   - Note PR number in relevant TODO items
+   - **Note:** Do NOT move TODOs to DONE file yet - this happens during Merge PR workflow
 
 4. **Commit documentation updates** (on main):
    ```bash
-   git add STATUS.md PLAN.md
+   git add STATUS.md PLAN.md docs/PLAN-PHASE-*-TODO.md
    git commit -m "$(cat <<'EOF'
    Update documentation for PR #42
 
    Added PR #42 to Needs Review section in STATUS.md.
-   Updated PLAN.md to reflect current project status.
+   Updated PLAN.md and phase TODO file to reflect current project status.
 
    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
    EOF

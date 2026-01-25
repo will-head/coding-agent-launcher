@@ -52,7 +52,11 @@ See `docs/WORKFLOWS.md` for complete index and `docs/WORKFLOW-*.md` for detailed
 ### TODOs
 - **`PLAN.md` and phase TODO files are the single source of truth** for all TODOs
 - Phase overview in `PLAN.md`, detailed TODOs in `docs/PLAN-PHASE-XX-TODO.md`
-- Phase complete only when ALL checkboxes in TODO file are `[x]`
+- **Completed items must be moved from TODO to DONE files** (e.g., `PLAN-PHASE-XX-TODO.md` → `PLAN-PHASE-XX-DONE.md`)
+  - On merge: move with PR number and date
+  - On PR closure: move with closure reason
+  - On direct implementation: move with completion date
+- Phase complete only when ALL items moved from TODO to DONE
 - Code TODOs must also be tracked in phase TODO files
 
 ### ADRs
@@ -84,7 +88,8 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 - Commit with failing tests or build
 - Skip code review for code/script changes (Interactive workflow)
 - Modify ADR files
-- Mark phase complete with unchecked TODOs
+- Mark TODOs as `[x]` in TODO files - always move completed items to DONE files
+- Mark phase complete with items remaining in TODO file
 
 ---
 

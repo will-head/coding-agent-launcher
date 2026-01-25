@@ -157,22 +157,22 @@ Create "Merged" section if it doesn't exist.
 
 Update PLAN.md and phase TODO files to reflect current project status after merge:
 
-**Mark completed tasks in phase TODO file:**
+**Move completed TODOs from TODO file to DONE file:**
 - Find TODOs related to this PR in active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`)
-- Mark as `[x]` completed
-- Example: `- [x] Add snapshot validation (PR #42)`
+- **Cut the completed TODO** from the TODO file
+- **Paste into the DONE file** (e.g., `docs/PLAN-PHASE-00-DONE.md`) with:
+  - `[x]` checkbox
+  - PR number reference
+  - Completion date
+  - Example: `- [x] Add snapshot validation (PR #42, merged 2026-01-21)`
 
 **Update PLAN.md phase status:**
 - If all TODOs in phase complete, update phase status in PLAN.md
 - Update "Current Status" section if phase changed
 - Add completion notes if applicable
 
-**Remove obsolete items:**
-- Remove "Pending" or "In Progress" labels from phase TODO file
-- Clean up temporary notes
-
 **Add follow-up TODOs:**
-- Note any issues discovered during merge in appropriate phase TODO file
+- Add any issues discovered during merge to appropriate phase TODO file
 - Add items for future improvements mentioned in PR
 
 **Always update** to keep project status current.
@@ -182,12 +182,12 @@ Update PLAN.md and phase TODO files to reflect current project status after merg
 **Ask user approval**, then commit the updated STATUS.md, PLAN.md, and phase TODO files:
 
 ```bash
-git add STATUS.md PLAN.md docs/PLAN-PHASE-*.md
+git add STATUS.md PLAN.md docs/PLAN-PHASE-*-TODO.md docs/PLAN-PHASE-*-DONE.md
 git commit -m "$(cat <<'EOF'
 Update documentation after merging PR #42
 
 Moved PR #42 to Merged section in STATUS.md.
-Updated PLAN-PHASE-00-TODO.md: marked snapshot validation complete.
+Moved completed TODO from PLAN-PHASE-00-TODO.md to PLAN-PHASE-00-DONE.md.
 Updated PLAN.md: phase status reflects completion.
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
@@ -200,6 +200,67 @@ git push
 
 ---
 
+## Handling Aborted/Closed PRs
+
+If a PR is closed without merging (abandoned, superseded, or filed as known issue):
+
+1. **Close the PR on GitHub** (if not already closed):
+   ```bash
+   gh pr close <PR#> --comment "$(cat <<'EOF'
+   Closing this PR: [reason for closure]
+
+   [Additional context if needed]
+   EOF
+   )"
+   ```
+
+2. **Switch to main branch:**
+   ```bash
+   git checkout main
+   ```
+
+3. **Update STATUS.md:**
+   - Remove from current section
+   - Add to "Closed" section:
+   ```markdown
+   | #42 | create-pr/add-validation | Add input validation | 2026-01-21 | Filed as known issue |
+   ```
+
+4. **Move TODO to DONE file with closure note:**
+   - Cut TODO from phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`)
+   - Paste into phase DONE file (e.g., `docs/PLAN-PHASE-00-DONE.md`) with:
+   - Example: `- [x] Add validation (PR #42 closed - filed as known issue in PLAN-PHASE-00-TODO.md § Known Issues)`
+   - Or: `- [x] Add validation (PR #42 closed - superseded by PR #45)`
+   - Or: `- [x] Add validation (PR #42 closed - approach abandoned)`
+
+5. **Add to Known Issues section if applicable:**
+   - If the issue remains but implementation was abandoned, add to phase TODO file § Known Issues
+   - Reference the closed PR for context
+
+6. **Delete branches:**
+   ```bash
+   git branch -d <branch-name>
+   git push origin --delete <branch-name>
+   ```
+
+7. **Commit documentation:**
+   ```bash
+   git add STATUS.md docs/PLAN-PHASE-*-TODO.md docs/PLAN-PHASE-*-DONE.md
+   git commit -m "$(cat <<'EOF'
+   Update documentation after closing PR #42
+
+   Moved PR #42 to Closed section in STATUS.md.
+   Moved TODO from PLAN-PHASE-00-TODO.md to PLAN-PHASE-00-DONE.md with closure note.
+   [Added to Known Issues if applicable]
+
+   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+   EOF
+   )"
+   git push
+   ```
+
+---
+
 ## Pre-Merge Checklist
 
 Before merging PR:
@@ -209,7 +270,9 @@ Before merging PR:
 - [ ] Local main branch updated (`git pull`)
 - [ ] PR branch deleted (local and remote)
 - [ ] STATUS.md updated (moved to "Merged" section)
-- [ ] PLAN.md and phase TODO files updated with current project status
+- [ ] Completed TODOs moved from phase TODO file to phase DONE file
+- [ ] PLAN.md phase status updated if applicable
+- [ ] New follow-up TODOs added to appropriate phase TODO file
 - [ ] Documentation changes committed with Co-Authored-By
 - [ ] Documentation changes pushed to remote
 
