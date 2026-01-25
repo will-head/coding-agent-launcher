@@ -64,7 +64,20 @@
 - [x] **Conclusion:** SSH is optimal for local VM (excellent performance)
 - [x] **Enhancement:** Added tmux support for session persistence
 
-### VM Management Improvements (Phase 0.8 - 9/11 Complete)
+### VM Management Improvements (Phase 0.8 - 10/11 Complete)
+- [x] **PR #2:** Implement clipboard sharing via tart-guest-agent (merged 2026-01-25)
+  - **Solution:** Installed tart-guest-agent which enables VM→Host clipboard sharing (one-way only)
+  - **Findings:**
+    - High Performance mode: Incompatible with Tart VMs (Virtualization.framework limitation) - shows black screen and locked VM
+    - Standard mode clipboard: VM→Host only via tart-guest-agent (SPICE vdagent protocol)
+    - Host→VM paste: Causes Screen Sharing disconnect (not necessarily crash) - known limitation, documented with warning
+    - Historical copy/paste disconnect issue: Fixed in Tart PR #154 (not affecting CAL setup)
+  - **Implementation:**
+    - Added tart-guest-agent installation to vm-setup.sh (Homebrew)
+    - Configured launchd service for auto-start (/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist)
+    - Added verification step in setup script
+    - Updated documentation with clipboard support instructions and warnings
+  - **Documentation:** docs/bootstrap.md (Screen Sharing section), scripts/vm-setup.sh
 - [x] Fix opencode installation in `--init` script (added Go install fallback, improved PATH setup)
 - [x] Simplify `--init` auth flow (removed verification prompt since opencode now works reliably)
 - [x] Add `--restart` option to cal-bootstrap for quick VM restart
