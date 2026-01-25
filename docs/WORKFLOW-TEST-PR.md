@@ -35,7 +35,12 @@ At the start of each new session using this workflow:
    - Emphasize the blocking wait for user test confirmation
    - Note that STATUS.md updates happen on main branch
 3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
-4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
+4. **Check environment** - Detect and display execution environment:
+   - Run: `echo $CAL_VM`
+   - If `CAL_VM=true`: Display "✅ **Running in cal-dev VM** (isolated environment)"
+   - If `CAL_VM≠true`: Display "⚠️  **Running on HOST machine** (not isolated)"
+   - This ensures awareness of execution environment before proceeding with any operations
+5. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
 
 This ensures both agent and user have shared understanding of the workflow being followed.
 
