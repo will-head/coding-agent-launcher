@@ -34,7 +34,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Implement clipboard sharing via tart-guest-agent | opencode | 2026-01-25 |
+| *No PRs awaiting testing* | | | | |
 
 ---
 
@@ -42,7 +42,7 @@
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|
-| *No tested PRs* | | | | |
+| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Document Screen Sharing modes and limitations for Tart VMs | User | 2026-01-25 |
 
 ---
 
