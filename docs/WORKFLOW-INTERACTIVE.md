@@ -118,12 +118,12 @@ Update affected documentation files:
 
 **Never modify `docs/adr/*`** - ADRs are immutable historical records.
 
-**Always update PLAN.md** with current project status:
-- Mark completed TODOs as `[x]`
-- Add new TODOs discovered during implementation
-- Update phase status to reflect actual completion
-- Update "Current Status" section if phase completion changed
-- Ensure all code TODOs have corresponding PLAN.md entries
+**Always update PLAN.md and phase TODO files** with current project status:
+- Mark completed TODOs as `[x]` in active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`)
+- Add new TODOs discovered during implementation to appropriate phase TODO file
+- Update PLAN.md phase status to reflect actual completion
+- Update PLAN.md "Current Status" section if phase completion changed
+- Ensure all code TODOs have corresponding entries in phase TODO files
 
 ### Step 7: Commit and Push
 
@@ -159,7 +159,7 @@ Before every commit:
 - [ ] Build succeeds (`go build -o cal ./cmd/cal`)
 - [ ] Code review presented and user approved (for code changes)
 - [ ] Documentation updated (affected files)
-- [ ] PLAN.md updated with current project status
+- [ ] PLAN.md and active phase TODO file updated with current project status
 - [ ] User approved commit operation
 
 ---
@@ -180,13 +180,14 @@ Before every commit:
 
 ### TODO Tracking
 
-**PLAN.md is the single source of truth** for all TODOs.
+**PLAN.md and phase TODO files are the single source of truth** for all TODOs.
 
 Rules:
-- All phase-affecting TODOs must be in PLAN.md
-- Phase complete only when ALL checkboxes are `[x]`
-- Code TODOs are notes only, must also be in PLAN.md
-- Before commit, verify each TODO has a PLAN.md entry
+- Phase overview in PLAN.md, detailed TODOs in phase-specific files (e.g., `docs/PLAN-PHASE-00-TODO.md`)
+- All phase-affecting TODOs must be in the appropriate phase TODO file
+- Phase complete only when ALL checkboxes in phase TODO file are `[x]`
+- Code TODOs are notes only, must also be tracked in phase TODO files
+- Before commit, verify each TODO has an entry in the appropriate phase TODO file
 
 ### Commit Message Format
 

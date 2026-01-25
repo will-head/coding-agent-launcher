@@ -168,19 +168,19 @@ go build -o cal ./cmd/cal
    | #42 | create-pr/add-validation | Add input validation | 2026-01-21 |
    ```
 
-4. **Update `PLAN.md`** with current project status:
-   - Mark any completed TODOs as `[x]`
-   - Add new TODOs discovered during fixes
-   - Update phase status if applicable
+4. **Update `PLAN.md` and phase TODO file** with current project status:
+   - Mark any completed TODOs as `[x]` in phase TODO file
+   - Add new TODOs discovered during fixes to appropriate phase TODO file
+   - Update PLAN.md phase status if applicable
 
 5. **Commit documentation updates:**
    ```bash
-   git add STATUS.md PLAN.md
+   git add STATUS.md PLAN.md docs/PLAN-PHASE-*.md
    git commit -m "$(cat <<'EOF'
    Update documentation after addressing PR #42 feedback
 
    Moved PR #42 back to Needs Review in STATUS.md.
-   Updated PLAN.md with current project status.
+   Updated phase TODO file and PLAN.md with current project status.
 
    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
    EOF
@@ -202,7 +202,7 @@ Before pushing updates:
 - [ ] Changes pushed to PR branch
 - [ ] Switched back to main branch
 - [ ] STATUS.md updated (moved to "Needs Review")
-- [ ] PLAN.md updated with current project status
+- [ ] PLAN.md and phase TODO files updated with current project status
 - [ ] Documentation changes committed and pushed
 
 ---

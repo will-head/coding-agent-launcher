@@ -262,19 +262,19 @@ git checkout main
 | #42 | create-pr/add-validation | Add input validation | 2026-01-21 | Security and quality issues |
 ```
 
-**Update PLAN.md if PR relates to tracked work:**
-- Mark any completed TODOs as `[x]`
-- Update phase status if applicable
-- Note any issues discovered that need follow-up
+**Update PLAN.md and phase TODO files if PR relates to tracked work:**
+- Mark any completed TODOs as `[x]` in phase TODO file
+- Update PLAN.md phase status if applicable
+- Note any issues discovered that need follow-up in phase TODO file
 
 **Commit documentation updates:**
 ```bash
-git add STATUS.md PLAN.md
+git add STATUS.md PLAN.md docs/PLAN-PHASE-*.md
 git commit -m "$(cat <<'EOF'
 Update documentation after reviewing PR #42
 
 Moved PR #42 to [Needs Testing/Needs Changes] in STATUS.md.
-Updated PLAN.md with current project status.
+Updated phase TODO file and PLAN.md with current project status.
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 EOF
@@ -295,7 +295,7 @@ Before completing review:
 - [ ] Review submitted via `gh pr review` with heredoc format
 - [ ] Switched back to main branch
 - [ ] STATUS.md updated with correct section and details
-- [ ] PLAN.md updated if PR relates to tracked work
+- [ ] PLAN.md and phase TODO files updated if PR relates to tracked work
 - [ ] Documentation changes committed and pushed
 
 ---

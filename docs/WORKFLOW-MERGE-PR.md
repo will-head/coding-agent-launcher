@@ -153,41 +153,42 @@ Move PR entry from "Needs Merging" to "Merged" section with merge date.
 
 Create "Merged" section if it doesn't exist.
 
-### Step 7: Update PLAN.md
+### Step 7: Update PLAN.md and Phase TODO Files
 
-Update PLAN.md to reflect current project status after merge:
+Update PLAN.md and phase TODO files to reflect current project status after merge:
 
-**Mark completed tasks:**
-- Find TODOs related to this PR
+**Mark completed tasks in phase TODO file:**
+- Find TODOs related to this PR in active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`)
 - Mark as `[x]` completed
 - Example: `- [x] Add snapshot validation (PR #42)`
 
-**Update phase status:**
-- If all TODOs in phase complete, update phase status
+**Update PLAN.md phase status:**
+- If all TODOs in phase complete, update phase status in PLAN.md
 - Update "Current Status" section if phase changed
 - Add completion notes if applicable
 
 **Remove obsolete items:**
-- Remove "Pending" or "In Progress" labels
+- Remove "Pending" or "In Progress" labels from phase TODO file
 - Clean up temporary notes
 
 **Add follow-up TODOs:**
-- Note any issues discovered during merge
+- Note any issues discovered during merge in appropriate phase TODO file
 - Add items for future improvements mentioned in PR
 
 **Always update** to keep project status current.
 
 ### Step 8: Commit Documentation
 
-**Ask user approval**, then commit the updated STATUS.md and PLAN.md:
+**Ask user approval**, then commit the updated STATUS.md, PLAN.md, and phase TODO files:
 
 ```bash
-git add STATUS.md PLAN.md
+git add STATUS.md PLAN.md docs/PLAN-PHASE-*.md
 git commit -m "$(cat <<'EOF'
 Update documentation after merging PR #42
 
 Moved PR #42 to Merged section in STATUS.md.
-Updated PLAN.md: marked snapshot validation complete.
+Updated PLAN-PHASE-00-TODO.md: marked snapshot validation complete.
+Updated PLAN.md: phase status reflects completion.
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 EOF
@@ -208,7 +209,7 @@ Before merging PR:
 - [ ] Local main branch updated (`git pull`)
 - [ ] PR branch deleted (local and remote)
 - [ ] STATUS.md updated (moved to "Merged" section)
-- [ ] PLAN.md updated with current project status
+- [ ] PLAN.md and phase TODO files updated with current project status
 - [ ] Documentation changes committed with Co-Authored-By
 - [ ] Documentation changes pushed to remote
 
@@ -251,7 +252,8 @@ git commit -m "$(cat <<'EOF'
 Update documentation after merging PR #<number>
 
 Brief description of what was merged.
-PLAN.md updates summary.
+Phase TODO file updates summary (completed TODOs marked).
+PLAN.md updates summary (phase status if changed).
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 EOF

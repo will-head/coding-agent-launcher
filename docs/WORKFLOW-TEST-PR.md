@@ -168,23 +168,23 @@ If manual tests failed:
 
 5. **Proceed to Step 7** (Update PLAN.md)
 
-### Step 7: Update PLAN.md
+### Step 7: Update PLAN.md and Phase TODO Files
 
-Update PLAN.md with current project status:
-- Mark any completed TODOs as `[x]` if the PR relates to tracked work
-- Update phase status if applicable
+Update PLAN.md and phase TODO files with current project status:
+- Mark any completed TODOs as `[x]` in phase TODO file if the PR relates to tracked work
+- Update PLAN.md phase status if applicable
 - Note testing outcome in relevant sections
 
-**Always update PLAN.md** to keep project status current.
+**Always update** to keep project status current.
 
 **Commit documentation updates:**
 ```bash
-git add STATUS.md PLAN.md
+git add STATUS.md PLAN.md docs/PLAN-PHASE-*.md
 git commit -m "$(cat <<'EOF'
 Update documentation after testing PR #42
 
 Moved PR #42 to [Needs Merging/Needs Changes] in STATUS.md.
-Updated PLAN.md with current project status.
+Updated phase TODO file and PLAN.md with current project status.
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 EOF
@@ -203,7 +203,7 @@ Before completing workflow:
 - [ ] PR comment added if tests failed (with heredoc format)
 - [ ] Switched back to main branch
 - [ ] STATUS.md updated ("Needs Merging" if passed, "Needs Changes" if failed)
-- [ ] PLAN.md updated with current project status
+- [ ] PLAN.md and phase TODO files updated with current project status
 - [ ] Documentation changes committed and pushed
 
 ---

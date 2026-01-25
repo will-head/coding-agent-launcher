@@ -141,12 +141,12 @@ If you're unsure whether changes are documentation-only:
 - Better safe than sorry
 - Tests and build won't hurt
 
-### PLAN.md Updates
+### PLAN.md and Phase TODO Updates
 
 Even for docs-only changes:
-- Update PLAN.md if completing TODOs
-- Mark documentation tasks as complete
-- Update "Current Status" if relevant
+- Update phase TODO files if completing TODOs (e.g., `docs/PLAN-PHASE-00-TODO.md`)
+- Mark documentation tasks as complete in phase TODO file
+- Update PLAN.md "Current Status" if phase completion changed
 
 ---
 

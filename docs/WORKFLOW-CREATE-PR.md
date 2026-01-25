@@ -70,7 +70,7 @@ Read `STATUS.md` to find the first TODO in "Refined" section:
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| Add git repo sync on init | PLAN.md Phase 0.10 | Prompt for repos during --init and clone using gh CLI | 2026-01-23 | Requires gh auth |
+| Add git repo sync on init | PLAN-PHASE-00-TODO.md § 0.10 | Prompt for repos during --init and clone using gh CLI | 2026-01-23 | Requires gh auth |
 ```
 
 **If no refined TODOs:**
@@ -78,8 +78,8 @@ Read `STATUS.md` to find the first TODO in "Refined" section:
 - Exit workflow or ask user for specific task
 
 **If refined TODO found:**
-- Note the TODO description and location in PLAN.md
-- Read the full refined TODO from PLAN.md to get complete requirements
+- Note the TODO description and location in phase TODO file
+- Read the full refined TODO from the phase TODO file to get complete requirements
 - Use this information to guide implementation
 - Proceed to Step 2
 
@@ -204,10 +204,10 @@ EOF
    | [#42](link) | create-pr/add-validation | Add input validation | 2026-01-22 |
    ```
 
-3. **Update `PLAN.md`** with current project status:
-   - Mark any completed TODOs as `[x]`
-   - Add new TODOs discovered during implementation
-   - Update phase status if applicable
+3. **Update `PLAN.md` and phase TODO file** with current project status:
+   - Mark any completed TODOs as `[x]` in phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`)
+   - Add new TODOs discovered during implementation to appropriate phase TODO file
+   - Update PLAN.md phase status if applicable
    - Note PR number in relevant TODO items
 
 4. **Commit documentation updates** (on main):
@@ -256,7 +256,7 @@ EOF
 
 Before creating PR:
 - [ ] Refined TODO read from STATUS.md "Refined" section
-- [ ] Full TODO details read from PLAN.md
+- [ ] Full TODO details read from phase TODO file
 - [ ] Coding standards reviewed (`CODING_STANDARDS.md`)
 - [ ] Tests written (TDD approach)
 - [ ] Tests pass (`go test ./...`)
@@ -266,7 +266,7 @@ Before creating PR:
 - [ ] Documentation updated if user-facing changes
 - [ ] Switched to main branch for doc updates
 - [ ] STATUS.md updated with PR entry (on main)
-- [ ] PLAN.md updated with current project status (on main)
+- [ ] PLAN.md and phase TODO file updated with current project status (on main)
 - [ ] Documentation changes committed and pushed (on main)
 
 ---
