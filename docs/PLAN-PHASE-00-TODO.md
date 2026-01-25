@@ -65,6 +65,7 @@
 ## Known Issues
 
 - [ ] vm-auth.sh GitHub clone fails with network timeout (needs transparent proxy auto-start before clone attempt)
+- [ ] Investigate: Environment status should be shown as last item before "What would you like to work on?" prompt (Cursor-CLI only - works correctly in Opencode and Claude Code)
 - [ ] Z.AI GLM 4.7 API concurrency limit error in cal-dev VM (investigated 2026-01-25)
   - Error: "High concurrency usage of this API, please reduce concurrency or contact customer... [retrying in 3s]"
   - Works fine on host machine but fails in VM
