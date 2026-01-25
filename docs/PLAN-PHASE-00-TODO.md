@@ -8,21 +8,7 @@
 
 ---
 
-## 0.8 VM Management Improvements (9/11 Complete)
-
-- [ ] **HIGH PRIORITY (WIP):** Fix cal-bootstrap TERM environment variable handling to prevent opencode hangs while maintaining tmux compatibility
-  - **Issue:** Conflicting requirements for TERM handling:
-    1. Tmux requires known TERM (Ghostty sends `xterm-ghostty` which fails: "missing or unsuitable terminal")
-    2. Opencode hangs when TERM is explicitly set in command environment (e.g., `TERM=xterm-256color command`)
-  - **Current Status:** WIP - Simple removal of explicit TERM breaks Ghostty compatibility
-  - **Original code:** `ssh ... "TERM=xterm-256color /opt/homebrew/bin/tmux ..."` (works for tmux, breaks opencode)
-  - **Attempted fix:** `ssh ... "/opt/homebrew/bin/tmux ..."` (works for opencode, breaks Ghostty)
-  - **Next Steps:** Implement one of three solutions:
-    1. Wrapper script: Create `~/scripts/tmux-wrapper.sh` that sets TERM then launches tmux (RECOMMENDED)
-    2. SSH SetEnv: Use `ssh -o SetEnv=TERM=xterm-256color` (requires sshd config check)
-    3. Source .zshrc: `ssh ... "source ~/.zshrc && /opt/homebrew/bin/tmux ..."` (quick fallback)
-  - **Reference:** [term-handling-investigation.md](term-handling-investigation.md) - Full investigation and test plan
-  - **Test:** Must work with Ghostty, iTerm2, Terminal.app AND allow opencode run without hanging
+## 0.8 VM Management Improvements (10/11 Complete)
 - [ ] Reduce network check timeout from 5s to 3s for faster feedback (vm-auth.sh)
 - [ ] Add explicit error handling for scp failures in setup_scripts_folder (vm-auth.sh)
 - [ ] Check for specific opencode auth token file if documented (vm-auth.sh)

@@ -411,6 +411,15 @@ setup_scripts_folder() {
         echo "    ⚠ vm-auth.sh not found"
     fi
 
+    # Copy tmux-wrapper.sh
+    if [ -f "$SCRIPT_DIR/tmux-wrapper.sh" ]; then
+        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SCRIPT_DIR/tmux-wrapper.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"
+        echo "    ✓ tmux-wrapper.sh"
+    else
+        echo "    ⚠ tmux-wrapper.sh not found"
+    fi
+
     # Make scripts executable
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
         "${VM_USER}@${vm_ip}" "chmod +x ~/scripts/*.sh" 2>> "$CAL_LOG"
@@ -1068,8 +1077,9 @@ do_init() {
     # 1. Unlock keychain
     # 2. Detect first-run flag and run vm-auth.sh
     # 3. Clear first-run flag
+    # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "/opt/homebrew/bin/tmux new-session -A -s setup 'zsh -l'"
+        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s setup 'zsh -l'"
 
     echo ""
     echo "Continuing with setup..."
@@ -1134,12 +1144,15 @@ do_run() {
                 fi
             fi
             unlock_keychain "$VM_IP"
+            # Ensure scripts folder is set up (idempotent - safe to run multiple times)
+            setup_scripts_folder "$VM_IP"
             echo ""
             echo "Connecting via SSH with tmux..."
             echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
             echo ""
+            # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
             ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                "${VM_USER}@${VM_IP}" "/opt/homebrew/bin/tmux new-session -A -s cal"
+                "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal"
         else
             echo "Could not get VM IP address."
             exit 1
@@ -1172,6 +1185,9 @@ do_run() {
     # Unlock keychain for SSH access
     unlock_keychain "$VM_IP"
 
+    # Ensure scripts folder is set up (idempotent - safe to run multiple times)
+    setup_scripts_folder "$VM_IP"
+
     echo ""
     echo "VNC:   open vnc://${VM_IP}"
     echo "Stop:  $TART stop $vm_to_run"
@@ -1184,8 +1200,9 @@ do_run() {
     echo ""
 
     # SSH into the VM with tmux (always)
+    # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "/opt/homebrew/bin/tmux new-session -A -s cal"
+        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal"
 }
 
 # === STOP MODE ===
@@ -1258,6 +1275,9 @@ do_restart() {
     # Unlock keychain for SSH access
     unlock_keychain "$VM_IP"
 
+    # Ensure scripts folder is set up (idempotent - safe to run multiple times)
+    setup_scripts_folder "$VM_IP"
+
     echo ""
     echo "VNC:   open vnc://${VM_IP}"
     echo "Stop:  $TART stop $VM_DEV"
@@ -1270,8 +1290,9 @@ do_restart() {
     echo ""
 
     # SSH into the VM with tmux (always)
+    # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "/opt/homebrew/bin/tmux new-session -A -s cal"
+        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal"
 }
 
 # === SNAPSHOT MODE ===

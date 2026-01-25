@@ -1,8 +1,9 @@
 # TERM Environment Variable Handling Investigation
 
-> **Status:** Work in Progress
+> **Status:** ✅ Resolved
 > **Date:** 2026-01-25
 > **Issue:** Conflict between tmux compatibility and opencode TERM handling
+> **Solution:** Wrapper script approach implemented and verified
 
 ## Problem Statement
 
@@ -270,7 +271,61 @@ echo $TERM
 - [opencode-vm-summary.md](opencode-vm-summary.md) - Quick reference
 - [ssh-alternatives-investigation.md](ssh-alternatives-investigation.md) - Original tmux implementation
 
+## Implemented Solution
+
+**Date:** 2026-01-25  
+**Approach:** Option 3 - Wrapper Script (Recommended)
+
+### Implementation Details
+
+1. **Created wrapper script** (`scripts/tmux-wrapper.sh`):
+   ```bash
+   #!/bin/zsh
+   export TERM=xterm-256color
+   exec /opt/homebrew/bin/tmux "$@"
+   ```
+
+2. **Updated cal-bootstrap**:
+   - Modified `setup_scripts_folder()` to copy `tmux-wrapper.sh` to VM's `~/scripts/`
+   - Updated all SSH tmux calls in `do_run()` and `do_restart()` to use `~/scripts/tmux-wrapper.sh`
+   - Added `setup_scripts_folder()` calls before SSH connections to ensure wrapper exists
+
+3. **Key Design Decision**:
+   - TERM is set in the script environment (via `export`), not in the command environment
+   - This allows opencode to inherit TERM naturally (avoids hang)
+   - Tmux receives a known TERM value that exists in VM terminfo database
+
+### Test Results
+
+| Test | Terminal | Result | Notes |
+|------|----------|--------|-------|
+| cal-bootstrap --run | Ghostty | ✅ PASS | Connects successfully, no "missing terminal" error |
+| cal-bootstrap --run | Terminal.app | ✅ PASS | Connects successfully |
+| opencode run | Inside tmux | ✅ PASS | Completes in ~11s, no hanging |
+| Wrapper script | VM deployment | ✅ PASS | Script exists and is executable |
+
+### Verification
+
+- ✅ Ghostty terminal: `cal-bootstrap --run` works without errors
+- ✅ Terminal.app: `cal-bootstrap --run` works correctly
+- ✅ Opencode: `opencode run "test message"` completes successfully (~11s), no hang
+- ✅ Wrapper script: Deployed to `~/scripts/tmux-wrapper.sh` in VM, executable
+
+### Why This Solution Works
+
+1. **Script environment vs command environment**: By setting TERM via `export` in the wrapper script, it becomes part of the script's environment. When opencode runs, it inherits TERM naturally (not explicitly set in command), which avoids the hang.
+
+2. **Tmux compatibility**: Tmux receives `TERM=xterm-256color` which exists in the VM's terminfo database, so it works with all terminals regardless of their native TERM value.
+
+3. **No configuration dependencies**: Unlike SSH SetEnv, this doesn't require sshd configuration changes. The wrapper script is deployed during normal VM setup.
+
+### Files Changed
+
+- `scripts/tmux-wrapper.sh` (new file)
+- `scripts/cal-bootstrap` (updated `setup_scripts_folder()`, `do_run()`, `do_restart()`)
+
 ---
 
-**Status:** Waiting for solution implementation and testing
-**Priority:** HIGH - Blocks both Ghostty users and opencode functionality
+**Status:** ✅ Resolved - Wrapper script approach implemented and verified  
+**Priority:** HIGH - Was blocking both Ghostty users and opencode functionality  
+**Completion Date:** 2026-01-25

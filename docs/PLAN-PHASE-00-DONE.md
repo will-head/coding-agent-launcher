@@ -64,7 +64,7 @@
 - [x] **Conclusion:** SSH is optimal for local VM (excellent performance)
 - [x] **Enhancement:** Added tmux support for session persistence
 
-### VM Management Improvements (Phase 0.8 - 10/11 Complete)
+### VM Management Improvements (Phase 0.8 - 11/11 Complete)
 - [x] **PR #2:** Implement clipboard sharing via tart-guest-agent (merged 2026-01-25)
   - **Solution:** Installed tart-guest-agent which enables VM→Host clipboard sharing (one-way only)
   - **Findings:**
@@ -89,6 +89,21 @@
 - [x] Investigate if uncommitted or unpushed git changes can be automatically checked if they exist in VM before restore (implemented)
 - [x] Remove distinction between clones and snapshots in `--snapshot list` (they're functionally same for our purposes)
 - [x] Create method for coding agent to detect if running in VM (env var + info file + helper functions, see docs/vm-detection.md)
+- [x] **Fix cal-bootstrap TERM environment variable handling** (completed 2026-01-25)
+  - **Issue:** Conflicting requirements for TERM handling:
+    1. Tmux requires known TERM (Ghostty sends `xterm-ghostty` which fails: "missing or unsuitable terminal")
+    2. Opencode hangs when TERM is explicitly set in command environment (e.g., `TERM=xterm-256color command`)
+  - **Solution:** Implemented wrapper script approach (Option 3 from investigation)
+    - Created `scripts/tmux-wrapper.sh` that sets `TERM=xterm-256color` in script environment
+    - Updated `setup_scripts_folder()` to deploy wrapper script to VM's `~/scripts/`
+    - Updated all SSH tmux calls in `do_run()` and `do_restart()` to use `~/scripts/tmux-wrapper.sh`
+    - Ensured scripts folder is set up before connecting (idempotent operation)
+  - **Why this works:**
+    - TERM set in script environment (inherited naturally by opencode) - avoids opencode hang
+    - Tmux receives known TERM value (`xterm-256color`) that exists in VM terminfo database
+    - Works with Ghostty, Terminal.app, iTerm2, and all terminals
+  - **Test Results:** ✅ Verified working with Ghostty, Terminal.app, and opencode (no hang)
+  - **Reference:** [term-handling-investigation.md](term-handling-investigation.md) - Full investigation and solution
 
 ### Transparent Proxy for Network Reliability (Phase 0.9 - Complete)
 - [x] Implement transparent proxy via sshuttle (VM→Host)
