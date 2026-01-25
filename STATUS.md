@@ -18,7 +18,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| *No PRs awaiting review* | | | |
+| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Implement clipboard sharing via tart-guest-agent | 2026-01-25 |
 
 ---
 
@@ -26,7 +26,7 @@
 
 | PR | Branch | Description | Requested | Reason |
 |----|--------|-------------|-----------|--------|
-| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Implement clipboard sharing via tart-guest-agent | 2026-01-25 | Sudo usage forbidden - must use user-writable directory |
+| *No PRs needing changes* | | | | |
 
 ---
 
