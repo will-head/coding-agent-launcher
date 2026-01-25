@@ -10,6 +10,13 @@
 
 ## 0.8 VM Management Improvements (9/11 Complete)
 
+- [ ] **HIGH PRIORITY:** Fix cal-bootstrap TERM environment variable handling to prevent opencode hangs
+  - **Issue:** cal-bootstrap explicitly sets `TERM=xterm-256color` when SSH'ing into VM (lines 1072, 1142, 1188, 1274)
+  - **Problem:** This can cause opencode to hang when TERM is explicitly set in command environment (see opencode investigation)
+  - **Fix:** Remove explicit TERM setting from SSH commands, let TERM be inherited naturally from SSH connection
+  - **Impact:** Prevents opencode run from hanging when users run it in VM sessions started via cal-bootstrap
+  - **Reference:** [opencode-vm-investigation.md](opencode-vm-investigation.md) - TERM handling bug identified
+  - **Test:** Verify opencode run works after fix in cal-bootstrap started sessions
 - [ ] Reduce network check timeout from 5s to 3s for faster feedback (vm-auth.sh)
 - [ ] Add explicit error handling for scp failures in setup_scripts_folder (vm-auth.sh)
 - [ ] Check for specific opencode auth token file if documented (vm-auth.sh)
@@ -66,17 +73,19 @@
 
 - [ ] vm-auth.sh GitHub clone fails with network timeout (needs transparent proxy auto-start before clone attempt)
 - [ ] Investigate: Environment status should be shown as last item before "What would you like to work on?" prompt (Cursor-CLI only - works correctly in Opencode and Claude Code)
-- [ ] Z.AI GLM 4.7 API concurrency limit error in cal-dev VM (investigated 2026-01-25)
-  - Error: "High concurrency usage of this API, please reduce concurrency or contact customer... [retrying in 3s]"
-  - Works fine on host machine but fails in VM
-  - Likely causes: IP-based rate limiting (host + VM sharing same external IP) OR SSH tunnel multiplexing creating excess concurrent connections
-  - Proposed fixes:
-    1. Exclude Z.AI API endpoints (api.zhipu.ai, open.bigmodel.cn) from sshuttle tunneling
-    2. Use alternative model provider (Claude, GPT) with higher concurrency limits
-    3. Stagger VM and host usage to avoid concurrent API calls
-    4. Contact Z.AI support for increased concurrency limit
-  - Full investigation: [zai-glm-concurrency-error-investigation.md](zai-glm-concurrency-error-investigation.md)
-  - Recommended immediate action: Test with API endpoint bypass to confirm proxy is root cause
+- [x] Opencode VM issues (investigated 2026-01-25, resolved)
+  - **Status:** ✅ Resolved - opencode works correctly in VM
+  - **Finding:** `opencode run` works when TERM is inherited from environment, but hangs when TERM is explicitly set in command environment
+  - **Root cause:** Opencode bug in TERM environment variable handling (not a VM issue)
+  - **Workaround:** Use `opencode run` normally (TERM inherited) - works correctly
+  - **Documentation:** 
+    - [opencode-vm-summary.md](opencode-vm-summary.md) - Quick reference
+    - [opencode-vm-investigation.md](opencode-vm-investigation.md) - Full investigation
+    - [zai-glm-concurrency-error-investigation.md](zai-glm-concurrency-error-investigation.md) - Previous investigation (superseded)
+  - **Test script:** [test-opencode-vm.sh](../../scripts/test-opencode-vm.sh) - Automated testing
+- [ ] Z.AI GLM 4.7 API concurrency limit error in cal-dev VM (investigated 2026-01-25, superseded by opencode investigation)
+  - **Note:** This issue was actually an opencode processing bug, not an API issue. The Z.AI API works correctly (verified via direct curl tests). The real issue was `opencode run` hanging, which is now understood and documented above.
+  - Original investigation: [zai-glm-concurrency-error-investigation.md](zai-glm-concurrency-error-investigation.md)
 
 ---
 
