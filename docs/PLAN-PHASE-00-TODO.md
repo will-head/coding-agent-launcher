@@ -10,7 +10,7 @@
 
 ## 0.8 VM Management Improvements (9/11 Complete)
 
-- [ ] **REFINED:** Fix Screen Sharing issues (High Performance black screen, Standard copy/paste disconnect)
+- [ ] **PR #2:** Fix Screen Sharing issues (High Performance black screen, Standard copy/paste disconnect)
   - **Problem 1 (High Performance):** When accessing Tart VM via macOS Screen Sharing, High Performance mode shows locked/black screen and cannot be used
   - **Problem 2 (Standard):** Standard mode works but copy/paste to/from host causes VM to disconnect
   - **Investigation scope:**

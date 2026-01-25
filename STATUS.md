@@ -10,7 +10,7 @@
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| Fix Screen Sharing issues | PLAN-PHASE-00-TODO.md § 0.8 | Web research + investigate + fix High Performance black screen and Standard copy/paste disconnect | 2026-01-25 | Includes Tart GitHub/docs research, primary focus: fix Standard copy/paste |
+| *No refined TODOs* | | | | |
 
 ---
 
@@ -18,7 +18,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| *No PRs awaiting review* | | | |
+| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Document Screen Sharing modes and limitations | 2026-01-25 |
 
 ---
 
