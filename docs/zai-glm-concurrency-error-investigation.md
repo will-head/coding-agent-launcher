@@ -237,6 +237,79 @@ sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 \
 | 2026-01-25 | Attempted web research | Certificate errors, 429 rate limits |
 | 2026-01-25 | Compared network configs | Host direct vs VM via sshuttle |
 | 2026-01-25 | Analyzed root causes | Identified 5 potential causes |
+| 2026-01-25 | Tested with --proxy on | No concurrency issues, but garbled/strange output |
+| 2026-01-25 | Tested with --proxy off | Originally worked, but output also strange |
+| 2026-01-25 | Observed performance | Slow response times with --proxy on |
+
+## Additional Observations (2026-01-25)
+
+### Key Findings
+
+1. **No concurrency issues with `--proxy on`** - The concurrency error does not occur when proxy is enabled, but output is garbled/nonsensical
+2. **Slow performance with `--proxy on`** - Noticeable latency when using the transparent proxy
+3. **Proxy off originally worked** - Initially worked without proxy, but output was also strange
+4. **Opencode startup message** - Reports model refresh on launch:
+   ```
+   INFO  2026-01-25T16:33:41 +58ms service=models.dev file={} refreshing
+   ```
+
+### Output Examples
+
+#### Proxy Off - Garbled Output
+
+Model produces nonsensical text mixing random concepts, fragments, and formatting:
+
+```
+7. Test PR - Manual testing gate (7-step, test confirmation)
+8. Merge PR - Merge tested PRs (8-step with approvals)
+Enter number (1-8):
+▣  Build · glm-4.7-flash · 24.9s
+1
+Thinking: The user selected "1" which corresponds to the Interactive workflow...
+→ Read docs/WORKFLOW-INTERACTIVE.md 
+Thinking: ーズ:
+and: and:
+All* as V.{
+Thanks for a term "expert：
+   and  and in our own: 
+Hard.  or 
+2?  and SMUL:
+*:
+so:  and 
+ using: 
+\* and 、
+** for and  (plan
+to the theory:
+... [continues with random fragments, equations, references to unrelated topics like "protein", "chromatographic", "CORNER", etc.]
+▣  Build · glm-4.7-flash · interrupted
+```
+
+#### Proxy On - Garbled Output
+
+Similar nonsensical output with random fragments:
+
+```
+I'll read the Documentation workflow details.
+→ Read docs/WORKFLOW-DOCUMENTATION.md 
+Thinking: лав (Lumps etc.
+[... (missing the terminal? =  ...\] to be replaced by year on the; again... => replacing...  E-COMEGA
+)</arg_value>
+`` is not to = (n'the? The file, effectively, its? skip the role. No the (see t? (to, but your?
+... Perhaps even?ing the? If we? (.
+I? Cancel
+... [continues with random fragments, question marks, malformed syntax]
+▣  Build · glm-4.7-flash · 1m 32s
+```
+
+### Analysis
+
+The garbled output suggests either:
+- **Model instability** - GLM 4.7-flash may be unstable or experiencing issues
+- **Token encoding issues** - Character encoding problems through proxy/SSH tunnel
+- **API response corruption** - Responses being mangled in transit
+- **Model confusion** - Model entering a degenerate state
+
+This is a separate issue from the original concurrency error - the model now runs but produces unusable output regardless of proxy setting.
 
 ## Next Steps
 
@@ -293,4 +366,4 @@ curl -I https://api.zhipu.ai
 
 **Investigation Date:** 2026-01-25
 **Investigator:** Claude Sonnet 4.5
-**Status:** Root cause analysis complete, fixes proposed (not implemented)
+**Status:** Ongoing - concurrency issue resolved with proxy, but model produces garbled output regardless of proxy setting
