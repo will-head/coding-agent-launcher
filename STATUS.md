@@ -18,7 +18,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Implement clipboard sharing via tart-guest-agent | 2026-01-25 |
+| *No PRs awaiting review* | | | |
 
 ---
 
@@ -34,7 +34,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| *No PRs awaiting testing* | | | | |
+| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Implement clipboard sharing via tart-guest-agent | opencode | 2026-01-25 |
 
 ---
 
