@@ -50,9 +50,10 @@ scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 See `docs/WORKFLOWS.md` for complete index and `docs/WORKFLOW-*.md` for detailed procedures.
 
 ### TODOs
-- **`PLAN.md` is the single source of truth** for all TODOs
-- Phase complete only when ALL checkboxes are `[x]`
-- Code TODOs must also be in PLAN.md
+- **`PLAN.md` and phase TODO files are the single source of truth** for all TODOs
+- Phase overview in `PLAN.md`, detailed TODOs in `docs/PLAN-PHASE-XX-TODO.md`
+- Phase complete only when ALL checkboxes in TODO file are `[x]`
+- Code TODOs must also be tracked in phase TODO files
 
 ### ADRs
 **Never modify `docs/adr/*`** - ADRs are immutable historical records.
@@ -129,16 +130,28 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
    - Reiterate the workflow to the user in your own words
    - Confirm understanding of the workflow before proceeding
 3. Ask approval, then run `git status` and `git fetch`
-4. Read `PLAN.md` for TODOs and current phase
-5. Report status and suggest next steps
+4. Read `PLAN.md` for overview and current phase status
+5. Read active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`) for current tasks
+6. Report status and suggest next steps
+
+**Note:** Only read the active phase TODO file. Do not read future phase files until the current phase is complete.
 
 ---
 
 ## Documentation
 
 **Planning (read for tasks):**
-- [PLAN.md](PLAN.md) - TODOs and implementation tasks **(source of truth)**
+- [PLAN.md](PLAN.md) - Phase overview and current status **(source of truth)**
+- Phase TODO/DONE files:
+  - [PLAN-PHASE-00-TODO.md](docs/PLAN-PHASE-00-TODO.md) / [DONE](docs/PLAN-PHASE-00-DONE.md) - Bootstrap (active)
+  - [PLAN-PHASE-01-TODO.md](docs/PLAN-PHASE-01-TODO.md) / [DONE](docs/PLAN-PHASE-01-DONE.md) - CLI Foundation
+  - [PLAN-PHASE-02-TODO.md](docs/PLAN-PHASE-02-TODO.md) / [DONE](docs/PLAN-PHASE-02-DONE.md) - Agent Integration
+  - [PLAN-PHASE-03-TODO.md](docs/PLAN-PHASE-03-TODO.md) / [DONE](docs/PLAN-PHASE-03-DONE.md) - GitHub Workflow
+  - [PLAN-PHASE-04-TODO.md](docs/PLAN-PHASE-04-TODO.md) / [DONE](docs/PLAN-PHASE-04-DONE.md) - Environment Plugins
+  - [PLAN-PHASE-05-TODO.md](docs/PLAN-PHASE-05-TODO.md) / [DONE](docs/PLAN-PHASE-05-DONE.md) - TUI & Polish
 - [STATUS.md](STATUS.md) - Project status tracking (refined TODOs and PRs)
+
+**Important:** Read only the active phase TODO file per session. Future phases should not be read until current phase is complete.
 
 **Operational:**
 - [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) - Comprehensive operational guide
