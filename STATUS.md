@@ -26,7 +26,7 @@
 
 | PR | Branch | Description | Requested | Reason |
 |----|--------|-------------|-----------|--------|
-| *No PRs needing changes* | | | | |
+| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Document Screen Sharing modes and limitations | 2026-01-25 | Manual test failure: copy from Host to VM crashes on paste |
 
 ---
 
@@ -34,7 +34,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Document Screen Sharing modes and limitations | Self-review | 2026-01-25 |
+| *No PRs awaiting testing* | | | | |
 
 ---
 

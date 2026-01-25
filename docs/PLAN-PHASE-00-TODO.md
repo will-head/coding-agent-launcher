@@ -11,13 +11,13 @@
 ## 0.8 VM Management Improvements (10/11 Complete)
 
 - [x] **PR #2:** Document Screen Sharing modes and limitations (completed, see PR #2)
-  - **Status:** ✅ Documentation complete (bootstrap.md updated)
+  - **Status:** ⚠️ Testing failed - needs correction (PR #2 in Needs Changes)
   - **Findings:**
     - High Performance mode: Incompatible with Tart VMs (Virtualization.framework limitation) - no fix possible
-    - Standard mode copy/paste: Works reliably with Edit → Use Shared Clipboard enabled
+    - Standard mode copy/paste: VM to Host works, Host to VM crashes VM on paste ⚠️
     - Historical copy/paste disconnect issue: Fixed in Tart PR #154 (not affecting CAL setup)
-  - **Acceptance criteria met:** Comprehensive research documented, user guidance provided
-  - **Note:** Implementation fixes not required - issues are either platform limitations or already fixed in Tart
+  - **Acceptance criteria:** Partial met - documentation created but contains incorrect claims
+  - **Issue:** Copy from Host to VM crashes the VM (contradicts documentation claim)
   - **Documentation:** docs/bootstrap.md (lines 352-430)
 - [ ] Reduce network check timeout from 5s to 3s for faster feedback (vm-auth.sh)
 - [ ] Add explicit error handling for scp failures in setup_scripts_folder (vm-auth.sh)
