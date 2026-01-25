@@ -84,10 +84,15 @@ echo "📦 Installing/upgrading Homebrew packages..."
 for pkg in node gh tmux sshuttle; do
     if brew_installed "$pkg"; then
         echo "  → Upgrading $pkg..."
-        if brew upgrade "$pkg" 2>/dev/null; then
+        upgrade_output=$(brew upgrade "$pkg" 2>&1)
+        upgrade_exit=$?
+        if [ $upgrade_exit -eq 0 ]; then
             echo "  ✓ $pkg upgraded"
-        else
+        elif echo "$upgrade_output" | grep -q "already installed"; then
             echo "  ✓ $pkg already up to date"
+        else
+            echo "  ⚠ $pkg upgrade failed"
+            echo "  Error: $(echo "$upgrade_output" | head -2 | sed 's/^/    /')"
         fi
     else
         echo "  → Installing $pkg..."
@@ -98,6 +103,119 @@ for pkg in node gh tmux sshuttle; do
         fi
     fi
 done
+
+# Install tart-guest-agent (enables clipboard sharing)
+echo ""
+echo "📋 Installing Tart Guest Agent (for clipboard support)..."
+if brew_installed "tart-guest-agent"; then
+    echo "  → Upgrading tart-guest-agent..."
+    upgrade_output=$(brew upgrade cirruslabs/cli/tart-guest-agent 2>&1)
+    upgrade_exit=$?
+    if [ $upgrade_exit -eq 0 ]; then
+        echo "  ✓ tart-guest-agent upgraded"
+    elif echo "$upgrade_output" | grep -q "already installed"; then
+        echo "  ✓ tart-guest-agent already up to date"
+    else
+        echo "  ⚠ tart-guest-agent upgrade failed"
+        echo "  Error: $(echo "$upgrade_output" | head -2 | sed 's/^/    /')"
+    fi
+else
+    echo "  → Installing tart-guest-agent..."
+    if brew install cirruslabs/cli/tart-guest-agent; then
+        echo "  ✓ tart-guest-agent installed"
+    else
+        echo "  ✗ Failed to install tart-guest-agent"
+    fi
+fi
+
+# Configure tart-guest-agent to start automatically (enables clipboard sharing)
+echo ""
+echo "📋 Configuring Tart Guest Agent auto-start..."
+
+# Detect tart-guest-agent path
+TART_AGENT_PATH=""
+if command_exists tart-guest-agent; then
+    TART_AGENT_PATH=$(command -v tart-guest-agent)
+    echo "  → Detected tart-guest-agent at: $TART_AGENT_PATH"
+else
+    echo "  ✗ tart-guest-agent not found in PATH - cannot configure auto-start"
+fi
+
+if [ -n "$TART_AGENT_PATH" ]; then
+    AGENT_PLIST="$HOME/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist"
+    # Ensure user LaunchAgents directory exists
+    mkdir -p "$HOME/Library/LaunchAgents"
+    if [ ! -f "$AGENT_PLIST" ]; then
+        echo "  → Creating launchd configuration..."
+        cat > "$AGENT_PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>org.cirruslabs.tart-guest-agent</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${TART_AGENT_PATH}</string>
+        <string>--run-agent</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
+        <key>TERM</key>
+        <string>xterm-256color</string>
+    </dict>
+    <key>WorkingDirectory</key>
+    <string>/Users/admin</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/tart-guest-agent.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/tart-guest-agent.log</string>
+</dict>
+</plist>
+EOF
+
+        # Set proper permissions for user LaunchAgent
+        chmod 644 "$AGENT_PLIST"
+        echo "  ✓ Created launchd configuration at $AGENT_PLIST"
+
+        # Load the agent (will start automatically on boot)
+        load_output=$(launchctl load "$AGENT_PLIST" 2>&1)
+        load_exit=$?
+        if [ $load_exit -eq 0 ]; then
+            echo "  ✓ Tart Guest Agent started (clipboard sharing enabled)"
+        else
+            echo "  ⚠ Could not start agent now (will start on next boot)"
+            if [ -n "$load_output" ]; then
+                echo "  Error: $(echo "$load_output" | head -1 | sed 's/^/    /')"
+            fi
+        fi
+    else
+        echo "  ✓ Tart Guest Agent already configured"
+
+        # Check if running
+        if launchctl list | grep -q "org.cirruslabs.tart-guest-agent"; then
+            echo "  ✓ Tart Guest Agent is running"
+        else
+            echo "  → Starting Tart Guest Agent..."
+            load_output=$(launchctl load "$AGENT_PLIST" 2>&1)
+            load_exit=$?
+            if [ $load_exit -eq 0 ]; then
+                echo "  ✓ Tart Guest Agent started"
+            else
+                echo "  ⚠ Could not start agent (may need reboot)"
+                if [ -n "$load_output" ]; then
+                    echo "  Error: $(echo "$load_output" | head -1 | sed 's/^/    /')"
+                fi
+            fi
+        fi
+    fi
+fi
 
 # Install Claude Code
 echo ""
@@ -424,6 +542,19 @@ else
     echo "  ✗ sshuttle: not found"
 fi
 
+if command_exists tart-guest-agent; then
+    TART_AGENT_VERSION=$(tart-guest-agent --version 2>/dev/null | head -n1)
+    echo "  ✓ tart-guest-agent: $TART_AGENT_VERSION"
+    # Check if agent is running
+    if launchctl list | grep -q "org.cirruslabs.tart-guest-agent"; then
+        echo "    → Status: Running (clipboard sharing enabled)"
+    else
+        echo "    → Status: Not running (will start on reboot)"
+    fi
+else
+    echo "  ✗ tart-guest-agent: not found"
+fi
+
 # Configure transparent proxy for reliable network access
 # (Only configure for future use - proxy should already be running if needed)
 if [ -n "$HOST_USER" ]; then
@@ -616,6 +747,8 @@ echo ""
 echo "💡 Notes:"
 echo "  • Auto-login is enabled - VM will boot to desktop for Screen Sharing"
 echo "  • Login keychain is unlocked - enables agent authentication via SSH"
+echo "  • Clipboard sharing enabled - VM to Host copy works in Screen Sharing (Edit → Use Shared Clipboard)"
+echo "  • WARNING: Do NOT paste from Host to VM - this will crash the VM"
 if [ -n "$HOST_USER" ]; then
     echo "  • Transparent proxy configured (sshuttle) - no app config needed"
     echo "  • Proxy commands: proxy-start, proxy-stop, proxy-status, proxy-log"

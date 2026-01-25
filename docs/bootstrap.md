@@ -349,13 +349,124 @@ tart delete <vm>             # Delete VM
 tart clone <src> <dst>       # Clone/snapshot
 ```
 
+## Screen Sharing
+
+macOS Screen Sharing provides GUI access to Tart VMs. **Always use Standard mode** - High Performance mode is incompatible with Tart VMs.
+
+### Quick Access
+
+```bash
+# Connect to cal-dev via Screen Sharing
+open vnc://$(tart ip cal-dev)   # password: admin
+```
+
+### Performance Modes
+
+macOS Sonoma offers two Screen Sharing modes when connecting. **Only Standard mode works with Tart VMs.**
+
+#### ✅ Standard Mode (Recommended)
+
+**Use this mode** - it's the only mode that works reliably with Tart VMs.
+
+**Features:**
+- ✅ Works with all Tart VMs
+- ⚠️ Partial clipboard sharing (VM to Host only - see warning below)
+- ✅ Reliable connection
+- ✅ Sufficient performance for GUI tasks
+
+**Clipboard Sharing:**
+
+The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-guest-agent), which enables one-way clipboard sharing from VM to Host:
+
+1. Connect via `open vnc://$(tart ip cal-dev)`
+2. In Screen Sharing window: **Edit → Use Shared Clipboard** (enable checkmark)
+3. Clipboard sharing works one-way only:
+   - ✅ Copy from VM → Paste in Host (works correctly)
+   - ❌ Copy from Host → Paste in VM (causes Screen Sharing disconnect - DO NOT USE)
+
+**⚠️ CRITICAL WARNING - Host to VM Paste:**
+
+**DO NOT paste from Host to VM** - this will cause Screen Sharing to disconnect (and may crash the VM in some cases). Only copy from VM to Host is supported.
+
+**Workaround for transferring text to VM:**
+- Type text directly in VM
+- Use SSH to echo text into files: `ssh admin@$(tart ip cal-dev) 'echo "text" > file.txt'`
+- Mount shared folders (if configured)
+- Use git to sync files
+
+**Technical Details:**
+- The guest agent implements the SPICE vdagent protocol for clipboard operations
+- Runs automatically as a launchd service (no manual start required)
+- Pre-installed during VM setup via `vm-setup.sh`
+- Verify status: `launchctl list | grep tart-guest-agent`
+
+#### ❌ High Performance Mode (Incompatible)
+
+**Do not use** - this mode is incompatible with Tart VMs and will show a black/locked screen.
+
+**Symptoms:**
+- Black screen upon connection
+- VM appears locked/unresponsive
+- No desktop or login window visible
+
+**Why it doesn't work:**
+- Tart uses Apple's Virtualization.framework which doesn't support High Performance mode
+- When a Tart VM is created with "high performance" profile selected, VNC/Screen Sharing connections are blocked entirely
+- This is a limitation of the Virtualization.framework, not a Tart bug
+
+**Technical Details:**
+- High Performance mode requires both Macs to be Apple Silicon running macOS Sonoma 14+
+- Communicates over UDP ports 5900, 5901, 5902
+- Provides 4K display support, high frame rates (30-60 fps), and advanced media features
+- However, the Virtualization.framework's performance profile implementation blocks VNC when "high performance" is selected
+
+**References:**
+- [Tart GitHub Issue #818](https://github.com/cirruslabs/tart/issues/818) - Documents High Performance incompatibility
+- [Apple Support: High Performance Screen Sharing](https://support.apple.com/guide/remote-desktop/use-high-performance-screen-sharing-apdf8e09f5a9/mac)
+
+### Clipboard Support History
+
+**Early Limitation (Resolved):**
+- Early versions of Tart had a clipboard bug where copy/paste would cause Screen Sharing to disconnect
+- Fixed in [Tart PR #154](https://github.com/cirruslabs/tart/pull/154) - moved VNC to public APIs with clipboard support
+
+**Partial Clipboard Support (Current):**
+- One-way clipboard sharing (VM → Host only) via [tart-guest-agent](https://github.com/cirruslabs/tart-guest-agent)
+- Implements SPICE vdagent protocol for clipboard operations
+- Host → VM paste causes VM crash (known limitation)
+- Pre-installed during CAL VM setup
+
+**References:**
+- [Tart GitHub Issue #152](https://github.com/cirruslabs/tart/issues/152) - Original clipboard disconnect issue
+- [Tart GitHub Issue #14](https://github.com/cirruslabs/tart/issues/14) - Host to VM clipboard support request
+- [Tart PR #1046](https://github.com/cirruslabs/tart/pull/1046) - Clipboard sharing implementation
+- [Tart Guest Agent Blog Post](https://tart.run/blog/2025/06/01/bridging-the-gaps-with-the-tart-guest-agent/) - Feature announcement
+
+### Use Cases
+
+**When to use Screen Sharing:**
+- Agent authentication requiring browser (especially Cursor Agent OAuth)
+- Manual keychain unlock
+- GUI-based configuration or debugging
+- File browsing with Finder
+- Testing GUI applications
+
+**When to use SSH:**
+- Development work (primary method)
+- Running terminal-based tools (agents, git, etc.)
+- Better performance for command-line tasks
+- tmux session persistence
+
 ## Troubleshooting
 
 - **SSH refused**: VM still booting - wait or check System Preferences → Sharing → Remote Login
 - **Agent not found**: Restart shell with `exec zsh` or check PATH
 - **Disk full**: `rm -rf ~/Library/Caches/* ~/.npm/_cacache`
-- **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (standard mode, not High Performance): `open vnc://$(tart ip cal-dev)` → manually unlock keychain → authenticate agent
+- **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (Standard mode): `open vnc://$(tart ip cal-dev)` → manually unlock keychain → authenticate agent
 - **Screen Sharing shows lock screen**: Auto-login requires VM reboot to activate. Stop and restart the VM.
+- **Screen Sharing shows black screen/locked VM**: You selected High Performance mode - disconnect and reconnect using **Standard mode** instead. This mode is incompatible with Tart VMs.
+- **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard. Only VM → Host copying works; Host → VM pasting causes Screen Sharing to disconnect. If VM → Host copying fails, verify tart-guest-agent is running: `launchctl list | grep tart-guest-agent`. If not running, reload: `launchctl load ~/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist`
+- **Screen Sharing disconnects when pasting from Host**: This is a known limitation - only VM → Host clipboard works reliably. Do not paste from Host to VM as it will disconnect the Screen Sharing session. Use SSH or other methods to transfer text to the VM.
 - **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
 - **First-run automation didn't trigger**: Check if `~/.cal-first-run` flag exists. If missing, run `vm-auth.sh` manually.
 - **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host
