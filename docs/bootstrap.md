@@ -293,7 +293,7 @@ Once logged in to the VM:
 ```bash
 claude      # Claude Code
 agent       # Cursor CLI
-opencode    # opencode
+opencode    # opencode (works correctly in VM - see troubleshooting if issues)
 gh          # GitHub CLI
 ```
 
@@ -468,6 +468,7 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 - **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard. Only VM → Host copying works; Host → VM pasting causes Screen Sharing to disconnect. If VM → Host copying fails, verify tart-guest-agent is running: `launchctl list | grep tart-guest-agent`. If not running, reload: `launchctl load ~/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist`
 - **Screen Sharing disconnects when pasting from Host**: This is a known limitation - only VM → Host clipboard works reliably. Do not paste from Host to VM as it will disconnect the Screen Sharing session. Use SSH or other methods to transfer text to the VM.
 - **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
+- **opencode run hangs**: This occurs when TERM is explicitly set in the command environment. Use `opencode run` normally (TERM inherited from environment) - it works correctly. See [Opencode VM Summary](opencode-vm-summary.md) for details.
 - **First-run automation didn't trigger**: Check if `~/.cal-first-run` flag exists. If missing, run `vm-auth.sh` manually.
 - **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host
 
