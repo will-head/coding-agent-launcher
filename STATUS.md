@@ -42,7 +42,7 @@
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|
-| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Document Screen Sharing modes and limitations for Tart VMs | User | 2026-01-25 |
+| *No PRs ready to merge* | | | | |
 
 ---
 
@@ -50,7 +50,7 @@
 
 | PR | Branch | Description | Merged |
 |----|--------|-------------|--------|
-| *No merged PRs* | | | |
+| [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Document Screen Sharing modes and limitations for Tart VMs | 2026-01-25 |
 
 ---
 

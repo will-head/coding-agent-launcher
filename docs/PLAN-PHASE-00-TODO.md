@@ -10,8 +10,8 @@
 
 ## 0.8 VM Management Improvements (10/11 Complete)
 
-- [x] **PR #2:** Implement clipboard sharing via tart-guest-agent (completed, tested, ready for merge)
-  - **Status:** ✅ Implementation complete - tested and verified
+- [x] **PR #2:** Implement clipboard sharing via tart-guest-agent (merged)
+  - **Status:** ✅ Merged to main (2026-01-25)
   - **Solution:** Installed tart-guest-agent which enables VM→Host clipboard sharing (one-way only)
   - **Findings:**
     - High Performance mode: Incompatible with Tart VMs (Virtualization.framework limitation) - shows black screen and locked VM
