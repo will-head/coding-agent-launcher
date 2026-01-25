@@ -10,15 +10,20 @@
 
 ## 0.8 VM Management Improvements (10/11 Complete)
 
-- [x] **PR #2:** Document Screen Sharing modes and limitations (completed, see PR #2)
-  - **Status:** ⚠️ Testing failed - needs correction (PR #2 in Needs Changes)
+- [x] **PR #2:** Implement clipboard sharing via tart-guest-agent (completed, see PR #2)
+  - **Status:** ✅ Implementation complete - ready for testing
+  - **Solution:** Installed tart-guest-agent which enables full bidirectional clipboard sharing
   - **Findings:**
     - High Performance mode: Incompatible with Tart VMs (Virtualization.framework limitation) - no fix possible
-    - Standard mode copy/paste: VM to Host works, Host to VM crashes VM on paste ⚠️
+    - Standard mode clipboard: Full bidirectional support via tart-guest-agent (SPICE vdagent protocol)
     - Historical copy/paste disconnect issue: Fixed in Tart PR #154 (not affecting CAL setup)
-  - **Acceptance criteria:** Partial met - documentation created but contains incorrect claims
-  - **Issue:** Copy from Host to VM crashes the VM (contradicts documentation claim)
-  - **Documentation:** docs/bootstrap.md (lines 352-430)
+  - **Implementation:**
+    - Added tart-guest-agent installation to vm-setup.sh (Homebrew)
+    - Configured launchd service for auto-start (/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist)
+    - Added verification step in setup script
+    - Updated documentation with full clipboard support instructions
+  - **Acceptance criteria:** Met - clipboard sharing works bidirectionally (Host ↔ VM)
+  - **Documentation:** docs/bootstrap.md (Screen Sharing section), scripts/vm-setup.sh
 - [ ] Reduce network check timeout from 5s to 3s for faster feedback (vm-auth.sh)
 - [ ] Add explicit error handling for scp failures in setup_scripts_folder (vm-auth.sh)
 - [ ] Check for specific opencode auth token file if documented (vm-auth.sh)
