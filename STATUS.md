@@ -10,7 +10,7 @@
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| *No refined TODOs* | | | | |
+| Fix Screen Sharing issues | PLAN-PHASE-00-TODO.md § 0.8 | Web research + investigate + fix High Performance black screen and Standard copy/paste disconnect | 2026-01-25 | Includes Tart GitHub/docs research, primary focus: fix Standard copy/paste |
 
 ---
 
