@@ -1069,7 +1069,7 @@ do_init() {
     # 2. Detect first-run flag and run vm-auth.sh
     # 3. Clear first-run flag
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s setup 'zsh -l'"
+        "${VM_USER}@${VM_IP}" "/opt/homebrew/bin/tmux new-session -A -s setup 'zsh -l'"
 
     echo ""
     echo "Continuing with setup..."
@@ -1139,7 +1139,7 @@ do_run() {
             echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
             echo ""
             ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s cal"
+                "${VM_USER}@${VM_IP}" "/opt/homebrew/bin/tmux new-session -A -s cal"
         else
             echo "Could not get VM IP address."
             exit 1
@@ -1185,7 +1185,7 @@ do_run() {
 
     # SSH into the VM with tmux (always)
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s cal"
+        "${VM_USER}@${VM_IP}" "/opt/homebrew/bin/tmux new-session -A -s cal"
 }
 
 # === STOP MODE ===
@@ -1271,7 +1271,7 @@ do_restart() {
 
     # SSH into the VM with tmux (always)
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s cal"
+        "${VM_USER}@${VM_IP}" "/opt/homebrew/bin/tmux new-session -A -s cal"
 }
 
 # === SNAPSHOT MODE ===
