@@ -349,13 +349,94 @@ tart delete <vm>             # Delete VM
 tart clone <src> <dst>       # Clone/snapshot
 ```
 
+## Screen Sharing
+
+macOS Screen Sharing provides GUI access to Tart VMs. **Always use Standard mode** - High Performance mode is incompatible with Tart VMs.
+
+### Quick Access
+
+```bash
+# Connect to cal-dev via Screen Sharing
+open vnc://$(tart ip cal-dev)   # password: admin
+```
+
+### Performance Modes
+
+macOS Sonoma offers two Screen Sharing modes when connecting. **Only Standard mode works with Tart VMs.**
+
+#### ✅ Standard Mode (Recommended)
+
+**Use this mode** - it's the only mode that works reliably with Tart VMs.
+
+**Features:**
+- ✅ Works with all Tart VMs
+- ✅ Copy/paste between host and VM (via Edit → Use Shared Clipboard)
+- ✅ Reliable connection
+- ✅ Sufficient performance for GUI tasks
+
+**Copy/Paste:**
+1. Connect via `open vnc://$(tart ip cal-dev)`
+2. In Screen Sharing window: **Edit → Use Shared Clipboard** (enable checkmark)
+3. Copy/paste now works between host and VM
+
+#### ❌ High Performance Mode (Incompatible)
+
+**Do not use** - this mode is incompatible with Tart VMs and will show a black/locked screen.
+
+**Why it doesn't work:**
+- Tart uses Apple's Virtualization.framework which doesn't support High Performance mode
+- When a Tart VM is created with "high performance" profile selected, VNC/Screen Sharing connections are blocked entirely
+- This is a limitation of the Virtualization.framework, not a Tart bug
+
+**Technical Details:**
+- High Performance mode requires both Macs to be Apple Silicon running macOS Sonoma 14+
+- Communicates over UDP ports 5900, 5901, 5902
+- Provides 4K display support, high frame rates (30-60 fps), and advanced media features
+- However, the Virtualization.framework's performance profile implementation blocks VNC when "high performance" is selected
+
+**References:**
+- [Tart GitHub Issue #818](https://github.com/cirruslabs/tart/issues/818) - Documents High Performance incompatibility
+- [Apple Support: High Performance Screen Sharing](https://support.apple.com/guide/remote-desktop/use-high-performance-screen-sharing-apdf8e09f5a9/mac)
+
+### Historical Issue: Copy/Paste Disconnect (Resolved)
+
+**Issue:** Early versions of Tart had a clipboard bug where copy/paste would cause Screen Sharing to disconnect.
+
+**Status:** ✅ **Fixed in Tart PR #154**
+- Original cause: `--vnc` flag used private APIs that disabled clipboard
+- Solution: Tart split into two modes:
+  - `--vnc` uses public APIs with clipboard support (default)
+  - `--experimental-vnc` uses private APIs without clipboard (for recovery mode)
+- CAL uses `--no-graphics` (not `--vnc`), so this issue doesn't affect our setup
+
+**References:**
+- [Tart GitHub Issue #152](https://github.com/cirruslabs/tart/issues/152) - Original clipboard issue
+- [Tart PR #154](https://github.com/cirruslabs/tart/pull/154) - Fix implementation
+
+### Use Cases
+
+**When to use Screen Sharing:**
+- Agent authentication requiring browser (especially Cursor Agent OAuth)
+- Manual keychain unlock
+- GUI-based configuration or debugging
+- File browsing with Finder
+- Testing GUI applications
+
+**When to use SSH:**
+- Development work (primary method)
+- Running terminal-based tools (agents, git, etc.)
+- Better performance for command-line tasks
+- tmux session persistence
+
 ## Troubleshooting
 
 - **SSH refused**: VM still booting - wait or check System Preferences → Sharing → Remote Login
 - **Agent not found**: Restart shell with `exec zsh` or check PATH
 - **Disk full**: `rm -rf ~/Library/Caches/* ~/.npm/_cacache`
-- **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (standard mode, not High Performance): `open vnc://$(tart ip cal-dev)` → manually unlock keychain → authenticate agent
+- **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (Standard mode): `open vnc://$(tart ip cal-dev)` → manually unlock keychain → authenticate agent
 - **Screen Sharing shows lock screen**: Auto-login requires VM reboot to activate. Stop and restart the VM.
+- **Screen Sharing shows black screen**: You selected High Performance mode - disconnect and reconnect using **Standard mode** instead
+- **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard in the Screen Sharing window
 - **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
 - **First-run automation didn't trigger**: Check if `~/.cal-first-run` flag exists. If missing, run `vm-auth.sh` manually.
 - **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host
