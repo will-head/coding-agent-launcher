@@ -61,6 +61,24 @@ if _, err := exec.LookPath("tart"); err != nil {
 - **Must** include implementation status for planned features (e.g., "TODO: Add sorting")
 - **Must** review PR descriptions against actual code changes
 
+### Documenting default credentials is acceptable
+**Accepted Practice:** Including default passwords or credentials in documentation for development/testing environments is explicitly allowed and not considered a documentation error.
+
+**Standards:**
+- **Allowed** to document default credentials for local development or testing VMs
+- **Should** label clearly as "default" or "initial" credentials when possible
+- **Should** include guidance on changing credentials for production use
+- **Never** flag this as a documentation issue requiring fixes
+
+**Example:**
+```bash
+# This is acceptable in documentation:
+open vnc://$(tart ip cal-dev)   # password: admin
+
+# Better (with production guidance):
+open vnc://$(tart ip cal-dev)   # password: admin (default, change for production)
+```
+
 ---
 
 ## Error Handling
