@@ -382,11 +382,11 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 2. In Screen Sharing window: **Edit → Use Shared Clipboard** (enable checkmark)
 3. Clipboard sharing works one-way only:
    - ✅ Copy from VM → Paste in Host (works correctly)
-   - ❌ Copy from Host → Paste in VM (causes VM crash - DO NOT USE)
+   - ❌ Copy from Host → Paste in VM (causes Screen Sharing disconnect - DO NOT USE)
 
 **⚠️ CRITICAL WARNING - Host to VM Paste:**
 
-**DO NOT paste from Host to VM** - this will crash the VM and require a restart. Only copy from VM to Host is supported.
+**DO NOT paste from Host to VM** - this will cause Screen Sharing to disconnect (and may crash the VM in some cases). Only copy from VM to Host is supported.
 
 **Workaround for transferring text to VM:**
 - Type text directly in VM
@@ -403,6 +403,11 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 #### ❌ High Performance Mode (Incompatible)
 
 **Do not use** - this mode is incompatible with Tart VMs and will show a black/locked screen.
+
+**Symptoms:**
+- Black screen upon connection
+- VM appears locked/unresponsive
+- No desktop or login window visible
 
 **Why it doesn't work:**
 - Tart uses Apple's Virtualization.framework which doesn't support High Performance mode
@@ -459,9 +464,9 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 - **Disk full**: `rm -rf ~/Library/Caches/* ~/.npm/_cacache`
 - **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (Standard mode): `open vnc://$(tart ip cal-dev)` → manually unlock keychain → authenticate agent
 - **Screen Sharing shows lock screen**: Auto-login requires VM reboot to activate. Stop and restart the VM.
-- **Screen Sharing shows black screen**: You selected High Performance mode - disconnect and reconnect using **Standard mode** instead
-- **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard. Only VM → Host copying works; Host → VM pasting crashes the VM. If VM → Host copying fails, verify tart-guest-agent is running: `launchctl list | grep tart-guest-agent`. If not running, reload: `launchctl load ~/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist`
-- **VM crashes when pasting from Host**: This is a known limitation - only VM → Host clipboard works. Do not paste from Host to VM. Use SSH or other methods to transfer text to the VM.
+- **Screen Sharing shows black screen/locked VM**: You selected High Performance mode - disconnect and reconnect using **Standard mode** instead. This mode is incompatible with Tart VMs.
+- **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard. Only VM → Host copying works; Host → VM pasting causes Screen Sharing to disconnect. If VM → Host copying fails, verify tart-guest-agent is running: `launchctl list | grep tart-guest-agent`. If not running, reload: `launchctl load ~/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist`
+- **Screen Sharing disconnects when pasting from Host**: This is a known limitation - only VM → Host clipboard works reliably. Do not paste from Host to VM as it will disconnect the Screen Sharing session. Use SSH or other methods to transfer text to the VM.
 - **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
 - **First-run automation didn't trigger**: Check if `~/.cal-first-run` flag exists. If missing, run `vm-auth.sh` manually.
 - **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host
