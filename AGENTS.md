@@ -137,7 +137,12 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 3. Ask approval, then run `git status` and `git fetch`
 4. Read `PLAN.md` for overview and current phase status
 5. Read active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`) for current tasks
-6. Report status and suggest next steps
+6. **Check environment** - Detect and display execution environment:
+   - Run: `echo $CAL_VM`
+   - If `CAL_VM=true`: Display "✅ **Running in cal-dev VM** (isolated environment)"
+   - If `CAL_VM≠true`: Display "⚠️  **Running on HOST machine** (not isolated)"
+   - This ensures awareness of execution environment before proceeding with any operations
+7. Report status and suggest next steps
 
 **Note:** Only read the active phase TODO file. Do not read future phase files until the current phase is complete.
 
