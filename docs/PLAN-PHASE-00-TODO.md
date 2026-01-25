@@ -65,6 +65,17 @@
 ## Known Issues
 
 - [ ] vm-auth.sh GitHub clone fails with network timeout (needs transparent proxy auto-start before clone attempt)
+- [ ] Z.AI GLM 4.7 API concurrency limit error in cal-dev VM (investigated 2026-01-25)
+  - Error: "High concurrency usage of this API, please reduce concurrency or contact customer... [retrying in 3s]"
+  - Works fine on host machine but fails in VM
+  - Likely causes: IP-based rate limiting (host + VM sharing same external IP) OR SSH tunnel multiplexing creating excess concurrent connections
+  - Proposed fixes:
+    1. Exclude Z.AI API endpoints (api.zhipu.ai, open.bigmodel.cn) from sshuttle tunneling
+    2. Use alternative model provider (Claude, GPT) with higher concurrency limits
+    3. Stagger VM and host usage to avoid concurrent API calls
+    4. Contact Z.AI support for increased concurrency limit
+  - Full investigation: [zai-glm-concurrency-error-investigation.md](zai-glm-concurrency-error-investigation.md)
+  - Recommended immediate action: Test with API endpoint bypass to confirm proxy is root cause
 
 ---
 
