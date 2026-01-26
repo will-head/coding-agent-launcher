@@ -129,7 +129,17 @@ cursor_authenticated() {
 }
 
 claude_authenticated() {
-    command_exists claude && [ -d ~/.claude ] && [ -n "$(ls -A ~/.claude 2>/dev/null)" ]
+    if ! command_exists claude; then
+        return 1
+    fi
+
+    if [ ! -f ~/.claude/settings.json ]; then
+        return 1
+    fi
+
+    # Check if settings.json has actual content (not just empty braces)
+    local content=$(cat ~/.claude/settings.json 2>/dev/null | tr -d '[:space:]')
+    [ "$content" != "{}" ] && [ -n "$content" ]
 }
 
 # Show authentication status summary

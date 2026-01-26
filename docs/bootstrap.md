@@ -292,6 +292,7 @@ Once logged in to the VM:
 
 ```bash
 claude      # Claude Code
+ccs         # CCS (Claude Code Switch)
 agent       # Cursor CLI
 opencode    # opencode (works correctly in VM - see troubleshooting if issues)
 gh          # GitHub CLI

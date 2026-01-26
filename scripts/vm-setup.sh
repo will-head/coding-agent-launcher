@@ -260,6 +260,22 @@ else
     fi
 fi
 
+# Install CCS (Claude Code Switch)
+echo ""
+echo "🚀 Installing CCS (Claude Code Switch)..."
+if command_exists ccs; then
+    echo "  ✓ CCS already installed"
+else
+    # Ensure node/npm is in PATH (reload brew environment)
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+
+    if npm install -g @kaitranntt/ccs; then
+        echo "  ✓ CCS installed"
+    else
+        echo "  ✗ Failed to install CCS"
+    fi
+fi
+
 # Create code directory for development
 echo ""
 echo "📁 Creating code directory..."

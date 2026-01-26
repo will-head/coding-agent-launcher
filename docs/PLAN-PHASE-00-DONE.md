@@ -117,6 +117,10 @@
 - [x] Check host SSH server and Python availability
 - [x] Comprehensive documentation (docs/proxy.md, updated bootstrap.md and architecture.md)
 
+### Installation Improvements (Phase 0.10 - Partial)
+- [x] Add CCS (Claude Code Switch) installation during --init (completed 2026-01-26)
+- [x] Fix Claude Code authentication detection (check settings.json content, not just existence) (completed 2026-01-26)
+
 ### Init Improvements and Enhancements (Phase 0.10 - Partial)
 - [x] Add option to sync git repos on init (clone specified repos into VM automatically)
 - [x] **Cursor OAuth authentication working** - OAuth now works with automatic keychain unlock (see Phase 0.8). First-run automation triggers vm-auth.sh on first login to authenticate all agents including Cursor.
