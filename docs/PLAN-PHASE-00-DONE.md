@@ -166,6 +166,32 @@
 - [x] Remove cal-dev prefix from snapshot names (snapshots now use exact names specified by user)
 - [x] When cal-init exists and user runs `--init` ask: Do you want to replace cal-init with current cal-dev y/N
 
+### First Login and Logout Improvements (Completed 2026-01-26)
+- [x] **Fixed first-run flag setting reliability**
+  - Problem: Booting cal-init briefly to set flag didn't get IP consistently (network timing issue)
+  - Solution: Set flag in cal-dev (while running with known IP) → Clone to cal-init (flag copies) → Remove flag from cal-dev after restart
+  - Implementation: Modified cal-bootstrap --init flow and replace-init flow
+  - Result: 100% reliable flag setting without ever booting cal-init separately
+- [x] **Fixed logout cancel keychain unlock spam**
+  - Problem: Cancelling logout with exec zsh -l re-ran keychain unlock and first-run checks
+  - Solution: Added CAL_SESSION_INITIALIZED flag to prevent repeat execution in same session chain
+  - Implementation: Wrapped keychain unlock in session flag check, flag persists through exec
+  - Result: Clean shell after logout cancel, git check still runs on next exit
+- [x] **Simplified vm-first-run.sh**
+  - Removed: Authentication checking, re-auth prompts, repository sync/pull, clone prompts
+  - Kept: Network connectivity with proxy auto-start, remote update checking
+  - Added: Better fetch error diagnostics (timeout, auth, network categories)
+  - Result: Fast, focused script that shows which repos have available updates
+- [x] **Fixed macOS compatibility issues**
+  - Removed timeout command dependency (not available on macOS by default)
+  - Git has built-in timeouts, external timeout not needed
+  - Fixed status messages to distinguish "up to date" vs "fetch failed"
+- [x] **Logout git status check**
+  - On logout (exit, Ctrl-D, Ctrl-C): Scans ~/code for uncommitted or unpushed changes
+  - Prompts user to push before exit if changes found
+  - Allows user to abort logout (exec zsh -l) or continue despite changes
+  - Implemented in ~/.zlogout via vm-setup.sh
+
 ### Documentation Cleanup (Complete)
 - [x] Clean up AGENTS.md (CLAUDE.md symlinks to it)
   - [x] Change internal refs from CLAUDE.md to AGENTS.md

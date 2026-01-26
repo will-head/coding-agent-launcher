@@ -22,19 +22,13 @@
 ### Repository Management
 - [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning
 
-### First Login Git Updates (WIP - Partially Complete)
+### First Login Git Updates (Complete)
 - [x] Created vm-first-run.sh for post-restore repo sync (completed 2026-01-26)
 - [x] Separated vm-auth.sh (--init only) from vm-first-run.sh (restore only) (completed 2026-01-26)
 - [x] Added logout git status check in vm-setup.sh (completed 2026-01-26)
-- [ ] **FIX**: First-run flag setting in cal-init unreliable (booting cal-init briefly doesn't get IP consistently)
-  - Current approach: Stop cal-dev → Clone to cal-init → Start cal-init → Set flag → Stop cal-init (FAILS)
-  - Better approach: Run vm-auth → Exit → Set first-run flag in cal-dev (while running) → Stop cal-dev → Clone to cal-init → Remove first-run flag from cal-dev → Start cal-dev
-  - This ensures flag is set before clone, no need to boot cal-init separately
-
-### Logout Git Status Check
-- [ ] On logout (exit, Ctrl-D, Ctrl-C) scan ~/code directories for git changes
-- [ ] Prompt user to push before exit if uncommitted/unpushed changes found
-- [ ] Allow user to abort logout or continue despite changes
+- [x] Fixed first-run flag setting reliability (completed 2026-01-26)
+- [x] Simplified vm-first-run.sh to check for remote updates only (completed 2026-01-26)
+- [x] Fixed logout cancel to not re-run keychain unlock (completed 2026-01-26)
 
 ### Installation Improvements
 - [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)

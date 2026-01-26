@@ -285,41 +285,45 @@ if ! grep -q '# CAL Keychain Auto-Unlock' ~/.zshrc; then
     cat >> ~/.zshrc <<'KEYCHAIN_EOF'
 
 # CAL Keychain Auto-Unlock
-# Ensures keychain is unlocked for SSH access on every login
-if [ -f ~/.cal-vm-config ]; then
-    source ~/.cal-vm-config
-    if security unlock-keychain -p "${VM_PASSWORD:-admin}" login.keychain 2>/dev/null; then
-        echo "🔐 Login keychain: ✓"
-    else
-        echo "🔐 Login keychain: ⚠ Could not unlock (may need manual unlock)"
-    fi
-fi
+# Only run on login shells, and only if not already done in this session chain
+if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
+    export CAL_SESSION_INITIALIZED=1
 
-# CAL Auth Needed (during --init)
-# Runs vm-auth.sh for initial authentication during cal-bootstrap --init
-if [ -f ~/.cal-auth-needed ]; then
-    rm -f ~/.cal-auth-needed
-    if [ -f ~/scripts/vm-auth.sh ]; then
-        echo ""
-        echo "🚀 Running initial authentication..."
-        echo ""
-        CAL_AUTH_NEEDED=1 zsh ~/scripts/vm-auth.sh
-        # Exit to allow cal-bootstrap to continue with cal-init creation
-        # User will be automatically reconnected after cal-init is ready
-        exit 0
+    if [ -f ~/.cal-vm-config ]; then
+        source ~/.cal-vm-config
+        if security unlock-keychain -p "${VM_PASSWORD:-admin}" login.keychain 2>/dev/null; then
+            echo "🔐 Login keychain: ✓"
+        else
+            echo "🔐 Login keychain: ⚠ Could not unlock (may need manual unlock)"
+        fi
     fi
-fi
 
-# CAL First Run (after restoring cal-init)
-# Runs vm-first-run.sh to sync repositories after restoring cal-init
-if [ -f ~/.cal-first-run ]; then
-    rm -f ~/.cal-first-run
-    if [ -f ~/scripts/vm-first-run.sh ]; then
-        echo ""
-        echo "🔄 First login detected - syncing repositories..."
-        echo ""
-        zsh ~/scripts/vm-first-run.sh
-        # Stay in cal-dev shell (don't exit like vm-auth does)
+    # CAL Auth Needed (during --init)
+    # Runs vm-auth.sh for initial authentication during cal-bootstrap --init
+    if [ -f ~/.cal-auth-needed ]; then
+        rm -f ~/.cal-auth-needed
+        if [ -f ~/scripts/vm-auth.sh ]; then
+            echo ""
+            echo "🚀 Running initial authentication..."
+            echo ""
+            CAL_AUTH_NEEDED=1 zsh ~/scripts/vm-auth.sh
+            # Exit to allow cal-bootstrap to continue with cal-init creation
+            # User will be automatically reconnected after cal-init is ready
+            exit 0
+        fi
+    fi
+
+    # CAL First Run (after restoring cal-init)
+    # Runs vm-first-run.sh to check for remote repository updates after restoring cal-init
+    if [ -f ~/.cal-first-run ]; then
+        rm -f ~/.cal-first-run
+        if [ -f ~/scripts/vm-first-run.sh ]; then
+            echo ""
+            echo "🔄 First login detected - checking for repository updates..."
+            echo ""
+            zsh ~/scripts/vm-first-run.sh
+            # Stay in cal-dev shell (don't exit like vm-auth does)
+        fi
     fi
 fi
 KEYCHAIN_EOF
@@ -439,7 +443,8 @@ if [[ -o interactive ]]; then
                 echo ""
                 # Prevent logout by starting a new login shell
                 # This replaces the current shell process, effectively cancelling the logout
-                # The user can then commit/push changes and try logging out again
+                # The CAL_SESSION_INITIALIZED flag prevents re-running keychain unlock
+                # But .zlogout will still run on next exit to check git again
                 exec zsh -l
             else
                 echo ""

@@ -299,6 +299,9 @@ else
 fi
 
 # 4. Claude Code (LAST - takes over screen)
+# TODO: Handle Claude auth clean exit if it fails
+# If claude command fails (network, API error, etc.) or exits unexpectedly,
+# we should detect this and show appropriate message rather than continuing silently
 echo ""
 echo "4. Claude Code"
 echo "--------------"

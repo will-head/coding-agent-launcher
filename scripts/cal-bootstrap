@@ -860,46 +860,57 @@ do_init() {
                 echo ""
                 echo "Replacing $VM_INIT with current $VM_DEV..."
 
-                # Stop cal-dev if running
+                # Start cal-dev if not running (need IP to set first-run flag)
+                local dev_was_running=false
+                if vm_running "$VM_DEV"; then
+                    dev_was_running=true
+                    DEV_IP=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
+                else
+                    echo "  Starting $VM_DEV to set first-run flag..."
+                    if start_vm_background "$VM_DEV"; then
+                        DEV_IP="$VM_IP"
+                    else
+                        echo "  ⚠ Failed to start $VM_DEV"
+                        echo "  → Cannot set first-run flag, manually run ~/scripts/vm-first-run.sh after restoring $VM_INIT"
+                        exit 1
+                    fi
+                fi
+
+                # Set first-run flag in cal-dev (will be copied to cal-init)
+                echo "  Setting first-run flag in $VM_DEV..."
+                if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                       "${VM_USER}@${DEV_IP}" "touch ~/.cal-first-run && sync && [ -f ~/.cal-first-run ] && echo 'success'" 2>> "$CAL_LOG" | grep -q 'success'; then
+                    echo "  ✓ First-run flag set"
+                else
+                    echo "  ⚠ Failed to set first-run flag"
+                    echo "  → Manually run ~/scripts/vm-first-run.sh after restoring $VM_INIT"
+                fi
+
+                # Stop cal-dev
                 stop_vm "$VM_DEV"
+                CLEANUP_VM=false
 
                 # Delete cal-init
                 echo "  Deleting $VM_INIT..."
                 "$TART" delete "$VM_INIT"
 
-                # Clone cal-dev to cal-init
+                # Clone cal-dev to cal-init (first-run flag gets copied)
                 echo "  Creating $VM_INIT from $VM_DEV..."
                 "$TART" clone "$VM_DEV" "$VM_INIT"
+                echo "  ✓ First-run flag copied to $VM_INIT"
 
-                # Set first-run flag in new cal-init
-                echo "  Setting first-run flag in $VM_INIT..."
-                echo "  Starting $VM_INIT briefly..."
-                "$TART" run --no-graphics "$VM_INIT" >/dev/null 2>&1 &
-                TART_PID=$!
-                disown "$TART_PID" 2>/dev/null || true
-
-                # Wait for IP
-                sleep 5
-                INIT_IP=$("$TART" ip "$VM_INIT" 2>/dev/null || echo "")
-
-                if [ -n "$INIT_IP" ]; then
-                    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                           "${VM_USER}@${INIT_IP}" "touch ~/.cal-first-run && sync && [ -f ~/.cal-first-run ] && echo 'success'" 2>> "$CAL_LOG" | grep -q 'success'; then
-                        echo "  ✓ First-run flag set"
+                # If cal-dev was running before, restart it and remove the flag
+                if [ "$dev_was_running" = true ]; then
+                    echo "  Restarting $VM_DEV..."
+                    if start_vm_background "$VM_DEV"; then
+                        CLEANUP_VM=false
+                        echo "  Removing first-run flag from $VM_DEV..."
+                        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                            "${VM_USER}@${VM_IP}" "rm -f ~/.cal-first-run && sync" 2>> "$CAL_LOG"
+                        echo "  ✓ $VM_DEV restarted and ready"
                     else
-                        echo "  ⚠ Failed to set first-run flag"
-                        echo "  → Manually run ~/scripts/vm-first-run.sh after restoring $VM_INIT"
+                        echo "  ⚠ Failed to restart $VM_DEV"
                     fi
-
-                    echo "  Stopping $VM_INIT..."
-                    "$TART" stop "$VM_INIT" 2>/dev/null || true
-                    kill "$TART_PID" 2>/dev/null || true
-                    sleep 2
-                else
-                    echo "  ⚠ Could not get IP for $VM_INIT"
-                    echo "  → Manually run ~/scripts/vm-first-run.sh after restoring $VM_INIT"
-                    "$TART" stop "$VM_INIT" 2>/dev/null || true
-                    kill "$TART_PID" 2>/dev/null || true
                 fi
 
                 echo ""
@@ -1125,13 +1136,18 @@ do_init() {
     echo ""
     echo "Continuing with setup..."
 
-    # Step 9.5: Remove first-run flag from cal-dev (if it exists)
+    # Step 9.5: Set first-run flag in cal-dev (while it's running)
     echo ""
-    echo "Step 9.5: Prepare cal-dev for use"
-    echo "  Removing first-run flag from cal-dev..."
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "rm -f ~/.cal-first-run && sync" 2>> "$CAL_LOG"
-    echo "  ✓ cal-dev ready (won't run vm-first-run.sh on next login)"
+    echo "Step 9.5: Prepare $VM_INIT snapshot"
+    echo "  Setting first-run flag in $VM_DEV (will be copied to $VM_INIT)..."
+    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${VM_IP}" "touch ~/.cal-first-run && sync && [ -f ~/.cal-first-run ] && echo 'success'" 2>> "$CAL_LOG" | grep -q 'success'; then
+        echo "  ✓ First-run flag set in $VM_DEV"
+    else
+        echo "  ⚠ Failed to set first-run flag"
+        echo "  → You can manually run ~/scripts/vm-first-run.sh after restoring $VM_INIT"
+        echo "[$(date)] Failed to set first-run flag in $VM_DEV" >> "$CAL_LOG"
+    fi
 
     # Step 10: Create cal-init snapshot
     echo ""
@@ -1145,43 +1161,11 @@ do_init() {
     sleep 2
 
     # Create cal-init (already deleted upfront if it existed)
+    # The first-run flag is already set in cal-dev, so it gets copied to cal-init
     echo "  Creating $VM_INIT from $VM_DEV..."
     "$TART" clone "$VM_DEV" "$VM_INIT"
     echo "  $VM_INIT created"
-
-    # Step 10.5: Set first-run flag in cal-init only
-    echo ""
-    echo "Step 10.5: Configure $VM_INIT for first-run sync"
-    echo "  Starting $VM_INIT briefly..."
-    "$TART" run --no-graphics "$VM_INIT" >/dev/null 2>&1 &
-    TART_PID=$!
-    disown "$TART_PID" 2>/dev/null || true
-
-    # Wait for IP
-    sleep 5
-    INIT_IP=$("$TART" ip "$VM_INIT" 2>/dev/null || echo "")
-
-    if [ -n "$INIT_IP" ]; then
-        echo "  Setting first-run flag in $VM_INIT..."
-        if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-               "${VM_USER}@${INIT_IP}" "touch ~/.cal-first-run && sync && [ -f ~/.cal-first-run ] && echo 'success'" 2>> "$CAL_LOG" | grep -q 'success'; then
-            echo "  ✓ First-run flag set ($VM_INIT will run vm-first-run.sh when restored)"
-        else
-            echo "  ⚠ Failed to set first-run flag"
-            echo "  → You can manually run ~/scripts/vm-first-run.sh after restoring $VM_INIT"
-            echo "[$(date)] Failed to set first-run flag in $VM_INIT" >> "$CAL_LOG"
-        fi
-
-        echo "  Stopping $VM_INIT..."
-        "$TART" stop "$VM_INIT" 2>/dev/null || true
-        kill "$TART_PID" 2>/dev/null || true
-        sleep 2
-    else
-        echo "  ⚠ Could not get IP for $VM_INIT"
-        echo "  → First-run flag not set, you can manually run ~/scripts/vm-first-run.sh after restoring"
-        "$TART" stop "$VM_INIT" 2>/dev/null || true
-        kill "$TART_PID" 2>/dev/null || true
-    fi
+    echo "  ✓ First-run flag copied to $VM_INIT (will run vm-first-run.sh when restored)"
     
     echo ""
     echo "Bootstrap complete!"
@@ -1222,6 +1206,14 @@ do_init() {
 
     # Ensure scripts folder is set up (idempotent - safe to run multiple times)
     setup_scripts_folder "$VM_IP"
+
+    # Step 10.5: Remove first-run flag from cal-dev (so it won't run vm-first-run.sh)
+    echo ""
+    echo "Step 10.5: Prepare $VM_DEV for use"
+    echo "  Removing first-run flag from $VM_DEV..."
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${VM_IP}" "rm -f ~/.cal-first-run && sync" 2>> "$CAL_LOG"
+    echo "  ✓ $VM_DEV ready (won't run vm-first-run.sh on next login)"
 
     echo ""
     echo "VNC:   open vnc://${VM_IP}"
