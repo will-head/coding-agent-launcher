@@ -12,11 +12,8 @@ fi
 clear
 echo ""
 echo "============================================"
-echo "  CAL VM Setup - Initial Authentication"
+echo "  CAL VM First Run - Sync Repositories"
 echo "============================================"
-echo ""
-echo "💡 This script runs during cal-bootstrap --init"
-echo "💡 For repository sync after restore, use vm-first-run.sh"
 echo ""
 
 # Network connectivity check
@@ -46,7 +43,7 @@ start_proxy_standalone() {
 
     echo "  Starting transparent proxy (sshuttle)..."
     nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.cal-proxy.log 2>&1 &
-    
+
     # Wait for it to start (usually takes 1-2 seconds)
     local count=0
     while [ $count -lt 5 ]; do
@@ -74,12 +71,12 @@ else
         echo "  → Proxy is running but connectivity failed"
         echo "  → Check ~/.cal-proxy.log for errors"
         echo ""
-        echo "  ⚠ Authentication may fail without network"
+        echo "  ⚠ Repository sync may fail without network"
         echo ""
     else
         echo "  → Proxy not running, attempting to start..."
         echo ""
-        
+
         if start_proxy_standalone; then
             # Re-test network after starting proxy
             sleep 1
@@ -90,7 +87,7 @@ else
                 echo "  ⚠ Proxy started but network still not working"
                 echo "  → Check ~/.cal-proxy.log for errors"
                 echo ""
-                echo "  ⚠ Authentication may fail without network"
+                echo "  ⚠ Repository sync may fail without network"
                 echo ""
             fi
         else
@@ -99,7 +96,7 @@ else
             echo "  → Try manually: proxy-start"
             echo "  → Or restart VM with: cal-bootstrap --restart"
             echo ""
-            echo "  ⚠ Authentication may fail without network"
+            echo "  ⚠ Repository sync may fail without network"
             echo ""
         fi
     fi
@@ -132,9 +129,119 @@ claude_authenticated() {
     command_exists claude && [ -d ~/.claude ] && [ -n "$(ls -A ~/.claude 2>/dev/null)" ]
 }
 
+# Check Existing Repositories for Updates
+echo "🔄 Checking Existing Repositories for Updates"
+echo "----------------------------------------------"
+
+# Find all git repositories in ~/code
+# Using array for cleaner handling of repository paths
+repos_with_updates=()
+
+if [ -d ~/code ]; then
+    echo "  Scanning ~/code for git repositories..."
+
+    # Count total repos found
+    repo_count=0
+
+    # Find all .git directories
+    while IFS= read -r gitdir; do
+        repo_count=$((repo_count + 1))
+        [ -z "$gitdir" ] && continue
+
+        repo_dir=$(dirname "$gitdir")
+        repo_name=$(basename "$repo_dir")
+
+        # Check if repo has a remote
+        cd "$repo_dir" 2>/dev/null || continue
+
+        if ! git remote -v &>/dev/null || [ -z "$(git remote)" ]; then
+            continue
+        fi
+
+        # Get current branch
+        current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+        if [ -z "$current_branch" ] || [ "$current_branch" = "HEAD" ]; then
+            continue
+        fi
+
+        # Check if branch has upstream
+        if ! git rev-parse --abbrev-ref --symbolic-full-name @{u} &>/dev/null; then
+            continue
+        fi
+
+        # Fetch updates quietly with timeout (10s)
+        echo -n "    Checking $repo_name... "
+        if timeout 10 git fetch --quiet 2>/dev/null; then
+            # Check if remote is ahead
+            local_commit=$(git rev-parse HEAD 2>/dev/null)
+            remote_commit=$(git rev-parse @{u} 2>/dev/null)
+
+            if [ "$local_commit" != "$remote_commit" ]; then
+                # Check if remote is ahead (not just diverged)
+                if git merge-base --is-ancestor HEAD @{u} 2>/dev/null; then
+                    echo "updates available"
+                    repos_with_updates+=("$repo_dir")
+                else
+                    echo "diverged (manual merge needed)"
+                fi
+            else
+                echo "up to date"
+            fi
+        else
+            echo "fetch failed"
+        fi
+    done < <(find ~/code -name ".git" -type d 2>/dev/null)
+
+    # Check results
+    repo_update_count=${#repos_with_updates[@]}
+    if [ $repo_count -eq 0 ]; then
+        echo "  → No repositories found"
+    elif [ $repo_update_count -gt 0 ]; then
+        echo ""
+        # Proper pluralization
+        if [ $repo_update_count -eq 1 ]; then
+            echo "  Found 1 repository with updates:"
+        else
+            echo "  Found $repo_update_count repositories with updates:"
+        fi
+        for repo in "${repos_with_updates[@]}"; do
+            echo "    - $repo"
+        done
+        echo ""
+        echo -n "  Pull updates now? [Y/n] "
+        read -r -k 1 pull_reply
+        echo ""
+
+        if [[ ! "$pull_reply" =~ ^[Nn]$ ]]; then
+            echo ""
+            for repo in "${repos_with_updates[@]}"; do
+                repo_name=$(basename "$repo")
+                echo "    → Pulling $repo_name..."
+                if (cd "$repo" && git pull 2>&1); then
+                    echo "      ✓ Updated"
+                else
+                    echo "      ✗ Pull failed"
+                fi
+            done
+            echo ""
+            echo "  ✓ Updates complete"
+        else
+            echo "  → Skipped pulling updates"
+        fi
+    else
+        echo "  ✓ All repositories are up to date"
+    fi
+else
+    echo "  → No ~/code directory found"
+fi
+
+# Optional: Re-authenticate services
+echo ""
+echo "🔐 Service Authentication"
+echo "-------------------------"
+
 # Show authentication status summary
-echo "Authentication Status:"
-echo "----------------------"
+echo "Current Status:"
 
 # Track if all services are authenticated
 all_authenticated=true
@@ -181,158 +288,145 @@ fi
 
 echo ""
 
-# Adjust default based on authentication status
+# Default to skip if all authenticated
 if [ "$all_authenticated" = true ]; then
+    echo -n "Do you want to re-authenticate services? [y/N] "
+else
     echo -n "Do you want to authenticate services? [y/N] "
-    read -r -k 1 proceed
-    echo ""
-    if [[ ! "$proceed" =~ ^[Yy]$ ]]; then
-        skip_auth=true
-    else
-        skip_auth=false
-    fi
-else
-    echo -n "Do you want to authenticate services? [Y/n] "
-    read -r -k 1 proceed
-    echo ""
-    if [[ "$proceed" =~ ^[Nn]$ ]]; then
-        skip_auth=true
-    else
-        skip_auth=false
-    fi
 fi
-
-if [ "$skip_auth" = true ]; then
-    echo "  → Skipping authentication"
-else
-    # Run all authentication steps
-
-# 1. GitHub CLI
+read -r -k 1 auth_reply
 echo ""
-echo "1. GitHub CLI (gh)"
-echo "-------------------"
-if gh_authenticated; then
-    GH_USER=$(gh api user -q .login 2>/dev/null || gh auth status 2>&1 | grep "Logged in" | head -1 | sed 's/.*as \([^ ]*\).*/\1/')
-    echo "  ✓ Already authenticated as $GH_USER"
-    echo -n "  Re-authenticate? [y/N] "
-    read -r -k 1 reply
+
+if [[ "$auth_reply" =~ ^[Yy]$ ]]; then
+    # Run authentication steps (simplified version)
+
+    # 1. GitHub CLI
     echo ""
-    if [[ "$reply" =~ ^[Yy]$ ]]; then
-        gh auth login
-    else
-        echo "  → Skipped"
-    fi
-else
-    if command_exists gh; then
-        echo "  ⚠ Not authenticated"
-        echo -n "  Authenticate now? [Y/n] "
+    echo "1. GitHub CLI (gh)"
+    echo "-------------------"
+    if gh_authenticated; then
+        GH_USER=$(gh api user -q .login 2>/dev/null || gh auth status 2>&1 | grep "Logged in" | head -1 | sed 's/.*as \([^ ]*\).*/\1/')
+        echo "  ✓ Already authenticated as $GH_USER"
+        echo -n "  Re-authenticate? [y/N] "
         read -r -k 1 reply
         echo ""
-        if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+        if [[ "$reply" =~ ^[Yy]$ ]]; then
             gh auth login
         else
             echo "  → Skipped"
         fi
     else
-        echo "  ✗ gh not installed"
+        if command_exists gh; then
+            echo "  ⚠ Not authenticated"
+            echo -n "  Authenticate now? [Y/n] "
+            read -r -k 1 reply
+            echo ""
+            if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+                gh auth login
+            else
+                echo "  → Skipped"
+            fi
+        else
+            echo "  ✗ gh not installed"
+        fi
     fi
-fi
 
-# 2. Opencode
-echo ""
-echo "2. Opencode"
-echo "-----------"
-if opencode_authenticated; then
-    echo "  ✓ Already authenticated"
-    echo -n "  Re-authenticate? [y/N] "
-    read -r -k 1 reply
+    # 2. Opencode
     echo ""
-    if [[ "$reply" =~ ^[Yy]$ ]]; then
-        opencode auth login
-    else
-        echo "  → Skipped"
-    fi
-else
-    if command_exists opencode; then
-        echo "  ⚠ Not authenticated"
-        echo -n "  Authenticate now? [Y/n] "
+    echo "2. Opencode"
+    echo "-----------"
+    if opencode_authenticated; then
+        echo "  ✓ Already authenticated"
+        echo -n "  Re-authenticate? [y/N] "
         read -r -k 1 reply
         echo ""
-        if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+        if [[ "$reply" =~ ^[Yy]$ ]]; then
             opencode auth login
         else
             echo "  → Skipped"
         fi
     else
-        echo "  ✗ opencode not installed"
+        if command_exists opencode; then
+            echo "  ⚠ Not authenticated"
+            echo -n "  Authenticate now? [Y/n] "
+            read -r -k 1 reply
+            echo ""
+            if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+                opencode auth login
+            else
+                echo "  → Skipped"
+            fi
+        else
+            echo "  ✗ opencode not installed"
+        fi
     fi
-fi
 
-# 3. Cursor Agent
-echo ""
-echo "3. Cursor Agent"
-echo "---------------"
-if cursor_authenticated; then
-    echo "  ✓ Already authenticated"
-    echo -n "  Re-authenticate? [y/N] "
-    read -r -k 1 reply
+    # 3. Cursor Agent
     echo ""
-    if [[ "$reply" =~ ^[Yy]$ ]]; then
-        agent
-    else
-        echo "  → Skipped"
-    fi
-else
-    if command_exists agent; then
-        echo "  ⚠ Not authenticated"
-        echo -n "  Authenticate now? [Y/n] "
+    echo "3. Cursor Agent"
+    echo "---------------"
+    if cursor_authenticated; then
+        echo "  ✓ Already authenticated"
+        echo -n "  Re-authenticate? [y/N] "
         read -r -k 1 reply
         echo ""
-        if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+        if [[ "$reply" =~ ^[Yy]$ ]]; then
             agent
         else
             echo "  → Skipped"
         fi
     else
-        echo "  ✗ agent not installed"
+        if command_exists agent; then
+            echo "  ⚠ Not authenticated"
+            echo -n "  Authenticate now? [Y/n] "
+            read -r -k 1 reply
+            echo ""
+            if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+                agent
+            else
+                echo "  → Skipped"
+            fi
+        else
+            echo "  ✗ agent not installed"
+        fi
     fi
-fi
 
-# 4. Claude Code (LAST - takes over screen)
-echo ""
-echo "4. Claude Code"
-echo "--------------"
-if claude_authenticated; then
-    echo "  ✓ Already authenticated"
-    echo -n "  Re-authenticate? [y/N] "
-    read -r -k 1 reply
+    # 4. Claude Code (LAST - takes over screen)
     echo ""
-    if [[ "$reply" =~ ^[Yy]$ ]]; then
-        echo "  Press Ctrl+C to exit when done."
-        claude
-    else
-        echo "  → Skipped"
-    fi
-else
-    if command_exists claude; then
-        echo "  ⚠ Not authenticated"
-        echo -n "  Authenticate now? [Y/n] "
+    echo "4. Claude Code"
+    echo "--------------"
+    if claude_authenticated; then
+        echo "  ✓ Already authenticated"
+        echo -n "  Re-authenticate? [y/N] "
         read -r -k 1 reply
         echo ""
-        if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+        if [[ "$reply" =~ ^[Yy]$ ]]; then
             echo "  Press Ctrl+C to exit when done."
             claude
         else
             echo "  → Skipped"
         fi
     else
-        echo "  ✗ claude not installed"
+        if command_exists claude; then
+            echo "  ⚠ Not authenticated"
+            echo -n "  Authenticate now? [Y/n] "
+            read -r -k 1 reply
+            echo ""
+            if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+                echo "  Press Ctrl+C to exit when done."
+                claude
+            else
+                echo "  → Skipped"
+            fi
+        else
+            echo "  ✗ claude not installed"
+        fi
     fi
+else
+    echo "  → Skipped authentication"
 fi
 
-fi  # End of authentication block
-
-# GitHub Repository Sync (initial clone during --init, only if gh is authenticated)
+# Optional: Clone additional repositories (only if gh is authenticated)
 if gh_authenticated; then
     echo ""
     echo "📦 GitHub Repository Sync"
@@ -341,13 +435,13 @@ if gh_authenticated; then
     # Get authenticated username
     GH_USER=$(gh api user -q .login 2>/dev/null || gh auth status 2>&1 | grep "Logged in" | head -1 | sed 's/.*as \([^ ]*\).*/\1/')
 
-    echo "  Clone repositories to ~/code/github.com/[owner]/[repo]"
+    echo "  Clone additional repositories to ~/code/github.com/[owner]/[repo]"
     echo ""
-    echo -n "  Do you want to clone repositories? [Y/n] "
+    echo -n "  Do you want to clone additional repositories? [y/N] "
     read -r -k 1 clone_reply
     echo ""
 
-    if [[ ! "$clone_reply" =~ ^[Nn]$ ]]; then
+    if [[ "$clone_reply" =~ ^[Yy]$ ]]; then
         echo ""
         echo "  Enter repository names (one per line):"
         echo "  - Format: 'owner/repo' or just 'repo' (assumes your account)"
@@ -421,7 +515,7 @@ fi
 
 echo ""
 echo "============================================"
-echo "  ✅ Initial Authentication Complete!"
+echo "  ✅ First Run Complete!"
 echo "============================================"
 echo ""
 echo "💡 Proxy commands:"
@@ -430,12 +524,9 @@ echo "   proxy-start   - Start proxy manually"
 echo "   proxy-stop    - Stop proxy"
 echo "   proxy-log     - View proxy logs"
 echo ""
-echo "💡 To re-authenticate agents, run:"
+echo "💡 To re-authenticate agents later, run:"
 echo "   ~/scripts/vm-auth.sh"
 echo ""
-echo "💡 To sync repositories after restoring cal-init, run:"
+echo "💡 To sync repositories again, run:"
 echo "   ~/scripts/vm-first-run.sh"
 echo ""
-
-# Note: We no longer exit here - user stays in shell during --init
-# cal-bootstrap will handle the rest (create cal-init, then reconnect)

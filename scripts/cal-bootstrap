@@ -411,6 +411,15 @@ setup_scripts_folder() {
         echo "    ⚠ vm-auth.sh not found"
     fi
 
+    # Copy vm-first-run.sh
+    if [ -f "$SCRIPT_DIR/vm-first-run.sh" ]; then
+        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SCRIPT_DIR/vm-first-run.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"
+        echo "    ✓ vm-first-run.sh"
+    else
+        echo "    ⚠ vm-first-run.sh not found"
+    fi
+
     # Copy tmux-wrapper.sh
     if [ -f "$SCRIPT_DIR/tmux-wrapper.sh" ]; then
         scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -862,6 +871,38 @@ do_init() {
                 echo "  Creating $VM_INIT from $VM_DEV..."
                 "$TART" clone "$VM_DEV" "$VM_INIT"
 
+                # Set first-run flag in new cal-init
+                echo "  Setting first-run flag in $VM_INIT..."
+                echo "  Starting $VM_INIT briefly..."
+                "$TART" run --no-graphics "$VM_INIT" >/dev/null 2>&1 &
+                TART_PID=$!
+                disown "$TART_PID" 2>/dev/null || true
+
+                # Wait for IP
+                sleep 5
+                INIT_IP=$("$TART" ip "$VM_INIT" 2>/dev/null || echo "")
+
+                if [ -n "$INIT_IP" ]; then
+                    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                           "${VM_USER}@${INIT_IP}" "touch ~/.cal-first-run && sync && [ -f ~/.cal-first-run ] && echo 'success'" 2>> "$CAL_LOG" | grep -q 'success'; then
+                        echo "  ✓ First-run flag set"
+                    else
+                        echo "  ⚠ Failed to set first-run flag"
+                        echo "  → Manually run ~/scripts/vm-first-run.sh after restoring $VM_INIT"
+                    fi
+
+                    echo "  Stopping $VM_INIT..."
+                    "$TART" stop "$VM_INIT" 2>/dev/null || true
+                    kill "$TART_PID" 2>/dev/null || true
+                    sleep 2
+                else
+                    echo "  ⚠ Could not get IP for $VM_INIT"
+                    echo "  → Manually run ~/scripts/vm-first-run.sh after restoring $VM_INIT"
+                    "$TART" stop "$VM_INIT" 2>/dev/null || true
+                    kill "$TART_PID" 2>/dev/null || true
+                fi
+
+                echo ""
                 echo "  ✓ $VM_INIT replaced with current $VM_DEV"
                 echo ""
                 exit 0
@@ -1064,7 +1105,7 @@ do_init() {
     fi
 
     # Step 9: Open login shell for agent authentication
-    # The .zshrc first-run check will automatically run vm-auth.sh
+    # The .zshrc auth-needed check will automatically run vm-auth.sh
     echo ""
     echo "============================================"
     echo "Agent Authentication"
@@ -1075,8 +1116,8 @@ do_init() {
 
     # SSH into VM with login shell - .zshrc will:
     # 1. Unlock keychain
-    # 2. Detect first-run flag and run vm-auth.sh
-    # 3. Clear first-run flag
+    # 2. Detect auth-needed flag and run vm-auth.sh
+    # 3. Clear auth-needed flag
     # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
         "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s setup 'zsh -l'"
@@ -1084,7 +1125,15 @@ do_init() {
     echo ""
     echo "Continuing with setup..."
 
-    # Step 10: Create cal-init
+    # Step 9.5: Remove first-run flag from cal-dev (if it exists)
+    echo ""
+    echo "Step 9.5: Prepare cal-dev for use"
+    echo "  Removing first-run flag from cal-dev..."
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${VM_IP}" "rm -f ~/.cal-first-run && sync" 2>> "$CAL_LOG"
+    echo "  ✓ cal-dev ready (won't run vm-first-run.sh on next login)"
+
+    # Step 10: Create cal-init snapshot
     echo ""
     echo "Step 10: Create $VM_INIT snapshot"
 
@@ -1099,6 +1148,40 @@ do_init() {
     echo "  Creating $VM_INIT from $VM_DEV..."
     "$TART" clone "$VM_DEV" "$VM_INIT"
     echo "  $VM_INIT created"
+
+    # Step 10.5: Set first-run flag in cal-init only
+    echo ""
+    echo "Step 10.5: Configure $VM_INIT for first-run sync"
+    echo "  Starting $VM_INIT briefly..."
+    "$TART" run --no-graphics "$VM_INIT" >/dev/null 2>&1 &
+    TART_PID=$!
+    disown "$TART_PID" 2>/dev/null || true
+
+    # Wait for IP
+    sleep 5
+    INIT_IP=$("$TART" ip "$VM_INIT" 2>/dev/null || echo "")
+
+    if [ -n "$INIT_IP" ]; then
+        echo "  Setting first-run flag in $VM_INIT..."
+        if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+               "${VM_USER}@${INIT_IP}" "touch ~/.cal-first-run && sync && [ -f ~/.cal-first-run ] && echo 'success'" 2>> "$CAL_LOG" | grep -q 'success'; then
+            echo "  ✓ First-run flag set ($VM_INIT will run vm-first-run.sh when restored)"
+        else
+            echo "  ⚠ Failed to set first-run flag"
+            echo "  → You can manually run ~/scripts/vm-first-run.sh after restoring $VM_INIT"
+            echo "[$(date)] Failed to set first-run flag in $VM_INIT" >> "$CAL_LOG"
+        fi
+
+        echo "  Stopping $VM_INIT..."
+        "$TART" stop "$VM_INIT" 2>/dev/null || true
+        kill "$TART_PID" 2>/dev/null || true
+        sleep 2
+    else
+        echo "  ⚠ Could not get IP for $VM_INIT"
+        echo "  → First-run flag not set, you can manually run ~/scripts/vm-first-run.sh after restoring"
+        "$TART" stop "$VM_INIT" 2>/dev/null || true
+        kill "$TART_PID" 2>/dev/null || true
+    fi
     
     echo ""
     echo "Bootstrap complete!"
@@ -1108,7 +1191,50 @@ do_init() {
     printf "  %-17s - Development VM (use this)\n" "$VM_DEV"
     printf "  %-17s - Snapshot with tools configured\n" "$VM_INIT"
     echo ""
-    echo "Next: Run './cal-bootstrap --run' to start developing"
+    echo "Starting $VM_DEV for development..."
+    echo ""
+
+    # Auto-start cal-dev
+    if ! start_vm_background "$VM_DEV"; then
+        echo "Failed to start VM"
+        echo "Run './cal-bootstrap --run' to start manually"
+        exit 1
+    fi
+
+    # Don't cleanup on success
+    CLEANUP_VM=false
+
+    echo ""
+    echo "$VM_DEV is running (PID: $TART_PID)"
+
+    # Setup and start transparent proxy if needed
+    if should_enable_proxy "$VM_IP"; then
+        # Ensure VM SSH key is set up (idempotent - safe to run multiple times)
+        if setup_vm_ssh_key "$VM_IP"; then
+            start_transparent_proxy "$VM_IP" || echo "  ⚠ Transparent proxy failed to start (see ~/.cal-bootstrap.log)"
+        else
+            echo "  ⚠ Skipping transparent proxy (setup failed)"
+        fi
+    fi
+
+    # Unlock keychain for SSH access
+    unlock_keychain "$VM_IP"
+
+    # Ensure scripts folder is set up (idempotent - safe to run multiple times)
+    setup_scripts_folder "$VM_IP"
+
+    echo ""
+    echo "VNC:   open vnc://${VM_IP}"
+    echo "Stop:  $TART stop $VM_DEV"
+    echo ""
+    echo "Connecting via SSH with tmux..."
+    echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
+    echo ""
+
+    # SSH into the VM with tmux (always)
+    # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
+    ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal"
 }
 
 # === RUN MODE ===

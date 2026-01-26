@@ -295,17 +295,31 @@ if [ -f ~/.cal-vm-config ]; then
     fi
 fi
 
-# CAL First-Run Authentication
-# Runs vm-auth.sh on first login after setup, then clears the flag
-if [ -f ~/.cal-first-run ]; then
-    rm -f ~/.cal-first-run
+# CAL Auth Needed (during --init)
+# Runs vm-auth.sh for initial authentication during cal-bootstrap --init
+if [ -f ~/.cal-auth-needed ]; then
+    rm -f ~/.cal-auth-needed
     if [ -f ~/scripts/vm-auth.sh ]; then
         echo ""
-        echo "🚀 First run detected - starting agent authentication..."
+        echo "🚀 Running initial authentication..."
         echo ""
-        CAL_FIRST_RUN=1 zsh ~/scripts/vm-auth.sh
-        # Exit shell to close tmux session and continue cal-bootstrap
+        CAL_AUTH_NEEDED=1 zsh ~/scripts/vm-auth.sh
+        # Exit to allow cal-bootstrap to continue with cal-init creation
+        # User will be automatically reconnected after cal-init is ready
         exit 0
+    fi
+fi
+
+# CAL First Run (after restoring cal-init)
+# Runs vm-first-run.sh to sync repositories after restoring cal-init
+if [ -f ~/.cal-first-run ]; then
+    rm -f ~/.cal-first-run
+    if [ -f ~/scripts/vm-first-run.sh ]; then
+        echo ""
+        echo "🔄 First login detected - syncing repositories..."
+        echo ""
+        zsh ~/scripts/vm-first-run.sh
+        # Stay in cal-dev shell (don't exit like vm-auth does)
     fi
 fi
 KEYCHAIN_EOF
@@ -347,6 +361,97 @@ if source ~/.zshrc 2>/dev/null; then
     echo "  ✓ Shell configuration reloaded"
 else
     echo "  ⚠ Could not reload shell config (restart shell manually)"
+fi
+
+# Configure logout git status check
+echo ""
+echo "⚙️  Configuring logout git status check..."
+
+if [ ! -f ~/.zlogout ] || ! grep -q '# CAL Logout Git Status Check' ~/.zlogout; then
+    cat >> ~/.zlogout <<'EOF'
+# CAL Logout Git Status Check
+# Scans for uncommitted or unpushed changes before logout
+# Note: This scan may take a few seconds if ~/code has many repositories
+
+# Only run for interactive shells
+if [[ -o interactive ]]; then
+    # Find all git repositories in ~/code
+    # Using arrays for cleaner handling of repository paths
+    uncommitted_repos=()
+    unpushed_repos=()
+
+    if [ -d ~/code ]; then
+        # Scan for repositories with uncommitted or unpushed changes
+        while IFS= read -r gitdir; do
+            [ -z "$gitdir" ] && continue
+            repo_dir=$(dirname "$gitdir")
+
+            cd "$repo_dir" 2>/dev/null || continue
+
+            # Check for uncommitted changes
+            if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+                uncommitted_repos+=("$repo_dir")
+            fi
+
+            # Check for unpushed commits
+            current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+            if [ -n "$current_branch" ] && [ "$current_branch" != "HEAD" ]; then
+                if git rev-parse --abbrev-ref --symbolic-full-name @{u} &>/dev/null; then
+                    if [ -n "$(git log @{u}.. --oneline 2>/dev/null)" ]; then
+                        unpushed_repos+=("$repo_dir")
+                    fi
+                fi
+            fi
+        done < <(find ~/code -name ".git" -type d 2>/dev/null)
+
+        # Show warning if changes found
+        uncommitted_count=${#uncommitted_repos[@]}
+        unpushed_count=${#unpushed_repos[@]}
+
+        if [ $uncommitted_count -gt 0 ] || [ $unpushed_count -gt 0 ]; then
+            echo ""
+            echo "⚠️  WARNING: Uncommitted or unpushed git changes detected!"
+            echo ""
+
+            if [ $uncommitted_count -gt 0 ]; then
+                echo "Repositories with uncommitted changes:"
+                for repo in "${uncommitted_repos[@]}"; do
+                    echo "  - $repo"
+                done
+                echo ""
+            fi
+
+            if [ $unpushed_count -gt 0 ]; then
+                echo "Repositories with unpushed commits:"
+                for repo in "${unpushed_repos[@]}"; do
+                    echo "  - $repo"
+                done
+                echo ""
+            fi
+
+            echo -n "Continue logout anyway? [y/N] "
+            read -r -k 1 continue_reply
+            echo ""
+
+            if [[ ! "$continue_reply" =~ ^[Yy]$ ]]; then
+                echo ""
+                echo "Logout cancelled. Push your changes and try again."
+                echo ""
+                # Prevent logout by starting a new login shell
+                # This replaces the current shell process, effectively cancelling the logout
+                # The user can then commit/push changes and try logging out again
+                exec zsh -l
+            else
+                echo ""
+                echo "Logging out despite uncommitted/unpushed changes..."
+            fi
+        fi
+    fi
+fi
+EOF
+    echo "  ✓ Added logout git status check to ~/.zlogout"
+else
+    echo "  ✓ Logout git status check already configured in ~/.zlogout"
 fi
 
 # Configure VM detection for coding agents
@@ -728,10 +833,10 @@ if [ "$USING_BOOTSTRAP_PROXY" = "true" ]; then
     echo "  ✓ Git proxy settings removed (sshuttle is transparent)"
 fi
 
-# Create first-run flag for automatic vm-auth on next login
-touch ~/.cal-first-run
+# Create auth-needed flag for automatic vm-auth during --init
+touch ~/.cal-auth-needed
 sync  # Ensure filesystem writes are flushed before VM reboot
-echo "  ✓ First-run flag set (vm-auth will run on next login)"
+echo "  ✓ Auth-needed flag set (vm-auth will run on next login)"
 
 echo ""
 echo "✅ Setup complete!"

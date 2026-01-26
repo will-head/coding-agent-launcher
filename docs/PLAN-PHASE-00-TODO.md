@@ -22,13 +22,14 @@
 ### Repository Management
 - [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning
 
-### First Login Git Updates
-- [ ] vm-setup.sh sets flag variable for first login
-- [ ] Login script checks flag and scans ~/code for git updates
-- [ ] Prompt user to pull if updates found
-- [ ] Unset flag variable after first login scan complete
-- [ ] Set cal-init back to first-run mode (reset first-run flag)
-- [ ] In vm-auth: prompt to update GitHub repos if existing repos found
+### First Login Git Updates (WIP - Partially Complete)
+- [x] Created vm-first-run.sh for post-restore repo sync (completed 2026-01-26)
+- [x] Separated vm-auth.sh (--init only) from vm-first-run.sh (restore only) (completed 2026-01-26)
+- [x] Added logout git status check in vm-setup.sh (completed 2026-01-26)
+- [ ] **FIX**: First-run flag setting in cal-init unreliable (booting cal-init briefly doesn't get IP consistently)
+  - Current approach: Stop cal-dev → Clone to cal-init → Start cal-init → Set flag → Stop cal-init (FAILS)
+  - Better approach: Run vm-auth → Exit → Set first-run flag in cal-dev (while running) → Stop cal-dev → Clone to cal-init → Remove first-run flag from cal-dev → Start cal-dev
+  - This ensures flag is set before clone, no need to boot cal-init separately
 
 ### Logout Git Status Check
 - [ ] On logout (exit, Ctrl-D, Ctrl-C) scan ~/code directories for git changes
