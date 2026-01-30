@@ -183,6 +183,9 @@
 - [x] Show VM/snapshot sizes in `--snapshot list` output (uses JSON API, displays actual size with GB units, includes total)
 - [x] Remove cal-dev prefix from snapshot names (snapshots now use exact names specified by user)
 - [x] When cal-init exists and user runs `--init` ask: Do you want to replace cal-init with current cal-dev y/N
+- [x] Allow `--snapshot delete` to accept multiple VM names (completed 2026-01-30)
+- [x] Add `--snapshot delete --force` option to skip git checks and avoid booting VM (for unresponsive VMs) (completed 2026-01-30)
+- [x] Check --help is up to date (completed 2026-01-30)
 
 ### First Login and Logout Improvements (Completed 2026-01-26)
 - [x] **Fixed first-run flag setting reliability**

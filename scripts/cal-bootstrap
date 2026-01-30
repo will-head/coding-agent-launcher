@@ -46,6 +46,9 @@ CLEANUP_VM=false
 CLEANUP_DONE=false
 TART_PID=""
 
+# Force delete flag (skip git checks and avoid booting)
+FORCE_DELETE=false
+
 # Cleanup function
 cleanup() {
     if [ "$CLEANUP_DONE" = true ]; then
@@ -1712,107 +1715,141 @@ do_snapshot() {
             ;;
             
         delete)
-            if [ -z "$name" ]; then
-                echo "Usage: ./cal-bootstrap --snapshot delete <name>"
+            # Support both old single-name syntax and new multiple-name syntax
+            local vms_to_delete=()
+
+            # Check if using array (new syntax) or single name (backwards compatibility)
+            if [ ${#SNAPSHOT_NAMES[@]} -gt 0 ]; then
+                vms_to_delete=("${SNAPSHOT_NAMES[@]}")
+            elif [ -n "$name" ]; then
+                vms_to_delete=("$name")
+            else
+                echo "Usage: ./cal-bootstrap --snapshot delete [--force] <name> [<name2> ...]"
+                echo ""
+                echo "Options:"
+                echo "  --force  Skip git checks and avoid booting VMs"
                 echo ""
                 do_snapshot list
                 exit 1
             fi
-            
-            # Resolve short name to full name
+
+            # Show force mode status
+            if [ "$FORCE_DELETE" = "true" ]; then
+                echo "Force mode: Skipping git checks and VM booting"
+                echo ""
+            fi
+
+            # Declare loop variables once (function-scoped in shell)
             local vm_to_delete
-            vm_to_delete=$(resolve_vm_name "$name")
+            local we_started_vm
+            local vm_ip
 
-            if [ -z "$vm_to_delete" ]; then
-                echo "VM '$name' not found"
+            # Process each VM
+            for vm_name in "${vms_to_delete[@]}"; do
+                echo "Processing: $vm_name"
                 echo ""
-                do_snapshot list
-                exit 1
-            fi
 
-            # Check for git changes before deleting (skip only for cal-clean base image)
-            if [ "$vm_to_delete" != "$VM_CLEAN" ]; then
-                local we_started_vm=false
-                local vm_ip=""
+                # Resolve short name to full name
+                vm_to_delete=$(resolve_vm_name "$vm_name")
 
-                # Start VM if not running to check for changes
-                if ! vm_running "$vm_to_delete"; then
-                    echo "Starting $vm_to_delete to check for uncommitted changes..."
-                    if start_vm_background "$vm_to_delete"; then
-                        we_started_vm=true
-                        vm_ip="$VM_IP"
+                if [ -z "$vm_to_delete" ]; then
+                    echo "⚠️  VM '$vm_name' not found, skipping"
+                    echo ""
+                    continue
+                fi
+
+                # Check for git changes before deleting (unless --force or cal-clean)
+                if [ "$FORCE_DELETE" = "false" ] && [ "$vm_to_delete" != "$VM_CLEAN" ]; then
+                    we_started_vm=false
+                    vm_ip=""
+
+                    # Start VM if not running to check for changes
+                    if ! vm_running "$vm_to_delete"; then
+                        echo "Starting $vm_to_delete to check for uncommitted changes..."
+                        if start_vm_background "$vm_to_delete"; then
+                            we_started_vm=true
+                            vm_ip="$VM_IP"
+                        else
+                            echo "  ⚠ Could not start VM to check for git changes"
+                            echo "  Proceeding without git check..."
+                        fi
                     else
-                        echo "  ⚠ Could not start VM to check for git changes"
-                        echo "  Proceeding without git check..."
+                        vm_ip=$("$TART" ip "$vm_to_delete" 2>/dev/null || echo "")
                     fi
+
+                    # Check for git changes if VM is running
+                    if [ -n "$vm_ip" ]; then
+                        check_vm_git_changes "$vm_to_delete" "$vm_ip"
+                        echo ""
+                    fi
+
+                    # Stop VM if we started it just for the git check
+                    if [ "$we_started_vm" = true ]; then
+                        echo "Stopping $vm_to_delete..."
+                        stop_vm "$vm_to_delete"
+                        CLEANUP_VM=false
+                        echo ""
+                    fi
+                fi
+
+                # Stop the VM before deletion (if still running)
+                stop_vm "$vm_to_delete"
+
+                # Confirm (with extra warning for system VMs)
+                if [ "$SKIP_CONFIRM" = false ]; then
+                    if [ "$vm_to_delete" = "$VM_DEV" ]; then
+                        echo "⚠️  WARNING: Deleting your working VM!"
+                        echo ""
+                        echo "This will delete $vm_to_delete permanently."
+                        echo "You may want to use restore instead to reset state."
+                        echo ""
+                    elif [ "$vm_to_delete" = "$VM_CLEAN" ]; then
+                        echo "⚠️  WARNING: Deleting the clean base image!"
+                        echo ""
+                        echo "This will delete $vm_to_delete permanently."
+                        echo "You'll need to re-download (~25GB) to recreate it."
+                        echo ""
+                    elif [ "$vm_to_delete" = "$VM_INIT" ]; then
+                        echo "⚠️  WARNING: Deleting the initialized snapshot!"
+                        echo ""
+                        echo "This will delete $vm_to_delete permanently."
+                        echo "You'll need to run --init again to recreate it."
+                        echo ""
+                    fi
+                    echo "Delete $vm_to_delete?"
+                    echo ""
+                    echo "Continue? (y/N)"
+                    read -r -k 1 reply
+                    echo ""
+                    if [[ ! $reply =~ ^[Yy]$ ]]; then
+                        echo "Skipped: $vm_to_delete"
+                        echo ""
+                        continue
+                    fi
+                fi
+
+                echo "Deleting $vm_to_delete..."
+                if "$TART" delete "$vm_to_delete"; then
+                    echo "✓ Deleted: $vm_to_delete"
                 else
-                    vm_ip=$("$TART" ip "$vm_to_delete" 2>/dev/null || echo "")
+                    echo "✗ Failed to delete: $vm_to_delete"
                 fi
-
-                # Check for git changes if VM is running
-                if [ -n "$vm_ip" ]; then
-                    check_vm_git_changes "$vm_to_delete" "$vm_ip"
-                    echo ""
-                fi
-
-                # Stop VM if we started it just for the git check
-                if [ "$we_started_vm" = true ]; then
-                    echo "Stopping $vm_to_delete..."
-                    stop_vm "$vm_to_delete"
-                    CLEANUP_VM=false
-                    echo ""
-                fi
-            fi
-
-            # Stop the VM before deletion (if still running)
-            stop_vm "$vm_to_delete"
-
-            # Confirm (with extra warning for system VMs)
-            if [ "$SKIP_CONFIRM" = false ]; then
-                if [ "$vm_to_delete" = "$VM_DEV" ]; then
-                    echo "⚠️  WARNING: Deleting your working VM!"
-                    echo ""
-                    echo "This will delete $vm_to_delete permanently."
-                    echo "You may want to use restore instead to reset state."
-                    echo ""
-                elif [ "$vm_to_delete" = "$VM_CLEAN" ]; then
-                    echo "⚠️  WARNING: Deleting the clean base image!"
-                    echo ""
-                    echo "This will delete $vm_to_delete permanently."
-                    echo "You'll need to re-download (~25GB) to recreate it."
-                    echo ""
-                elif [ "$vm_to_delete" = "$VM_INIT" ]; then
-                    echo "⚠️  WARNING: Deleting the initialized snapshot!"
-                    echo ""
-                    echo "This will delete $vm_to_delete permanently."
-                    echo "You'll need to run --init again to recreate it."
-                    echo ""
-                fi
-                echo "Delete $vm_to_delete?"
                 echo ""
-                echo "Continue? (y/N)"
-                read -r -k 1 reply
-                echo ""
-                if [[ ! $reply =~ ^[Yy]$ ]]; then
-                    echo "Aborted"
-                    exit 1
-                fi
-            fi
-            
-            echo "Deleting $vm_to_delete..."
-            "$TART" delete "$vm_to_delete"
-            echo ""
-            echo "Deleted: $vm_to_delete"
+            done
+
+            echo "Delete operation complete"
             ;;
             
         *)
-            echo "Usage: ./cal-bootstrap --snapshot <list|create|restore|delete> [name]"
+            echo "Usage: ./cal-bootstrap --snapshot <list|create|restore|delete> [options] [name...]"
             echo ""
             echo "Examples:"
             echo "  ./cal-bootstrap --snapshot list"
             echo "  ./cal-bootstrap --snapshot create before-refactor"
             echo "  ./cal-bootstrap --snapshot restore before-refactor"
             echo "  ./cal-bootstrap --snapshot delete before-refactor"
+            echo "  ./cal-bootstrap --snapshot delete snap1 snap2 snap3"
+            echo "  ./cal-bootstrap --snapshot delete --force unresponsive-vm"
             exit 1
             ;;
     esac
@@ -1825,6 +1862,7 @@ MODE=""
 SKIP_CONFIRM=false
 SNAPSHOT_ACTION=""
 SNAPSHOT_NAME=""
+SNAPSHOT_NAMES=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -1849,8 +1887,37 @@ while [[ $# -gt 0 ]]; do
             shift
             SNAPSHOT_ACTION="${1:-}"
             [[ $# -gt 0 ]] && shift
-            SNAPSHOT_NAME="${1:-}"
-            [[ $# -gt 0 ]] && shift
+
+            # For delete action, collect all VM names (after checking for --force and --yes)
+            if [ "$SNAPSHOT_ACTION" = "delete" ]; then
+                # Collect all remaining arguments, handling flags and VM names
+                SNAPSHOT_NAMES=()
+                while [[ $# -gt 0 ]]; do
+                    case "$1" in
+                        --force)
+                            FORCE_DELETE=true
+                            shift
+                            ;;
+                        --yes|-y)
+                            SKIP_CONFIRM=true
+                            shift
+                            ;;
+                        --*)
+                            # Unknown flag for delete action - stop processing
+                            break
+                            ;;
+                        *)
+                            # VM name
+                            SNAPSHOT_NAMES+=("$1")
+                            shift
+                            ;;
+                    esac
+                done
+            else
+                # For other actions (create, restore), just take one name
+                SNAPSHOT_NAME="${1:-}"
+                [[ $# -gt 0 ]] && shift
+            fi
             ;;
         --socks|--proxy)
             shift
@@ -1872,20 +1939,22 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: ./cal-bootstrap [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --init, -i                    Initialize VM environment"
-            echo "  --run                         Run cal-dev with tmux (default if VMs exist)"
-            echo "  --restart, -r                 Restart cal-dev and connect with tmux"
-            echo "  --stop, -s                    Stop cal-dev"
-            echo "  --snapshot, -S list           List available snapshots"
-            echo "  --snapshot, -S create <name>  Create a named snapshot"
-            echo "  --snapshot, -S restore <name> Restore from a snapshot"
-            echo "  --snapshot, -S delete <name>  Delete a snapshot"
-            echo "  --proxy <on|off|auto>         Transparent proxy mode (default: auto)"
-            echo "                                  on   - Always enable transparent proxy"
-            echo "                                  off  - Disable transparent proxy"
-            echo "                                  auto - Test github.com, enable if needed"
-            echo "  --yes, -y                     Skip confirmation prompts"
-            echo "  --help, -h                    Show this help"
+            echo "  --init, -i                          Initialize VM environment"
+            echo "  --run                               Run cal-dev with tmux (default if VMs exist)"
+            echo "  --restart, -r                       Restart cal-dev and connect with tmux"
+            echo "  --stop, -s                          Stop cal-dev"
+            echo "  --snapshot, -S list                 List available snapshots"
+            echo "  --snapshot, -S create <name>        Create a named snapshot"
+            echo "  --snapshot, -S restore <name>       Restore from a snapshot"
+            echo "  --snapshot, -S delete [--force] <name> [<name2> ...]"
+            echo "                                      Delete one or more snapshots"
+            echo "                                      --force: Skip git checks, avoid booting VMs"
+            echo "  --proxy <on|off|auto>               Transparent proxy mode (default: auto)"
+            echo "                                        on   - Always enable transparent proxy"
+            echo "                                        off  - Disable transparent proxy"
+            echo "                                        auto - Test github.com, enable if needed"
+            echo "  --yes, -y                           Skip confirmation prompts"
+            echo "  --help, -h                          Show this help"
             echo ""
             echo "Examples:"
             echo "  ./cal-bootstrap --init              # First-time setup"
@@ -1894,6 +1963,8 @@ while [[ $# -gt 0 ]]; do
             echo "  ./cal-bootstrap --snapshot create pre-experiment"
             echo "  ./cal-bootstrap --snapshot restore pre-experiment"
             echo "  ./cal-bootstrap --snapshot delete pre-experiment"
+            echo "  ./cal-bootstrap --snapshot delete old-snap1 old-snap2 old-snap3"
+            echo "  ./cal-bootstrap --snapshot delete --force unresponsive-vm"
             echo ""
             echo "Note: tmux is always used for persistent sessions."
             echo "      Ctrl+b d to detach, Ctrl+b ? for help"

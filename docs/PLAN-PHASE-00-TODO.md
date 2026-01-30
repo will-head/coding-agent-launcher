@@ -27,10 +27,7 @@
 - [ ] Verify opencode login flow is fixed (test authentication reliability)
 - [ ] Add Codex GitHub CLI Antigravity tools installation in init
 
-### cal-bootstrap Script Enhancements
-- [ ] Allow `--snapshot delete` to accept multiple VM names
-- [ ] Add `--snapshot delete --force` option to skip git checks and avoid booting VM (for unresponsive VMs)
-- [ ] Check --help is up to date
+### cal-bootstrap Script Enhancements (Complete)
 
 ### GUI/Remote Access Setup
 - [ ] Install Tart Guest Agent in cal-dev VM (`brew install cirruslabs/cli/tart-guest-agent`)
