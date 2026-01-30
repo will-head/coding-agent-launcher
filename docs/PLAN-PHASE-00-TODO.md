@@ -18,9 +18,6 @@
 
 ## 0.10 Init Improvements and Enhancements (In Progress)
 
-### Repository Management
-- [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning
-
 ### First Login Git Updates (Complete)
 - [x] Created vm-first-run.sh for post-restore repo sync (completed 2026-01-26)
 - [x] Separated vm-auth.sh (--init only) from vm-first-run.sh (restore only) (completed 2026-01-26)
@@ -72,6 +69,14 @@
 - [ ] Z.AI GLM 4.7 API concurrency limit error in cal-dev VM (investigated 2026-01-25, superseded by opencode investigation)
   - **Note:** This issue was actually an opencode processing bug, not an API issue. The Z.AI API works correctly (verified via direct curl tests). The real issue was `opencode run` hanging, which is now understood and documented above.
   - Original investigation: [zai-glm-concurrency-error-investigation.md](zai-glm-concurrency-error-investigation.md)
+
+---
+
+## Future Improvements
+
+**Note:** These items are not essential for Phase 0 completion:
+
+- [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning
 
 ---
 
