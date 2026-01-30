@@ -64,8 +64,9 @@
 - [x] **Conclusion:** SSH is optimal for local VM (excellent performance)
 - [x] **Enhancement:** Added tmux support for session persistence
 
-### VM Management Improvements (Phase 0.8 - 12/12 Complete)
+### VM Management Improvements (Phase 0.8 - 13/13 Complete)
 - [x] Network check timeout optimization - already implemented at 2s (faster than requested 3s) (completed 2026-01-30)
+- [x] Check for specific opencode auth token file if documented (vm-auth.sh) - already using opencode auth list command-based approach (completed 2026-01-30)
 - [x] **PR #2:** Implement clipboard sharing via tart-guest-agent (merged 2026-01-25)
   - **Solution:** Installed tart-guest-agent which enables VM→Host clipboard sharing (one-way only)
   - **Findings:**

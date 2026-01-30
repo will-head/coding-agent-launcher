@@ -8,9 +8,8 @@
 
 ---
 
-## 0.8 VM Management Improvements (11/12 Complete)
+## 0.8 VM Management Improvements (10/11 Complete)
 - [ ] Add explicit error handling for scp failures in setup_scripts_folder (vm-auth.sh)
-- [ ] Check for specific opencode auth token file if documented (vm-auth.sh)
 - [ ] Add Ctrl+C trap handlers during authentication flows (vm-auth.sh)
 - [ ] Ensure gh username parsing works in non-English locales (vm-auth.sh)
 
