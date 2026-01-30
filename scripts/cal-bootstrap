@@ -388,50 +388,67 @@ setup_scripts_folder() {
     local vm_ip="$1"
 
     echo "  Creating ~/scripts directory in VM..."
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "mkdir -p ~/scripts" 2>> "$CAL_LOG"
+    if ! ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "mkdir -p ~/scripts" 2>> "$CAL_LOG"; then
+        echo "    ✗ Failed to create ~/scripts directory"
+        return 1
+    fi
 
     echo "  Copying scripts to ~/scripts..."
 
     # Copy vm-setup.sh
     if [ -f "$SCRIPT_DIR/vm-setup.sh" ]; then
-        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$SCRIPT_DIR/vm-setup.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"
-        echo "    ✓ vm-setup.sh"
+        if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SCRIPT_DIR/vm-setup.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
+            echo "    ✓ vm-setup.sh"
+        else
+            echo "    ✗ vm-setup.sh (copy failed)"
+        fi
     else
         echo "    ⚠ vm-setup.sh not found"
     fi
 
     # Copy vm-auth.sh
     if [ -f "$SCRIPT_DIR/vm-auth.sh" ]; then
-        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$SCRIPT_DIR/vm-auth.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"
-        echo "    ✓ vm-auth.sh"
+        if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SCRIPT_DIR/vm-auth.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
+            echo "    ✓ vm-auth.sh"
+        else
+            echo "    ✗ vm-auth.sh (copy failed)"
+        fi
     else
         echo "    ⚠ vm-auth.sh not found"
     fi
 
     # Copy vm-first-run.sh
     if [ -f "$SCRIPT_DIR/vm-first-run.sh" ]; then
-        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$SCRIPT_DIR/vm-first-run.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"
-        echo "    ✓ vm-first-run.sh"
+        if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SCRIPT_DIR/vm-first-run.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
+            echo "    ✓ vm-first-run.sh"
+        else
+            echo "    ✗ vm-first-run.sh (copy failed)"
+        fi
     else
         echo "    ⚠ vm-first-run.sh not found"
     fi
 
     # Copy tmux-wrapper.sh
     if [ -f "$SCRIPT_DIR/tmux-wrapper.sh" ]; then
-        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$SCRIPT_DIR/tmux-wrapper.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"
-        echo "    ✓ tmux-wrapper.sh"
+        if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SCRIPT_DIR/tmux-wrapper.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
+            echo "    ✓ tmux-wrapper.sh"
+        else
+            echo "    ✗ tmux-wrapper.sh (copy failed)"
+        fi
     else
         echo "    ⚠ tmux-wrapper.sh not found"
     fi
 
     # Make scripts executable
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "chmod +x ~/scripts/*.sh" 2>> "$CAL_LOG"
+    if ! ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "chmod +x ~/scripts/*.sh" 2>> "$CAL_LOG"; then
+        echo "    ⚠ Failed to make scripts executable"
+    fi
 
     # Add ~/scripts to PATH in .zshrc if not already present
     echo "  Adding ~/scripts to PATH in .zshrc..."

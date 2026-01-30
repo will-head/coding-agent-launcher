@@ -222,13 +222,17 @@ echo ""
 echo "1. GitHub CLI (gh)"
 echo "-------------------"
 if gh_authenticated; then
-    GH_USER=$(gh api user -q .login 2>/dev/null || gh auth status 2>&1 | grep "Logged in" | head -1 | sed 's/.*as \([^ ]*\).*/\1/')
+    # Use API call for locale-independent username retrieval
+    GH_USER=$(gh api user -q .login 2>/dev/null || echo "unknown")
     echo "  ✓ Already authenticated as $GH_USER"
     echo -n "  Re-authenticate? [y/N] "
     read -r -k 1 reply
     echo ""
     if [[ "$reply" =~ ^[Yy]$ ]]; then
+        # Set up trap for Ctrl+C during authentication
+        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
         gh auth login
+        trap - INT
     else
         echo "  → Skipped"
     fi
@@ -239,7 +243,10 @@ else
         read -r -k 1 reply
         echo ""
         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+            # Set up trap for Ctrl+C during authentication
+            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
             gh auth login
+            trap - INT
         else
             echo "  → Skipped"
         fi
@@ -258,7 +265,10 @@ if opencode_authenticated; then
     read -r -k 1 reply
     echo ""
     if [[ "$reply" =~ ^[Yy]$ ]]; then
+        # Set up trap for Ctrl+C during authentication
+        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
         opencode auth login
+        trap - INT
     else
         echo "  → Skipped"
     fi
@@ -269,7 +279,10 @@ else
         read -r -k 1 reply
         echo ""
         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+            # Set up trap for Ctrl+C during authentication
+            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
             opencode auth login
+            trap - INT
         else
             echo "  → Skipped"
         fi
@@ -288,7 +301,10 @@ if cursor_authenticated; then
     read -r -k 1 reply
     echo ""
     if [[ "$reply" =~ ^[Yy]$ ]]; then
+        # Set up trap for Ctrl+C during authentication
+        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
         agent
+        trap - INT
     else
         echo "  → Skipped"
     fi
@@ -299,7 +315,10 @@ else
         read -r -k 1 reply
         echo ""
         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
+            # Set up trap for Ctrl+C during authentication
+            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
             agent
+            trap - INT
         else
             echo "  → Skipped"
         fi
@@ -309,9 +328,6 @@ else
 fi
 
 # 4. Claude Code (LAST - takes over screen)
-# TODO: Handle Claude auth clean exit if it fails
-# If claude command fails (network, API error, etc.) or exits unexpectedly,
-# we should detect this and show appropriate message rather than continuing silently
 echo ""
 echo "4. Claude Code"
 echo "--------------"
@@ -322,7 +338,10 @@ if claude_authenticated; then
     echo ""
     if [[ "$reply" =~ ^[Yy]$ ]]; then
         echo "  Press Ctrl+C to exit when done."
+        # Set up trap for Ctrl+C during authentication
+        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
         claude
+        trap - INT
     else
         echo "  → Skipped"
     fi
@@ -334,7 +353,10 @@ else
         echo ""
         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
             echo "  Press Ctrl+C to exit when done."
+            # Set up trap for Ctrl+C during authentication
+            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
             claude
+            trap - INT
         else
             echo "  → Skipped"
         fi
@@ -351,8 +373,8 @@ if gh_authenticated; then
     echo "📦 GitHub Repository Sync"
     echo "-------------------------"
     echo ""
-    # Get authenticated username
-    GH_USER=$(gh api user -q .login 2>/dev/null || gh auth status 2>&1 | grep "Logged in" | head -1 | sed 's/.*as \([^ ]*\).*/\1/')
+    # Get authenticated username (locale-independent API call)
+    GH_USER=$(gh api user -q .login 2>/dev/null || echo "unknown")
 
     echo "  Clone repositories to ~/code/github.com/[owner]/[repo]"
     echo ""
