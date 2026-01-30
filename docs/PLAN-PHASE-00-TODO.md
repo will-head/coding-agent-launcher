@@ -32,6 +32,13 @@
 - [ ] Add `--snapshot delete --force` option to skip git checks and avoid booting VM (for unresponsive VMs)
 - [ ] Check --help is up to date
 
+### GUI/Remote Access Setup
+- [ ] Install Tart Guest Agent in cal-dev VM (`brew install cirruslabs/cli/tart-guest-agent`)
+- [ ] Configure VS Code Remote-SSH for cal-dev VM access
+- [ ] Document when to use Remote-SSH vs native Tart console
+- [ ] Add clipboard sharing setup to bootstrap guide
+- [ ] Test `tart exec` command functionality with guest agent
+
 ---
 
 ## 0.11 Session State Management (Future)
