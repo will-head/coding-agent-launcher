@@ -22,10 +22,6 @@
 - [x] Simplified vm-first-run.sh to check for remote updates only (completed 2026-01-26)
 - [x] Fixed logout cancel to not re-run keychain unlock (completed 2026-01-26)
 
-### Installation Improvements
-- [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
-- [ ] Verify opencode login flow is fixed (test authentication reliability)
-- [ ] Add Codex GitHub CLI Antigravity tools installation in init
 
 ### cal-bootstrap Script Enhancements (Complete)
 

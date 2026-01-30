@@ -276,6 +276,22 @@ else
     fi
 fi
 
+# Install Codex CLI
+echo ""
+echo "🤖 Installing Codex CLI..."
+if command_exists codex; then
+    echo "  ✓ Codex CLI already installed"
+else
+    # Ensure node/npm is in PATH (reload brew environment)
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+
+    if npm install -g @openai/codex; then
+        echo "  ✓ Codex CLI installed"
+    else
+        echo "  ✗ Failed to install Codex CLI"
+    fi
+fi
+
 # Install Go development tools
 echo ""
 echo "🛠️  Installing Go development tools..."
@@ -746,6 +762,13 @@ else
     echo "  ✗ opencode: not found (may need to restart shell)"
 fi
 
+if command_exists codex; then
+    CODEX_VERSION=$(codex --version 2>/dev/null | head -n1)
+    echo "  ✓ codex: $CODEX_VERSION"
+else
+    echo "  ✗ codex: not found (may need to restart shell)"
+fi
+
 if command_exists gh; then
     GH_VERSION=$(gh --version 2>/dev/null | head -n1)
     echo "  ✓ gh: $GH_VERSION"
@@ -968,6 +991,7 @@ echo "  3. Authenticate agents:"
 echo "     • Claude Code: claude"
 echo "     • Opencode: opencode auth login"
 echo "     • Cursor: agent"
+echo "     • Codex CLI: codex"
 echo ""
 echo "💡 Notes:"
 echo "  • Auto-login is enabled - VM will boot to desktop for Screen Sharing"

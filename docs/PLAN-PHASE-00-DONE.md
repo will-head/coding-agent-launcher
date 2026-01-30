@@ -134,6 +134,11 @@
   - Added GOPATH and Go bin directory to PATH in .zshrc
   - Core Go tools (go fmt, go vet, go test, go mod) already included
   - Implementation in vm-setup.sh
+- [x] Add Codex CLI installation in vm-setup.sh (completed 2026-01-30)
+  - Installs via npm: @openai/codex package
+  - Added to agent installation section alongside Claude Code, Cursor, opencode, CCS
+  - Added verification check and documentation in "Next steps" section
+  - Implementation in vm-setup.sh
 
 ### Init Improvements and Enhancements (Phase 0.10 - Partial)
 - [x] Add option to sync git repos on init (clone specified repos into VM automatically)
