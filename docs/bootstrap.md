@@ -66,7 +66,7 @@ CAL automatically checks for uncommitted changes and unpushed commits before des
 
 **Protected operations:**
 - `--init` - Checks cal-dev before deleting and recreating
-- `--snapshot restore` - Checks cal-dev before replacing with snapshot
+- `--snapshot restore` - Checks cal-dev before replacing (if cal-dev exists); creates from snapshot if cal-dev doesn't exist
 - `--snapshot delete` - Checks VM being deleted (except cal-clean base image)
 
 **What is checked:**
@@ -328,9 +328,14 @@ See [VM Detection Guide](vm-detection.md) for complete documentation and integra
 # Restore to freshly-configured state
 ./scripts/cal-bootstrap -S restore cal-init
 
+# Restore even if cal-dev was deleted
+./scripts/cal-bootstrap -S restore cal-init  # Creates cal-dev from snapshot
+
 # List all VMs and snapshots
 ./scripts/cal-bootstrap -S list
 ```
+
+**Note:** `--snapshot restore` can create `cal-dev` from a snapshot even if `cal-dev` doesn't exist. If `cal-dev` exists, it checks for uncommitted/unpushed git changes before replacing it.
 
 ## Aliases (~/.zshrc)
 

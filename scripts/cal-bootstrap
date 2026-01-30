@@ -1504,70 +1504,60 @@ do_snapshot() {
                 exit 1
             fi
 
-            # Check if cal-dev exists (early exit if missing)
-            if ! vm_exists "$VM_DEV"; then
-                echo "⚠️  $VM_DEV does not exist."
-                echo ""
-                echo "Cannot restore to a non-existent VM."
-                echo ""
-                echo "You can:"
-                echo "  1. Re-run: ./scripts/cal-bootstrap --init"
-                echo "  2. Or create manually: tart clone cal-clean $VM_DEV"
-                echo ""
-                exit 1
-            fi
-
-            # Always check for git changes - boot VM if needed
-            local we_started_vm=false
-            local vm_ip=""
-
-            # Start VM if not running
-            if ! vm_running "$VM_DEV"; then
-                echo "Starting $VM_DEV to check for uncommitted changes..."
-                if start_vm_background "$VM_DEV"; then
-                    we_started_vm=true
-                    vm_ip="$VM_IP"
-                else
-                    echo "  ⚠ Could not start VM to check for git changes"
-                    echo "  Proceeding without git check..."
-                fi
-            else
-                vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
-            fi
-
-            # Check for git changes if VM is running
-            if [ -n "$vm_ip" ]; then
-                check_vm_git_changes "$VM_DEV" "$vm_ip"
-            fi
-
-            # Stop VM if we started it just for the git check
-            if [ "$we_started_vm" = true ]; then
-                echo ""
-                echo "Stopping $VM_DEV..."
-                stop_vm "$VM_DEV"
-                CLEANUP_VM=false
-            fi
-
-            # Single confirmation prompt (after showing git warnings if any)
-            if [ "$SKIP_CONFIRM" = false ]; then
-                echo ""
-                echo "This will replace $VM_DEV with $restore_from"
-                echo "All changes in $VM_DEV will be lost!"
-                echo ""
-                echo "Continue? (y/N)"
-                read -r -k 1 reply
-                echo ""
-                if [[ ! $reply =~ ^[Yy]$ ]]; then
-                    echo "Aborted"
-                    exit 1
-                fi
-            fi
-
-            # Stop and delete current VM
-            stop_vm "$VM_DEV"
-
-            # Delete VM
+            # Handle two scenarios:
+            # 1. cal-dev exists: Check for git changes, confirm, delete, then clone from snapshot
+            # 2. cal-dev doesn't exist: Skip git checks, just confirm and create from snapshot
+            # Check if cal-dev exists
             if vm_exists "$VM_DEV"; then
+                # cal-dev exists - check for git changes before replacing
+                local we_started_vm=false
+                local vm_ip=""
+
+                # Start VM if not running
+                if ! vm_running "$VM_DEV"; then
+                    echo "Starting $VM_DEV to check for uncommitted changes..."
+                    if start_vm_background "$VM_DEV"; then
+                        we_started_vm=true
+                        vm_ip="$VM_IP"
+                    else
+                        echo "  ⚠ Could not start VM to check for git changes"
+                        echo "  Proceeding without git check..."
+                    fi
+                else
+                    vm_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
+                fi
+
+                # Check for git changes if VM is running
+                if [ -n "$vm_ip" ]; then
+                    check_vm_git_changes "$VM_DEV" "$vm_ip"
+                fi
+
+                # Stop VM if we started it just for the git check
+                if [ "$we_started_vm" = true ]; then
+                    echo ""
+                    echo "Stopping $VM_DEV..."
+                    stop_vm "$VM_DEV"
+                    CLEANUP_VM=false
+                fi
+
+                # Confirmation prompt (after showing git warnings if any)
+                if [ "$SKIP_CONFIRM" = false ]; then
+                    echo ""
+                    echo "This will replace $VM_DEV with $restore_from"
+                    echo "All changes in $VM_DEV will be lost!"
+                    echo ""
+                    echo "Continue? (y/N)"
+                    read -r -k 1 reply
+                    echo ""
+                    if [[ ! $reply =~ ^[Yy]$ ]]; then
+                        echo "Aborted"
+                        exit 1
+                    fi
+                fi
+
+                # Stop and delete current VM
+                stop_vm "$VM_DEV"
+
                 echo "Deleting $VM_DEV..."
                 if ! "$TART" delete "$VM_DEV"; then
                     echo ""
@@ -1585,6 +1575,22 @@ do_snapshot() {
                     echo ""
                     echo "Aborting restore."
                     exit 1
+                fi
+            else
+                # cal-dev doesn't exist - create it from snapshot
+                echo "$VM_DEV does not exist."
+                echo "Creating $VM_DEV from $restore_from..."
+                echo ""
+
+                # Confirmation prompt
+                if [ "$SKIP_CONFIRM" = false ]; then
+                    echo "Create $VM_DEV from $restore_from? (y/N)"
+                    read -r -k 1 reply
+                    echo ""
+                    if [[ ! $reply =~ ^[Yy]$ ]]; then
+                        echo "Aborted"
+                        exit 1
+                    fi
                 fi
             fi
 

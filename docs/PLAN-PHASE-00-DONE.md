@@ -191,6 +191,7 @@
 - [x] Allow `--snapshot delete` to accept multiple VM names (completed 2026-01-30)
 - [x] Add `--snapshot delete --force` option to skip git checks and avoid booting VM (for unresponsive VMs) (completed 2026-01-30)
 - [x] Check --help is up to date (completed 2026-01-30)
+- [x] Allow `--snapshot restore` to create cal-dev from snapshot even if cal-dev doesn't exist (completed 2026-01-30)
 
 ### First Login and Logout Improvements (Completed 2026-01-26)
 - [x] **Fixed first-run flag setting reliability**
