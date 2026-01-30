@@ -358,6 +358,30 @@ brew install anomalyco/tap/opencode
 # Binary: opencode
 ```
 
+**CCS - Claude Code Switch** (npm):
+```bash
+npm install -g @kaitranntt/ccs
+# Binary: ccs
+```
+
+### Go Development Tools
+
+**Linters and Static Analysis**:
+```bash
+brew install golangci-lint                               # Meta-linter with 50+ linters
+go install honnef.co/go/tools/cmd/staticcheck@latest    # Fast static analyzer
+```
+
+**Development Tools**:
+```bash
+go install golang.org/x/tools/cmd/goimports@latest      # Auto-import formatter
+go install github.com/go-delve/delve/cmd/dlv@latest     # Debugger
+go install go.uber.org/mock/mockgen@latest               # Test mocking
+go install github.com/air-verse/air@latest               # Hot reload
+```
+
+**Note**: Core Go tools (go fmt, go vet, go test, go mod) are built-in.
+
 ### PATH Configuration
 
 ```bash
@@ -365,7 +389,8 @@ brew install anomalyco/tap/opencode
 export PATH="$HOME/.local/bin:$PATH"           # Cursor CLI
 export PATH="$HOME/scripts:$PATH"              # Helper scripts
 export PATH="$HOME/.opencode/bin:$PATH"        # opencode (alternate location)
-export PATH="$HOME/go/bin:$PATH"               # Go binaries (if using go install)
+export GOPATH="$HOME/go"                       # Go workspace
+export PATH="$GOPATH/bin:$PATH"                # Go development tools
 ```
 
 ---

@@ -1893,12 +1893,39 @@ done
 # Find tart
 TART=$(find_tart)
 if [ -z "$TART" ]; then
-    echo "Error: tart not found"
+    echo "Tart not found. Attempting to install..."
     echo ""
-    echo "Install with: brew install cirruslabs/cli/tart"
-    echo ""
-    echo "Or set TART_PATH environment variable"
-    exit 1
+
+    # Check if brew is available
+    if command -v brew &>/dev/null; then
+        echo "Installing Tart via Homebrew..."
+        if brew install cirruslabs/cli/tart; then
+            echo "  ✓ Tart installed successfully"
+            echo ""
+
+            # Find tart again after installation
+            TART=$(find_tart)
+            if [ -z "$TART" ]; then
+                echo "Error: Tart was installed but still not found in PATH"
+                echo "Try: source ~/.zshrc or restart your terminal"
+                exit 1
+            fi
+        else
+            echo "  ✗ Failed to install Tart via Homebrew"
+            echo ""
+            echo "Please install manually with: brew install cirruslabs/cli/tart"
+            echo "Or set TART_PATH environment variable"
+            exit 1
+        fi
+    else
+        echo "Error: Homebrew not found"
+        echo ""
+        echo "Install Homebrew first: https://brew.sh"
+        echo "Then install Tart with: brew install cirruslabs/cli/tart"
+        echo ""
+        echo "Or set TART_PATH environment variable"
+        exit 1
+    fi
 fi
 
 # Auto-detect mode if not specified

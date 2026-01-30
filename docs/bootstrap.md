@@ -5,7 +5,7 @@
 ## Quick Start
 
 ```bash
-# 1. Install Tart
+# 1. Install Tart (optional - cal-bootstrap will auto-install if not present)
 brew install cirruslabs/cli/tart
 
 # 2. Run bootstrap script (creates VMs, installs tools, sets up SSH keys)
@@ -17,6 +17,8 @@ brew install cirruslabs/cli/tart
 # OR: Restart VM and reconnect (quick refresh)
 ./scripts/cal-bootstrap --restart
 ```
+
+**Note:** cal-bootstrap will automatically install Tart via Homebrew if it's not already installed.
 
 **Migration Note:** If you have an existing `cal-initialised` VM from before this change, it will not be automatically renamed. You can:
 1. Keep it as a backup

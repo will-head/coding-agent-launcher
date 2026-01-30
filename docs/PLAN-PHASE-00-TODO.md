@@ -27,14 +27,9 @@
 - [x] Fixed logout cancel to not re-run keychain unlock (completed 2026-01-26)
 
 ### Installation Improvements
-- [ ] Try to install Tart automatically during init if not present (brew install cirruslabs/cli/tart)
 - [ ] Consider using GUIDs for VM/snapshot names with friendly name mapping
 - [ ] Verify opencode login flow is fixed (test authentication reliability)
 - [ ] Add Codex GitHub CLI Antigravity tools installation in init
-- [ ] Install all packages required for full Go development in cal-dev during --init (follow best practice)
-  - Research and install in vm-setup.sh: golangci-lint (linters runner), goimports, delve (debugger), mockgen (test mocking), air (hot reload)
-  - Note: Core Go tools already included (go fmt, go vet, go test, go mod)
-  - Reference: https://golangci-lint.run/ and Go community best practices
 
 ### cal-bootstrap Script Enhancements
 - [ ] Allow `--snapshot delete` to accept multiple VM names

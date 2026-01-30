@@ -20,7 +20,7 @@ VM-based sandbox for running AI coding agents (Claude Code, Cursor, opencode) sa
 ## Quick Start
 
 ```bash
-# 1. Install Tart
+# 1. Install Tart (optional - cal-bootstrap will auto-install if not present)
 brew install cirruslabs/cli/tart
 
 # 2. Run bootstrap script (creates VMs, installs tools, sets up SSH keys)
@@ -29,6 +29,8 @@ brew install cirruslabs/cli/tart
 # 3. After manual login setup, start developing
 ./scripts/cal-bootstrap --run
 ```
+
+**Note:** cal-bootstrap will automatically install Tart via Homebrew if it's not already installed.
 
 See [Bootstrap Guide](docs/bootstrap.md) for setup instructions.
 

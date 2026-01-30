@@ -121,6 +121,15 @@
 ### Installation Improvements (Phase 0.10 - Partial)
 - [x] Add CCS (Claude Code Switch) installation during --init (completed 2026-01-26)
 - [x] Fix Claude Code authentication detection (check settings.json content, not just existence) (completed 2026-01-26)
+- [x] Try to install Tart automatically during init if not present (completed 2026-01-30)
+  - Auto-installs via Homebrew if not found in PATH
+  - Checks for brew availability and provides clear error messages
+  - Implementation in cal-bootstrap script
+- [x] Install all packages required for full Go development in cal-dev during --init (completed 2026-01-30)
+  - Installed tools: golangci-lint, staticcheck, goimports, delve (dlv), mockgen, air
+  - Added GOPATH and Go bin directory to PATH in .zshrc
+  - Core Go tools (go fmt, go vet, go test, go mod) already included
+  - Implementation in vm-setup.sh
 
 ### Init Improvements and Enhancements (Phase 0.10 - Partial)
 - [x] Add option to sync git repos on init (clone specified repos into VM automatically)

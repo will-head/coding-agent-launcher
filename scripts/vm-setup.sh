@@ -276,6 +276,93 @@ else
     fi
 fi
 
+# Install Go development tools
+echo ""
+echo "🛠️  Installing Go development tools..."
+echo "  Core Go tools (go fmt, go vet, go test, go mod) are built-in"
+echo ""
+
+# Ensure Go is in PATH (from Homebrew)
+if [ -d "/opt/homebrew/opt/go/libexec/bin" ]; then
+    export PATH="/opt/homebrew/opt/go/libexec/bin:$PATH"
+fi
+export GOPATH="$HOME/go"
+export PATH="$GOPATH/bin:$PATH"
+
+# Install golangci-lint (comprehensive linters runner - includes 50+ linters)
+echo "  → golangci-lint (meta-linter with 50+ linters)..."
+if command_exists golangci-lint; then
+    echo "    ✓ Already installed"
+else
+    if brew install golangci-lint; then
+        echo "    ✓ Installed"
+    else
+        echo "    ✗ Failed to install"
+    fi
+fi
+
+# Install staticcheck (fast, standalone static analyzer)
+echo "  → staticcheck (static analyzer)..."
+if command_exists staticcheck; then
+    echo "    ✓ Already installed"
+else
+    if go install honnef.co/go/tools/cmd/staticcheck@latest; then
+        echo "    ✓ Installed"
+    else
+        echo "    ✗ Failed to install"
+    fi
+fi
+
+# Install goimports (auto-import formatter)
+echo "  → goimports (import formatter)..."
+if command_exists goimports; then
+    echo "    ✓ Already installed"
+else
+    if go install golang.org/x/tools/cmd/goimports@latest; then
+        echo "    ✓ Installed"
+    else
+        echo "    ✗ Failed to install"
+    fi
+fi
+
+# Install delve (debugger)
+echo "  → delve (debugger)..."
+if command_exists dlv; then
+    echo "    ✓ Already installed"
+else
+    if go install github.com/go-delve/delve/cmd/dlv@latest; then
+        echo "    ✓ Installed"
+    else
+        echo "    ✗ Failed to install"
+    fi
+fi
+
+# Install mockgen (test mocking)
+echo "  → mockgen (test mocking)..."
+if command_exists mockgen; then
+    echo "    ✓ Already installed"
+else
+    if go install go.uber.org/mock/mockgen@latest; then
+        echo "    ✓ Installed"
+    else
+        echo "    ✗ Failed to install"
+    fi
+fi
+
+# Install air (hot reload for development)
+echo "  → air (hot reload)..."
+if command_exists air; then
+    echo "    ✓ Already installed"
+else
+    if go install github.com/air-verse/air@latest; then
+        echo "    ✓ Installed"
+    else
+        echo "    ✗ Failed to install"
+    fi
+fi
+
+echo "  ✓ Go development tools setup complete"
+
 # Create code directory for development
 echo ""
 echo "📁 Creating code directory..."
@@ -358,6 +445,18 @@ if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' ~/.zshrc; then
     echo "  ✓ Added .local/bin to PATH"
 else
     echo "  ✓ .local/bin already in PATH"
+fi
+
+# Add Go bin paths to PATH if not already present (for Go development tools)
+if ! grep -q 'export GOPATH="\$HOME/go"' ~/.zshrc; then
+    cat >> ~/.zshrc <<'GO_PATH_EOF'
+# Go development environment
+export GOPATH="$HOME/go"
+export PATH="$GOPATH/bin:$PATH"
+GO_PATH_EOF
+    echo "  ✓ Added Go paths to PATH"
+else
+    echo "  ✓ Go paths already in PATH"
 fi
 
 # Fix terminal TERM setting
