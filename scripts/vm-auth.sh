@@ -333,12 +333,12 @@ echo "4. Claude Code"
 echo "--------------"
 if claude_authenticated; then
     echo "  ✓ Already authenticated"
+    echo "  💡 Press 'c' to copy the auth URL (do not mouse-select - line breaks will break the URL)"
     echo -n "  Re-authenticate? [y/N] "
     read -r -k 1 reply
     echo ""
     if [[ "$reply" =~ ^[Yy]$ ]]; then
         echo "  Press Ctrl+C to exit when done."
-        echo "  💡 Press 'c' to copy the auth URL (do not mouse-select - line breaks will break the URL)"
         # Set up trap for Ctrl+C during authentication
         trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
         claude
@@ -349,12 +349,12 @@ if claude_authenticated; then
 else
     if command_exists claude; then
         echo "  ⚠ Not authenticated"
+        echo "  💡 Press 'c' to copy the auth URL (do not mouse-select - line breaks will break the URL)"
         echo -n "  Authenticate now? [Y/n] "
         read -r -k 1 reply
         echo ""
         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
             echo "  Press Ctrl+C to exit when done."
-            echo "  💡 Press 'c' to copy the auth URL (do not mouse-select - line breaks will break the URL)"
             # Set up trap for Ctrl+C during authentication
             trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
             claude
