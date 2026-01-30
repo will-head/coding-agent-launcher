@@ -47,7 +47,6 @@
 
 - [ ] vm-auth.sh GitHub clone fails with network timeout (needs transparent proxy auto-start before clone attempt)
 - [ ] Investigate: Environment status should be shown as last item before "What would you like to work on?" prompt (Cursor-CLI only - works correctly in Opencode and Claude Code)
-- [ ] Claude Code OAuth URL breaks when copied from terminal due to line wrapping - investigate terminal output wrapping or URL shortening to prevent copy/paste failures during authentication
 - [x] Opencode VM issues (investigated 2026-01-25, resolved)
   - **Status:** ✅ Resolved - opencode works correctly in VM
   - **Finding:** `opencode run` works when TERM is inherited from environment, but hangs when TERM is explicitly set in command environment

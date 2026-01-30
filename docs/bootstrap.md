@@ -471,6 +471,7 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 - **Screen Sharing shows black screen/locked VM**: You selected High Performance mode - disconnect and reconnect using **Standard mode** instead. This mode is incompatible with Tart VMs.
 - **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard. Only VM → Host copying works; Host → VM pasting causes Screen Sharing to disconnect. If VM → Host copying fails, verify tart-guest-agent is running: `launchctl list | grep tart-guest-agent`. If not running, reload: `launchctl load ~/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist`
 - **Screen Sharing disconnects when pasting from Host**: This is a known limitation - only VM → Host clipboard works reliably. Do not paste from Host to VM as it will disconnect the Screen Sharing session. Use SSH or other methods to transfer text to the VM.
+- **Claude Code OAuth URL won't paste correctly**: Do not mouse-select the URL - line breaks will be included. Instead, press `c` when prompted to copy the auth URL to your clipboard.
 - **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
 - **opencode run hangs**: This occurs when TERM is explicitly set in the command environment. Use `opencode run` normally (TERM inherited from environment) - it works correctly. See [Opencode VM Summary](opencode-vm-summary.md) for details.
 - **First-run automation didn't trigger**: Check if `~/.cal-first-run` flag exists. If missing, run `vm-auth.sh` manually.

@@ -218,6 +218,14 @@
   - Allows user to abort logout (exec zsh -l) or continue despite changes
   - Implemented in ~/.zlogout via vm-setup.sh
 
+### Known Issues Resolved
+- [x] **Claude Code OAuth URL line wrapping** (investigated 2026-01-30, resolved)
+  - **Issue:** Mouse-selecting the OAuth URL from terminal includes literal newlines, breaking the URL when pasted in browser
+  - **Finding:** Claude Code has built-in `c` to copy feature that copies the full URL without line breaks
+  - **Root cause:** Normal terminal behavior - mouse selection includes line breaks from wrapped text
+  - **Solution:** Press `c` when prompted instead of mouse-selecting the URL
+  - **Fix:** Added hint in vm-auth.sh to remind users to press `c` to copy auth URL
+
 ### Documentation Cleanup (Complete)
 - [x] Clean up AGENTS.md (CLAUDE.md symlinks to it)
   - [x] Change internal refs from CLAUDE.md to AGENTS.md

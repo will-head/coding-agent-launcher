@@ -338,6 +338,7 @@ if claude_authenticated; then
     echo ""
     if [[ "$reply" =~ ^[Yy]$ ]]; then
         echo "  Press Ctrl+C to exit when done."
+        echo "  💡 Press 'c' to copy the auth URL (do not mouse-select - line breaks will break the URL)"
         # Set up trap for Ctrl+C during authentication
         trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
         claude
@@ -353,6 +354,7 @@ else
         echo ""
         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
             echo "  Press Ctrl+C to exit when done."
+            echo "  💡 Press 'c' to copy the auth URL (do not mouse-select - line breaks will break the URL)"
             # Set up trap for Ctrl+C during authentication
             trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
             claude
