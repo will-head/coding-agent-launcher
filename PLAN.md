@@ -21,7 +21,7 @@ Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via c
 
 | Phase | Name | Status | Outstanding TODOs | Detail Files |
 |-------|------|--------|-------------------|--------------|
-| 0 | Bootstrap | Mostly Complete | ~19 | [TODO](docs/PLAN-PHASE-00-TODO.md) • [DONE](docs/PLAN-PHASE-00-DONE.md) |
+| 0 | Bootstrap | Mostly Complete | ~18 | [TODO](docs/PLAN-PHASE-00-TODO.md) • [DONE](docs/PLAN-PHASE-00-DONE.md) |
 | 1 | CLI Foundation | Not Started | ~40 | [TODO](docs/PLAN-PHASE-01-TODO.md) • [DONE](docs/PLAN-PHASE-01-DONE.md) |
 | 2 | Agent Integration & UX | Not Started | ~20 | [TODO](docs/PLAN-PHASE-02-TODO.md) • [DONE](docs/PLAN-PHASE-02-DONE.md) |
 | 3 | GitHub Workflow | Not Started | ~15 | [TODO](docs/PLAN-PHASE-03-TODO.md) • [DONE](docs/PLAN-PHASE-03-DONE.md) |

@@ -8,8 +8,7 @@
 
 ---
 
-## 0.8 VM Management Improvements (10/11 Complete)
-- [ ] Reduce network check timeout from 5s to 3s for faster feedback (vm-auth.sh)
+## 0.8 VM Management Improvements (11/12 Complete)
 - [ ] Add explicit error handling for scp failures in setup_scripts_folder (vm-auth.sh)
 - [ ] Check for specific opencode auth token file if documented (vm-auth.sh)
 - [ ] Add Ctrl+C trap handlers during authentication flows (vm-auth.sh)
