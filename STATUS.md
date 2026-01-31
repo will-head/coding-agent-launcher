@@ -18,7 +18,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| [#3](https://github.com/will-head/coding-agent-launcher/pull/3) | create-pr/project-scaffolding | Add project scaffolding for CAL CLI | 2026-01-31 |
+| *No PRs awaiting review* | | | |
 
 ---
 
@@ -26,7 +26,7 @@
 
 | PR | Branch | Description | Requested | Reason |
 |----|--------|-------------|-----------|--------|
-| *No PRs needing changes* | | | | |
+| [#3](https://github.com/will-head/coding-agent-launcher/pull/3) | create-pr/project-scaffolding | Add project scaffolding for CAL CLI | 2026-01-31 | Linter selection, dependency checks, install target issues |
 
 ---
 
