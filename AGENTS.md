@@ -19,6 +19,19 @@ scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 
 ## Core Rules
 
+### CAL_VM Auto-Approve
+
+When `CAL_VM=true` (running in cal-dev VM isolated environment):
+- All operations proceed without user confirmation
+- EXCEPTION: Destructive remote git operations always require approval:
+  - `push --force` (overwrites remote history)
+  - `push --delete` / deleting remote branches
+- Local-only operations (reset, checkout, clean, etc.) are allowed — GitHub is the restore point
+- This applies to ALL workflows (Interactive, Bug Cleanup, Documentation, etc.)
+
+When `CAL_VM` is not true (running on HOST):
+- Standard workflow approvals apply as documented
+
 ### Workflow Modes
 
 **Interactive** is the default workflow unless user specifies otherwise or changes are docs-only.
@@ -69,10 +82,10 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 ## Prohibitions
 
 **Never:**
-- Run commands without user approval (Interactive workflow)
-- Commit without user approval (Interactive workflow)
+- Run commands without user approval (Interactive workflow — unless `CAL_VM=true`, see [CAL_VM Auto-Approve](#cal_vm-auto-approve))
+- Commit without user approval (Interactive workflow — unless `CAL_VM=true`)
 - Commit to main branch (Create PR workflow)
-- Perform destructive operations without approval (all workflows)
+- Perform destructive remote git operations without approval (`push --force`, `push --delete` — even when `CAL_VM=true`)
 - Commit with failing tests or build
 - Skip code review for code/script changes (Interactive workflow)
 - Modify ADR or PRD files

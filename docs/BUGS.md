@@ -23,6 +23,6 @@ When bugs are resolved, remove the entry from this file and update `bugs/README.
 
 ## Active Bugs
 
-| ID | Summary | Severity | Status | Component | Opened |
-|----|---------|----------|--------|-----------|--------|
-| [BUG-001](bugs/BUG-001-ccs-auth-clipboard.md) | CCS auth create clipboard keybinding failure | Medium | Open | CCS/VM | 2026-01-31 |
+| ID | Summary | Severity | Status | Component | Phase | Opened |
+|----|---------|----------|--------|-----------|-------|--------|
+| [BUG-001](bugs/BUG-001-ccs-auth-clipboard.md) | CCS auth create clipboard keybinding failure | Medium | Open | CCS/VM | 0 (Bootstrap) | 2026-01-31 |

@@ -6,6 +6,7 @@
 | Status    | Open |
 | Severity  | Medium |
 | Component | CCS/VM |
+| Phase     | 0 (Bootstrap) |
 | Opened    | 2026-01-31 |
 
 ## Environment

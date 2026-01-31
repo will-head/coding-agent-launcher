@@ -293,6 +293,18 @@ Every workflow follows this procedure at session start:
 
 This ensures both agent and user have shared understanding of the workflow being followed.
 
+### CAL_VM Auto-Approve
+
+When `CAL_VM=true` (running in cal-dev VM isolated environment), individual workflow approval steps are skipped — operations proceed automatically without user confirmation.
+
+**Exception:** Destructive remote git operations always require approval, even when `CAL_VM=true`:
+- `push --force` (overwrites remote history)
+- `push --delete` / deleting remote branches
+
+Local-only operations (reset, checkout, clean, etc.) are allowed without approval since GitHub is the restore point.
+
+This applies to ALL workflows. See [CLAUDE.md § CAL_VM Auto-Approve](../CLAUDE.md#cal_vm-auto-approve) for the authoritative definition.
+
 ### Numbered Choice Presentation
 
 When presenting items for user selection (TODOs, PRs, tasks), **always use a numbered list** so users can reply with just a number:

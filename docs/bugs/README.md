@@ -26,6 +26,6 @@ This file is for human browsing only. Agents should not read this file.
 
 ## All Bugs
 
-| ID | Summary | Severity | Status | Component | Opened | Resolved |
-|----|---------|----------|--------|-----------|--------|----------|
-| [BUG-001](BUG-001-ccs-auth-clipboard.md) | CCS auth create clipboard keybinding failure | Medium | Open | CCS/VM | 2026-01-31 | - |
+| ID | Summary | Severity | Status | Component | Phase | Opened | Resolved |
+|----|---------|----------|--------|-----------|-------|--------|----------|
+| [BUG-001](BUG-001-ccs-auth-clipboard.md) | CCS auth create clipboard keybinding failure | Medium | Open | CCS/VM | 0 (Bootstrap) | 2026-01-31 | - |
