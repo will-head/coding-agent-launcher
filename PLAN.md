@@ -117,11 +117,11 @@ Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via c
 ```bash
 # On host (for building CAL)
 brew install go
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+go install honnef.co/go/tools/cmd/staticcheck@latest
 
 # Verify
 go version
-golangci-lint --version
+staticcheck --version
 ```
 
 ---

@@ -12,7 +12,7 @@
 
 ---
 
-## 1.1 **REFINED:** Project Scaffolding (PR #3 - updates applied, needs re-review)
+## 1.1 **REFINED:** Project Scaffolding (PR #3 - Viper added, PLAN.md updated, needs review)
 
 **Tasks:**
 1. Initialize Go module
