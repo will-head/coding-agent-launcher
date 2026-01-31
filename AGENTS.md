@@ -13,7 +13,7 @@ internal/                  # tui/, isolation/, agent/, env/, github/, config/
 scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 ```
 
-**Commands:** `go build -o cal ./cmd/cal` | `go test ./...` | `golangci-lint run`
+**Commands:** `go build -o cal ./cmd/cal` | `go test ./...` | `staticcheck ./...`
 
 ---
 
