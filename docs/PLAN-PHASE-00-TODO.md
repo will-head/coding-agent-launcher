@@ -27,17 +27,7 @@
 
 ### Console Access & Clipboard Solutions
 
-**Status:** ✅ **COMPLETED** - VNC experimental mode solves clipboard issues (2026-01-31)
-
-**Solution Implemented:**
-- Added `--gui` option to cal-bootstrap
-- Uses `tart run --vnc-experimental` for reliable bidirectional clipboard
-- Terminal remains free (VM runs in background)
-- Simple reconnect: `./cal-bootstrap --gui`
-
-**Remaining documentation tasks:**
-- [ ] Update bootstrap.md with `--gui` option and VNC setup
-- [ ] Document when to use SSH vs GUI console
+**Status:** ✅ **COMPLETED** - All implementation and documentation complete (2026-01-31)
 
 ---
 

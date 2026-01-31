@@ -243,6 +243,17 @@
     - Avoids standard VNC mode which has the same clipboard disconnect issue
   - **Trade-offs:** VNC experimental mode may have occasional display quirks (documented)
   - **Why experimental mode:** Standard `--vnc` mode uses macOS Screen Sharing which has the same Host→VM clipboard disconnect issue. Experimental mode uses Virtualization.Framework's built-in VNC server with reliable clipboard support.
+- [x] Update bootstrap.md with `--gui` option and VNC setup (completed 2026-01-31)
+  - Added --gui to Quick Start and Commands sections
+  - Documented GUI Console with VNC experimental mode features
+  - Explained bidirectional clipboard support without disconnects
+  - Added comprehensive troubleshooting for clipboard issues
+  - Added cal-gui alias
+- [x] Document when to use SSH vs GUI console (completed 2026-01-31)
+  - Created "When to use" sections for both access methods
+  - Restructured Use Cases as "Recommended access methods" with priority order
+  - Clarified SSH for development, GUI for clipboard/browser tasks
+  - Marked Screen Sharing as legacy with --gui recommendation
 
 ### Known Issues Resolved
 - [x] **Claude Code OAuth URL line wrapping** (investigated 2026-01-30, resolved)
