@@ -16,6 +16,9 @@ brew install cirruslabs/cli/tart
 
 # OR: Restart VM and reconnect (quick refresh)
 ./scripts/cal-bootstrap --restart
+
+# OR: Launch with GUI console (VNC with bidirectional clipboard)
+./scripts/cal-bootstrap --gui
 ```
 
 **Note:** cal-bootstrap will automatically install Tart via Homebrew if it's not already installed.
@@ -43,6 +46,10 @@ The `cal-bootstrap` script automates VM setup and management.
 # Restart cal-dev and SSH in (quick refresh)
 ./scripts/cal-bootstrap --restart
 ./scripts/cal-bootstrap -r
+
+# Launch with GUI console (VNC with clipboard support)
+./scripts/cal-bootstrap --gui
+./scripts/cal-bootstrap -g
 
 # Stop cal-dev
 ./scripts/cal-bootstrap --stop
@@ -220,20 +227,52 @@ chmod +x ~/vm-setup.sh && ./vm-setup.sh
 
 ## Accessing the VM
 
-**SSH with tmux (Default):**
+**GUI Console with Clipboard (Recommended for clipboard operations):**
+```bash
+./scripts/cal-bootstrap --gui
+```
+
+This launches cal-dev with VNC experimental mode, providing:
+- **Full macOS desktop** - Native GUI access with mouse and keyboard
+- **Bidirectional clipboard** - Copy/paste works both ways reliably
+- **No disconnect issues** - Paste operations don't cause crashes
+- **Terminal remains free** - VM runs in background, VNC window opens automatically
+- **Simple reconnect** - Just run `./scripts/cal-bootstrap --gui` again
+
+**Why experimental mode?**
+- Standard VNC (`--vnc`) has clipboard issues: Host→VM paste causes disconnect
+- Experimental mode (`--vnc-experimental`) uses Virtualization.Framework's VNC server
+- Provides reliable clipboard support without crashes
+- Trade-off: May have occasional display quirks, but clipboard works correctly
+
+**When to use GUI console:**
+- Copying/pasting text between host and VM
+- Agent authentication requiring browser (especially Cursor Agent OAuth)
+- Manual keychain unlock
+- GUI-based configuration or debugging
+- File browsing with Finder
+
+**SSH with tmux (Recommended for development):**
 ```bash
 ./scripts/cal-bootstrap --run   # Starts VM and connects with tmux
 # Or manually:
 ssh -t admin@$(tart ip cal-dev) "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s cal"
 ```
 
-tmux is now the default for all connections, providing:
+tmux is the default for SSH connections, providing:
 - **Session persistence** - Sessions survive SSH disconnects
 - **Multiple panes** - Split screen for side-by-side work
 - **Scrollback buffer** - Independent of terminal emulator
 - **Better terminal handling** - Enhanced features
+- **Better performance** - Faster for command-line work
 
-**VNC (for GUI access):**
+**When to use SSH:**
+- Development work (primary method)
+- Running terminal-based tools (agents, git, etc.)
+- Better performance for command-line tasks
+- tmux session persistence
+
+**Screen Sharing (Legacy VNC - use --gui instead):**
 ```bash
 open vnc://$(tart ip cal-dev)   # password: admin
 ```
@@ -343,6 +382,7 @@ See [VM Detection Guide](vm-detection.md) for complete documentation and integra
 alias cal='./scripts/cal-bootstrap'
 alias cal-start='./scripts/cal-bootstrap --run'
 alias cal-restart='./scripts/cal-bootstrap --restart'
+alias cal-gui='./scripts/cal-bootstrap --gui'
 alias cal-stop='./scripts/cal-bootstrap --stop'
 alias cal-snap='./scripts/cal-bootstrap --snapshot'
 ```
@@ -358,7 +398,11 @@ tart delete <vm>             # Delete VM
 tart clone <src> <dst>       # Clone/snapshot
 ```
 
-## Screen Sharing
+## Screen Sharing (Legacy)
+
+> **Recommendation:** Use `./scripts/cal-bootstrap --gui` instead for reliable clipboard support.
+>
+> This section documents Screen Sharing for reference, but the --gui option provides a better experience with bidirectional clipboard and no disconnect issues.
 
 macOS Screen Sharing provides GUI access to Tart VMs. **Always use Standard mode** - High Performance mode is incompatible with Tart VMs.
 
@@ -453,18 +497,27 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 
 ### Use Cases
 
-**When to use Screen Sharing:**
-- Agent authentication requiring browser (especially Cursor Agent OAuth)
-- Manual keychain unlock
-- GUI-based configuration or debugging
-- File browsing with Finder
-- Testing GUI applications
+**Recommended access methods (in order of preference):**
 
-**When to use SSH:**
-- Development work (primary method)
-- Running terminal-based tools (agents, git, etc.)
-- Better performance for command-line tasks
-- tmux session persistence
+1. **SSH with tmux** (`./scripts/cal-bootstrap --run`) - Primary development method
+   - Terminal-based work
+   - Running agents, git, development tools
+   - Best performance for command-line tasks
+   - Session persistence
+
+2. **GUI Console** (`./scripts/cal-bootstrap --gui`) - Clipboard and GUI tasks
+   - Copying/pasting between host and VM
+   - Agent authentication (browser-based OAuth)
+   - Manual keychain unlock
+   - GUI configuration and debugging
+   - File browsing with Finder
+   - **Use this instead of Screen Sharing for clipboard operations**
+
+3. **Screen Sharing** (`open vnc://...`) - Legacy method
+   - Only if --gui doesn't work
+   - **Note:** One-way clipboard only (VM→Host)
+   - Host→VM paste causes disconnects
+   - Not recommended for regular use
 
 ## Troubleshooting
 
@@ -474,9 +527,9 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 - **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (Standard mode): `open vnc://$(tart ip cal-dev)` → manually unlock keychain → authenticate agent
 - **Screen Sharing shows lock screen**: Auto-login requires VM reboot to activate. Stop and restart the VM.
 - **Screen Sharing shows black screen/locked VM**: You selected High Performance mode - disconnect and reconnect using **Standard mode** instead. This mode is incompatible with Tart VMs.
-- **Copy/paste not working in Screen Sharing**: Enable it via Edit → Use Shared Clipboard. Only VM → Host copying works; Host → VM pasting causes Screen Sharing to disconnect. If VM → Host copying fails, verify tart-guest-agent is running: `launchctl list | grep tart-guest-agent`. If not running, reload: `launchctl load ~/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist`
-- **Screen Sharing disconnects when pasting from Host**: This is a known limitation - only VM → Host clipboard works reliably. Do not paste from Host to VM as it will disconnect the Screen Sharing session. Use SSH or other methods to transfer text to the VM.
-- **Claude Code OAuth URL won't paste correctly**: Do not mouse-select the URL - line breaks will be included. Instead, press `c` when prompted to copy the auth URL to your clipboard.
+- **Copy/paste not working**: Use `./scripts/cal-bootstrap --gui` for reliable bidirectional clipboard support. The --gui option uses VNC experimental mode which solves clipboard issues. Screen Sharing (standard VNC) only supports VM→Host copying and Host→VM pasting causes disconnects.
+- **Screen Sharing disconnects when pasting from Host**: This is a known limitation of standard VNC. Use `./scripts/cal-bootstrap --gui` instead for bidirectional clipboard support without disconnects.
+- **Claude Code OAuth URL won't paste correctly**: Do not mouse-select the URL - line breaks will be included. Instead, press `c` when prompted to copy the auth URL to your clipboard. Alternatively, use `./scripts/cal-bootstrap --gui` to access the VM with full clipboard support, allowing you to copy/paste the URL reliably.
 - **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
 - **opencode run hangs**: This occurs when TERM is explicitly set in the command environment. Use `opencode run` normally (TERM inherited from environment) - it works correctly. See [Opencode VM Summary](opencode-vm-summary.md) for details.
 - **First-run automation didn't trigger**: Check if `~/.cal-first-run` flag exists. If missing, run `vm-auth.sh` manually.
