@@ -25,10 +25,19 @@
 
 ### cal-bootstrap Script Enhancements (Complete)
 
-### GUI/Remote Access Setup
-- [ ] Configure VS Code Remote-SSH for cal-dev VM access
-- [ ] Document when to use Remote-SSH vs native Tart console
-- [ ] Add clipboard sharing setup to bootstrap guide
+### Console Access & Clipboard Solutions
+
+**Status:** ✅ **COMPLETED** - VNC experimental mode solves clipboard issues (2026-01-31)
+
+**Solution Implemented:**
+- Added `--gui` option to cal-bootstrap
+- Uses `tart run --vnc-experimental` for reliable bidirectional clipboard
+- Terminal remains free (VM runs in background)
+- Simple reconnect: `./cal-bootstrap --gui`
+
+**Remaining documentation tasks:**
+- [ ] Update bootstrap.md with `--gui` option and VNC setup
+- [ ] Document when to use SSH vs GUI console
 
 ---
 

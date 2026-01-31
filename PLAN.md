@@ -9,7 +9,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap): Mostly Complete** - Core functionality documented in [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md). Outstanding TODOs: ~7 in sections 0.10-0.11, plus known issues and future improvements (see [Phase 0 TODO](docs/PLAN-PHASE-00-TODO.md) for details).
+**Phase 0 (Bootstrap): Mostly Complete** - Core functionality documented in [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md). Outstanding TODOs: ~6 in sections 0.10-0.11 (including 2 documentation tasks for new --gui feature), plus known issues and future improvements (see [Phase 0 TODO](docs/PLAN-PHASE-00-TODO.md) for details).
 
 Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via cal-bootstrap, transparent proxy for network reliability, comprehensive git safety checks, VM detection capabilities, and first-run/logout git automation are all operational.
 
@@ -21,7 +21,7 @@ Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via c
 
 | Phase | Name | Status | Outstanding TODOs | Detail Files |
 |-------|------|--------|-------------------|--------------|
-| 0 | Bootstrap | Mostly Complete | ~12 | [TODO](docs/PLAN-PHASE-00-TODO.md) • [DONE](docs/PLAN-PHASE-00-DONE.md) |
+| 0 | Bootstrap | Mostly Complete | ~10 | [TODO](docs/PLAN-PHASE-00-TODO.md) • [DONE](docs/PLAN-PHASE-00-DONE.md) |
 | 1 | CLI Foundation | Not Started | ~40 | [TODO](docs/PLAN-PHASE-01-TODO.md) • [DONE](docs/PLAN-PHASE-01-DONE.md) |
 | 2 | Agent Integration & UX | Not Started | ~20 | [TODO](docs/PLAN-PHASE-02-TODO.md) • [DONE](docs/PLAN-PHASE-02-DONE.md) |
 | 3 | GitHub Workflow | Not Started | ~15 | [TODO](docs/PLAN-PHASE-03-TODO.md) • [DONE](docs/PLAN-PHASE-03-DONE.md) |

@@ -6,12 +6,13 @@ set -e
 SCRIPT_DIR="${0:A:h}"
 
 # CAL Bootstrap Script
-# Usage: ./cal-bootstrap [--init|-i] [--run] [--restart|-r] [--stop] [--snapshot <action> <name>]
+# Usage: ./cal-bootstrap [--init|-i] [--run] [--restart|-r] [--gui|-g] [--stop] [--snapshot <action> <name>]
 #
 # Options:
 #   --init, -i      Initialize VM environment (create cal-clean, cal-dev, cal-init)
 #   --run           Run cal-dev and SSH in with tmux (default if VMs exist)
 #   --restart, -r   Restart cal-dev and SSH in with tmux
+#   --gui, -g       Launch cal-dev with VNC GUI (experimental mode with clipboard support)
 #   --stop, -s      Stop cal-dev
 #   --snapshot, -S  Manage snapshots (list, create, restore, delete)
 #   --yes, -y       Skip confirmation prompts
@@ -1433,6 +1434,90 @@ do_restart() {
         "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal"
 }
 
+# === GUI MODE ===
+do_gui() {
+    echo ""
+    echo "CAL Bootstrap - GUI"
+    echo "===================="
+    echo ""
+
+    # Check if VM exists
+    if ! vm_exists "$VM_DEV"; then
+        echo "$VM_DEV does not exist."
+        echo ""
+        echo "Run './cal-bootstrap --init' to set up the environment."
+        exit 1
+    fi
+
+    # Stop if already running (need to restart with VNC flags)
+    if vm_running "$VM_DEV"; then
+        echo "$VM_DEV is already running. Stopping to restart with VNC..."
+        "$TART" stop "$VM_DEV"
+        sleep 2
+        echo ""
+    fi
+
+    echo "Starting $VM_DEV with VNC (experimental mode for clipboard support)..."
+    echo ""
+    echo "💡 VNC Features:"
+    echo "   - Full GUI access to macOS desktop"
+    echo "   - Bidirectional clipboard (copy/paste works both ways)"
+    echo "   - No disconnect issues with paste operations"
+    echo ""
+    echo "ℹ️  Why experimental mode?"
+    echo "   Standard VNC (--vnc) has clipboard issues: Host→VM paste causes disconnect"
+    echo "   Experimental mode (--vnc-experimental) uses Virtualization.Framework VNC"
+    echo "   This solves clipboard problems but may have occasional display quirks"
+    echo ""
+
+    # Run with VNC experimental mode (background process)
+    # This allows the terminal to remain free while VNC window is open
+    #
+    # Why --vnc-experimental instead of --vnc:
+    # - Standard --vnc mode uses macOS Screen Sharing with known clipboard issues
+    #   (Host→VM paste causes Screen Sharing disconnect)
+    # - Experimental mode uses Virtualization.Framework's built-in VNC server
+    # - Provides reliable bidirectional clipboard support
+    # - Trade-off: May have experimental bugs (display, input) but clipboard works
+    # - Tested and confirmed working for clipboard operations (2026-01-31)
+    "$TART" run "$VM_DEV" --vnc-experimental >/dev/null 2>&1 &
+    TART_PID=$!
+
+    # Wait for VM to get an IP address
+    echo "  Waiting for VM to start..."
+    local max_wait=30
+    local count=0
+    VM_IP=""
+
+    while [ $count -lt $max_wait ]; do
+        sleep 2
+        count=$((count + 2))
+        VM_IP=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
+        if [ -n "$VM_IP" ]; then
+            break
+        fi
+    done
+
+    echo ""
+    echo "VNC window should open automatically."
+    echo "VM running in background (PID: $TART_PID)"
+
+    if [ -n "$VM_IP" ]; then
+        echo "VM IP: $VM_IP"
+        echo ""
+        echo "To stop the VM:"
+        echo "  ./cal-bootstrap --stop"
+        echo ""
+        echo "To reconnect to VNC if window closes:"
+        echo "  ./cal-bootstrap --gui"
+    else
+        echo ""
+        echo "To stop the VM:"
+        echo "  ./cal-bootstrap --stop"
+    fi
+    echo ""
+}
+
 # === SNAPSHOT MODE ===
 do_snapshot() {
     local action="$1"
@@ -1884,6 +1969,10 @@ while [[ $# -gt 0 ]]; do
             MODE="restart"
             shift
             ;;
+        --gui|-g)
+            MODE="gui"
+            shift
+            ;;
         --stop|-s)
             MODE="stop"
             shift
@@ -1948,6 +2037,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --init, -i                          Initialize VM environment"
             echo "  --run                               Run cal-dev with tmux (default if VMs exist)"
             echo "  --restart, -r                       Restart cal-dev and connect with tmux"
+            echo "  --gui, -g                           Launch cal-dev with VNC GUI (experimental mode)"
+            echo "                                        Provides full macOS desktop with clipboard support"
             echo "  --stop, -s                          Stop cal-dev"
             echo "  --snapshot, -S list                 List available snapshots"
             echo "  --snapshot, -S create <name>        Create a named snapshot"
@@ -1966,6 +2057,7 @@ while [[ $# -gt 0 ]]; do
             echo "  ./cal-bootstrap --init              # First-time setup"
             echo "  ./cal-bootstrap                     # Start cal-dev (auto-detects mode)"
             echo "  ./cal-bootstrap --restart           # Restart cal-dev and connect"
+            echo "  ./cal-bootstrap --gui               # Launch GUI with clipboard support"
             echo "  ./cal-bootstrap --snapshot create pre-experiment"
             echo "  ./cal-bootstrap --snapshot restore pre-experiment"
             echo "  ./cal-bootstrap --snapshot delete pre-experiment"
@@ -2042,6 +2134,9 @@ case "$MODE" in
         ;;
     restart)
         do_restart
+        ;;
+    gui)
+        do_gui
         ;;
     stop)
         do_stop

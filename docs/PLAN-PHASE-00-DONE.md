@@ -219,7 +219,7 @@
   - Allows user to abort logout (exec zsh -l) or continue despite changes
   - Implemented in ~/.zlogout via vm-setup.sh
 
-### GUI/Remote Access Setup (Phase 0.10 - Partial)
+### GUI/Remote Access Setup (Phase 0.10 - Complete)
 - [x] Install Tart Guest Agent in cal-dev VM (verified 2026-01-31 - already installed via PR #2)
   - Version: 0.9.0-84fe9c4
   - Service: org.cirruslabs.tart-guest-agent (running automatically)
@@ -227,6 +227,22 @@
 - [x] Test `tart exec` command functionality with guest agent (verified 2026-01-31)
   - Tested and working correctly
   - Enables running commands in VM from host without SSH
+- [x] **Solve clipboard issues with VNC experimental mode** (completed 2026-01-31)
+  - **Problem:** Screen Sharing had critical clipboard limitation (Host→VM paste caused disconnect)
+  - **Solution:** Implemented `--gui` option in cal-bootstrap using `tart run --vnc-experimental`
+  - **Testing:** Verified bidirectional clipboard (Host↔VM) works reliably
+  - **Features:**
+    - Added `./cal-bootstrap --gui` (and `-g` shorthand)
+    - VM runs in background, terminal stays free
+    - Displays actual VM IP and simple reconnect instructions
+    - Auto-restarts VM with VNC if already running without it
+  - **Implementation:**
+    - New `do_gui()` function in cal-bootstrap
+    - Waits for VM IP, displays helpful usage info
+    - Uses VNC experimental mode (Virtualization.Framework VNC server)
+    - Avoids standard VNC mode which has the same clipboard disconnect issue
+  - **Trade-offs:** VNC experimental mode may have occasional display quirks (documented)
+  - **Why experimental mode:** Standard `--vnc` mode uses macOS Screen Sharing which has the same Host→VM clipboard disconnect issue. Experimental mode uses Virtualization.Framework's built-in VNC server with reliable clipboard support.
 
 ### Known Issues Resolved
 - [x] **Claude Code OAuth URL line wrapping** (investigated 2026-01-30, resolved)
