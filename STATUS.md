@@ -10,7 +10,7 @@
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| *No refined TODOs* | | | | |
+| Project Scaffolding | PLAN-PHASE-01-TODO.md § 1.1 | Go module init, directory structure, minimal Cobra root command, .gitignore, Makefile with build/test/lint/install targets | 2026-01-31 | Use staticcheck for linting; add dependencies incrementally |
 
 ---
 
