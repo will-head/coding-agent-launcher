@@ -750,8 +750,8 @@ bind -r L resize-pane -R 5
 
 # Status bar styling
 set -g status-style bg=colour235,fg=colour255
-set -g status-left-length 20
-set -g status-left '#[fg=colour76,bold]CAL '
+set -g status-left-length 30
+set -g status-left '#[fg=colour76,bold]CAL-BOOTSTRAP '
 set -g status-right '#[fg=colour245]%H:%M '
 set -g window-status-current-style bg=colour240,fg=colour255,bold
 set -g window-status-style fg=colour245
