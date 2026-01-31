@@ -6,7 +6,7 @@
 
 **Key Principles:**
 - **Bug-driven** - work items come from `docs/BUGS.md`, not phase TODO files
-- **User approval required** - ask permission before ALL commands (same as Interactive)
+- **User approval required on HOST** - ask permission before ALL commands (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
 - **Blocking checkpoints** - each step must complete before proceeding
 - **Code review mandatory** - all code/script changes reviewed before commit
 - **Bug lifecycle** - resolved bugs move from `BUGS.md` to `bugs/README.md`
@@ -15,10 +15,10 @@
 
 ## Overview
 
-The Bug Cleanup workflow is a variant of the Interactive workflow where work items are sourced from `docs/BUGS.md` instead of phase TODO files. It follows the same 10-step process with user approvals at each checkpoint.
+The Bug Cleanup workflow is a variant of the Interactive workflow where work items are sourced from `docs/BUGS.md` instead of phase TODO files. It follows the same 10-step process with user approvals at each checkpoint on HOST (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve)).
 
 **Target:** main branch (direct commits)
-**Approvals:** Required for all commands
+**Approvals:** Required on HOST for all commands (auto-approved when `CAL_VM=true`)
 **Steps:** 10 (same as Interactive)
 
 ---
@@ -27,7 +27,7 @@ The Bug Cleanup workflow is a variant of the Interactive workflow where work ite
 
 Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
 - This is the Bug Cleanup workflow (Interactive variant for bug fixes)
-- Key principles: bug-driven, user approval required, blocking checkpoints, code review mandatory
+- Key principles: bug-driven, user approval required on HOST (auto-approved when `CAL_VM=true`), blocking checkpoints, code review mandatory
 - Work items sourced from `docs/BUGS.md`
 
 **Then:**
@@ -43,7 +43,7 @@ Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shar
 For bug fixes that only affect `.md` files or code comments:
 
 1. Make changes
-2. Ask user approval to commit
+2. Ask user approval to commit (auto-approved when `CAL_VM=true`)
 3. Commit and push
 
 **Skip:** tests, build, and code review for docs-only changes.
@@ -66,7 +66,7 @@ For bug fixes that only affect `.md` files or code comments:
 
 ### Step 2: Test
 
-- **Ask user approval** before running
+- **Ask user approval** before running (auto-approved when `CAL_VM=true`)
 - Execute: `go test ./...`
 - **Stop if tests fail** - fix issues before proceeding
 
@@ -74,7 +74,7 @@ All tests must pass to continue.
 
 ### Step 3: Build
 
-- **Ask user approval** before running
+- **Ask user approval** before running (auto-approved when `CAL_VM=true`)
 - Execute: `go build -o cal ./cmd/cal`
 - **Stop if build fails** - fix issues before proceeding
 
@@ -99,9 +99,9 @@ Document findings with:
 ### Step 5: Present Review
 
 - Always present review findings to user
-- **STOP and wait for explicit user approval**
+- **STOP and wait for explicit user approval** (auto-approved when `CAL_VM=true`)
 - User responses like "approved", "looks good", "proceed" = approved
-- Do not proceed without approval
+- Do not proceed without approval on HOST
 
 ### Step 6: Present User Testing Instructions
 
@@ -124,7 +124,7 @@ After user testing is complete, present a final code review summarizing:
 - Confirmation that all tests still pass after any fixes
 - Final assessment of code quality and readiness for commit
 
-**STOP and wait for explicit user approval** before proceeding.
+**STOP and wait for explicit user approval** before proceeding (auto-approved when `CAL_VM=true`).
 
 ### Step 8: Update Documentation
 
@@ -147,7 +147,7 @@ Update affected documentation files as needed, plus bug-specific updates:
 
 ### Step 9: Commit and Push
 
-- **Ask user approval** before committing
+- **Ask user approval** before committing (auto-approved when `CAL_VM=true`)
 - Follow [Commit Message Format](WORKFLOWS.md#commit-message-format) from Shared Conventions
 - Reference the bug ID in the commit message (e.g., "Fix BUG-001: ...")
 - Execute only after all previous steps complete successfully
@@ -199,7 +199,7 @@ Resolved (removed from BUGS.md, updated in bugs/README.md)
 
 ### Command Execution Policy
 
-**Ask user approval before running ANY command**, including:
+**Ask user approval before running ANY command** (auto-approved when `CAL_VM=true`), including:
 - Git operations (commit, push, branch, merge)
 - Build commands
 - Test commands

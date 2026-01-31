@@ -7,7 +7,7 @@
 **Key Principles:**
 - **Defaults to active phase** - refine TODOs in current active phase unless user specifies different phase
 - **Also offers active bugs** - presents bugs from `docs/BUGS.md` alongside phase TODOs
-- **Approval required** - user must approve changes before committing to main
+- **Approval required on HOST** - user must approve changes before committing to main (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
 - **Target main branch** - updates phase TODO file, bug reports, and STATUS.md directly on main
 - **Comprehensive requirements** - gather all details needed for implementation
 - **Track refinement** - both prefix TODO in phase file and add to STATUS.md
@@ -21,7 +21,7 @@ The Refine workflow ensures TODOs and bugs are implementation-ready by gathering
 **Default Behavior:** Offers TODOs from the **current active phase** and active bugs from `docs/BUGS.md` unless user specifies a different phase or specific item.
 
 **Target:** main branch (direct updates)
-**Approvals:** Required (user reviews changes before commit)
+**Approvals:** Required on HOST (auto-approved when `CAL_VM=true`)
 **Steps:** 6 (thorough refinement with tracking)
 
 ---
@@ -30,7 +30,7 @@ The Refine workflow ensures TODOs and bugs are implementation-ready by gathering
 
 Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
 - This is the Refine workflow (6-step for refining phase TODOs and bugs)
-- Key principles: defaults to active phase, also offers active bugs, approval required, main branch, comprehensive requirements, track refinement
+- Key principles: defaults to active phase, also offers active bugs, approval required on HOST (auto-approved when `CAL_VM=true`), main branch, comprehensive requirements, track refinement
 - 6 steps: Read PLAN.md & Phase TODO & BUGS.md → Ask Questions → Update Phase TODO/Bug Report → Update STATUS.md → Ask Approval → Commit
 - Explain the REFINED prefix and STATUS.md tracking
 - Defaults to active phase TODOs and active bugs unless user specifies different phase or item
@@ -175,13 +175,13 @@ Present changes to user for review:
 3. **Summarize refining** - explain what was clarified
 4. **List affected files** - phase TODO file and STATUS.md
 
-**Wait for explicit user approval** before committing.
+**Wait for explicit user approval** before committing (auto-approved when `CAL_VM=true`).
 
 If user requests changes, return to Step 2 or Step 3 as needed.
 
 ### Step 6: Commit and Push
 
-After user approval, stage `docs/PLAN-PHASE-XX-TODO.md` and `STATUS.md`, then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format). Include "Refine TODO:" prefix and list key requirements in the body. Push after commit.
+After approval (user approval on HOST; auto-approved when `CAL_VM=true`), stage `docs/PLAN-PHASE-XX-TODO.md` and `STATUS.md`, then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format). Include "Refine TODO:" prefix and list key requirements in the body. Push after commit.
 
 **Done!** TODO is now implementation-ready.
 

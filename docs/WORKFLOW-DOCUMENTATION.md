@@ -6,7 +6,7 @@
 
 **Key Principles:**
 - **Always on main branch** - direct commits, no PRs
-- **User approval required** - must approve before commit
+- **User approval required on HOST** - must approve before commit (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
 - **Skip tests, build, and code review** - not needed for docs
 - **Simplified Interactive** - like Interactive workflow but only 3 steps
 
@@ -14,10 +14,10 @@
 
 ## Overview
 
-The Documentation workflow is a simplified version of the Interactive workflow for documentation-only changes. It commits directly to main with user approval but skips automated testing, build verification, and code review steps since these aren't applicable to markdown files or comments.
+The Documentation workflow is a simplified version of the Interactive workflow for documentation-only changes. It commits directly to main with user approval on HOST (auto-approved when `CAL_VM=true`) but skips automated testing, build verification, and code review steps since these aren't applicable to markdown files or comments.
 
 **Target:** main branch (direct commits)
-**Approvals:** Required
+**Approvals:** Required on HOST (auto-approved when `CAL_VM=true`)
 **Steps:** 3 (simplified)
 
 ---
@@ -26,7 +26,7 @@ The Documentation workflow is a simplified version of the Interactive workflow f
 
 Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
 - This is the Documentation workflow (simplified 3-step)
-- Key principles: docs-only, main branch, user approval required, skip tests/build/review
+- Key principles: docs-only, main branch, user approval required on HOST (auto-approved when `CAL_VM=true`), skip tests/build/review
 - 3 steps: Make Changes → Ask Approval → Commit and Push
 - Clarify what counts as documentation-only vs. not
 
@@ -71,11 +71,11 @@ Present changes to user:
 - Explain why changes were made
 - List affected files
 
-**Wait for explicit approval** before committing.
+**Wait for explicit approval** before committing (auto-approved when `CAL_VM=true`).
 
 ### Step 3: Commit and Push
 
-**Ask user approval**, then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format) from Shared Conventions. Push after commit.
+**Ask user approval** (auto-approved when `CAL_VM=true`), then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format) from Shared Conventions. Push after commit.
 
 **Done!** No tests, build, or code review needed.
 

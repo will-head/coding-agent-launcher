@@ -21,7 +21,13 @@ scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 
 ### CAL_VM Auto-Approve
 
-When `CAL_VM=true` (running in cal-dev VM isolated environment):
+The agent **MUST** verify VM status at session start by running `echo $CAL_VM` before any approval-gated step:
+- `CAL_VM=true` → Display "Running in cal-dev VM (isolated environment)" → auto-approve enabled
+- Any other value (empty, unset, `false`, etc.) → Display "Running on HOST machine (not isolated)" → require all approvals
+- **Fail-safe:** If the check cannot be performed or returns unexpected output, default to HOST (require approval)
+- **Never assume VM status** — always verify explicitly
+
+When `CAL_VM=true` (confirmed via explicit check):
 - All operations proceed without user confirmation
 - EXCEPTION: Destructive remote git operations always require approval:
   - `push --force` (overwrites remote history)
@@ -31,6 +37,7 @@ When `CAL_VM=true` (running in cal-dev VM isolated environment):
 
 When `CAL_VM` is not true (running on HOST):
 - Standard workflow approvals apply as documented
+- **When in doubt, require approval**
 
 ### Workflow Modes
 
@@ -109,12 +116,13 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 1. **Determine workflow** - If unclear, ask user (see [Workflow Modes](#workflow-modes) routing rules)
 2. **Read and reiterate workflow** - Follow [Session Start Procedure](docs/WORKFLOWS.md#session-start-procedure) from Shared Conventions
-3. Ask approval, then run `git status` and `git fetch`
-4. Read `PLAN.md` for overview and current phase status
-5. Read active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`) for current tasks
-6. **Check environment** - Run `echo $CAL_VM`:
-   - `CAL_VM=true`: Display "Running in cal-dev VM (isolated environment)"
-   - Otherwise: Display "Running on HOST machine (not isolated)"
+3. **Check environment** - Run `echo $CAL_VM` (must happen before any approval-gated step):
+   - `CAL_VM=true`: Display "Running in cal-dev VM (isolated environment)" — approvals auto-granted
+   - Any other value (empty, unset, etc.): Display "Running on HOST machine (not isolated)" — approvals required
+   - If check fails: default to HOST (require approval)
+4. Run `git status` and `git fetch` (ask approval on HOST; auto-approved when `CAL_VM=true`)
+5. Read `PLAN.md` for overview and current phase status
+6. Read active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`) for current tasks
 7. Report status and suggest next steps using [Numbered Choice Presentation](docs/WORKFLOWS.md#numbered-choice-presentation)
 
 **Note:** Only read the active phase TODO file. Do not read future phase files until the current phase is complete.

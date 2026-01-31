@@ -10,15 +10,15 @@
 
 | Workflow | Steps | Approvals | Target | Use Case |
 |----------|-------|-----------|--------|----------|
-| [Interactive](#interactive-workflow) | 10 | Required | main branch | Default for code changes |
-| [Documentation](#documentation-workflow) | 3 | Required | main branch | Docs-only changes |
-| [Bug Cleanup](#bug-cleanup-workflow) | 10 | Required | main branch | Fix tracked bugs from BUGS.md |
-| [Refine](#refine-workflow) | 6 | Required | main branch | Refine PLAN.md TODOs and bugs |
+| [Interactive](#interactive-workflow) | 10 | Required on HOST | main branch | Default for code changes |
+| [Documentation](#documentation-workflow) | 3 | Required on HOST | main branch | Docs-only changes |
+| [Bug Cleanup](#bug-cleanup-workflow) | 10 | Required on HOST | main branch | Fix tracked bugs from BUGS.md |
+| [Refine](#refine-workflow) | 6 | Required on HOST | main branch | Refine PLAN.md TODOs and bugs |
 | [Create PR](#create-pr-workflow) | 7 | Not required | PR branch | PR-based development |
 | [Review PR](#review-pr-workflow) | 6 | Not required | PR review | Code review of PRs |
 | [Update PR](#update-pr-workflow) | 8 | Not required | PR branch | Address review feedback |
-| [Test PR](#test-pr-workflow) | 7 | Test confirmation | PR testing | Manual testing gate |
-| [Merge PR](#merge-pr-workflow) | 8 | Required | main branch | Merge tested PRs |
+| [Test PR](#test-pr-workflow) | 7 | Test confirmation (always) | PR testing | Manual testing gate |
+| [Merge PR](#merge-pr-workflow) | 8 | Required on HOST | main branch | Merge tested PRs |
 
 ---
 
@@ -48,7 +48,7 @@ Default workflow for direct code changes to main branch with user approvals at e
 
 **When to use:** Making code changes directly to main branch
 **Key features:**
-- User approval required before ALL commands
+- User approval required on HOST before ALL commands (auto-approved when `CAL_VM=true`)
 - Blocking checkpoints at each step
 - Mandatory code review for code/script changes
 - Documentation-only exception available
@@ -66,7 +66,7 @@ Simplified Interactive workflow for documentation-only changes on main branch.
 **When to use:** Making changes exclusively to `.md` files or code comments
 **Key features:**
 - Always on main branch
-- User approval required
+- User approval required on HOST (auto-approved when `CAL_VM=true`)
 - Skip tests, build, and code review
 - Simplified 3-step process
 
@@ -83,7 +83,7 @@ Interactive workflow variant for resolving tracked bugs from BUGS.md.
 **When to use:** Fixing bugs tracked in `docs/BUGS.md`
 **Key features:**
 - Work items sourced from `docs/BUGS.md`
-- Same 10-step Interactive process with user approvals
+- Same 10-step Interactive process with user approvals on HOST (auto-approved when `CAL_VM=true`)
 - Bug lifecycle: resolved bugs move from BUGS.md to bugs/README.md
 - TDD with bug reproduction tests
 
@@ -99,7 +99,7 @@ Refine TODOs and bugs with comprehensive requirements gathering and user approva
 
 **When to use:** Clarifying and detailing TODOs or bugs before implementation begins
 **Key features:**
-- User approval required before commit
+- User approval required on HOST before commit (auto-approved when `CAL_VM=true`)
 - Gather complete requirements through Q&A
 - Offers both phase TODOs and active bugs from `docs/BUGS.md`
 - Prefix TODOs with "REFINED" in PLAN.md
@@ -189,7 +189,7 @@ Merge tested PRs into main with user approvals.
 
 **When to use:** Merging PRs from "Needs Merging" section into main branch
 **Key features:**
-- User approval required for all commands
+- User approval required on HOST for all commands (auto-approved when `CAL_VM=true`)
 - Use merge commit strategy (preserves history)
 - Delete branches after merge
 - Track in PRS.md "Merged" section
@@ -295,13 +295,25 @@ This ensures both agent and user have shared understanding of the workflow being
 
 ### CAL_VM Auto-Approve
 
-When `CAL_VM=true` (running in cal-dev VM isolated environment), individual workflow approval steps are skipped — operations proceed automatically without user confirmation.
+#### VM Verification
+
+The agent **MUST** verify VM status at session start by running `echo $CAL_VM`:
+- `CAL_VM=true` → Display "Running in cal-dev VM (isolated environment)" → auto-approve enabled
+- Any other value (empty, unset, `false`, etc.) → Display "Running on HOST machine (not isolated)" → require all approvals
+- **Fail-safe:** If the check cannot be performed or returns unexpected output, default to HOST (require approval)
+- **Never assume VM status** — always verify explicitly
+
+#### Approval Behavior
+
+When `CAL_VM=true` (confirmed via explicit check), individual workflow approval steps are skipped — operations proceed automatically without user confirmation.
 
 **Exception:** Destructive remote git operations always require approval, even when `CAL_VM=true`:
 - `push --force` (overwrites remote history)
 - `push --delete` / deleting remote branches
 
 Local-only operations (reset, checkout, clean, etc.) are allowed without approval since GitHub is the restore point.
+
+**When in doubt, require approval.**
 
 This applies to ALL workflows. See [CLAUDE.md § CAL_VM Auto-Approve](../CLAUDE.md#cal_vm-auto-approve) for the authoritative definition.
 
