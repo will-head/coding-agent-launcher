@@ -1,4 +1,4 @@
-# Interactive Workflow (8-Step)
+# Interactive Workflow (10-Step)
 
 > Default workflow for direct code changes with user approvals at each step
 
@@ -18,16 +18,16 @@ The Interactive workflow is the default workflow for making code changes directl
 
 **Target:** main branch (direct commits)
 **Approvals:** Required for all commands
-**Steps:** 8 (full workflow) or simplified for docs-only
+**Steps:** 10 (full workflow) or simplified for docs-only
 
 ---
 
 ## Session Start Procedure
 
 Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
-- This is the Interactive workflow (8-step with approvals)
+- This is the Interactive workflow (10-step with approvals)
 - Key principles: user approval required, blocking checkpoints, code review mandatory
-- 8 steps for code or simplified 3-step for docs-only
+- 10 steps for code or simplified 3-step for docs-only
 - Present available TODOs using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation)
 
 ---
@@ -44,7 +44,7 @@ For changes **only** to `.md` files or code comments:
 
 ---
 
-## Code/Script Changes (Full 8-Step Workflow)
+## Code/Script Changes (Full 10-Step Workflow)
 
 **Each step is a blocking checkpoint.**
 
@@ -96,7 +96,29 @@ Document findings with:
 - User responses like "approved", "looks good", "proceed" = approved
 - Do not proceed without approval
 
-### Step 6: Update Documentation
+### Step 6: Present User Testing Instructions
+
+Present testing instructions to the user **one by one** (not as a batch list):
+- Present the first test instruction and wait for the user to confirm pass/fail
+- Only after the current test is resolved, present the next test instruction
+- If a test fails, the user can choose to:
+  - **Fix it now** - address the issue before continuing
+  - **Add as a TODO** - add it to the appropriate phase TODO file for later
+  - **Accept as known issue** - acknowledge and proceed
+- Continue until all user testing instructions have been presented
+
+**STOP and wait for user confirmation** on each test before presenting the next.
+
+### Step 7: Present Final Code Review
+
+After user testing is complete, present a final code review summarizing:
+- Any issues discovered during user testing and their resolutions
+- Confirmation that all tests still pass after any fixes
+- Final assessment of code quality and readiness for commit
+
+**STOP and wait for explicit user approval** before proceeding.
+
+### Step 8: Update Documentation
 
 Update affected documentation files:
 - `README.md` - if user-facing changes
@@ -113,13 +135,13 @@ Update affected documentation files:
 
 **Always update PLAN.md and phase TODO files** - follow [TODO → DONE Movement](WORKFLOWS.md#todo--done-movement) rules from Shared Conventions. Also add new TODOs discovered during implementation and update PLAN.md phase status.
 
-### Step 7: Commit and Push
+### Step 9: Commit and Push
 
 - **Ask user approval** before committing
 - Follow [Commit Message Format](WORKFLOWS.md#commit-message-format) from Shared Conventions
 - Execute only after all previous steps complete successfully
 
-### Step 8: Complete
+### Step 10: Complete
 
 Report completion status and suggest next steps from PLAN.md.
 
@@ -131,6 +153,8 @@ Before every commit:
 - [ ] Tests pass (`go test ./...`)
 - [ ] Build succeeds (`go build -o cal ./cmd/cal`)
 - [ ] Code review presented and user approved (for code changes)
+- [ ] User testing instructions presented one by one and resolved
+- [ ] Final code review presented and user approved
 - [ ] Documentation updated (affected files)
 - [ ] PLAN.md updated with current project status
 - [ ] Completed TODOs moved from phase TODO file to phase DONE file

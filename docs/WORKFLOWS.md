@@ -10,7 +10,7 @@
 
 | Workflow | Steps | Approvals | Target | Use Case |
 |----------|-------|-----------|--------|----------|
-| [Interactive](#interactive-workflow) | 8 | Required | main branch | Default for code changes |
+| [Interactive](#interactive-workflow) | 10 | Required | main branch | Default for code changes |
 | [Documentation](#documentation-workflow) | 3 | Required | main branch | Docs-only changes |
 | [Refine](#refine-workflow) | 6 | Required | main branch | Refine PLAN.md TODOs |
 | [Create PR](#create-pr-workflow) | 7 | Not required | PR branch | PR-based development |
@@ -51,7 +51,7 @@ Default workflow for direct code changes to main branch with user approvals at e
 - Mandatory code review for code/script changes
 - Documentation-only exception available
 
-**Steps:** Implement → Test → Build → Code Review → Present Review → Update Docs → Commit
+**Steps:** Implement → Test → Build → Code Review → Present Review → User Testing → Final Review → Update Docs → Commit → Complete
 
 ---
 
@@ -290,6 +290,20 @@ This applies to:
 - Next step suggestions at workflow completion
 - Any time user must choose between multiple items
 
+### Sequential Question and Test Presentation
+
+When gathering information or presenting testing instructions, **present items one by one** rather than as a batch list:
+
+- Ask one question at a time and wait for the user's full response before asking the next
+- Present one test instruction at a time and wait for the user to confirm pass/fail before presenting the next
+- For failed tests, the user can choose to: fix now, add as a TODO, or accept as a known issue
+- Only proceed to the next item once the current one is fully resolved
+
+This applies to:
+- Requirements gathering questions (Refine, Interactive workflows)
+- User testing instructions (Interactive workflow Step 6)
+- Any multi-step user interaction requiring sequential confirmation
+
 ### Commit Message Format
 
 Use imperative mood with Co-Authored-By. Always use heredoc for multi-line:
@@ -362,7 +376,7 @@ EOF
 - [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
 
 **Workflow Detail Files:**
-- [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Interactive workflow (8-step)
+- [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Interactive workflow (10-step)
 - [WORKFLOW-REFINE.md](WORKFLOW-REFINE.md) - Refine workflow (6-step)
 - [WORKFLOW-CREATE-PR.md](WORKFLOW-CREATE-PR.md) - Create PR workflow (6-step)
 - [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Review PR workflow (6-step)

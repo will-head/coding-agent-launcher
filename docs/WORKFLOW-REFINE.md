@@ -80,7 +80,9 @@ If user hasn't specified which TODO, present candidates using [Numbered Choice P
 
 ### Step 2: Ask Clarifying Questions
 
-Ask comprehensive questions to gather all requirements. Use the `AskUserQuestion` tool to collect:
+Ask questions **one by one** following the [Sequential Question and Test Presentation](WORKFLOWS.md#sequential-question-and-test-presentation) convention. Wait for the user's full response to each question before asking the next.
+
+Use the `AskUserQuestion` tool to collect:
 
 **Requirements:**
 - What is the desired outcome?

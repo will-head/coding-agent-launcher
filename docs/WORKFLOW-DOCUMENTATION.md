@@ -173,5 +173,5 @@ Even for docs-only changes, follow [TODO → DONE Movement](WORKFLOWS.md#todo--d
 ## Related Documentation
 
 - [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Full Interactive workflow (8-step)
+- [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Full Interactive workflow (10-step)
 - [PLAN.md](../PLAN.md) - Project status

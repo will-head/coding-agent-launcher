@@ -67,45 +67,50 @@ Extract the "Manual Testing Instructions" section from the PR description. This 
 
 ### Step 3: Present Test Instructions
 
-Present the full manual testing instructions to the user in clear, actionable format:
+Present testing instructions to the user **one by one** following the [Sequential Question and Test Presentation](WORKFLOWS.md#sequential-question-and-test-presentation) convention:
 
-**Format:**
+1. Announce the PR being tested: "Manual Testing Required for PR #42: Add input validation"
+2. Present the **first** test instruction with its expected outcome
+3. **STOP and wait** for the user to confirm pass/fail
+4. If a test fails, the user can choose to:
+   - **Fix it now** - address the issue before continuing
+   - **Add as a TODO** - add it to the appropriate phase TODO file for later
+   - **Accept as known issue** - acknowledge and proceed
+5. Only after the current test is resolved, present the **next** test instruction
+6. Continue until all tests have been presented
+
+**Example (presenting one test at a time):**
 ```
 Manual Testing Required for PR #42: Add input validation
 
-## Test Instructions
-1. Run `./scripts/cal-bootstrap --snapshot create test@invalid`
-   - Expected: Error message "Invalid snapshot name"
+Test 1 of 3:
+Run `./scripts/cal-bootstrap --snapshot create test@invalid`
+Expected: Error message "Invalid snapshot name"
 
-2. Run `./scripts/cal-bootstrap --snapshot create test-valid`
-   - Expected: Snapshot created successfully
-
-3. Run `./scripts/cal-bootstrap --snapshot list`
-   - Expected: Shows test-valid in list
-
-## Expected Outcomes
-- Invalid characters rejected with clear error
-- Valid names accepted and snapshot created
-- New snapshot appears in list
-
-Please run these tests and respond with:
-- "tests passed" or "pass" - if all tests succeed
-- "tests failed: [details]" - if any tests fail, include what went wrong
+Please run this test and confirm: pass or fail?
 ```
 
-**STOP and wait for user response.** Do not proceed until user confirms test results.
+After user confirms, present the next test:
+```
+Test 2 of 3:
+Run `./scripts/cal-bootstrap --snapshot create test-valid`
+Expected: Snapshot created successfully
+
+Please run this test and confirm: pass or fail?
+```
+
+**Do not present all tests at once.** Each test must be individually confirmed before proceeding.
 
 ### Step 4: Evaluate Test Results
 
-Based on user response:
+After all tests have been presented one by one, evaluate the overall outcome:
 
-**If tests passed:**
-- User said: "tests passed", "pass", "all good", "works", "success", etc.
+**If all tests passed (or failures were accepted as known issues/TODOs):**
 - Proceed to Step 5 (Update STATUS.md - Success Path)
 
-**If tests failed:**
-- User said: "tests failed", "fail", "doesn't work", "error", etc.
+**If any tests failed and were not resolved:**
 - Proceed to Step 6 (Add Failure Comment)
+- Include details of which specific tests failed and how
 
 ### Step 5: Update STATUS.md - Success Path
 
