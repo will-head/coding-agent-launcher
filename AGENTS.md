@@ -24,6 +24,7 @@ scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 **Interactive** is the default workflow unless user specifies otherwise or changes are docs-only.
 
 Routing rules:
+- "bug cleanup" → Bug Cleanup workflow
 - "refine" / "refinement" → Refine workflow
 - "create PR" → Create PR workflow
 - "review PR" → Review PR workflow

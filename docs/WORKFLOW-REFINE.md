@@ -1,13 +1,14 @@
 # Refine Workflow (6-Step)
 
-> Refine TODOs in the active phase TODO file to ensure they are implementation-ready with user approvals
+> Refine TODOs and bugs to ensure they are implementation-ready with user approvals
 
-**Use When:** Clarifying and detailing TODOs in the current phase before implementation begins
+**Use When:** Clarifying and detailing TODOs or bugs before implementation begins
 
 **Key Principles:**
 - **Defaults to active phase** - refine TODOs in current active phase unless user specifies different phase
+- **Also offers active bugs** - presents bugs from `docs/BUGS.md` alongside phase TODOs
 - **Approval required** - user must approve changes before committing to main
-- **Target main branch** - updates phase TODO file and STATUS.md directly on main
+- **Target main branch** - updates phase TODO file, bug reports, and STATUS.md directly on main
 - **Comprehensive requirements** - gather all details needed for implementation
 - **Track refinement** - both prefix TODO in phase file and add to STATUS.md
 
@@ -15,9 +16,9 @@
 
 ## Overview
 
-The Refine workflow ensures TODOs in phase TODO files are implementation-ready by gathering complete requirements through clarifying questions. Once refined, TODOs are prefixed with "REFINED" in the phase TODO file and tracked in STATUS.md's "Refined" section.
+The Refine workflow ensures TODOs and bugs are implementation-ready by gathering complete requirements through clarifying questions. Once refined, TODOs are prefixed with "REFINED" in the phase TODO file and tracked in STATUS.md's "Refined" section. Bugs are refined by updating their bug report with additional detail.
 
-**Default Behavior:** Refines TODOs in the **current active phase** unless user specifies a different phase.
+**Default Behavior:** Offers TODOs from the **current active phase** and active bugs from `docs/BUGS.md` unless user specifies a different phase or specific item.
 
 **Target:** main branch (direct updates)
 **Approvals:** Required (user reviews changes before commit)
@@ -28,11 +29,11 @@ The Refine workflow ensures TODOs in phase TODO files are implementation-ready b
 ## Session Start Procedure
 
 Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
-- This is the Refine workflow (6-step for refining phase TODO files)
-- Key principles: defaults to active phase, approval required, main branch, comprehensive requirements, track refinement
-- 6 steps: Read PLAN.md & Phase TODO → Ask Questions → Update Phase TODO → Update STATUS.md → Ask Approval → Commit
+- This is the Refine workflow (6-step for refining phase TODOs and bugs)
+- Key principles: defaults to active phase, also offers active bugs, approval required, main branch, comprehensive requirements, track refinement
+- 6 steps: Read PLAN.md & Phase TODO & BUGS.md → Ask Questions → Update Phase TODO/Bug Report → Update STATUS.md → Ask Approval → Commit
 - Explain the REFINED prefix and STATUS.md tracking
-- Defaults to active phase unless user specifies different phase
+- Defaults to active phase TODOs and active bugs unless user specifies different phase or item
 
 ---
 
@@ -40,23 +41,24 @@ Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shar
 
 Use Refine workflow when:
 - A TODO in a phase TODO file lacks sufficient detail for implementation
+- A bug in `docs/BUGS.md` needs more investigation or detail before fixing
 - Requirements are unclear or ambiguous
 - Multiple implementation approaches are possible
 - User input is needed to define acceptance criteria
 - Technical decisions require user preferences
 
-**Defaults to active phase** but user can specify any phase to refine.
+**Defaults to active phase TODOs and active bugs** but user can specify any phase to refine.
 
 **Do NOT use for:**
-- Simple, self-explanatory TODOs
+- Simple, self-explanatory TODOs or well-documented bugs
 - TODOs with complete requirements already documented
-- Implementation work (use Interactive or Create PR workflows instead)
+- Implementation work (use Interactive, Bug Cleanup, or Create PR workflows instead)
 
 ---
 
 ## Step-by-Step Process
 
-### Step 1: Read PLAN.md and Determine Target Phase TODO File
+### Step 1: Read PLAN.md, Phase TODO File, and BUGS.md
 
 **First, read `PLAN.md`** to determine the current active phase:
 - Check "Current Status" section to identify active phase (e.g., "Phase 0 (Bootstrap): Mostly Complete")
@@ -68,15 +70,17 @@ Use Refine workflow when:
 - **User-specified:** If user mentions a specific phase (e.g., "refine Phase 1 TODO"), use that phase instead
 - Read the appropriate phase TODO file based on target phase
 
-**Then, read the target phase TODO file** to identify the TODO needing refining:
+**Also read `docs/BUGS.md`** to get the list of active bugs.
+
+**Then, identify the item needing refining** from both phase TODOs and active bugs:
 
 **Identify:**
-- Which TODO the user wants refined
-- Current TODO description and context
+- Which TODO or bug the user wants refined
+- Current description and context
 - Related TODOs or dependencies within the same phase
-- Section location within the phase file
+- Section location within the phase file (for TODOs) or bug report path (for bugs)
 
-If user hasn't specified which TODO, present candidates using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation) so the user can reply with just a number.
+If user hasn't specified which item, present candidates from **both** phase TODOs and active bugs using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation) so the user can reply with just a number. Group them with clear headings (e.g., "Phase TODOs:" and "Active Bugs:").
 
 ### Step 2: Ask Clarifying Questions
 
@@ -108,15 +112,23 @@ Use the `AskUserQuestion` tool to collect:
 - Acceptance criteria are defined
 - User confirms completeness
 
-### Step 3: Update Active Phase TODO File
+### Step 3: Update Phase TODO File or Bug Report
 
-Update the TODO in the active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`):
+**For TODOs:** Update the TODO in the phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`):
 
 1. **Prefix with "REFINED"** at the start of the TODO line
 2. **Expand description** with gathered requirements
 3. **Add sub-items** with implementation details if helpful
 4. **Include acceptance criteria** clearly stated
 5. **Note any constraints** or special considerations
+
+**For Bugs:** Update the bug report file (e.g., `docs/bugs/BUG-NNN-slug.md`):
+
+1. Expand root cause analysis with gathered information
+2. Update or add resolution path details
+3. Add acceptance criteria for the fix
+4. Update workarounds if new ones discovered
+5. Note any constraints or dependencies
 
 **Example transformation (in `docs/PLAN-PHASE-00-TODO.md`):**
 

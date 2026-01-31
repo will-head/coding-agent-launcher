@@ -12,7 +12,8 @@
 |----------|-------|-----------|--------|----------|
 | [Interactive](#interactive-workflow) | 10 | Required | main branch | Default for code changes |
 | [Documentation](#documentation-workflow) | 3 | Required | main branch | Docs-only changes |
-| [Refine](#refine-workflow) | 6 | Required | main branch | Refine PLAN.md TODOs |
+| [Bug Cleanup](#bug-cleanup-workflow) | 10 | Required | main branch | Fix tracked bugs from BUGS.md |
+| [Refine](#refine-workflow) | 6 | Required | main branch | Refine PLAN.md TODOs and bugs |
 | [Create PR](#create-pr-workflow) | 7 | Not required | PR branch | PR-based development |
 | [Review PR](#review-pr-workflow) | 6 | Not required | PR review | Code review of PRs |
 | [Update PR](#update-pr-workflow) | 8 | Not required | PR branch | Address review feedback |
@@ -24,6 +25,7 @@
 ## Default Workflow
 
 **Interactive** is the default workflow unless:
+- User specifies "bug cleanup" → use Bug Cleanup workflow
 - User specifies "refine" or "refinement" → use Refine workflow
 - User specifies "create PR" → use Create PR workflow
 - User specifies "review PR" → use Review PR workflow
@@ -72,20 +74,38 @@ Simplified Interactive workflow for documentation-only changes on main branch.
 
 ---
 
+### Bug Cleanup Workflow
+
+**[📖 Full Documentation](WORKFLOW-BUG-CLEANUP.md)**
+
+Interactive workflow variant for resolving tracked bugs from BUGS.md.
+
+**When to use:** Fixing bugs tracked in `docs/BUGS.md`
+**Key features:**
+- Work items sourced from `docs/BUGS.md`
+- Same 10-step Interactive process with user approvals
+- Bug lifecycle: resolved bugs move from BUGS.md to bugs/README.md
+- TDD with bug reproduction tests
+
+**Steps:** Select Bug → Implement → Test → Build → Code Review → Present Review → User Testing → Final Review → Update Docs → Commit → Complete
+
+---
+
 ### Refine Workflow
 
 **[📖 Full Documentation](WORKFLOW-REFINE.md)**
 
-Refine TODOs in PLAN.md with comprehensive requirements gathering and user approvals.
+Refine TODOs and bugs with comprehensive requirements gathering and user approvals.
 
-**When to use:** Clarifying and detailing TODOs before implementation begins
+**When to use:** Clarifying and detailing TODOs or bugs before implementation begins
 **Key features:**
 - User approval required before commit
 - Gather complete requirements through Q&A
+- Offers both phase TODOs and active bugs from `docs/BUGS.md`
 - Prefix TODOs with "REFINED" in PLAN.md
 - Track in STATUS.md "Refined" section
 
-**Steps:** Read PLAN.md → Ask Questions → Update PLAN.md → Update STATUS.md → Ask Approval → Commit
+**Steps:** Read PLAN.md & BUGS.md → Ask Questions → Update PLAN.md/Bug Report → Update STATUS.md → Ask Approval → Commit
 
 ---
 
@@ -229,28 +249,31 @@ Project status is tracked in these sections:
 
 ### Ask Yourself:
 
-1. **Does a TODO in PLAN.md need clarification?**
+1. **Does a TODO or bug need clarification?**
    - → Use **Refine** workflow
 
 2. **Are you making docs-only changes?**
    - → Use **Documentation** workflow
 
-3. **Is there a refined TODO in STATUS.md ready for implementation?**
+3. **Is there an active bug in BUGS.md to fix?**
+   - → Use **Bug Cleanup** workflow
+
+4. **Is there a refined TODO in STATUS.md ready for implementation?**
    - → Use **Create PR** workflow
 
-4. **Is there a PR in "Needs Review"?**
+5. **Is there a PR in "Needs Review"?**
    - → Use **Review PR** workflow
 
-5. **Is there a PR in "Needs Changes"?**
+6. **Is there a PR in "Needs Changes"?**
    - → Use **Update PR** workflow
 
-6. **Is there a PR in "Needs Testing"?**
+7. **Is there a PR in "Needs Testing"?**
    - → Use **Test PR** workflow
 
-7. **Is there a PR in "Needs Merging"?**
+8. **Is there a PR in "Needs Merging"?**
    - → Use **Merge PR** workflow
 
-8. **Are you making direct code changes to main?**
+9. **Are you making direct code changes to main?**
    - → Use **Interactive** workflow
 
 ---
@@ -377,6 +400,7 @@ EOF
 
 **Workflow Detail Files:**
 - [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Interactive workflow (10-step)
+- [WORKFLOW-BUG-CLEANUP.md](WORKFLOW-BUG-CLEANUP.md) - Bug Cleanup workflow (10-step)
 - [WORKFLOW-REFINE.md](WORKFLOW-REFINE.md) - Refine workflow (6-step)
 - [WORKFLOW-CREATE-PR.md](WORKFLOW-CREATE-PR.md) - Create PR workflow (6-step)
 - [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Review PR workflow (6-step)
