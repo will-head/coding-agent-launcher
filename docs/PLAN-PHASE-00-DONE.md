@@ -263,6 +263,31 @@
   - **Solution:** Press `c` when prompted instead of mouse-selecting the URL
   - **Fix:** Added hint in vm-auth.sh to remind users to press `c` to copy auth URL
 
+### Known Issues Closed (2026-01-31)
+
+- [x] **vm-auth.sh GitHub clone network timeout** (closed as mitigated 2026-01-31)
+  - **Issue:** GitHub clone operations could fail with network timeout
+  - **Status:** Mitigated by existing transparent proxy infrastructure
+  - **Mitigation:** Transparent proxy (Phase 0.9) handles network reliability
+  - **Auto-start:** vm-auth.sh automatically starts proxy if network check fails
+  - **Conclusion:** Already solved by transparent proxy implementation, no additional work needed
+
+- [x] **Environment status display order in Cursor-CLI** (closed as accepted 2026-01-31)
+  - **Issue:** Environment status not shown as last item before prompt (Cursor-CLI only)
+  - **Status:** Accepted - won't fix
+  - **Reason:** Cursor-CLI specific behavior, works correctly in Opencode and Claude Code
+  - **Impact:** Cosmetic only, doesn't affect functionality
+  - **Conclusion:** Not a CAL issue, no action required
+
+- [x] **Z.AI GLM 4.7 API concurrency error** (closed as resolved/superseded 2026-01-31)
+  - **Issue:** Reported as API concurrency limit error in cal-dev VM
+  - **Investigation:** 2026-01-25, determined to be opencode processing bug
+  - **Finding:** Not an API issue - Z.AI API works correctly (verified via curl)
+  - **Root cause:** `opencode run` hanging when TERM explicitly set in environment
+  - **Resolution:** Superseded by opencode VM investigation (see Known Issues Resolved section)
+  - **Documentation:** [zai-glm-concurrency-error-investigation.md](zai-glm-concurrency-error-investigation.md)
+  - **Conclusion:** Issue resolved by tmux-wrapper.sh TERM handling fix
+
 ### Documentation Cleanup (Complete)
 - [x] Clean up AGENTS.md (CLAUDE.md symlinks to it)
   - [x] Change internal refs from CLAUDE.md to AGENTS.md

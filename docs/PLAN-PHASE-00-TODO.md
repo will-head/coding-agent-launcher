@@ -33,21 +33,16 @@
 
 ## Known Issues
 
-- [ ] vm-auth.sh GitHub clone fails with network timeout (needs transparent proxy auto-start before clone attempt)
-- [ ] Investigate: Environment status should be shown as last item before "What would you like to work on?" prompt (Cursor-CLI only - works correctly in Opencode and Claude Code)
 - [x] Opencode VM issues (investigated 2026-01-25, resolved)
   - **Status:** ✅ Resolved - opencode works correctly in VM
   - **Finding:** `opencode run` works when TERM is inherited from environment, but hangs when TERM is explicitly set in command environment
   - **Root cause:** Opencode bug in TERM environment variable handling (not a VM issue)
   - **Workaround:** Use `opencode run` normally (TERM inherited) - works correctly
-  - **Documentation:** 
+  - **Documentation:**
     - [opencode-vm-summary.md](opencode-vm-summary.md) - Quick reference
     - [opencode-vm-investigation.md](opencode-vm-investigation.md) - Full investigation
     - [zai-glm-concurrency-error-investigation.md](zai-glm-concurrency-error-investigation.md) - Previous investigation (superseded)
   - **Test script:** [test-opencode-vm.sh](../../scripts/test-opencode-vm.sh) - Automated testing
-- [ ] Z.AI GLM 4.7 API concurrency limit error in cal-dev VM (investigated 2026-01-25, superseded by opencode investigation)
-  - **Note:** This issue was actually an opencode processing bug, not an API issue. The Z.AI API works correctly (verified via direct curl tests). The real issue was `opencode run` hanging, which is now understood and documented above.
-  - Original investigation: [zai-glm-concurrency-error-investigation.md](zai-glm-concurrency-error-investigation.md)
 
 ---
 
