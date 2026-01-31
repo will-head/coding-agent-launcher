@@ -31,15 +31,6 @@
 
 ---
 
-## 0.11 Session State Management (Future)
-
-- [ ] Implement constant context state persistence
-- [ ] Write context to file after every operation
-- [ ] Enable seamless session recovery on crash or usage limits
-- [ ] Allow session continuation across Claude Code restarts
-
----
-
 ## Known Issues
 
 - [ ] vm-auth.sh GitHub clone fails with network timeout (needs transparent proxy auto-start before clone attempt)

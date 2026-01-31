@@ -44,3 +44,17 @@
 1. Support running multiple VMs simultaneously
 2. Apple limits: max 2 concurrent VMs
 3. VM switching in TUI
+
+---
+
+## 5.5 Session State Management
+
+**Goal:** Enable seamless session recovery and continuation across interruptions.
+
+**Tasks:**
+1. Implement constant context state persistence
+2. Write context to file after every operation
+3. Enable seamless session recovery on crash or usage limits
+4. Allow session continuation across Claude Code restarts
+
+**Note:** Moved from Phase 0 (originally section 0.11) to Phase 5 as this is a polish/UX enhancement rather than bootstrap requirement.
