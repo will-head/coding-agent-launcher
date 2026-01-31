@@ -22,10 +22,6 @@ with automated setup, snapshot management, and GitHub workflow integration.`,
 	Version: Version,
 }
 
-func init() {
-	// Version flag is automatically added by Cobra via Version field
-}
-
 func main() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
