@@ -12,7 +12,7 @@
 
 ---
 
-## 1.1 **REFINED:** Project Scaffolding (PR #3 - updates applied, needs re-review)
+## 1.1 **REFINED:** Project Scaffolding (PR #3 - needs changes: empty dirs, AGENTS.md linter ref)
 
 **Tasks:**
 1. Initialize Go module
