@@ -12,7 +12,7 @@
 
 ---
 
-## 1.1 **REFINED:** Project Scaffolding
+## 1.1 **REFINED:** Project Scaffolding (PR #3 - awaiting merge)
 
 **Tasks:**
 1. Initialize Go module

@@ -10,7 +10,7 @@
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| Project Scaffolding | PLAN-PHASE-01-TODO.md § 1.1 | Go module init, directory structure, minimal Cobra root command, .gitignore, Makefile with build/test/lint/install targets | 2026-01-31 | Use staticcheck for linting; add dependencies incrementally |
+| *No refined TODOs* | | | | |
 
 ---
 
@@ -18,7 +18,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| *No PRs awaiting review* | | | |
+| [#3](https://github.com/will-head/coding-agent-launcher/pull/3) | create-pr/project-scaffolding | Add project scaffolding for CAL CLI | 2026-01-31 |
 
 ---
 
