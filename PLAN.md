@@ -22,7 +22,7 @@ Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via c
 | Phase | Name | Status | Outstanding TODOs | Detail Files |
 |-------|------|--------|-------------------|--------------|
 | 0 | Bootstrap | Complete | 1 (optional) | [TODO](docs/PLAN-PHASE-00-TODO.md) • [DONE](docs/PLAN-PHASE-00-DONE.md) |
-| 1 | CLI Foundation | Not Started | ~40 | [TODO](docs/PLAN-PHASE-01-TODO.md) • [DONE](docs/PLAN-PHASE-01-DONE.md) |
+| 1 | CLI Foundation | Not Started | ~50 | [TODO](docs/PLAN-PHASE-01-TODO.md) • [DONE](docs/PLAN-PHASE-01-DONE.md) |
 | 2 | Agent Integration & UX | Not Started | ~20 | [TODO](docs/PLAN-PHASE-02-TODO.md) • [DONE](docs/PLAN-PHASE-02-DONE.md) |
 | 3 | GitHub Workflow | Not Started | ~15 | [TODO](docs/PLAN-PHASE-03-TODO.md) • [DONE](docs/PLAN-PHASE-03-DONE.md) |
 | 4 | Environment Plugin System | Not Started | ~25 | [TODO](docs/PLAN-PHASE-04-TODO.md) • [DONE](docs/PLAN-PHASE-04-DONE.md) |
@@ -63,9 +63,13 @@ Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via c
 1. Project scaffolding (1.1)
 2. Configuration management (1.2)
 3. Tart wrapper (1.3)
-4. CLI commands (1.6)
-5. Snapshot management (1.4)
-6. SSH management (1.5)
+4. Snapshot management (1.4)
+5. SSH management (1.5)
+6. CLI commands (1.6)
+7. Git safety checks (1.7)
+8. Proxy management (1.8)
+9. VM lifecycle automation (1.9)
+10. Helper script deployment (1.10)
 
 ### Medium-term (Phases 2-3)
 1. Status banner (2.2)
@@ -124,13 +128,13 @@ golangci-lint --version
 
 ## Next Action
 
-**Complete Phase 0 first:**
-1. Set up base VM with all agents
-2. Create safety snapshot
-3. Verify rollback works
-4. Use for actual development
-5. Complete remaining Phase 0 enhancements
+**Phase 0 is complete.** All operational learnings captured in [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md).
 
-**Then proceed to Phase 1 CLI implementation.**
+**Begin Phase 1 (CLI Foundation):**
+1. Project scaffolding and Go module setup (1.1)
+2. Configuration management with VM config file awareness (1.2)
+3. Tart wrapper with cache sharing, VNC experimental, BSD awk compat (1.3)
+4. Build out remaining subsystems per ADR-002 operational requirements
 
-Read [PLAN-PHASE-00-TODO.md](docs/PLAN-PHASE-00-TODO.md) for current outstanding tasks.
+Read [PLAN-PHASE-01-TODO.md](docs/PLAN-PHASE-01-TODO.md) for detailed tasks.
+See [ADR-002 § Phase 1 Readiness](docs/adr/ADR-002-tart-vm-operational-guide.md) for command mapping and operational requirements.

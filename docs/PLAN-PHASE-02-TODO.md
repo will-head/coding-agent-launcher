@@ -8,6 +8,8 @@
 
 **Deliverable:** `cal isolation run <workspace>` launches agent with full UX.
 
+**Reference:** [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) for agent installation, authentication, and TERM handling details.
+
 ---
 
 ## 2.1 TUI Framework Setup
@@ -35,6 +37,7 @@
    ```
 2. Dynamic color based on VM state
 3. Update banner in real-time during session
+4. Show proxy status indicator (from ADR-002 proxy management)
 
 ---
 
@@ -63,11 +66,31 @@
        ConfigDir() string
        LaunchCommand(prompt string) string
        IsInstalled(ssh *SSHClient) bool
+       IsAuthenticated(ssh *SSHClient) bool
+       AuthCommand() string
    }
    ```
-2. Implement for Claude Code, opencode, Cursor CLI
+2. Implement for all supported agents:
+
+   | Agent | Binary | Install | Auth Detection |
+   |-------|--------|---------|----------------|
+   | Claude Code | `claude` | `npm install -g @anthropic-ai/claude-code` | settings.json has content (not empty `{}`) |
+   | opencode | `opencode` | `brew install anomalyco/tap/opencode` | `opencode auth list` has non-zero credentials |
+   | Cursor CLI | `agent` | `curl -fsSL https://cursor.com/install \| bash` | `agent whoami` not "Not logged in" |
+   | CCS | `ccs` | `npm install -g @kaitranntt/ccs` | N/A (uses Claude Code auth) |
+   | Codex CLI | `codex` | `npm install -g @openai/codex` | OpenAI credentials |
+
 3. Agent installation in VM
 4. Agent configuration management
+5. Authentication flow with Ctrl+C trap handlers (from ADR-002)
+
+**Key learnings from Phase 0 (ADR-002):**
+- Claude Code auth: must check settings.json *content*, not just file existence. Empty `{}` = not authenticated
+- Claude Code OAuth URL: press `c` to copy (mouse-select includes line breaks)
+- Cursor CLI: requires keychain unlock for OAuth credential storage
+- opencode: hangs when TERM explicitly set in command environment (use tmux-wrapper.sh)
+- `gh api user -q .login` for locale-independent username extraction
+- Smart gate prompt: `[Y/n]` if any not authenticated, `[y/N]` if all authenticated
 
 ---
 
@@ -79,3 +102,8 @@
 3. Pass through agent terminal output
 4. Capture hotkey inputs (S, C, P, R, Q)
 5. Clean exit handling
+
+**Key learnings from Phase 0 (ADR-002):**
+- Use tmux-wrapper.sh for TERM compatibility (never set TERM explicitly in command)
+- tmux sessions: `~/scripts/tmux-wrapper.sh new-session -A -s cal`
+- Sessions survive SSH disconnects (agents keep running)

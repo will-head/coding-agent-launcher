@@ -8,6 +8,8 @@
 
 **Deliverable:** Complete TUI for CAL.
 
+**Reference:** [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) for VM state information and operational details.
+
 ---
 
 ## 5.1 Workspace Selector
@@ -15,7 +17,7 @@
 **Tasks:**
 1. Interactive list of workspaces
 2. Show status (running/stopped)
-3. Quick actions (start, stop, ssh, run)
+3. Quick actions (start, stop, ssh, run, gui)
 
 ---
 
@@ -24,8 +26,10 @@
 **Tasks:**
 1. VM resource usage
 2. Active processes
-3. Git status
+3. Git status (uncommitted changes, unpushed commits across ~/code repos)
 4. Environment status
+5. Proxy status (running/stopped, mode, connectivity)
+6. Agent authentication status
 
 ---
 
@@ -35,6 +39,7 @@
 1. `cal isolation logs <workspace> --follow`
 2. Build log capture
 3. Agent output capture
+4. Proxy log streaming (`~/.cal-proxy.log`)
 
 ---
 

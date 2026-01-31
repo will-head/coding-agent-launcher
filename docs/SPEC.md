@@ -4,7 +4,7 @@
 
 ## Overview
 
-CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code, opencode) in isolated Tart macOS VMs, protecting the host filesystem while providing a seamless developer experience.
+CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code, opencode, Cursor CLI, CCS, Codex) in isolated Tart macOS VMs, protecting the host filesystem while providing a seamless developer experience.
 
 ## Core Components
 
@@ -24,10 +24,13 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 | Agent | Install Command | Config Dir | Status |
 |-------|-----------------|------------|--------|
 | Claude Code | `npm install -g @anthropic-ai/claude-code` | `~/.claude` | Working |
-| opencode | `brew install anomalyco/tap/opencode` | `~/.opencode` | Working |
-| Cursor CLI | `curl -fsSL https://cursor.com/install \| bash` | `~/.cursor` | Working* |
+| opencode | `brew install anomalyco/tap/opencode` | `~/.opencode` | Working* |
+| Cursor CLI | `curl -fsSL https://cursor.com/install \| bash` | `~/.cursor` | Working** |
+| CCS | `npm install -g @kaitranntt/ccs` | N/A | Working |
+| Codex CLI | `npm install -g @openai/codex` | N/A | Working |
 
-*Cursor CLI requires automatic keychain unlock for OAuth. Implemented via .zshrc in Phase 0.8.5.
+*opencode hangs when TERM is explicitly set in command environment. Use tmux-wrapper.sh (see ADR-002).
+**Cursor CLI requires automatic keychain unlock for OAuth. Implemented via .zshrc in Phase 0.8.5.
 
 ### 3. Environment Plugin System
 
@@ -70,7 +73,10 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 ### Network
 
 - SSH access to VM (default credentials: admin/admin)
-- VNC available for GUI debugging
+- VNC experimental mode for GUI with bidirectional clipboard (`--gui`)
+- Screen Sharing (legacy, one-way clipboard only)
+- Transparent proxy via sshuttle for corporate networks (auto/on/off)
+- Bootstrap SOCKS proxy (SSH -D) during init before sshuttle installed
 - GitHub HTTPS/SSH for repository operations
 
 ---
@@ -109,8 +115,12 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 ### VM (`/Users/admin/`)
 
 ```
-~/workspace/{repo}/                # Cloned repositories
+~/code/github.com/{owner}/{repo}/  # Cloned repositories
+~/scripts/                         # Helper scripts (vm-auth.sh, vm-setup.sh, etc.)
 ~/.config/gh/                      # GitHub CLI auth
+~/.cal-vm-info                     # VM detection metadata
+~/.cal-vm-config                   # VM password (mode 600)
+~/.cal-proxy-config                # Proxy settings
 ~/.cal-env/                        # Environment markers
 ~/output/                          # Artifact staging (synced to host)
 ```

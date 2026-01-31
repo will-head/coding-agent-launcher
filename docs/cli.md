@@ -1,6 +1,7 @@
 # CLI Reference
 
 > Future CLI commands. Current bootstrap commands are in [Bootstrap Guide](bootstrap.md).
+> See [ADR-002 § Phase 1 Readiness](adr/ADR-002-tart-vm-operational-guide.md) for command mapping from cal-bootstrap.
 
 ```bash
 cal isolation <command>    # or: cal iso <command>
@@ -9,73 +10,98 @@ cal isolation <command>    # or: cal iso <command>
 ## Workspace
 
 ```bash
-init <name> [--template <t>] [--env <e>...] [--agent <a>] [--cpu N] [--memory N] [--disk N]
-start <name> [--headless] [--vnc]
-stop <name> [--force]
-destroy <name>
-status <name>
-ssh <name> [command]
+init [--proxy auto|on|off] [--yes]
+start [--headless]
+stop [--force]
+restart
+gui                                # VNC experimental mode (bidirectional clipboard)
+destroy
+status
+ssh [command]
 ```
 
 ## Git/GitHub
 
 ```bash
-clone <name> --repo <owner/repo> [--branch <b>] [--new-branch <b>]
-commit <name> --message <msg> [--push] [--pr]
-pr <name> --title <t> [--body <b>] [--base <branch>]
-auth login <name> [--token <t>]
-auth status <name>
-auth logout <name>
+clone --repo <owner/repo> [--branch <b>] [--new-branch <b>]
+commit --message <msg> [--push] [--pr]
+pr --title <t> [--body <b>] [--base <branch>]
+auth login [--token <t>]
+auth status
+auth logout
 ```
 
 ## Agent
 
 ```bash
-run <name> [--prompt <text>] [--agent <a>] [--autonomous]
-agent list <name>
-agent install <name> <agent>
-agent use <name> <agent>
-agent update <name> <agent>
+run [--prompt <text>] [--agent <a>] [--autonomous]
+agent list
+agent install <agent>
+agent use <agent>
+agent update <agent>
 ```
+
+**Supported agents:** claude, agent (Cursor), opencode, ccs, codex
 
 ## Snapshots
 
 ```bash
-snapshot create <name> --name <s>
-snapshot restore <name> --name <s>
-snapshot list <name>
-snapshot delete <name> --name <s>
-snapshot cleanup <name> [--auto-only] [--older-than <duration>]
-rollback <name>                        # restore to session start
-disk-usage <name>
+snapshot create <name>
+snapshot restore <name>
+snapshot list
+snapshot delete <names...> [--force]       # Multiple names, --force skips git check
+snapshot cleanup [--auto-only] [--older-than <duration>]
+rollback                                   # Restore to session start
+disk-usage
 ```
 
 ## Environments
 
 ```bash
-env list <name>
-env install <name> <env> [--variant <v>]
-env remove <name> <env>
-env verify <name>
+env list
+env install <env> [--variant <v>]
+env remove <env>
+env verify
 env info <env>
-env update <name> <env>
+env update <env>
 ```
 
 ## Artifacts
 
 ```bash
-sync <name> [--watch]
-watch <name> [--on-archive <cmd>]
-logs <name> [--follow] [--tail <n>]
-sign <name> --archive <path> --identity <id> --profile <path> [--output <path>]
+sync [--watch]
+watch [--on-archive <cmd>]
+logs [--follow] [--tail <n>]
+sign --archive <path> --identity <id> --profile <path> [--output <path>]
 cleanup [--all] [--cache] [--stopped]
+```
+
+## Global Flags
+
+```bash
+--yes, -y                  # Skip confirmation prompts
+--proxy auto|on|off        # Control proxy mode
 ```
 
 ## Future: CAL Core
 
 ```bash
 cal                                    # Launch TUI
-cal quick <name> --repo <r> --agent <a> --prompt <p>
+cal quick --repo <r> --agent <a> --prompt <p>
 cal list
 cal status
 ```
+
+## Command Mapping (cal-bootstrap -> cal isolation)
+
+| cal-bootstrap | cal isolation |
+|---------------|---------------|
+| `--init` | `init` |
+| `--run` | `start` |
+| `--stop` | `stop` |
+| `--restart` | `restart` |
+| `--gui` | `gui` |
+| `-S list` | `snapshot list` |
+| `-S create <name>` | `snapshot create <name>` |
+| `-S restore <name>` | `snapshot restore <name>` |
+| `-S delete <names...>` | `snapshot delete <names...>` |

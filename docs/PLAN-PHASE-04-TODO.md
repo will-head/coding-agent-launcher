@@ -8,6 +8,8 @@
 
 **Deliverable:** Multi-platform development with pluggable environments.
 
+**Reference:** [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) for tool installation patterns and PATH configuration.
+
 ---
 
 ## 4.1 Plugin Manifest Schema
@@ -26,12 +28,20 @@
      env: map[string]string
      brew: []string
      cask: []string
+     npm: []string
+     go_install: []string
      post_install: []string
    verify: []VerifyCommand
    artifacts: ArtifactConfig
    ```
 2. Parse and validate manifests
 3. Store in `~/.cal/environments/plugins/`
+
+**Key learnings from Phase 0 (ADR-002):**
+- Tools install via multiple methods: brew, brew cask, npm, go install, curl scripts
+- PATH configuration varies by tool: ~/.local/bin, ~/go/bin, ~/scripts, ~/.opencode/bin
+- Shell reload (`exec zsh` or `source ~/.zshrc`) needed after PATH changes
+- Some tools need Homebrew environment initialized: `eval "$(/opt/homebrew/bin/brew shellenv)"`
 
 ---
 
@@ -53,10 +63,15 @@ Create manifests for:
 - `ios` - Xcode, Swift, simulators (~30GB)
 - `android` - SDK, Gradle, Kotlin (~12GB)
 - `java` - OpenJDK 17 (~500MB)
-- `node` - Node.js LTS (~200MB)
+- `node` - Node.js LTS (~200MB) - already installed by vm-setup.sh
 - `python` - Python 3.12 (~500MB)
-- `go` - Go toolchain (~500MB)
+- `go` - Go toolchain + dev tools (~500MB) - already installed by vm-setup.sh
 - `rust` - Rust/Cargo (~1GB)
+
+**Note:** Node and Go (with dev tools) are already installed as part of Phase 0 bootstrap. Core plugins for these should detect existing installations and only add missing components.
+
+**Go dev tools already installed (from ADR-002):**
+- golangci-lint (meta-linter), staticcheck, goimports, delve (dlv), mockgen, air
 
 ---
 

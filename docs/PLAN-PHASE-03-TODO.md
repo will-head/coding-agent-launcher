@@ -6,7 +6,9 @@
 
 **Goal:** Complete git workflow from VM.
 
-**Deliverable:** Clone → Edit → Commit → PR workflow working.
+**Deliverable:** Clone -> Edit -> Commit -> PR workflow working.
+
+**Reference:** [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) for authentication patterns, repository structure, and git safety checks.
 
 ---
 
@@ -17,8 +19,14 @@
 **Tasks:**
 1. Wrap `gh auth login` for VM
 2. Support token-based auth
-3. Auth status checking
+3. Auth status checking via `gh auth status`
 4. Secure token storage (encrypted in host config or re-auth each session)
+5. Username extraction via `gh api user -q .login` (locale-independent)
+
+**Key learnings from Phase 0 (ADR-002):**
+- `gh auth status` output is locale-dependent; use `gh api user -q .login` for username
+- Ctrl+C trap handlers needed during interactive auth flows
+- Network connectivity check before auth (auto-start proxy if needed)
 
 ---
 
@@ -28,7 +36,13 @@
 1. `cal isolation clone <workspace> --repo owner/repo`
 2. Support `--branch` for existing branch
 3. Support `--new-branch` with prefix (default: `agent/`)
-4. Clone into `~/workspace/{repo}` in VM
+4. Clone into `~/code/github.com/[owner]/[repo]` in VM (matches Phase 0 convention)
+
+**Key learnings from Phase 0 (ADR-002):**
+- Repository directory structure: `~/code/github.com/[owner]/[repo]`
+- Support both `owner/repo` and bare `repo` format (assumes authenticated user for bare)
+- Skip if repository already exists at target path
+- Network connectivity required (proxy auto-start if needed)
 
 ---
 
@@ -39,6 +53,11 @@
 2. Optional `--push` flag
 3. Show git diff before commit
 4. Handle uncommitted changes on exit
+
+**Key learnings from Phase 0 (ADR-002):**
+- Logout git check (`~/.zlogout`) already warns about uncommitted/unpushed changes
+- Unpushed commit detection requires upstream tracking
+- Search locations: ~/workspace, ~/projects, ~/repos, ~/code, ~ (depth 2)
 
 ---
 
@@ -59,3 +78,4 @@
 2. Show git status of cloned repos
 3. Show uncommitted changes
 4. Show current branch
+5. Show unpushed commits (when upstream tracking configured)
