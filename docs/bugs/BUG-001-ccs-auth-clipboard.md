@@ -3,11 +3,12 @@
 | Field     | Value |
 |-----------|-------|
 | ID        | BUG-001 |
-| Status    | Open |
+| Status    | Won't Fix |
 | Severity  | Medium |
 | Component | CCS/VM |
 | Phase     | 0 (Bootstrap) |
 | Opened    | 2026-01-31 |
+| Closed    | 2026-01-31 |
 
 ## Environment
 
@@ -62,6 +63,17 @@ When CCS spawns Claude Code as a subprocess, stdin is not properly configured fo
 ## Resolution Path
 
 Report upstream to [kaitranntt/ccs](https://github.com/kaitranntt/ccs) GitHub. The fix likely involves CCS passing stdin with `stdio: ['inherit', 'inherit', 'inherit']` when spawning the Claude subprocess.
+
+## Closure
+
+**Status:** Won't Fix (2026-01-31)
+
+**Reason:** Existing workarounds are sufficient:
+1. Run `claude` directly for authentication
+2. Use `--gui` mode with VNC (full clipboard support)
+3. Manually copy URL from terminal output
+
+The issue is in the upstream CCS tool, not CAL. Workarounds are straightforward and effective, so this bug is being closed as won't fix in the CAL project.
 
 ## Related
 

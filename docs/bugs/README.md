@@ -28,4 +28,4 @@ This file is for human browsing only. Agents should not read this file.
 
 | ID | Summary | Severity | Status | Component | Phase | Opened | Resolved |
 |----|---------|----------|--------|-----------|-------|--------|----------|
-| [BUG-001](BUG-001-ccs-auth-clipboard.md) | CCS auth create clipboard keybinding failure | Medium | Open | CCS/VM | 0 (Bootstrap) | 2026-01-31 | - |
+| [BUG-001](BUG-001-ccs-auth-clipboard.md) | CCS auth create clipboard keybinding failure | Medium | Won't Fix | CCS/VM | 0 (Bootstrap) | 2026-01-31 | 2026-01-31 |
