@@ -219,6 +219,30 @@
   - Allows user to abort logout (exec zsh -l) or continue despite changes
   - Implemented in ~/.zlogout via vm-setup.sh
 
+### Tart Cache Sharing for Nested VMs (Phase 0.10 - Complete)
+- [x] **Implemented Tart cache sharing** (completed 2026-01-31)
+  - **Problem:** Running cal-bootstrap inside cal-dev VM would re-download macos-sequoia-base:latest (~30-47GB), wasting bandwidth and time
+  - **Solution:** Share host's Tart cache directory with VM using Tart's directory sharing feature
+  - **Implementation:**
+    - Modified `start_vm_background()` in cal-bootstrap to share `~/.tart/cache` as read-only via `--dir` flag
+    - Created `setup_tart_cache_sharing()` function to create symlink inside VM: `~/.tart/cache -> /Volumes/My Shared Files/tart-cache`
+    - Added cache sharing to all VM start operations (--init, --run, --restart, --gui)
+    - Added Tart installation to vm-setup.sh for nested VM support
+    - Added Ghostty terminal emulator installation to vm-setup.sh
+    - Added jq to package list for JSON parsing
+    - Enhanced verification section to check cache sharing status
+  - **Testing:** Verified Tart inside VM can see and use host's cached OCI images (no re-download needed)
+  - **Benefits:**
+    - Saves 30-47GB download when using nested VMs
+    - Read-only sharing prevents VM from corrupting host cache
+    - Idempotent setup (safe to run multiple times)
+    - Gracefully degrades if sharing not available
+  - **Files modified:**
+    - scripts/cal-bootstrap (cache sharing implementation)
+    - scripts/vm-setup.sh (Tart, Ghostty, jq installation)
+    - docs/PLAN-PHASE-00-TODO.md (moved to DONE)
+    - docs/PLAN-PHASE-00-DONE.md (this entry)
+
 ### GUI/Remote Access Setup (Phase 0.10 - Complete)
 - [x] Install Tart Guest Agent in cal-dev VM (verified 2026-01-31 - already installed via PR #2)
   - Version: 0.9.0-84fe9c4

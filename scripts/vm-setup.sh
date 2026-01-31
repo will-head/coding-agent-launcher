@@ -81,7 +81,7 @@ fi
 # Install Homebrew dependencies
 echo ""
 echo "📦 Installing/upgrading Homebrew packages..."
-for pkg in node gh tmux sshuttle; do
+for pkg in node gh tmux sshuttle jq; do
     if brew_installed "$pkg"; then
         echo "  → Upgrading $pkg..."
         upgrade_output=$(brew upgrade "$pkg" 2>&1)
@@ -104,6 +104,31 @@ for pkg in node gh tmux sshuttle; do
     fi
 done
 
+# Install Tart (for nested VM support - uses host's cache)
+echo ""
+echo "🖥️  Installing Tart (for nested VMs)..."
+if brew_installed "tart"; then
+    echo "  → Upgrading tart..."
+    upgrade_output=$(brew upgrade cirruslabs/cli/tart 2>&1)
+    upgrade_exit=$?
+    if [ $upgrade_exit -eq 0 ]; then
+        echo "  ✓ tart upgraded"
+    elif echo "$upgrade_output" | grep -q "already installed"; then
+        echo "  ✓ tart already up to date"
+    else
+        echo "  ⚠ tart upgrade failed"
+        echo "  Error: $(echo "$upgrade_output" | head -2 | sed 's/^/    /')"
+    fi
+else
+    echo "  → Installing tart..."
+    if brew install cirruslabs/cli/tart; then
+        echo "  ✓ tart installed"
+        echo "  ℹ️  Tart can use host's image cache via ~/.tart/cache (shared from host)"
+    else
+        echo "  ✗ Failed to install tart"
+    fi
+fi
+
 # Install tart-guest-agent (enables clipboard sharing)
 echo ""
 echo "📋 Installing Tart Guest Agent (for clipboard support)..."
@@ -125,6 +150,31 @@ else
         echo "  ✓ tart-guest-agent installed"
     else
         echo "  ✗ Failed to install tart-guest-agent"
+    fi
+fi
+
+# Install Ghostty (modern terminal emulator)
+echo ""
+echo "🖥️  Installing Ghostty (terminal emulator)..."
+# Check if cask is installed (different command for casks)
+if brew list --cask ghostty &>/dev/null; then
+    echo "  → Upgrading ghostty..."
+    upgrade_output=$(brew upgrade --cask ghostty 2>&1)
+    upgrade_exit=$?
+    if [ $upgrade_exit -eq 0 ]; then
+        echo "  ✓ ghostty upgraded"
+    elif echo "$upgrade_output" | grep -q "already installed"; then
+        echo "  ✓ ghostty already up to date"
+    else
+        echo "  ⚠ ghostty upgrade failed"
+        echo "  Error: $(echo "$upgrade_output" | head -2 | sed 's/^/    /')"
+    fi
+else
+    echo "  → Installing ghostty..."
+    if brew install --cask ghostty; then
+        echo "  ✓ ghostty installed"
+    else
+        echo "  ✗ Failed to install ghostty"
     fi
 fi
 
@@ -790,6 +840,21 @@ else
     echo "  ✗ sshuttle: not found"
 fi
 
+if command_exists tart; then
+    TART_VERSION=$(tart --version 2>/dev/null | head -n1)
+    echo "  ✓ tart: $TART_VERSION"
+    # Check if cache is shared from host
+    if [ -L ~/.tart/cache ]; then
+        echo "    → Cache: Shared from host (saves ~30GB downloads)"
+    elif [ -d ~/.tart/cache ]; then
+        echo "    → Cache: Local (not using host cache)"
+    else
+        echo "    → Cache: Not initialized"
+    fi
+else
+    echo "  ✗ tart: not found"
+fi
+
 if command_exists tart-guest-agent; then
     TART_AGENT_VERSION=$(tart-guest-agent --version 2>/dev/null | head -n1)
     echo "  ✓ tart-guest-agent: $TART_AGENT_VERSION"
@@ -801,6 +866,13 @@ if command_exists tart-guest-agent; then
     fi
 else
     echo "  ✗ tart-guest-agent: not found"
+fi
+
+if [ -d "/Applications/Ghostty.app" ]; then
+    # Ghostty doesn't have a CLI version command, just check if app exists
+    echo "  ✓ ghostty: Installed"
+else
+    echo "  ✗ ghostty: not found"
 fi
 
 # Configure transparent proxy for reliable network access

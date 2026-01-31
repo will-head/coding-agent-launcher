@@ -165,9 +165,22 @@ stop_vm() {
 # Start VM in background and wait for IP/SSH
 start_vm_background() {
     local vm="$1"
-    
+    local share_tart_cache="${2:-true}"  # Default to sharing cache
+
     echo "  Starting $vm in background..."
-    "$TART" run --no-graphics "$vm" >/dev/null 2>&1 &
+
+    # Build tart run command with optional cache sharing
+    local tart_cmd=("$TART" "run" "--no-graphics")
+
+    # Share host's Tart cache with VM (read-only) to avoid duplicate downloads
+    # when running nested VMs. Mounted to /Volumes/My Shared Files/tart-cache
+    if [ "$share_tart_cache" = "true" ] && [ -d ~/.tart/cache ]; then
+        tart_cmd+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
+    fi
+
+    tart_cmd+=("$vm")
+
+    "${tart_cmd[@]}" >/dev/null 2>&1 &
     TART_PID=$!
     disown "$TART_PID" 2>/dev/null || true
     CLEANUP_VM=true
@@ -476,6 +489,51 @@ unlock_keychain() {
         echo "  ⚠ Could not unlock keychain (may already be unlocked)"
         return 0
     fi
+}
+
+# Setup Tart cache access from shared host cache (for nested VM support)
+# Returns 0 even on failure to avoid blocking VM startup
+setup_tart_cache_sharing() {
+    local vm_ip="$1"
+
+    echo "  Setting up Tart cache sharing..."
+
+    # Check if shared directory is mounted
+    local shared_cache_mounted
+    shared_cache_mounted=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "[ -d '/Volumes/My Shared Files/tart-cache' ] && echo yes || echo no" 2>/dev/null || echo "no")
+
+    if [ "$shared_cache_mounted" != "yes" ]; then
+        echo "  ⚠ Host Tart cache not shared (skipping)"
+        return 0
+    fi
+
+    # Set up symlink from ~/.tart/cache to shared cache
+    # This allows Tart inside the VM to use host's cached images
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "
+        # Create .tart directory if it doesn't exist
+        mkdir -p ~/.tart
+
+        # Remove existing cache if it's a directory (not a symlink)
+        if [ -d ~/.tart/cache ] && [ ! -L ~/.tart/cache ]; then
+            echo '  Found existing cache directory, removing...'
+            rm -rf ~/.tart/cache
+        fi
+
+        # Create symlink if it doesn't exist
+        if [ ! -e ~/.tart/cache ]; then
+            ln -s '/Volumes/My Shared Files/tart-cache' ~/.tart/cache
+            echo '  ✓ Symlink created: ~/.tart/cache -> /Volumes/My Shared Files/tart-cache'
+        elif [ -L ~/.tart/cache ]; then
+            echo '  ✓ Symlink already exists'
+        else
+            echo '  ⚠ ~/.tart/cache exists but is not a symlink (manual intervention needed)'
+        fi
+    " 2>> "$CAL_LOG"
+
+    echo "  ✓ Tart cache sharing configured"
+    return 0
 }
 
 
@@ -1228,6 +1286,9 @@ do_init() {
     # Ensure scripts folder is set up (idempotent - safe to run multiple times)
     setup_scripts_folder "$VM_IP"
 
+    # Setup Tart cache sharing for nested VM support
+    setup_tart_cache_sharing "$VM_IP"
+
     # Step 10.5: Remove first-run flag from cal-dev (so it won't run vm-first-run.sh)
     echo ""
     echo "Step 10.5: Prepare $VM_DEV for use"
@@ -1285,6 +1346,8 @@ do_run() {
             unlock_keychain "$VM_IP"
             # Ensure scripts folder is set up (idempotent - safe to run multiple times)
             setup_scripts_folder "$VM_IP"
+            # Setup Tart cache sharing for nested VM support
+            setup_tart_cache_sharing "$VM_IP"
             echo ""
             echo "Connecting via SSH with tmux..."
             echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
@@ -1326,6 +1389,9 @@ do_run() {
 
     # Ensure scripts folder is set up (idempotent - safe to run multiple times)
     setup_scripts_folder "$VM_IP"
+
+    # Setup Tart cache sharing for nested VM support
+    setup_tart_cache_sharing "$VM_IP"
 
     echo ""
     echo "VNC:   open vnc://${VM_IP}"
@@ -1417,6 +1483,9 @@ do_restart() {
     # Ensure scripts folder is set up (idempotent - safe to run multiple times)
     setup_scripts_folder "$VM_IP"
 
+    # Setup Tart cache sharing for nested VM support
+    setup_tart_cache_sharing "$VM_IP"
+
     echo ""
     echo "VNC:   open vnc://${VM_IP}"
     echo "Stop:  $TART stop $VM_DEV"
@@ -1480,7 +1549,16 @@ do_gui() {
     # - Provides reliable bidirectional clipboard support
     # - Trade-off: May have experimental bugs (display, input) but clipboard works
     # - Tested and confirmed working for clipboard operations (2026-01-31)
-    "$TART" run "$VM_DEV" --vnc-experimental >/dev/null 2>&1 &
+
+    # Build tart run command with cache sharing
+    local tart_cmd=("$TART" "run" "$VM_DEV" "--vnc-experimental")
+
+    # Share host's Tart cache with VM (read-only) to avoid duplicate downloads
+    if [ -d ~/.tart/cache ]; then
+        tart_cmd+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
+    fi
+
+    "${tart_cmd[@]}" >/dev/null 2>&1 &
     TART_PID=$!
 
     # Wait for VM to get an IP address

@@ -147,6 +147,37 @@ proxy-log         # View proxy logs
 
 ---
 
+### Nested VM Support (Tart Cache Sharing)
+
+CAL automatically shares the host's Tart cache directory with cal-dev, enabling nested virtualization without re-downloading base images.
+
+**What is shared:**
+- Host's `~/.tart/cache/` directory (contains OCI images like macos-sequoia-base:latest)
+- Shared as read-only to prevent VM from corrupting host cache
+- Automatically mounted at `/Volumes/My Shared Files/tart-cache`
+- Symlinked to `~/.tart/cache` inside the VM
+
+**Benefits:**
+- Saves 30-47GB download when using nested VMs
+- Enables running `tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest` inside cal-dev instantly
+- Supports nested VM development and testing workflows
+
+**Tools installed in cal-dev:**
+- Tart (for creating nested VMs)
+- Ghostty (modern terminal emulator)
+- jq (JSON processing)
+
+**Verify cache sharing:**
+```bash
+# Inside cal-dev VM
+ls -la ~/.tart/cache/              # Should show symlink
+tart list --format json | jq -r '.[] | select(.Source == "OCI") | .Name'
+```
+
+**Note:** Tart cache sharing is automatic - no configuration needed.
+
+---
+
 ### Init Workflow
 
 The `--init` command performs these steps:

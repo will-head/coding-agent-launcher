@@ -51,11 +51,3 @@
 **Note:** These items are not essential for Phase 0 completion:
 
 - [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning
-
----
-
-## Phase 1 Pending TODOs
-
-**Note:** This item doesn't fit cleanly into Phase 0 or 1, tracked here for visibility:
-
-- [ ] Make cached macos-sequoia-base:latest available inside cal-dev to avoid duplicate downloading
