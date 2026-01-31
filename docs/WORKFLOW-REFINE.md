@@ -27,19 +27,12 @@ The Refine workflow ensures TODOs in phase TODO files are implementation-ready b
 
 ## Session Start Procedure
 
-At the start of each new session using this workflow:
-
-1. **Read this workflow file** - Read `docs/WORKFLOW-REFINE.md` in full
-2. **Reiterate to user** - Summarize the workflow in your own words:
-   - Explain this is the Refine workflow (6-step for refining phase TODO files)
-   - List the key principles (defaults to active phase, approval required, main branch, comprehensive requirements, track refinement)
-   - Outline the 6 steps (Read PLAN.md & Phase TODO → Ask Questions → Update Phase TODO → Update STATUS.md → Ask Approval → Commit)
-   - Explain the REFINED prefix and STATUS.md tracking
-   - Note that it defaults to active phase unless user specifies different phase
-3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
-4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
-
-This ensures both agent and user have shared understanding of the workflow being followed.
+Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
+- This is the Refine workflow (6-step for refining phase TODO files)
+- Key principles: defaults to active phase, approval required, main branch, comprehensive requirements, track refinement
+- 6 steps: Read PLAN.md & Phase TODO → Ask Questions → Update Phase TODO → Update STATUS.md → Ask Approval → Commit
+- Explain the REFINED prefix and STATUS.md tracking
+- Defaults to active phase unless user specifies different phase
 
 ---
 
@@ -83,7 +76,7 @@ Use Refine workflow when:
 - Related TODOs or dependencies within the same phase
 - Section location within the phase file
 
-If user hasn't specified which TODO, present a list of candidates from the **target phase** that would benefit from refining.
+If user hasn't specified which TODO, present candidates using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation) so the user can reply with just a number.
 
 ### Step 2: Ask Clarifying Questions
 
@@ -174,28 +167,7 @@ If user requests changes, return to Step 2 or Step 3 as needed.
 
 ### Step 6: Commit and Push
 
-After user approval, commit changes to main:
-
-```bash
-git add docs/PLAN-PHASE-XX-TODO.md STATUS.md
-git commit -m "$(cat <<'EOF'
-Refine TODO: [brief description]
-
-Updated PLAN-PHASE-XX-TODO.md with refined requirements for [TODO].
-Added refine tracking entry to STATUS.md.
-
-Refine details:
-- [Key requirement 1]
-- [Key requirement 2]
-- [Key requirement 3]
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-EOF
-)"
-git push
-```
-
-**Note:** Replace `XX` with the actual phase number (e.g., `00`, `01`, etc.).
+After user approval, stage `docs/PLAN-PHASE-XX-TODO.md` and `STATUS.md`, then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format). Include "Refine TODO:" prefix and list key requirements in the body. Push after commit.
 
 **Done!** TODO is now implementation-ready.
 

@@ -24,18 +24,11 @@ The Interactive workflow is the default workflow for making code changes directl
 
 ## Session Start Procedure
 
-At the start of each new session using this workflow:
-
-1. **Read this workflow file** - Read `docs/WORKFLOW-INTERACTIVE.md` in full
-2. **Reiterate to user** - Summarize the workflow in your own words:
-   - Explain this is the Interactive workflow (8-step with approvals)
-   - List the key principles (user approval required, blocking checkpoints, code review mandatory)
-   - Outline the 8 steps or simplified 3-step process for docs-only
-   - Mention important policies (command approval, PLAN.md tracking, commit format)
-3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
-4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
-
-This ensures both agent and user have shared understanding of the workflow being followed.
+Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
+- This is the Interactive workflow (8-step with approvals)
+- Key principles: user approval required, blocking checkpoints, code review mandatory
+- 8 steps for code or simplified 3-step for docs-only
+- Present available TODOs using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation)
 
 ---
 
@@ -116,37 +109,14 @@ Update affected documentation files:
 - `docs/roadmap.md` - if roadmap changed
 - Inline comments in changed code files
 
-**Never modify `docs/adr/*`** - ADRs are immutable historical records.
+**Never modify `docs/adr/*` or `docs/prd/*`** - ADRs and PRDs are immutable historical records.
 
-**Always update PLAN.md and phase TODO files** with current project status:
-- **Move completed TODOs** from TODO file to DONE file (e.g., from `docs/PLAN-PHASE-00-TODO.md` to `docs/PLAN-PHASE-00-DONE.md`)
-  - Cut the completed TODO item from TODO file
-  - Paste it into DONE file with `[x]` checkbox and completion note
-  - Example: `- [x] Add snapshot validation (completed 2026-01-21)`
-- Add new TODOs discovered during implementation to appropriate phase TODO file
-- Update PLAN.md phase status to reflect actual completion
-- Update PLAN.md "Current Status" section if phase completion changed
-- Ensure all code TODOs have corresponding entries in phase TODO files
+**Always update PLAN.md and phase TODO files** - follow [TODO → DONE Movement](WORKFLOWS.md#todo--done-movement) rules from Shared Conventions. Also add new TODOs discovered during implementation and update PLAN.md phase status.
 
 ### Step 7: Commit and Push
 
 - **Ask user approval** before committing
-- Use imperative mood commit messages
-- Include Co-Authored-By line:
-  ```
-  Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-  ```
-- Use heredoc format for multi-line commits:
-  ```bash
-  git commit -m "$(cat <<'EOF'
-  Brief summary (imperative mood)
-
-  Detailed description of what changed and why.
-
-  Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-  EOF
-  )"
-  ```
+- Follow [Commit Message Format](WORKFLOWS.md#commit-message-format) from Shared Conventions
 - Execute only after all previous steps complete successfully
 
 ### Step 8: Complete
@@ -185,24 +155,7 @@ Before every commit:
 
 ### TODO Tracking
 
-**PLAN.md and phase TODO files are the single source of truth** for all TODOs.
-
-Rules:
-- Phase overview in PLAN.md, detailed TODOs in phase-specific files (e.g., `docs/PLAN-PHASE-00-TODO.md`)
-- All phase-affecting TODOs must be in the appropriate phase TODO file
-- Phase complete only when ALL checkboxes in phase TODO file are `[x]`
-- Code TODOs are notes only, must also be tracked in phase TODO files
-- Before commit, verify each TODO has an entry in the appropriate phase TODO file
-
-### Commit Message Format
-
-```
-Brief summary (imperative mood)
-
-Detailed description of what changed and why.
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-```
+See [PLAN.md is Source of Truth](WORKFLOWS.md#planmd-is-source-of-truth) and [TODO → DONE Movement](WORKFLOWS.md#todo--done-movement) in Shared Conventions.
 
 ---
 

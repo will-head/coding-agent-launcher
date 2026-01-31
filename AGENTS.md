@@ -21,33 +21,20 @@ scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
 
 ### Workflow Modes
 
-## Quick Reference
+**Interactive** is the default workflow unless user specifies otherwise or changes are docs-only.
 
-| Workflow | Steps | Approvals | Target | Use Case |
-|----------|-------|-----------|--------|----------|
-| [Interactive](docs/WORKFLOW-INTERACTIVE.md) | 8 | Required | main branch | Default for code changes |
-| [Documentation](docs/WORKFLOW-DOCUMENTATION.md) | 3 | Required | main branch | Docs-only changes |
-| [Refine](docs/WORKFLOW-REFINE.md) | 6 | Required | main branch | Refine PLAN.md TODOs |
-| [Create PR](docs/WORKFLOW-CREATE-PR.md) | 7 | Not required | PR branch | PR-based development |
-| [Review PR](docs/WORKFLOW-REVIEW-PR.md) | 6 | Not required | PR review | Code review of PRs |
-| [Update PR](docs/WORKFLOW-UPDATE-PR.md) | 8 | Not required | PR branch | Address review feedback |
-| [Test PR](docs/WORKFLOW-TEST-PR.md) | 7 | Test confirmation | PR testing | Manual testing gate |
-| [Merge PR](docs/WORKFLOW-MERGE-PR.md) | 8 | Required | main branch | Merge tested PRs |
-
-## Default Workflow
-
-**Interactive** is the default workflow unless:
-- User specifies "refine" or "refinement" → use Refine workflow
-- User specifies "create PR" → use Create PR workflow
-- User specifies "review PR" → use Review PR workflow
-- User specifies "update PR" → use Update PR workflow
-- User specifies "test PR" → use Test PR workflow
-- User specifies "merge PR" → use Merge PR workflow
-- Changes are documentation-only → use Documentation workflow
+Routing rules:
+- "refine" / "refinement" → Refine workflow
+- "create PR" → Create PR workflow
+- "review PR" → Review PR workflow
+- "update PR" → Update PR workflow
+- "test PR" → Test PR workflow
+- "merge PR" → Merge PR workflow
+- Documentation-only changes → Documentation workflow
 
 **If unclear, ask user explicitly which workflow to use.**
 
-See `docs/WORKFLOWS.md` for complete index and `docs/WORKFLOW-*.md` for detailed procedures.
+See [WORKFLOWS.md](docs/WORKFLOWS.md) for complete index, quick reference table, shared conventions, and detailed procedures.
 
 ### TODOs
 - **`PLAN.md` and phase TODO files are the single source of truth** for all TODOs
@@ -59,9 +46,9 @@ See `docs/WORKFLOWS.md` for complete index and `docs/WORKFLOW-*.md` for detailed
 - Phase complete only when ALL items moved from TODO to DONE
 - Code TODOs must also be tracked in phase TODO files
 
-### ADRs
-**Never modify `docs/adr/*`** - ADRs are immutable historical records.
-Create new ADR to supersede if needed.
+### ADRs and PRDs
+**Never modify `docs/adr/*` or `docs/prd/*`** - ADRs and PRDs are immutable historical records.
+Create new ADR/PRD to supersede if needed.
 
 ### Coding Standards
 **All code must meet mandatory quality standards.** Common errors to avoid:
@@ -87,7 +74,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 - Perform destructive operations without approval (all workflows)
 - Commit with failing tests or build
 - Skip code review for code/script changes (Interactive workflow)
-- Modify ADR files
+- Modify ADR or PRD files
 - Mark TODOs as `[x]` in TODO files - always move completed items to DONE files
 - Mark phase complete with items remaining in TODO file
 
@@ -98,21 +85,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 **When user enters a single `.` as their prompt:**
 
 1. Read `docs/WORKFLOWS.md`
-2. Present a numbered list of available workflows:
-   ```
-   Select a workflow:
-
-   1. Interactive - Default for code changes (8-step with approvals)
-   2. Documentation - Docs-only changes (3-step with approvals)
-   3. Refine - Refine PLAN.md TODOs (6-step with approvals)
-   4. Create PR - PR-based development (7-step, autonomous)
-   5. Review PR - Code review of PRs (6-step, autonomous)
-   6. Update PR - Address review feedback (8-step, autonomous)
-   7. Test PR - Manual testing gate (7-step, test confirmation)
-   8. Merge PR - Merge tested PRs (8-step with approvals)
-
-   Enter number (1-8):
-   ```
+2. Present numbered workflow list (see [WORKFLOWS.md Quick Reference](docs/WORKFLOWS.md#quick-reference))
 3. Wait for user to select a number
 4. Run the chosen workflow following its standard procedure
 
@@ -120,29 +93,15 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 ## Session Start
 
-1. **Determine workflow** - If user hasn't specified or it's unclear which workflow to use, ask explicitly:
-   - Interactive (8-step with approvals)
-   - Refine (6-step with approvals, refine TODOs)
-   - Create PR (6-step, autonomous, PR-based)
-   - Review PR (6-step, autonomous review)
-   - Update PR (8-step, autonomous fixes)
-   - Test PR (7-step, manual testing gate)
-   - Merge PR (8-step with approvals)
-   - Documentation (docs-only)
-2. **Read and reiterate workflow** - Read the specific workflow file and communicate it to the user:
-   - Read the appropriate `docs/WORKFLOW-*.md` file for the selected workflow
-   - Summarize the workflow steps and key principles
-   - Reiterate the workflow to the user in your own words
-   - Confirm understanding of the workflow before proceeding
+1. **Determine workflow** - If unclear, ask user (see [Workflow Modes](#workflow-modes) routing rules)
+2. **Read and reiterate workflow** - Follow [Session Start Procedure](docs/WORKFLOWS.md#session-start-procedure) from Shared Conventions
 3. Ask approval, then run `git status` and `git fetch`
 4. Read `PLAN.md` for overview and current phase status
 5. Read active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`) for current tasks
-6. **Check environment** - Detect and display execution environment:
-   - Run: `echo $CAL_VM`
-   - If `CAL_VM=true`: Display "✅ **Running in cal-dev VM** (isolated environment)"
-   - If `CAL_VM≠true`: Display "⚠️  **Running on HOST machine** (not isolated)"
-   - This ensures awareness of execution environment before proceeding with any operations
-7. Report status and suggest next steps
+6. **Check environment** - Run `echo $CAL_VM`:
+   - `CAL_VM=true`: Display "Running in cal-dev VM (isolated environment)"
+   - Otherwise: Display "Running on HOST machine (not isolated)"
+7. Report status and suggest next steps using [Numbered Choice Presentation](docs/WORKFLOWS.md#numbered-choice-presentation)
 
 **Note:** Only read the active phase TODO file. Do not read future phase files until the current phase is complete.
 
@@ -150,30 +109,12 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 
 ## Documentation
 
-**Planning (read for tasks):**
-- [PLAN.md](PLAN.md) - Phase overview and current status **(source of truth)**
-- Phase TODO/DONE files:
-  - [PLAN-PHASE-00-TODO.md](docs/PLAN-PHASE-00-TODO.md) / [DONE](docs/PLAN-PHASE-00-DONE.md) - Bootstrap (active)
-  - [PLAN-PHASE-01-TODO.md](docs/PLAN-PHASE-01-TODO.md) / [DONE](docs/PLAN-PHASE-01-DONE.md) - CLI Foundation
-  - [PLAN-PHASE-02-TODO.md](docs/PLAN-PHASE-02-TODO.md) / [DONE](docs/PLAN-PHASE-02-DONE.md) - Agent Integration
-  - [PLAN-PHASE-03-TODO.md](docs/PLAN-PHASE-03-TODO.md) / [DONE](docs/PLAN-PHASE-03-DONE.md) - GitHub Workflow
-  - [PLAN-PHASE-04-TODO.md](docs/PLAN-PHASE-04-TODO.md) / [DONE](docs/PLAN-PHASE-04-DONE.md) - Environment Plugins
-  - [PLAN-PHASE-05-TODO.md](docs/PLAN-PHASE-05-TODO.md) / [DONE](docs/PLAN-PHASE-05-DONE.md) - TUI & Polish
-- [STATUS.md](STATUS.md) - Project status tracking (refined TODOs and PRs)
+**Planning:** [PLAN.md](PLAN.md) **(source of truth)** | [STATUS.md](STATUS.md) | Phase TODO/DONE files in `docs/PLAN-PHASE-XX-{TODO,DONE}.md` (phases 00-05)
 
-**Important:** Read only the active phase TODO file per session. Future phases should not be read until current phase is complete.
+**Important:** Read only the active phase TODO file per session.
 
-**Operational:**
-- [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) - Comprehensive operational guide
-- [bootstrap.md](docs/bootstrap.md) - Quick start VM setup
+**Operational:** [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) | [bootstrap.md](docs/bootstrap.md)
 
-**Reference:**
-- [WORKFLOWS.md](docs/WORKFLOWS.md) - Index of all workflows with quick reference
-- [WORKFLOW-*.md](docs/) - Detailed workflow files (Interactive, Refine, Create PR, Review PR, Update PR, Test PR, Merge PR, Documentation)
-- [PR-WORKFLOW-DIAGRAM.md](docs/PR-WORKFLOW-DIAGRAM.md) - Visual PR workflow diagram
-- [architecture.md](docs/architecture.md) - System design
-- [cli.md](docs/cli.md) - Command reference
-- [SPEC.md](docs/SPEC.md) - Technical specification
+**Reference:** [WORKFLOWS.md](docs/WORKFLOWS.md) (index + shared conventions) | [WORKFLOW-*.md](docs/) | [architecture.md](docs/architecture.md) | [cli.md](docs/cli.md) | [SPEC.md](docs/SPEC.md) | [CODING_STANDARDS.md](CODING_STANDARDS.md)
 
-**Historical (immutable):**
-- [ADR-001](docs/adr/ADR-001-cal-isolation.md) - Original design decisions
+**Historical (immutable):** [ADR-001](docs/adr/ADR-001-cal-isolation.md) | [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) | [PRD-001](docs/prd/prd-001-tart-vm-gui-access.md)

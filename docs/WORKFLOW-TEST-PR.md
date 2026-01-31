@@ -25,19 +25,12 @@ The Test PR workflow provides a manual testing gate before merge. The agent fetc
 
 ## Session Start Procedure
 
-At the start of each new session using this workflow:
-
-1. **Read this workflow file** - Read `docs/WORKFLOW-TEST-PR.md` in full
-2. **Reiterate to user** - Summarize the workflow in your own words:
-   - Explain this is the Test PR workflow (7-step manual testing gate)
-   - List the key principles (autonomous until test presentation, user approval for confirmation, PR comments for feedback, conditional paths)
-   - Outline the 7 steps (Read Queue → Fetch Details → Present Tests → WAIT → Evaluate → Success/Failure Path → Update Docs)
-   - Emphasize the blocking wait for user test confirmation
-   - Note that STATUS.md updates happen on main branch
-3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
-4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
-
-This ensures both agent and user have shared understanding of the workflow being followed.
+Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
+- This is the Test PR workflow (7-step manual testing gate)
+- Key principles: autonomous until test presentation, user approval for confirmation, PR comments for feedback, conditional paths
+- 7 steps: Read Queue → Fetch Details → Present Tests → WAIT → Evaluate → Success/Failure Path → Update Docs
+- Blocking wait for user test confirmation
+- STATUS.md updates happen on main branch
 
 ---
 
@@ -55,7 +48,10 @@ Read `STATUS.md` to find the first PR in "Needs Testing" section:
 - Report completion: "No PRs need testing"
 - Exit workflow
 
-**If PR found:**
+**If multiple PRs found:**
+- Present using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation) so user can select by number
+
+**If PR found/selected:**
 - Note PR number, branch name, and description
 - Proceed to Step 2
 
@@ -187,21 +183,7 @@ Update PLAN.md and phase TODO files with current project status:
 
 **Always update** to keep project status current.
 
-**Commit documentation updates:**
-```bash
-git add STATUS.md PLAN.md docs/PLAN-PHASE-*-TODO.md docs/PLAN-PHASE-*-DONE.md
-git commit -m "$(cat <<'EOF'
-Update documentation after testing PR #42
-
-Moved PR #42 to [Needs Merging/Needs Changes] in STATUS.md.
-Updated phase TODO file and PLAN.md with current project status.
-[Moved TODO to DONE file if PR was closed]
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-EOF
-)"
-git push
-```
+**Commit documentation updates** using [Commit Message Format](WORKFLOWS.md#commit-message-format). Push after commit.
 
 ---
 
@@ -240,30 +222,11 @@ When ambiguous, ask for clarification.
 
 ### Failure Comment Format
 
-Always use heredoc format for PR comments:
-
-```bash
-gh pr comment <PR#> --body "$(cat <<'EOF'
-Manual testing failed.
-
-## Test Failure Details
-[User's description of what failed]
-
-## Issue
-[Analysis of the problem]
-
-Please address these issues and resubmit for review.
-EOF
-)"
-```
+See [PR Comments Format](WORKFLOWS.md#pr-comments-format) in Shared Conventions.
 
 ### Documentation Updates on Main
 
-All STATUS.md and PLAN.md updates must be done on main branch:
-1. Stay on main throughout workflow (no branch checkout needed)
-2. Update STATUS.md based on test results
-3. Update PLAN.md
-4. Commit and push to main
+See [Documentation Updates on Main](WORKFLOWS.md#documentation-updates-on-main) in Shared Conventions.
 
 ---
 

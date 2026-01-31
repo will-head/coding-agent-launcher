@@ -26,19 +26,12 @@ The Create PR workflow enables autonomous PR-based development starting from ref
 
 ## Session Start Procedure
 
-At the start of each new session using this workflow:
-
-1. **Read this workflow file** - Read `docs/WORKFLOW-CREATE-PR.md` in full
-2. **Reiterate to user** - Summarize the workflow in your own words:
-   - Explain this is the Create PR workflow (7-step autonomous PR creation)
-   - List the key principles (start with refined TODOs, no permission needed, never commit to main, TDD required)
-   - Outline the 7 steps (Read Refined Queue → Read Standards → Implement → Test → Build → Create PR → Update Docs)
-   - Mention branch naming convention (`create-pr/feature-name`)
-   - Note that PLAN.md/STATUS.md updates happen on main branch
-3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
-4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
-
-This ensures both agent and user have shared understanding of the workflow being followed.
+Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
+- This is the Create PR workflow (7-step autonomous PR creation)
+- Key principles: start with refined TODOs, no permission needed, never commit to main, TDD required
+- 7 steps: Read Refined Queue → Read Standards → Implement → Test → Build → Create PR → Update Docs
+- Branch naming: `create-pr/feature-name`
+- PLAN.md/STATUS.md updates happen on main branch
 
 ---
 
@@ -77,7 +70,10 @@ Read `STATUS.md` to find the first TODO in "Refined" section:
 - Report completion: "No refined TODOs available for implementation"
 - Exit workflow or ask user for specific task
 
-**If refined TODO found:**
+**If multiple refined TODOs found:**
+- Present using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation) so user can select by number
+
+**If refined TODO found/selected:**
 - Note the TODO description and location in phase TODO file
 - Read the full refined TODO from the phase TODO file to get complete requirements
 - Use this information to guide implementation
@@ -211,20 +207,7 @@ EOF
    - Update PLAN.md phase status if applicable
    - **Note:** Do NOT move TODOs to DONE file yet - this happens during Merge PR workflow
 
-4. **Commit documentation updates** (on main):
-   ```bash
-   git add STATUS.md PLAN.md docs/PLAN-PHASE-*-TODO.md
-   git commit -m "$(cat <<'EOF'
-   Update documentation for PR #42
-
-   Added PR #42 to Needs Review section in STATUS.md.
-   Updated PLAN.md and phase TODO file to reflect current project status.
-
-   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-   EOF
-   )"
-   git push
-   ```
+4. **Commit documentation updates** (on main) using [Commit Message Format](WORKFLOWS.md#commit-message-format)
 
 5. Move to next task
 
@@ -295,28 +278,11 @@ Never perform these operations without explicit user approval:
 
 ### PR Comments Format
 
-When adding PR comments, always use heredoc format to preserve formatting:
-
-```bash
-gh pr comment <PR#> --body "$(cat <<'EOF'
-Comment text here with proper formatting.
-
-- Bullet points
-- Multiple lines
-- Proper structure
-
-EOF
-)"
-```
+See [PR Comments Format](WORKFLOWS.md#pr-comments-format) in Shared Conventions.
 
 ### Documentation Updates on Main
 
-**CRITICAL:** PLAN.md and STATUS.md updates must be done on the main branch:
-1. Create PR on feature branch
-2. Switch to main: `git checkout main`
-3. Update STATUS.md and PLAN.md
-4. Commit and push to main
-5. Do NOT include these doc changes in the PR
+See [Documentation Updates on Main](WORKFLOWS.md#documentation-updates-on-main) in Shared Conventions.
 
 ---
 

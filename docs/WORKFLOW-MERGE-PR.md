@@ -25,19 +25,12 @@ The Merge PR workflow integrates tested PRs into the main branch. With user appr
 
 ## Session Start Procedure
 
-At the start of each new session using this workflow:
-
-1. **Read this workflow file** - Read `docs/WORKFLOW-MERGE-PR.md` in full
-2. **Reiterate to user** - Summarize the workflow in your own words:
-   - Explain this is the Merge PR workflow (8-step with approvals)
-   - List the key principles (user approval required, merge commit strategy, delete branches, track merged PRs, update PLAN.md)
-   - Outline the 8 steps (Read Queue → Fetch PR → Merge PR → Update Local Main → Delete Branch → Update STATUS.md → Update PLAN.md → Commit Docs)
-   - Mention that this integrates tested PRs into main
-   - Note that all commands require user approval
-3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
-4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
-
-This ensures both agent and user have shared understanding of the workflow being followed.
+Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
+- This is the Merge PR workflow (8-step with approvals)
+- Key principles: user approval required, merge commit strategy, delete branches, track merged PRs, update PLAN.md
+- 8 steps: Read Queue → Fetch PR → Merge PR → Update Local Main → Delete Branch → Update STATUS.md → Update PLAN.md → Commit Docs
+- Integrates tested PRs into main
+- All commands require user approval
 
 ---
 
@@ -55,7 +48,10 @@ Read `STATUS.md` to find the first PR in "Needs Merging" section:
 - Report completion: "No PRs ready to merge"
 - Exit workflow
 
-**If PR found:**
+**If multiple PRs found:**
+- Present using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation) so user can select by number
+
+**If PR found/selected:**
 - Note PR number, branch name, description, and test details
 - Proceed to Step 2
 
@@ -157,14 +153,7 @@ Create "Merged" section if it doesn't exist.
 
 Update PLAN.md and phase TODO files to reflect current project status after merge:
 
-**Move completed TODOs from TODO file to DONE file:**
-- Find TODOs related to this PR in active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`)
-- **Cut the completed TODO** from the TODO file
-- **Paste into the DONE file** (e.g., `docs/PLAN-PHASE-00-DONE.md`) with:
-  - `[x]` checkbox
-  - PR number reference
-  - Completion date
-  - Example: `- [x] Add snapshot validation (PR #42, merged 2026-01-21)`
+**Move completed TODOs from TODO file to DONE file** following [TODO → DONE Movement](WORKFLOWS.md#todo--done-movement) rules from Shared Conventions.
 
 **Update PLAN.md phase status:**
 - If all TODOs in phase complete, update phase status in PLAN.md
@@ -179,22 +168,7 @@ Update PLAN.md and phase TODO files to reflect current project status after merg
 
 ### Step 8: Commit Documentation
 
-**Ask user approval**, then commit the updated STATUS.md, PLAN.md, and phase TODO files:
-
-```bash
-git add STATUS.md PLAN.md docs/PLAN-PHASE-*-TODO.md docs/PLAN-PHASE-*-DONE.md
-git commit -m "$(cat <<'EOF'
-Update documentation after merging PR #42
-
-Moved PR #42 to Merged section in STATUS.md.
-Moved completed TODO from PLAN-PHASE-00-TODO.md to PLAN-PHASE-00-DONE.md.
-Updated PLAN.md: phase status reflects completion.
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-EOF
-)"
-git push
-```
+**Ask user approval**, then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format). Stage STATUS.md, PLAN.md, and phase TODO/DONE files. Push after commit.
 
 **Verify push succeeds** - ensures documentation updates are preserved.
 
@@ -243,21 +217,7 @@ If a PR is closed without merging (abandoned, superseded, or filed as known issu
    git push origin --delete <branch-name>
    ```
 
-7. **Commit documentation:**
-   ```bash
-   git add STATUS.md docs/PLAN-PHASE-*-TODO.md docs/PLAN-PHASE-*-DONE.md
-   git commit -m "$(cat <<'EOF'
-   Update documentation after closing PR #42
-
-   Moved PR #42 to Closed section in STATUS.md.
-   Moved TODO from PLAN-PHASE-00-TODO.md to PLAN-PHASE-00-DONE.md with closure note.
-   [Added to Known Issues if applicable]
-
-   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-   EOF
-   )"
-   git push
-   ```
+7. **Commit documentation** using [Commit Message Format](WORKFLOWS.md#commit-message-format). Push after commit.
 
 ---
 
@@ -310,18 +270,7 @@ User approval is required for:
 
 ### Documentation Commit Format
 
-```bash
-git commit -m "$(cat <<'EOF'
-Update documentation after merging PR #<number>
-
-Brief description of what was merged.
-Phase TODO file updates summary (completed TODOs marked).
-PLAN.md updates summary (phase status if changed).
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-EOF
-)"
-```
+See [Commit Message Format](WORKFLOWS.md#commit-message-format) in Shared Conventions.
 
 ---
 

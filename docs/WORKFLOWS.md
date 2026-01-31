@@ -255,7 +255,55 @@ Project status is tracked in these sections:
 
 ---
 
-## Important Notes
+## Shared Conventions
+
+These conventions apply across all workflows. Individual workflow files reference this section rather than repeating these patterns.
+
+### Session Start Procedure
+
+Every workflow follows this procedure at session start:
+
+1. **Read the workflow file** - Read the appropriate `docs/WORKFLOW-*.md`
+2. **Reiterate to user** - Summarize the workflow steps and key principles in your own words
+3. **Confirm understanding** - Acknowledge understanding before proceeding
+4. **Proceed with standard session start** - git status, PLAN.md, active phase TODO, environment check
+
+This ensures both agent and user have shared understanding of the workflow being followed.
+
+### Numbered Choice Presentation
+
+When presenting items for user selection (TODOs, PRs, tasks), **always use a numbered list** so users can reply with just a number:
+
+```
+Available items:
+
+1. Add snapshot validation (PLAN-PHASE-01-TODO.md § 1.3)
+2. Fix SSH timeout handling (PLAN-PHASE-01-TODO.md § 1.5)
+3. Add config file support (PLAN-PHASE-01-TODO.md § 1.7)
+
+Enter number:
+```
+
+This applies to:
+- TODO selection (Interactive, Refine workflows)
+- PR queue selection (Create PR, Review PR, Update PR, Test PR, Merge PR workflows)
+- Next step suggestions at workflow completion
+- Any time user must choose between multiple items
+
+### Commit Message Format
+
+Use imperative mood with Co-Authored-By. Always use heredoc for multi-line:
+
+```bash
+git commit -m "$(cat <<'EOF'
+Brief summary (imperative mood)
+
+Detailed description of what changed and why.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+EOF
+)"
+```
 
 ### Documentation Updates on Main
 

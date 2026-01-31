@@ -24,18 +24,11 @@ The Documentation workflow is a simplified version of the Interactive workflow f
 
 ## Session Start Procedure
 
-At the start of each new session using this workflow:
-
-1. **Read this workflow file** - Read `docs/WORKFLOW-DOCUMENTATION.md` in full
-2. **Reiterate to user** - Summarize the workflow in your own words:
-   - Explain this is the Documentation workflow (simplified 3-step)
-   - List the key principles (docs-only, main branch, user approval required, skip tests/build/review)
-   - Outline the 3 steps (Make Changes → Ask Approval → Commit and Push)
-   - Clarify what counts as documentation-only vs. not
-3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
-4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
-
-This ensures both agent and user have shared understanding of the workflow being followed.
+Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
+- This is the Documentation workflow (simplified 3-step)
+- Key principles: docs-only, main branch, user approval required, skip tests/build/review
+- 3 steps: Make Changes → Ask Approval → Commit and Push
+- Clarify what counts as documentation-only vs. not
 
 ---
 
@@ -82,22 +75,7 @@ Present changes to user:
 
 ### Step 3: Commit and Push
 
-**Ask user approval**, then commit:
-
-```bash
-git add <files>
-git commit -m "$(cat <<'EOF'
-Update documentation: [brief description]
-
-- Specific change 1
-- Specific change 2
-- Specific change 3
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-EOF
-)"
-git push
-```
+**Ask user approval**, then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format) from Shared Conventions. Push after commit.
 
 **Done!** No tests, build, or code review needed.
 
@@ -143,13 +121,7 @@ If you're unsure whether changes are documentation-only:
 
 ### PLAN.md and Phase TODO Updates
 
-Even for docs-only changes:
-- **Move completed documentation TODOs** from TODO file to DONE file (e.g., from `docs/PLAN-PHASE-00-TODO.md` to `docs/PLAN-PHASE-00-DONE.md`)
-  - Cut the completed TODO item from TODO file
-  - Paste it into DONE file with `[x]` checkbox and completion note
-  - Example: `- [x] Update bootstrap documentation (completed 2026-01-21)`
-- Add new documentation TODOs discovered to appropriate phase TODO file
-- Update PLAN.md "Current Status" if phase completion changed
+Even for docs-only changes, follow [TODO → DONE Movement](WORKFLOWS.md#todo--done-movement) rules from Shared Conventions. Add new documentation TODOs discovered to appropriate phase TODO file.
 
 ---
 

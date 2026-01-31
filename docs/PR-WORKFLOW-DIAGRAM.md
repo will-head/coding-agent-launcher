@@ -4,27 +4,7 @@
 
 ## Overview
 
-```
-Create PR
-    ↓
-Needs Review ←─────────────────┐
-    ↓                             │
-Review PR                         │
-    ├──────────────┐              │
-    ↓              ↓              │
-Needs Testing   ┌─► Needs Changes   │
-    ↓      │       ↓              │
-    │      │  Update PR ──────────┘
-    │      │
-    ↓      │
-Test PR ───┘
-    ↓
-Needs Merging
-    ↓
-Merge PR
-    ↓
-Merged
-```
+See [PR Workflow Cycle](WORKFLOWS.md#pr-workflow-cycle) in WORKFLOWS.md for the overview diagram.
 
 ## Detailed Workflow Steps
 

@@ -26,19 +26,12 @@ The Review PR workflow performs autonomous, comprehensive code reviews of PRs in
 
 ## Session Start Procedure
 
-At the start of each new session using this workflow:
-
-1. **Read this workflow file** - Read `docs/WORKFLOW-REVIEW-PR.md` in full
-2. **Reiterate to user** - Summarize the workflow in your own words:
-   - Explain this is the Review PR workflow (6-step autonomous code review)
-   - List the key principles (no permission needed, fetch branch, comprehensive review, submit formal review, update standards)
-   - Outline the 6 steps (Read Queue → Fetch PR → Review Code → Update Standards → Submit Review → Update Docs)
-   - Mention the review areas (10 comprehensive quality areas)
-   - Note that STATUS.md updates happen on main branch
-3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
-4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
-
-This ensures both agent and user have shared understanding of the workflow being followed.
+Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
+- This is the Review PR workflow (6-step autonomous code review)
+- Key principles: no permission needed, fetch branch, comprehensive review, submit formal review, update standards
+- 6 steps: Read Queue → Fetch PR → Review Code → Update Standards → Submit Review → Update Docs
+- 10 comprehensive quality review areas
+- STATUS.md updates happen on main branch
 
 ---
 
@@ -56,7 +49,10 @@ Read `STATUS.md` to find the first PR in "Needs Review" section:
 - Report completion: "No PRs awaiting review"
 - Exit workflow
 
-**If PR found:**
+**If multiple PRs found:**
+- Present using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation) so user can select by number
+
+**If PR found/selected:**
 - Note PR number, branch name, and description
 - Proceed to Step 2
 
@@ -268,20 +264,7 @@ git checkout main
 - Add any issues discovered that need follow-up to phase TODO file
 - **Note:** Do NOT move TODOs to DONE file yet - this happens during Merge PR workflow
 
-**Commit documentation updates:**
-```bash
-git add STATUS.md PLAN.md docs/PLAN-PHASE-*-TODO.md docs/PLAN-PHASE-*-DONE.md
-git commit -m "$(cat <<'EOF'
-Update documentation after reviewing PR #42
-
-Moved PR #42 to [Needs Testing/Needs Changes] in STATUS.md.
-Updated phase TODO file and PLAN.md with current project status.
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-EOF
-)"
-git push
-```
+**Commit documentation updates** using [Commit Message Format](WORKFLOWS.md#commit-message-format). Push after commit.
 
 ---
 
@@ -314,22 +297,11 @@ Ensure reviews are:
 
 ### PR Comments Format
 
-Always use heredoc format for proper formatting:
-
-```bash
-gh pr review --approve --body "$(cat <<'EOF'
-Review content here.
-EOF
-)"
-```
+See [PR Comments Format](WORKFLOWS.md#pr-comments-format) in Shared Conventions.
 
 ### Documentation Updates on Main
 
-All STATUS.md and PLAN.md updates must be done on main branch:
-1. Finish review on PR branch
-2. Switch to main: `git checkout main`
-3. Update STATUS.md and PLAN.md
-4. Commit and push to main
+See [Documentation Updates on Main](WORKFLOWS.md#documentation-updates-on-main) in Shared Conventions.
 
 ---
 

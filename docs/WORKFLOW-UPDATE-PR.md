@@ -25,19 +25,12 @@ The Update PR workflow autonomously addresses review feedback on PRs that need c
 
 ## Session Start Procedure
 
-At the start of each new session using this workflow:
-
-1. **Read this workflow file** - Read `docs/WORKFLOW-UPDATE-PR.md` in full
-2. **Reiterate to user** - Summarize the workflow in your own words:
-   - Explain this is the Update PR workflow (8-step autonomous feedback implementation)
-   - List the key principles (no permission needed, never commit to main, autonomous fixes, skip code review)
-   - Outline the 8 steps (Read Standards → Read Queue → Fetch PR → Analyze Review → Implement Changes → Test → Build → Update Docs)
-   - Mention that this addresses review feedback and resubmits for review
-   - Note that STATUS.md updates happen on main branch
-3. **Confirm understanding** - Acknowledge understanding of the workflow before proceeding
-4. **Proceed with standard session start** - Continue with git status, PLAN.md reading, etc.
-
-This ensures both agent and user have shared understanding of the workflow being followed.
+Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
+- This is the Update PR workflow (8-step autonomous feedback implementation)
+- Key principles: no permission needed, never commit to main, autonomous fixes, skip code review
+- 8 steps: Read Standards → Read Queue → Fetch PR → Analyze Review → Implement Changes → Test → Build → Update Docs
+- Addresses review feedback and resubmits for review
+- STATUS.md updates happen on main branch
 
 ---
 
@@ -65,7 +58,10 @@ Read `STATUS.md` to find the first PR in "Needs Changes" section:
 - Report completion: "No PRs needing changes"
 - Exit workflow
 
-**If PR found:**
+**If multiple PRs found:**
+- Present using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation) so user can select by number
+
+**If PR found/selected:**
 - Note PR number, branch name, description, and reason
 - Proceed to Step 3
 
@@ -174,20 +170,7 @@ go build -o cal ./cmd/cal
    - Update PLAN.md phase status if applicable
    - **Note:** Do NOT move TODOs to DONE file yet - this happens during Merge PR workflow
 
-5. **Commit documentation updates:**
-   ```bash
-   git add STATUS.md PLAN.md docs/PLAN-PHASE-*-TODO.md docs/PLAN-PHASE-*-DONE.md
-   git commit -m "$(cat <<'EOF'
-   Update documentation after addressing PR #42 feedback
-
-   Moved PR #42 back to Needs Review in STATUS.md.
-   Updated phase TODO file and PLAN.md with current project status.
-
-   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-   EOF
-   )"
-   git push
-   ```
+5. **Commit documentation updates** using [Commit Message Format](WORKFLOWS.md#commit-message-format). Push after commit.
 
 ---
 
@@ -229,28 +212,11 @@ Only address issues raised in review:
 
 ### Documentation Updates on Main
 
-**CRITICAL:** PLAN.md and STATUS.md updates must be done on main branch:
-1. Push PR updates on feature branch
-2. Switch to main: `git checkout main`
-3. Update STATUS.md and PLAN.md
-4. Commit and push to main
+See [Documentation Updates on Main](WORKFLOWS.md#documentation-updates-on-main) in Shared Conventions.
 
 ### PR Comments Format
 
-If adding clarifying comments to PR, use heredoc format:
-
-```bash
-gh pr comment <PR#> --body "$(cat <<'EOF'
-Addressed all review feedback:
-
-- Fixed command injection in vm-auth.sh
-- Extracted validation to helper function
-- Updated CLI documentation examples
-
-All tests passing, ready for re-review.
-EOF
-)"
-```
+See [PR Comments Format](WORKFLOWS.md#pr-comments-format) in Shared Conventions.
 
 ---
 
