@@ -219,6 +219,15 @@
   - Allows user to abort logout (exec zsh -l) or continue despite changes
   - Implemented in ~/.zlogout via vm-setup.sh
 
+### GUI/Remote Access Setup (Phase 0.10 - Partial)
+- [x] Install Tart Guest Agent in cal-dev VM (verified 2026-01-31 - already installed via PR #2)
+  - Version: 0.9.0-84fe9c4
+  - Service: org.cirruslabs.tart-guest-agent (running automatically)
+  - Status: Fully operational
+- [x] Test `tart exec` command functionality with guest agent (verified 2026-01-31)
+  - Tested and working correctly
+  - Enables running commands in VM from host without SSH
+
 ### Known Issues Resolved
 - [x] **Claude Code OAuth URL line wrapping** (investigated 2026-01-30, resolved)
   - **Issue:** Mouse-selecting the OAuth URL from terminal includes literal newlines, breaking the URL when pasted in browser

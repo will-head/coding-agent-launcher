@@ -26,11 +26,9 @@
 ### cal-bootstrap Script Enhancements (Complete)
 
 ### GUI/Remote Access Setup
-- [ ] Install Tart Guest Agent in cal-dev VM (`brew install cirruslabs/cli/tart-guest-agent`)
 - [ ] Configure VS Code Remote-SSH for cal-dev VM access
 - [ ] Document when to use Remote-SSH vs native Tart console
 - [ ] Add clipboard sharing setup to bootstrap guide
-- [ ] Test `tart exec` command functionality with guest agent
 
 ---
 
