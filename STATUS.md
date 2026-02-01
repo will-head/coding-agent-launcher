@@ -34,7 +34,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| [#3](https://github.com/will-head/coding-agent-launcher/pull/3) | create-pr/project-scaffolding | Add project scaffolding for CAL CLI | Claude Sonnet 4.5 | 2026-01-31 |
+| *No PRs awaiting testing* | | | | |
 
 ---
 
@@ -42,7 +42,7 @@
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|
-| *No PRs ready to merge* | | | | |
+| [#3](https://github.com/will-head/coding-agent-launcher/pull/3) | create-pr/project-scaffolding | Add project scaffolding for CAL CLI | Will Head | 2026-02-01 |
 
 ---
 
