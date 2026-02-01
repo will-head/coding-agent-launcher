@@ -42,7 +42,7 @@
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|
-| [#3](https://github.com/will-head/coding-agent-launcher/pull/3) | create-pr/project-scaffolding | Add project scaffolding for CAL CLI | Will Head | 2026-02-01 |
+| *No PRs ready to merge* | | | | |
 
 ---
 
@@ -50,6 +50,7 @@
 
 | PR | Branch | Description | Merged |
 |----|--------|-------------|--------|
+| [#3](https://github.com/will-head/coding-agent-launcher/pull/3) | create-pr/project-scaffolding | Add project scaffolding for CAL CLI | 2026-02-01 |
 | [#2](https://github.com/will-head/coding-agent-launcher/pull/2) | create-pr/fix-screen-sharing | Document Screen Sharing modes and limitations for Tart VMs | 2026-01-25 |
 
 ---

@@ -13,7 +13,7 @@
 
 Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via cal-bootstrap, transparent proxy for network reliability, comprehensive git safety checks, VM detection capabilities, first-run/logout git automation, Tart cache sharing for nested VMs, and Ghostty terminal emulator are all operational.
 
-**Active Work:** Phase 0 is feature-complete. Ready to begin Phase 1 (CLI Foundation).
+**Active Work:** Phase 1 (CLI Foundation) in progress. Project scaffolding complete (PR #3). Next: Configuration Management (1.2).
 
 ---
 
@@ -22,7 +22,7 @@ Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via c
 | Phase | Name | Status | Outstanding TODOs | Detail Files |
 |-------|------|--------|-------------------|--------------|
 | 0 | Bootstrap | Complete | 1 (optional) | [TODO](docs/PLAN-PHASE-00-TODO.md) • [DONE](docs/PLAN-PHASE-00-DONE.md) |
-| 1 | CLI Foundation | Not Started | ~50 | [TODO](docs/PLAN-PHASE-01-TODO.md) • [DONE](docs/PLAN-PHASE-01-DONE.md) |
+| 1 | CLI Foundation | In Progress | ~49 | [TODO](docs/PLAN-PHASE-01-TODO.md) • [DONE](docs/PLAN-PHASE-01-DONE.md) |
 | 2 | Agent Integration & UX | Not Started | ~20 | [TODO](docs/PLAN-PHASE-02-TODO.md) • [DONE](docs/PLAN-PHASE-02-DONE.md) |
 | 3 | GitHub Workflow | Not Started | ~15 | [TODO](docs/PLAN-PHASE-03-TODO.md) • [DONE](docs/PLAN-PHASE-03-DONE.md) |
 | 4 | Environment Plugin System | Not Started | ~25 | [TODO](docs/PLAN-PHASE-04-TODO.md) • [DONE](docs/PLAN-PHASE-04-DONE.md) |
