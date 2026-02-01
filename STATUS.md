@@ -10,7 +10,7 @@
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| *No refined TODOs* | | | | |
+| Configuration Management | PLAN-PHASE-01-TODO.md § 1.2 | YAML config loading with per-VM override, validation, and `cal config show` command | 2026-02-01 | Tart-documented ranges, future enhancements in § 1.11 |
 
 ---
 

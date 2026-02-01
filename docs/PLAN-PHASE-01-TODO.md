@@ -12,14 +12,30 @@
 
 ---
 
-## 1.2 Configuration Management
+## 1.2 **REFINED:** Configuration Management
+
+**Design Decisions:**
+- **Precedence:** Per-VM config overrides global config overrides hard-coded defaults
+- **Scope:** YAML configs only (`~/.cal/config.yaml` and per-VM `vm.yaml`). Other subsystems manage their own files (proxy module handles `~/.cal-proxy-config`, lifecycle handles flags, etc.)
+- **Missing config:** Use hard-coded defaults silently (no auto-create, no errors)
+- **Validation:** Error out immediately with clear messages including invalid value, expected range/format, and file path
+- **Validation rules:** Strict validation using Tart-documented ranges:
+  - CPU: Valid range from Tart documentation
+  - Memory: Valid range from Tart documentation (MB)
+  - Disk size: Valid range from Tart documentation (GB)
+  - Proxy mode: Must be one of `auto`, `on`, `off`
+  - Base image: String validation (non-empty)
+- **Config inspection:** `cal config show [--vm name]` displays effective merged configuration
 
 **Tasks:**
-1. Define config structs in `internal/config/config.go`
-2. Implement config loading from `~/.cal/config.yaml`
-3. Implement per-VM config from `~/.cal/isolation/vms/{name}/vm.yaml`
-4. Add config validation
-5. Add config defaults
+1. Define config structs in `internal/config/config.go` with schema version support
+2. Implement config loading from `~/.cal/config.yaml` (optional file, silent fallback to defaults)
+3. Implement per-VM config from `~/.cal/isolation/vms/{name}/vm.yaml` (optional)
+4. Implement config merging logic: hard-coded defaults → global config → per-VM config
+5. Add config validation with strict ranges from Tart documentation
+6. Add hard-coded config defaults in code
+7. Implement `cal config show [--vm name]` command to display effective merged config
+8. Add clear error messages (format: "Invalid {field} '{value}' in {path}: must be {expected}")
 
 **Config schema (from ADR):**
 ```yaml
@@ -39,14 +55,50 @@ isolation:
       mode: "auto"  # auto, on, off
 ```
 
-**VM configuration files the CLI must manage (from ADR-002):**
-- `~/.cal-vm-info` - VM metadata (name, version, created date)
-- `~/.cal-vm-config` - VM password for keychain unlock (mode 600)
-- `~/.cal-proxy-config` - Proxy settings (HOST_GATEWAY, HOST_USER, PROXY_MODE)
-- `~/.cal-auth-needed` / `~/.cal-first-run` - Lifecycle flags
-- `~/.tmux.conf` - tmux configuration
-- `~/.zshrc` - Shell configuration blocks (keychain, VM detection, proxy functions, logout check)
-- `~/.zlogout` - Logout git status check
+**Per-VM config example (`~/.cal/isolation/vms/heavy-build/vm.yaml`):**
+```yaml
+# Only specify fields to override from global config
+cpu: 8
+memory: 16384
+# Other fields inherit from global config or defaults
+```
+
+**Config loading order:**
+1. Load hard-coded defaults
+2. Merge global config from `~/.cal/config.yaml` (if exists)
+3. Merge per-VM config from `~/.cal/isolation/vms/{name}/vm.yaml` (if exists)
+4. Result: Per-VM values override global values override defaults
+
+**Acceptance criteria:**
+- Config loads from global and per-VM files with correct precedence
+- Missing config files handled gracefully (silent fallback to defaults)
+- Invalid config values rejected with clear error messages showing value, expected range, and file path
+- `cal config show` displays effective merged configuration for default VM
+- `cal config show --vm <name>` displays effective merged configuration for specific VM
+- Validation uses Tart-documented ranges (research Tart docs during implementation)
+- Other subsystems manage their own config files independently (config module doesn't touch them)
+
+**Constraints:**
+- YAML format only for Phase 1
+- Must research Tart documentation for accurate validation ranges
+- Error messages must include: field name, invalid value, expected range/format, file path where set
+- Config module does NOT manage other VM files (listed below for reference only)
+
+**Other VM files (NOT managed by config module - for reference only):**
+- `~/.cal-vm-info` - VM metadata (managed by VM lifecycle subsystem)
+- `~/.cal-vm-config` - VM password (managed by lifecycle subsystem, mode 600)
+- `~/.cal-proxy-config` - Proxy settings (managed by proxy subsystem)
+- `~/.cal-auth-needed` / `~/.cal-first-run` - Lifecycle flags (managed by lifecycle subsystem)
+- `~/.tmux.conf` - tmux configuration (managed by SSH subsystem)
+- `~/.zshrc` - Shell configuration (managed by lifecycle subsystem)
+- `~/.zlogout` - Logout git status check (managed by git safety subsystem)
+
+**Future enhancements (tracked as separate TODOs below):**
+- Interactive config fixing on validation errors
+- Environment variable overrides (e.g., `CAL_VM_CPU=8`)
+- `cal config validate` command
+- Config schema migration strategy for version changes
+- `cal config show --defaults` to display hard-coded defaults
 
 ---
 
@@ -253,6 +305,37 @@ isolation:
    - `tmux-wrapper.sh` - TERM compatibility wrapper for tmux
 3. Add `~/scripts` to PATH in `.zshrc`
 4. Verify deployment after SCP (check exit codes)
+
+---
+
+## 1.11 Configuration Enhancements (Future)
+
+**Tasks (deferred to future phases):**
+1. **Interactive config fixing** - When validation fails, prompt user to fix config interactively
+   - Detect invalid values and offer to correct them on the spot
+   - Show valid ranges and let user enter new value
+   - Write corrected config back to file
+2. **Environment variable overrides** - Support env vars overriding config values
+   - Example: `CAL_VM_CPU=8 cal isolation init` overrides config CPU setting
+   - Follow 12-factor app pattern for configuration hierarchy
+   - Priority: env vars > per-VM config > global config > defaults
+3. **Config validation command** - `cal config validate` to check config without running
+   - Parse and validate config files
+   - Report all errors (don't stop at first error)
+   - Exit 0 if valid, non-zero if invalid
+4. **Config schema migration** - Strategy for handling config version changes
+   - Detect old config versions and migrate automatically
+   - Backup old config before migration
+   - Clear migration messages to user
+5. **Default values documentation** - `cal config show --defaults` flag
+   - Display hard-coded default values
+   - Help users understand what they get without a config file
+   - Show which values are from defaults vs. config files
+
+**Notes:**
+- These enhancements improve UX but are not critical for Phase 1 functionality
+- Can be prioritized based on user feedback after Phase 1 completion
+- Interactive fixing and env var overrides are most valuable for daily use
 
 ---
 
