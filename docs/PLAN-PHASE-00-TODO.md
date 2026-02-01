@@ -61,6 +61,8 @@
   - Set history limit: `set -g history-limit 5000`
   - Enable tmux-continuum: `set -g @continuum-restore 'on'`
   - Set continuum save interval: `set -g @continuum-save-interval '15'` (minutes)
+  - Add keybinding to reload config: `bind R source-file ~/.tmux.conf \; display "Config reloaded!"`
+  - Add keybinding to resize pane: `bind r resize-pane -y 33%`
 - [ ] Hook into `.zshrc` to restore sessions on login
 - [ ] Hook into `.zlogout` to save sessions on logout
 - [ ] Call from `vm-setup.sh` during `cal-bootstrap --init`
