@@ -12,7 +12,7 @@
 
 ---
 
-## 1.2 **REFINED:** Configuration Management
+## 1.2 Configuration Management (PR #4 - awaiting merge)
 
 **Design Decisions:**
 - **Precedence:** Per-VM config overrides global config overrides hard-coded defaults

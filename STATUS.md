@@ -10,7 +10,7 @@
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| Configuration Management | PLAN-PHASE-01-TODO.md § 1.2 | YAML config loading with per-VM override, validation, and `cal config show` command | 2026-02-01 | Tart-documented ranges, future enhancements in § 1.11 |
+| | | | | |
 
 ---
 
@@ -18,7 +18,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| *No PRs awaiting review* | | | |
+| [#4](https://github.com/will-head/coding-agent-launcher/pull/4) | create-pr/config-management | Add configuration management with validation | 2026-02-01 |
 
 ---
 
