@@ -14,9 +14,9 @@
 | [Documentation](#documentation-workflow) | 3 | Required on HOST | main branch | Docs-only changes |
 | [Bug Cleanup](#bug-cleanup-workflow) | 10 | Required on HOST | main branch | Fix tracked bugs from BUGS.md |
 | [Refine](#refine-workflow) | 6 | Required on HOST | main branch | Refine PLAN.md TODOs and bugs |
-| [Create PR](#create-pr-workflow) | 7 | Not required | PR branch | PR-based development |
-| [Review PR](#review-pr-workflow) | 6 | Not required | PR review | Code review of PRs |
-| [Update PR](#update-pr-workflow) | 8 | Not required | PR branch | Address review feedback |
+| [Create PR](#create-pr-workflow) | 8 | Not required | PR branch | PR-based development |
+| [Review & Fix PR](#review--fix-pr-workflow) | 8 | Not required | PR review + fix | Code review with direct fixes |
+| [Update PR](#update-pr-workflow) | 8 | Not required | PR branch | Architectural issue fixes (rare) |
 | [Test PR](#test-pr-workflow) | 7 | Test confirmation (always) | PR testing | Manual testing gate |
 | [Merge PR](#merge-pr-workflow) | 8 | Required on HOST | main branch | Merge tested PRs |
 
@@ -28,8 +28,8 @@
 - User specifies "bug cleanup" → use Bug Cleanup workflow
 - User specifies "refine" or "refinement" → use Refine workflow
 - User specifies "create PR" → use Create PR workflow
-- User specifies "review PR" → use Review PR workflow
-- User specifies "update PR" → use Update PR workflow
+- User specifies "review PR" → use Review & Fix PR workflow
+- User specifies "update PR" → use Update PR workflow (rare fallback for architectural issues)
 - User specifies "test PR" → use Test PR workflow
 - User specifies "merge PR" → use Merge PR workflow
 - Changes are documentation-only → use Documentation workflow
@@ -113,37 +113,41 @@ Refine TODOs and bugs with comprehensive requirements gathering and user approva
 
 **[📖 Full Documentation](WORKFLOW-CREATE-PR.md)**
 
-Autonomous PR-based development starting from refined TODOs.
+Autonomous PR-based development starting from refined TODOs with self-review before submission.
 
 **When to use:** Creating new pull requests from refined TODOs in STATUS.md
 **Key features:**
-- Start with refined TODOs from STATUS.md
+- Start with refined TODOs from STATUS.md (read full requirements and constraints)
 - No permission needed (autonomous)
 - Never commit to main (all changes via PR)
 - TDD required
+- Self-review against requirements before PR creation
 - Manual testing instructions in PR
 
-**Steps:** Read Refined Queue → Read Standards → Implement (TDD) → Test → Build → Create PR → Update Docs
+**Steps:** Read Refined Queue → Read Standards → Implement (TDD) → Test → Build → Self-Review → Create PR → Update Docs
 
 **Branch format:** `create-pr/feature-name`
 
 ---
 
-### Review PR Workflow
+### Review & Fix PR Workflow
 
 **[📖 Full Documentation](WORKFLOW-REVIEW-PR.md)**
 
-Autonomous code review of PRs with comprehensive quality assessment.
+Autonomous code review of PRs with direct issue resolution — fixes most issues on the spot.
 
 **When to use:** Reviewing PRs in "Needs Review" queue
 **Key features:**
 - No permission needed (autonomous)
 - Fetch branch locally for thorough review
+- Read source requirements to review against original TODO
 - Comprehensive review (10 areas)
+- Fix minor/moderate issues directly on PR branch
+- Request changes only for architectural issues
 - Submit formal GitHub review
 - Update coding standards if patterns found
 
-**Steps:** Read Queue → Fetch PR → Review Code → Update Standards → Submit Review → Update Docs
+**Steps:** Read Queue → Read Source Requirements → Fetch PR → Review Code → Fix Issues → Test & Build → Submit Review → Update Docs
 
 ---
 
@@ -151,14 +155,15 @@ Autonomous code review of PRs with comprehensive quality assessment.
 
 **[📖 Full Documentation](WORKFLOW-UPDATE-PR.md)**
 
-Autonomous implementation of PR review feedback.
+Rare fallback for architectural issues that couldn't be resolved during Review & Fix PR.
 
-**When to use:** Addressing review feedback on PRs in "Needs Changes" section
+**When to use:** Addressing **architectural** review feedback on PRs in "Needs Changes" section (rare — most issues are fixed during Review & Fix PR)
 **Key features:**
 - No permission needed (autonomous)
 - Never commit to main (work on PR branches)
-- Autonomous fixes based on feedback
+- Autonomous fixes based on architectural feedback
 - Skip code review (already reviewed)
+- Only needed when Review & Fix PR identified fundamental design issues
 
 **Steps:** Read Standards → Read Queue → Fetch PR → Analyze Review → Implement Changes → Test → Build → Update Docs
 
@@ -203,17 +208,18 @@ Merge tested PRs into main with user approvals.
 Complete flow from creation to merge:
 
 ```
-Create PR
+Create PR (with self-review)
     ↓
 Needs Review ←─────────────────┐
     ↓                           │
-Review PR                       │
+Review & Fix PR                 │
     ├──────────────┐            │
     ↓              ↓            │
 Needs Testing  Needs Changes    │
+(common path)  (rare - arch.)   │
     ↓              ↓            │
     │         Update PR ────────┘
-    ↓
+    ↓         (rare fallback)
 Test PR
     ├─────────┐
     ↓         ↓
@@ -236,8 +242,8 @@ Project status is tracked in these sections:
 | Section | Description | Next Workflow |
 |---------|-------------|---------------|
 | **Refined** | TODOs refined and ready for implementation | Interactive or Create PR |
-| **Needs Review** | PRs awaiting code review | Review PR |
-| **Needs Changes** | PRs with review feedback | Update PR |
+| **Needs Review** | PRs awaiting code review | Review & Fix PR |
+| **Needs Changes** | PRs with architectural review feedback (rare) | Update PR |
 | **Needs Testing** | Approved PRs needing manual tests | Test PR |
 | **Needs Merging** | Tested PRs ready to merge | Merge PR |
 | **Merged** | Completed PRs integrated to main | (final) |
@@ -262,10 +268,10 @@ Project status is tracked in these sections:
    - → Use **Create PR** workflow
 
 5. **Is there a PR in "Needs Review"?**
-   - → Use **Review PR** workflow
+   - → Use **Review & Fix PR** workflow
 
 6. **Is there a PR in "Needs Changes"?**
-   - → Use **Update PR** workflow
+   - → Use **Update PR** workflow (rare — only for architectural issues from Review & Fix PR)
 
 7. **Is there a PR in "Needs Testing"?**
    - → Use **Test PR** workflow
@@ -333,7 +339,7 @@ Enter number:
 
 This applies to:
 - TODO selection (Interactive, Refine workflows)
-- PR queue selection (Create PR, Review PR, Update PR, Test PR, Merge PR workflows)
+- PR queue selection (Create PR, Review & Fix PR, Update PR, Test PR, Merge PR workflows)
 - Next step suggestions at workflow completion
 - Any time user must choose between multiple items
 
@@ -426,9 +432,9 @@ EOF
 - [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Interactive workflow (10-step)
 - [WORKFLOW-BUG-CLEANUP.md](WORKFLOW-BUG-CLEANUP.md) - Bug Cleanup workflow (10-step)
 - [WORKFLOW-REFINE.md](WORKFLOW-REFINE.md) - Refine workflow (6-step)
-- [WORKFLOW-CREATE-PR.md](WORKFLOW-CREATE-PR.md) - Create PR workflow (6-step)
-- [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Review PR workflow (6-step)
-- [WORKFLOW-UPDATE-PR.md](WORKFLOW-UPDATE-PR.md) - Update PR workflow (8-step)
+- [WORKFLOW-CREATE-PR.md](WORKFLOW-CREATE-PR.md) - Create PR workflow (8-step)
+- [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Review & Fix PR workflow (8-step)
+- [WORKFLOW-UPDATE-PR.md](WORKFLOW-UPDATE-PR.md) - Update PR workflow (8-step, rare fallback)
 - [WORKFLOW-TEST-PR.md](WORKFLOW-TEST-PR.md) - Test PR workflow (7-step)
 - [WORKFLOW-MERGE-PR.md](WORKFLOW-MERGE-PR.md) - Merge PR workflow (8-step)
 - [WORKFLOW-DOCUMENTATION.md](WORKFLOW-DOCUMENTATION.md) - Documentation workflow (3-step)

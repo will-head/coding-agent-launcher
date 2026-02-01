@@ -47,8 +47,8 @@ Routing rules:
 - "bug cleanup" → Bug Cleanup workflow
 - "refine" / "refinement" → Refine workflow
 - "create PR" → Create PR workflow
-- "review PR" → Review PR workflow
-- "update PR" → Update PR workflow
+- "review PR" → Review & Fix PR workflow
+- "update PR" → Update PR workflow (rare fallback for architectural issues)
 - "test PR" → Test PR workflow
 - "merge PR" → Merge PR workflow
 - Documentation-only changes → Documentation workflow

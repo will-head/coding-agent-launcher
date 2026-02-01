@@ -1,4 +1,4 @@
-# Create PR Workflow (7-Step)
+# Create PR Workflow (8-Step)
 
 > Autonomous PR-based development starting from refined TODOs
 
@@ -10,26 +10,27 @@
 - **Never commit to main** - all changes via PR on `create-pr/feature-name` branch
 - **No destructive operations** - no force pushes, branch deletions, or dangerous git operations
 - **TDD required** - write test first, then implementation
+- **Self-review before submission** - review against requirements before creating PR
 - **PLAN.md and STATUS.md updates must be done on main branch**, not PR branch
 
 ---
 
 ## Overview
 
-The Create PR workflow enables autonomous PR-based development starting from refined TODOs. The agent reads the "Refined" section in STATUS.md, picks the first item, reads coding standards, implements changes with TDD, runs tests and build, creates a PR with manual testing instructions, and updates documentation—all without requiring user approval.
+The Create PR workflow enables autonomous PR-based development starting from refined TODOs. The agent reads the "Refined" section in STATUS.md, picks the first item, reads the full TODO with constraints from the phase TODO file, reads coding standards, implements changes with TDD, runs tests and build, performs a self-review against the original requirements, creates a PR with manual testing instructions, and updates documentation—all without requiring user approval.
 
 **Target:** `create-pr/` branch → PR (will merge to main later)
 **Approvals:** Not required (autonomous)
-**Steps:** 7 (streamlined for autonomy)
+**Steps:** 8 (streamlined for autonomy with self-review)
 
 ---
 
 ## Session Start Procedure
 
 Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
-- This is the Create PR workflow (7-step autonomous PR creation)
-- Key principles: start with refined TODOs, no permission needed, never commit to main, TDD required
-- 7 steps: Read Refined Queue → Read Standards → Implement → Test → Build → Create PR → Update Docs
+- This is the Create PR workflow (8-step autonomous PR creation with self-review)
+- Key principles: start with refined TODOs, no permission needed, never commit to main, TDD required, self-review before submission
+- 8 steps: Read Refined Queue → Read Standards → Implement → Test → Build → Self-Review → Create PR → Update Docs
 - Branch naming: `create-pr/feature-name`
 - PLAN.md/STATUS.md updates happen on main branch
 
@@ -75,8 +76,8 @@ Read `STATUS.md` to find the first TODO in "Refined" section:
 
 **If refined TODO found/selected:**
 - Note the TODO description and location in phase TODO file
-- Read the full refined TODO from the phase TODO file to get complete requirements
-- Use this information to guide implementation
+- Read the full refined TODO from the phase TODO file to get complete requirements, constraints, and acceptance criteria
+- Keep these requirements accessible for self-review in Step 6
 - Proceed to Step 2
 
 ### Step 2: Read Coding Standards
@@ -144,7 +145,35 @@ go build -o cal ./cmd/cal
 
 **Must succeed before proceeding.** Fix any build errors before continuing.
 
-### Step 6: Create PR
+### Step 6: Self-Review
+
+Before creating the PR, review the implementation against the original requirements from Step 1.
+
+**Review the 10 quality areas against requirements:**
+
+1. **Code Quality** - Readable, maintainable, well-organized?
+2. **Architecture** - Appropriate patterns, good separation of concerns?
+3. **Correctness** - Handles edge cases, no logic errors, matches requirements?
+4. **Error Handling** - Proper propagation, meaningful messages, recovery strategies?
+5. **Security** - Input validation, no injection vulnerabilities, secrets handled?
+6. **Performance** - No unnecessary operations, reasonable complexity?
+7. **Testing** - All scenarios covered, test quality adequate?
+8. **Documentation** - Code matches docs, user-facing changes documented?
+9. **Language Conventions** - Go idioms followed, style consistent?
+10. **Dependencies** - Tools checked, versions appropriate?
+
+**For each issue found:**
+- Fix the issue directly
+- Re-run tests (`go test ./...`) to verify no regressions
+- Re-run build (`go build -o cal ./cmd/cal`) if needed
+
+**Self-review is complete when:**
+- All 10 areas assessed against the original requirements
+- All found issues are fixed
+- Tests still pass
+- Build still succeeds
+
+### Step 7: Create PR
 
 1. **Push branch to remote:**
    ```bash
@@ -174,6 +203,7 @@ gh pr create --title "Add snapshot validation" --body "$(cat <<'EOF'
 ## Automated Tests
 - [x] All tests pass (`go test ./...`)
 - [x] Build succeeds (`go build -o cal ./cmd/cal`)
+- [x] Self-review completed (10 areas checked)
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
@@ -183,10 +213,10 @@ EOF
 **PR Body Must Include:**
 - Summary (2-4 bullet points)
 - Manual Testing Instructions (step-by-step, with expected outcomes)
-- Automated Tests checklist
+- Automated Tests checklist (including self-review confirmation)
 - Claude Code attribution
 
-### Step 7: Update Documentation
+### Step 8: Update Documentation
 
 **IMPORTANT: All documentation updates must be done on main branch, NOT the PR branch.**
 
@@ -230,6 +260,7 @@ EOF
 ## Automated Tests
 - [x] All tests pass (`go test ./...`)
 - [x] Build succeeds (`go build -o cal ./cmd/cal`)
+- [x] Self-review completed (10 areas checked)
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
@@ -240,11 +271,13 @@ EOF
 
 Before creating PR:
 - [ ] Refined TODO read from STATUS.md "Refined" section
-- [ ] Full TODO details read from phase TODO file
+- [ ] Full TODO details and constraints read from phase TODO file
 - [ ] Coding standards reviewed (`CODING_STANDARDS.md`)
 - [ ] Tests written (TDD approach)
 - [ ] Tests pass (`go test ./...`)
 - [ ] Build succeeds (`go build -o cal ./cmd/cal`)
+- [ ] Self-review completed against original requirements (10 areas)
+- [ ] All self-review issues fixed and re-tested
 - [ ] Manual testing instructions included in PR body
 - [ ] PR body uses heredoc format for proper formatting
 - [ ] Documentation updated if user-facing changes
@@ -289,7 +322,7 @@ See [Documentation Updates on Main](WORKFLOWS.md#documentation-updates-on-main) 
 ## Related Documentation
 
 - [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Next step: PR review
+- [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Next step: PR review & fix
 - [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
 - [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards
 - [STATUS.md](../STATUS.md) - PR tracking

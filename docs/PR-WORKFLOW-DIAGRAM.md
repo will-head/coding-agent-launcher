@@ -8,20 +8,22 @@ See [PR Workflow Cycle](WORKFLOWS.md#pr-workflow-cycle) in WORKFLOWS.md for the 
 
 ## Detailed Workflow Steps
 
-### 1. Create PR Workflow (6-Step)
+### 1. Create PR Workflow (8-Step)
 
 **Branch:** `create-pr/feature-name` → **End:** `main`
 
 ```
 Start
   │
-  ├─ Step 1: Read Coding Standards (on main)
-  ├─ Step 2: Implement (create create-pr/* branch, TDD)
-  ├─ Step 3: Test (go test ./...)
-  ├─ Step 4: Build (go build)
-  ├─ Step 5: Create PR (push branch, gh pr create)
+  ├─ Step 1: Read Refined Queue (STATUS.md + full TODO with constraints)
+  ├─ Step 2: Read Coding Standards (on main)
+  ├─ Step 3: Implement (create create-pr/* branch, TDD)
+  ├─ Step 4: Test (go test ./...)
+  ├─ Step 5: Build (go build)
+  ├─ Step 6: Self-Review (10-area checklist against requirements, fix issues)
+  ├─ Step 7: Create PR (push branch, gh pr create)
   │           └─ PR moves to: Needs Review
-  └─ Step 6: Update Documentation
+  └─ Step 8: Update Documentation
               ├─ Switch to main ✓
               ├─ Update STATUS.md (add to Needs Review) ✓
               └─ Update PLAN.md ✓
@@ -32,39 +34,45 @@ End (on main)
 
 ---
 
-### 2. Review PR Workflow (6-Step)
+### 2. Review & Fix PR Workflow (8-Step)
 
-**Branch:** `main` → PR branch → **End:** `main`
+**Branch:** `main` → PR branch (read + write) → **End:** `main`
 
 ```
 Start (on main)
   │
   ├─ Step 1: Read STATUS.md (Needs Review section)
-  ├─ Step 2: Fetch PR (gh pr checkout <PR#>)
+  ├─ Step 2: Read Source Requirements (refined TODO from phase file)
+  ├─ Step 3: Fetch PR (gh pr checkout <PR#>)
   │           └─ Now on: create-pr/* branch
-  ├─ Step 3: Review Code (comprehensive review)
-  ├─ Step 4: Update Standards (CODING_STANDARDS.md if needed)
-  ├─ Step 5: Submit Review (gh pr review)
-  │           ├─ APPROVE → moves to: Needs Testing
-  │           └─ REQUEST_CHANGES → moves to: Needs Changes
-  └─ Step 6: Update Documentation
+  ├─ Step 4: Review Code (comprehensive review against requirements)
+  │           └─ Classify issues: fixable vs. architectural
+  ├─ Step 5: Fix Issues (resolve fixable issues on PR branch)
+  ├─ Step 6: Test & Build (verify fixes, commit and push)
+  ├─ Step 7: Submit Review (gh pr review)
+  │           ├─ APPROVE → moves to: Needs Testing (common)
+  │           └─ REQUEST_CHANGES → moves to: Needs Changes (rare, arch. only)
+  └─ Step 8: Update Documentation
               ├─ Switch to main ✓
               ├─ Update STATUS.md ✓
               │   ├─ If approved: move to Needs Testing
-              │   └─ If changes: move to Needs Changes
+              │   └─ If arch. changes: move to Needs Changes
+              ├─ Update CODING_STANDARDS.md if patterns found ✓
               └─ Update PLAN.md ✓
 End (on main)
 ```
 
 **STATUS.md Update:** Move from **Needs Review** to:
-- **Needs Testing** (if approved), OR
-- **Needs Changes** (if changes requested)
+- **Needs Testing** (if approved — common path), OR
+- **Needs Changes** (if architectural changes requested — rare)
 
 ---
 
-### 3. Update PR Workflow (8-Step)
+### 3. Update PR Workflow (8-Step) — Rare Fallback
 
 **Branch:** `main` → PR branch (push) → **End:** `main`
+
+**Note:** This workflow is rarely needed. Review & Fix PR resolves most issues directly. This is only for architectural issues that require rethinking the implementation approach.
 
 ```
 Start (on main)
@@ -87,7 +95,7 @@ End (on main)
 
 **STATUS.md Update:** Move from **Needs Changes** to **Needs Review**
 
-**Loop:** This sends the PR back through Review PR workflow
+**Loop:** This sends the PR back through Review & Fix PR workflow
 
 ---
 
@@ -158,13 +166,13 @@ End (on main)
 
 ## Complete Flow Matrix
 
-| Workflow   | Start Branch | Working Branch      | End Branch | STATUS.md From         | STATUS.md To            | PLAN.md | Branch Switch |
-|------------|--------------|---------------------|------------|---------------------|----------------------|---------|---------------|
-| Create PR  | main         | create-pr/*         | main       | —                   | Needs Review      | ✓       | ✓             |
-| Review PR  | main         | create-pr/* (read)  | main       | Needs Review     | Needs Testing/Changes     | ✓       | ✓             |
-| Update PR  | main         | create-pr/* (write) | main       | Needs Changes    | Needs Review      | ✓       | ✓             |
-| Test PR    | main         | main (stays)        | main       | Needs Testing            | Needs Merging/Changes       | ✓       | ✓ (already)   |
-| Merge PR   | main         | main (stays)        | main       | Needs Merging              | Merged               | ✓       | ✓ (already)   |
+| Workflow        | Start Branch | Working Branch      | End Branch | STATUS.md From      | STATUS.md To              | PLAN.md | Branch Switch |
+|-----------------|--------------|---------------------|------------|---------------------|---------------------------|---------|---------------|
+| Create PR       | main         | create-pr/*         | main       | —                   | Needs Review              | ✓       | ✓             |
+| Review & Fix PR | main         | create-pr/* (r/w)   | main       | Needs Review        | Needs Testing (common) / Needs Changes (rare) | ✓ | ✓ |
+| Update PR       | main         | create-pr/* (write) | main       | Needs Changes       | Needs Review              | ✓       | ✓             |
+| Test PR         | main         | main (stays)        | main       | Needs Testing       | Needs Merging/Changes     | ✓       | ✓ (already)   |
+| Merge PR        | main         | main (stays)        | main       | Needs Merging       | Merged                    | ✓       | ✓ (already)   |
 
 ---
 
@@ -173,11 +181,11 @@ End (on main)
 ### STATUS.md Sections (PR States)
 
 ```
-1. Needs Review  ──Review PR──► 2. Needs Testing
-                    ──Review PR──► 3. Needs Changes
+1. Needs Review  ──Review & Fix PR──► 2. Needs Testing (common)
+                    ──Review & Fix PR──► 3. Needs Changes (rare, arch. only)
                          │                    │
                          │                    │
-                         │            Update PR
+                         │            Update PR (rare)
                          │                    │
                          │                    ▼
                          │            1. Needs Review (loop)
@@ -194,20 +202,20 @@ End (on main)
 
 ## Key Principles (All Workflows)
 
-### ✅ Documentation Updates (Required)
+### Documentation Updates (Required)
 - **STATUS.md**: Updated in every workflow to track PR state
 - **PLAN.md**: Updated in every workflow to track project status
 
-### ✅ Branch Management (Required)
+### Branch Management (Required)
 - **Create PR**: Creates `create-pr/*` branch, ends on `main`
-- **Review PR**: Checks out PR branch (read-only), ends on `main`
+- **Review & Fix PR**: Checks out PR branch (reads and writes fixes), ends on `main`
 - **Update PR**: Checks out PR branch (writes changes), ends on `main`
 - **Test PR**: Stays on `main` throughout
 - **Merge PR**: Stays on `main`, deletes PR branch after merge
 
-### 🔒 Approval Requirements
+### Approval Requirements
 - **Create PR**: No approvals (autonomous)
-- **Review PR**: No approvals (autonomous)
+- **Review & Fix PR**: No approvals (autonomous)
 - **Update PR**: No approvals (autonomous)
 - **Test PR**: Approval only for test confirmation (wait for user)
 - **Merge PR**: Approval for all git operations
@@ -219,39 +227,28 @@ End (on main)
 ```
 Day 1: Create PR
 ├─ Developer: "Create PR for new validation feature"
+├─ Agent reads refined TODO with full requirements and constraints
 ├─ Agent creates create-pr/add-validation branch
 ├─ Agent implements with TDD, tests pass, build succeeds
+├─ Agent self-reviews against requirements (10 areas), fixes issues
 ├─ Agent creates PR with test instructions
 ├─ Agent updates STATUS.md → Needs Review
 ├─ Agent updates PLAN.md
 └─ Agent switches to main ✓
 
-Day 2: Review PR
+Day 2: Review & Fix PR
 ├─ Developer: "Review PR"
-├─ Agent checks out PR branch, reviews code
-├─ Agent finds issue, gh pr review --request-changes
-├─ Agent updates STATUS.md → Needs Changes
-├─ Agent updates PLAN.md
-└─ Agent switches to main ✓
-
-Day 2: Update PR
-├─ Developer: "Update PR"
-├─ Agent checks out PR branch
-├─ Agent reads review feedback, implements fixes
-├─ Agent runs tests, build succeeds, pushes changes
-├─ Agent updates STATUS.md → Needs Review
-├─ Agent updates PLAN.md
-└─ Agent switches to main ✓
-
-Day 3: Review PR (again)
-├─ Developer: "Review PR"
-├─ Agent checks out PR branch, reviews fixes
-├─ Agent approves, gh pr review --approve
+├─ Agent reads source requirements from phase TODO file
+├─ Agent checks out PR branch, reviews code against requirements
+├─ Agent finds 3 issues: 2 fixable, 1 none (all clean)
+├─ Agent fixes 2 issues directly on PR branch
+├─ Agent runs tests and build (pass), commits and pushes fixes
+├─ Agent approves PR: gh pr review --approve
 ├─ Agent updates STATUS.md → Needs Testing
 ├─ Agent updates PLAN.md
 └─ Agent switches to main ✓
 
-Day 3: Test PR
+Day 2: Test PR
 ├─ Developer: "Test PR"
 ├─ Agent presents manual test instructions
 ├─ Developer runs tests manually: "tests passed"
@@ -259,7 +256,7 @@ Day 3: Test PR
 ├─ Agent updates PLAN.md
 └─ Agent already on main ✓
 
-Day 4: Merge PR
+Day 3: Merge PR
 ├─ Developer: "Merge PR"
 ├─ Agent merges PR with user approval
 ├─ Agent updates local main with git pull
@@ -274,33 +271,26 @@ Result: Feature fully integrated into main branch
 
 ---
 
-## Example: Path with Multiple Review Cycles
+## Example: Path with Architectural Issues (Rare)
 
 ```
-Create PR → Needs Review
+Create PR (with self-review) → Needs Review
          ↓
-Review PR → Needs Changes (Issue #1 found)
+Review & Fix PR → Needs Changes (architectural issue found)
+  └─ Minor issues fixed directly on branch
          ↓
-Update PR → Needs Review (Issue #1 fixed)
+Update PR → Needs Review (architectural issue redesigned)
          ↓
-Review PR → Needs Changes (Issue #2 found)
-         ↓
-Update PR → Needs Review (Issue #2 fixed)
-         ↓
-Review PR → Needs Testing (approved)
-         ↓
-Test PR → Needs Changes (manual tests failed)
-         ↓
-Update PR → Needs Review (test failures fixed)
-         ↓
-Review PR → Needs Testing (re-approved)
+Review & Fix PR → Needs Testing (approved, no remaining issues)
          ↓
 Test PR → Needs Merging (tests passed)
          ↓
 Merge PR → Merged ✓
 ```
 
+**Note:** With self-review in Create PR and direct fixes in Review & Fix PR, the common path skips "Needs Changes" entirely. Multiple review cycles are now rare.
+
 **All workflows:**
-- ✅ Updated PLAN.md before completion
-- ✅ Updated STATUS.md before completion
-- ✅ Returned to main branch before completion
+- Updated PLAN.md before completion
+- Updated STATUS.md before completion
+- Returned to main branch before completion

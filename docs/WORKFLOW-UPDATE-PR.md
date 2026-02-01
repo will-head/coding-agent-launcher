@@ -1,14 +1,21 @@
 # Update PR Workflow (8-Step)
 
-> Autonomous implementation of PR review feedback
+> Autonomous implementation of PR review feedback — rare fallback for architectural issues
 
-**Use When:** Addressing review feedback on PRs in "Needs Changes" section
+**Note:** This workflow is a rare fallback for architectural issues that couldn't be resolved during [Review & Fix PR](WORKFLOW-REVIEW-PR.md). Most review issues are fixed directly during Review & Fix PR. This workflow is only needed when the reviewer identified fundamental design or architectural problems that require rethinking the implementation approach.
+
+**Use When:** Addressing **architectural** review feedback on PRs in "Needs Changes" section. The Review & Fix PR workflow will have already fixed minor and moderate issues directly. Only use this workflow when:
+- The PR was sent back with REQUEST_CHANGES for architectural/design issues
+- The implementation approach needs fundamental changes (not just code quality fixes)
+- Requirements were misunderstood and the implementation needs rethinking
+- Breaking changes to interfaces require design discussion first
 
 **Key Principles:**
 - **No permission needed** - fully autonomous operation
 - **Never commit to main** - work on existing PR branches
 - **Autonomous fixes** - analyze feedback and implement changes
 - **Skip code review step** - changes already went through PR review
+- **Focus on architectural issues** - minor/moderate issues were already fixed during Review & Fix
 - **PLAN.md and STATUS.md updates must be done on main branch**, not PR branch
 
 ---
@@ -255,7 +262,7 @@ See [PR Comments Format](WORKFLOWS.md#pr-comments-format) in Shared Conventions.
 ## Related Documentation
 
 - [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Previous step: PR review
+- [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Previous step: Review & Fix PR (fixes most issues directly)
 - [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
 - [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards
 - [STATUS.md](../STATUS.md) - PR tracking
