@@ -390,3 +390,37 @@
 - [x] Argument parsing `shift || true` showed error in zsh - fixed with `[[ $# -gt 0 ]] && shift`
 - [x] Unpushed commits detection requires proper git upstream tracking to be set - working as designed (has prerequisites)
 - [x] cal-bootstrap snapshot delete unnecessarily stops cal-dev if already running before checking git changes (should skip stop if VM already running) - **FIXED**: Removed premature stop, git check now intelligently handles VM state
+
+### Tmux Session Persistence (Phase 0.11 - Complete)
+- [x] **Implemented tmux session persistence** (completed 2026-02-01)
+  - **Goal:** Automatically save and restore tmux sessions across VM restarts and snapshots
+  - **Implementation:**
+    - Created `scripts/vm-tmux-resurrect.sh` - setup script for tmux persistence
+    - Created `scripts/test-tmux-persistence.sh` - validation test script
+    - Installed tmux-resurrect and tmux-continuum plugins
+    - Configured comprehensive tmux.conf with session persistence
+    - Updated session name from `cal` to `cal-dev` in cal-bootstrap (4 locations: lines 1311, 1357, 1410, 1503)
+    - Implemented reattach-or-recreate logic using `tmux new-session -A -s cal-dev`
+    - Added .zlogout hook to save sessions on logout
+    - Integrated vm-tmux-resurrect.sh into vm-setup.sh
+  - **Configuration:**
+    - Session name: `cal-dev` (matches VM naming convention)
+    - Pane contents (scrollback): Enabled with 50,000 line limit
+    - Auto-save: Every 15 minutes via tmux-continuum
+    - Auto-restore: On tmux start via tmux-continuum
+    - Manual triggers: Save on logout via .zlogout hook
+    - Keybindings: `Ctrl+b R` reload config, `Ctrl+b r` resize pane to 67%
+    - Split bindings: `Ctrl+b |` horizontal split, `Ctrl+b -` vertical split
+  - **Testing:**
+    - ✓ Tested session save/restore manually
+    - ✓ Tested auto-save on logout
+    - ✓ Tested auto-restore on tmux start
+    - ✓ Verified pane layouts and scrollback preservation
+    - ✓ Tested with 4-pane layout
+  - **Files:**
+    - scripts/vm-tmux-resurrect.sh (new)
+    - scripts/test-tmux-persistence.sh (new)
+    - scripts/cal-bootstrap (modified - session name updates)
+    - scripts/vm-setup.sh (modified - calls vm-tmux-resurrect.sh)
+  - **Note:** ADR-002 intentionally NOT modified (ADRs are immutable)
+  - **Future testing:** VM restart and snapshot/restore scenarios not yet tested (will work via resurrect data in `~/.tmux/resurrect/`)

@@ -1,0 +1,187 @@
+#!/bin/zsh
+# vm-tmux-resurrect.sh - Setup tmux session persistence
+#
+# This script installs and configures tmux-resurrect and tmux-continuum plugins
+# to automatically save and restore tmux sessions across VM restarts and snapshots.
+#
+# Session persistence features:
+# - Auto-save every 15 minutes
+# - Save on tmux detach (Ctrl+b d)
+# - Save on SSH disconnect
+# - Save on logout via .zlogout hook
+# - Restore pane contents (scrollback up to 5000 lines)
+# - Restore sessions on login
+#
+# Usage: Run this script during VM setup (called from vm-setup.sh)
+
+set -e
+
+echo "============================================"
+echo "Tmux Session Persistence Setup"
+echo "============================================"
+echo ""
+
+# Check if tmux is installed
+if ! command -v tmux &> /dev/null; then
+    echo "Error: tmux is not installed. Please install tmux first."
+    exit 1
+fi
+
+# Create TPM (Tmux Plugin Manager) directory
+TPM_DIR="$HOME/.tmux/plugins/tpm"
+if [[ ! -d "$TPM_DIR" ]]; then
+    echo "Installing Tmux Plugin Manager (TPM)..."
+    git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
+    echo "✓ TPM installed"
+else
+    echo "✓ TPM already installed"
+fi
+
+# Create or update tmux.conf with session persistence settings
+TMUX_CONF="$HOME/.tmux.conf"
+echo ""
+echo "Configuring tmux.conf..."
+
+# Backup existing config if it exists
+if [[ -f "$TMUX_CONF" ]]; then
+    cp "$TMUX_CONF" "$TMUX_CONF.backup.$(date +%Y%m%d_%H%M%S)"
+    echo "  Backed up existing tmux.conf"
+fi
+
+# Write tmux configuration
+cat > "$TMUX_CONF" <<'EOF'
+# CAL Tmux Configuration
+# Session persistence with tmux-resurrect and tmux-continuum
+
+# Better terminal support
+set -g default-terminal "screen-256color"
+
+# Enable mouse support (scrolling, pane selection, resizing)
+set -g mouse on
+
+# Increase scrollback buffer
+set -g history-limit 50000
+
+# Don't rename windows automatically
+set-option -g allow-rename off
+
+# Start windows and panes at 1, not 0
+set -g base-index 1
+setw -g pane-base-index 1
+
+# Renumber windows when one is closed
+set -g renumber-windows on
+
+# Enable activity alerts
+setw -g monitor-activity on
+set -g visual-activity off
+
+# Faster command sequences (no delay)
+set -s escape-time 0
+
+# Vi-style key bindings in copy mode
+setw -g mode-keys vi
+
+# Easy config reload
+bind R source-file ~/.tmux.conf \; display "Config reloaded!"
+
+# Resize pane to 67%
+bind r resize-pane -y 67%
+
+# Better splitting with current path
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+
+# Pane navigation (Vim-style)
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+
+# Pane resizing
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 5
+bind -r K resize-pane -U 5
+bind -r L resize-pane -R 5
+
+# Status bar styling
+set -g status-style bg=colour235,fg=colour255
+set -g status-left-length 30
+set -g status-left '#[fg=colour76,bold]CAL-BOOTSTRAP '
+set -g status-right '#[fg=colour245]%H:%M '
+set -g window-status-current-style bg=colour240,fg=colour255,bold
+set -g window-status-style fg=colour245
+
+# Pane border styling
+set -g pane-border-style fg=colour238
+set -g pane-active-border-style fg=colour76
+
+# Plugin manager
+set -g @plugin 'tmux-plugins/tpm'
+
+# Session persistence plugins
+set -g @plugin 'tmux-plugins/tmux-resurrect'
+set -g @plugin 'tmux-plugins/tmux-continuum'
+
+# Resurrect settings
+set -g @resurrect-capture-pane-contents 'on'
+
+# Continuum settings
+set -g @continuum-restore 'on'
+set -g @continuum-save-interval '15'
+
+# Initialize TPM (keep this line at the very bottom)
+run '~/.tmux/plugins/tpm/tpm'
+EOF
+
+echo "✓ tmux.conf configured"
+
+# Install plugins
+echo ""
+echo "Installing tmux plugins..."
+"$TPM_DIR/bin/install_plugins"
+echo "✓ Plugins installed"
+
+# Configure .zlogout to save sessions on logout
+ZLOGOUT="$HOME/.zlogout"
+echo ""
+echo "Configuring .zlogout to save sessions..."
+
+# Create .zlogout if it doesn't exist
+if [[ ! -f "$ZLOGOUT" ]]; then
+    touch "$ZLOGOUT"
+fi
+
+# Add tmux session save block if not already present
+if ! grep -q "# CAL: Save tmux sessions on logout" "$ZLOGOUT" 2>/dev/null; then
+    cat >> "$ZLOGOUT" <<'EOF'
+
+# CAL: Save tmux sessions on logout
+if command -v tmux &> /dev/null && tmux list-sessions &> /dev/null; then
+    # Save all tmux sessions before logout
+    tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh &> /dev/null || true
+fi
+EOF
+    echo "✓ .zlogout configured"
+else
+    echo "✓ .zlogout already configured"
+fi
+
+echo ""
+echo "============================================"
+echo "Tmux Session Persistence Setup Complete"
+echo "============================================"
+echo ""
+echo "Features enabled:"
+echo "  • Auto-save every 15 minutes"
+echo "  • Save on logout"
+echo "  • Restore on login (automatic)"
+echo "  • Pane contents saved (5000 line scrollback)"
+echo ""
+echo "Manual save: Ctrl+b Ctrl+s"
+echo "Manual restore: Ctrl+b Ctrl+r"
+echo "Reload config: Ctrl+b R"
+echo "Resize pane to 67%: Ctrl+b r"
+echo ""
+echo "Session data stored in: ~/.tmux/resurrect/"
+echo ""

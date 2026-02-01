@@ -695,74 +695,15 @@ fi
 export CAL_VM=true
 export CAL_VM_INFO="$HOME/.cal-vm-info"
 
-# Configure tmux
+# Configure tmux with session persistence
 echo ""
-echo "🖥️  Configuring tmux..."
-if [ ! -f ~/.tmux.conf ]; then
-    cat > ~/.tmux.conf <<'EOF'
-# Better terminal support
-set -g default-terminal "screen-256color"
-
-# Enable mouse support (scrolling, pane selection, resizing)
-set -g mouse on
-
-# Increase scrollback buffer
-set -g history-limit 50000
-
-# Don't rename windows automatically
-set-option -g allow-rename off
-
-# Start windows and panes at 1, not 0
-set -g base-index 1
-setw -g pane-base-index 1
-
-# Renumber windows when one is closed
-set -g renumber-windows on
-
-# Enable activity alerts
-setw -g monitor-activity on
-set -g visual-activity off
-
-# Faster command sequences (no delay)
-set -s escape-time 0
-
-# Vi-style key bindings in copy mode
-setw -g mode-keys vi
-
-# Easy config reload
-bind r source-file ~/.tmux.conf \; display "Config reloaded!"
-
-# Better splitting with current path
-bind | split-window -h -c "#{pane_current_path}"
-bind - split-window -v -c "#{pane_current_path}"
-
-# Pane navigation (Vim-style)
-bind h select-pane -L
-bind j select-pane -D
-bind k select-pane -U
-bind l select-pane -R
-
-# Pane resizing
-bind -r H resize-pane -L 5
-bind -r J resize-pane -D 5
-bind -r K resize-pane -U 5
-bind -r L resize-pane -R 5
-
-# Status bar styling
-set -g status-style bg=colour235,fg=colour255
-set -g status-left-length 30
-set -g status-left '#[fg=colour76,bold]CAL-BOOTSTRAP '
-set -g status-right '#[fg=colour245]%H:%M '
-set -g window-status-current-style bg=colour240,fg=colour255,bold
-set -g window-status-style fg=colour245
-
-# Pane border styling
-set -g pane-border-style fg=colour238
-set -g pane-active-border-style fg=colour76
-EOF
-    echo "  ✓ Created default tmux configuration"
+echo "🖥️  Configuring tmux with session persistence..."
+if [ -f ~/scripts/vm-tmux-resurrect.sh ]; then
+    zsh ~/scripts/vm-tmux-resurrect.sh
 else
-    echo "  ✓ tmux configuration already exists"
+    echo "  ⚠ vm-tmux-resurrect.sh not found in ~/scripts/"
+    echo "  → Tmux session persistence not configured"
+    echo "  → Run ~/scripts/vm-tmux-resurrect.sh manually to enable"
 fi
 
 # Enable auto-login for Screen Sharing
@@ -1077,5 +1018,6 @@ fi
 echo "  • Helper scripts available in ~/scripts/:"
 echo "    - vm-setup.sh: Re-run this setup script"
 echo "    - vm-auth.sh: Re-authenticate all agents"
+echo "    - vm-tmux-resurrect.sh: Setup tmux session persistence"
 echo "  • If any commands show 'not found', restart your shell with: exec zsh"
 echo "  • Auto-login takes effect on next VM reboot"

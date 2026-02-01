@@ -1302,13 +1302,13 @@ do_init() {
     echo "Stop:  $TART stop $VM_DEV"
     echo ""
     echo "Connecting via SSH with tmux..."
-    echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
+    echo "💡 tmux session 'cal-dev' (Ctrl+b d to detach, Ctrl+b ? for help)"
     echo ""
 
     # SSH into the VM with tmux (always)
     # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal"
+        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal-dev"
 }
 
 # === RUN MODE ===
@@ -1350,11 +1350,11 @@ do_run() {
             setup_tart_cache_sharing "$VM_IP"
             echo ""
             echo "Connecting via SSH with tmux..."
-            echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
+            echo "💡 tmux session 'cal-dev' (Ctrl+b d to detach, Ctrl+b ? for help)"
             echo ""
             # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
             ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal"
+                "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal-dev"
         else
             echo "Could not get VM IP address."
             exit 1
@@ -1401,13 +1401,13 @@ do_run() {
     echo "   open vnc://${VM_IP} → Authenticate agent → Return to terminal"
     echo ""
     echo "Connecting via SSH with tmux..."
-    echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
+    echo "💡 tmux session 'cal-dev' (Ctrl+b d to detach, Ctrl+b ? for help)"
     echo ""
 
     # SSH into the VM with tmux (always)
     # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal"
+        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal-dev"
 }
 
 # === STOP MODE ===
@@ -1494,13 +1494,13 @@ do_restart() {
     echo "   open vnc://${VM_IP} → Authenticate agent → Return to terminal"
     echo ""
     echo "Connecting via SSH with tmux..."
-    echo "💡 tmux session 'cal' (Ctrl+b d to detach, Ctrl+b ? for help)"
+    echo "💡 tmux session 'cal-dev' (Ctrl+b d to detach, Ctrl+b ? for help)"
     echo ""
 
     # SSH into the VM with tmux (always)
     # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal"
+        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal-dev"
 }
 
 # === GUI MODE ===
