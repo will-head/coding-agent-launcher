@@ -191,6 +191,60 @@ Every Go code change **must** include:
 
 ---
 
+## Go Language Standards
+
+### Use standard library over custom implementations
+**Common Error:** Implementing custom helper functions for operations already available in the standard library.
+
+**Standards:**
+- **Must** check standard library before writing custom helper functions
+- **Must** use `strings` package functions for string operations
+- **Must** use `filepath` package for path operations
+- **Must** prefer well-tested stdlib over custom implementations
+
+**Example:**
+```go
+// Bad - custom implementation
+func contains(s, substr string) bool {
+    for i := 0; i <= len(s)-len(substr); i++ {
+        if s[i:i+len(substr)] == substr {
+            return true
+        }
+    }
+    return false
+}
+
+// Good - use stdlib
+import "strings"
+if strings.Contains(s, substr) { ... }
+```
+
+### Document all exported identifiers
+**Common Error:** Missing GoDoc comments for exported types, functions, and constants.
+
+**Standards:**
+- **Must** add GoDoc comments for all exported types
+- **Must** add GoDoc comments for all exported functions
+- **Must** add GoDoc comments for all exported constants and variables
+- **Must** start comments with the identifier name
+- **Should** add package-level documentation
+
+**Example:**
+```go
+// Config represents the top-level CAL configuration structure.
+type Config struct {
+    Version int `yaml:"version"`
+}
+
+// LoadConfig loads configuration from global and per-VM paths.
+// Returns error if files exist but cannot be read/parsed.
+func LoadConfig(globalPath, vmPath string) (*Config, error) {
+    // ...
+}
+```
+
+---
+
 ## Code Review Checklist
 
 Before submitting code for review, **must** verify:
@@ -204,6 +258,8 @@ Before submitting code for review, **must** verify:
 - [ ] All test scenarios have been executed
 - [ ] All tests pass (`go test ./...` for Go code)
 - [ ] Code builds successfully (`go build` for Go code)
+- [ ] Go code uses stdlib over custom implementations
+- [ ] All exported Go identifiers have GoDoc comments
 
 ---
 

@@ -79,6 +79,8 @@ Create new ADR/PRD to supersede if needed.
 - **Silent error suppression** - Never hide errors with `&>/dev/null`
 - **Missing validation** - Check preconditions before operations
 - **Dangerous constructs** - Avoid `eval` and injection risks
+- **Go: Custom implementations** - Use stdlib over custom helpers (e.g., `strings.Contains`)
+- **Go: Missing GoDoc** - All exported identifiers must have documentation
 
 **Must test all scenarios:** valid inputs, invalid inputs, missing dependencies, auth failures, existing state, network failures.
 
