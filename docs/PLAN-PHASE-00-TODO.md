@@ -50,11 +50,4 @@
 
 **Note:** These items are not essential for Phase 0 completion:
 
-- [ ] Deploy Claude statusline integration
-  - Install `scripts/statusline-command.sh` to VM `/Users/admin/scripts/` and make executable
-  - Create helper script to add statusLine configuration to `~/.claude/settings.json`
-  - StatusLine format: `"statusLine": {"type": "command", "command": "~/.claude/statusline-command.sh orange"}`
-  - Script should be executable but not run automatically (requires manual execution after Claude authentication)
-  - Script should merge with existing settings.json content (preserve all existing fields)
-
 - [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning

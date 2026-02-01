@@ -462,3 +462,16 @@
   - Graceful fallback when jq not installed
   - Shortcut: `-s` for `--status`
   - Implementation in scripts/cal-bootstrap (do_status function)
+
+### Claude Statusline Integration (Phase 0 Future Improvement - Complete)
+- [x] **Deploy Claude statusline integration** (completed 2026-02-01)
+  - Created statusline-command.sh script for Claude Code session metrics display
+  - Shows model name, context usage percentage, session duration, and total cost
+  - Color-coded warnings at 50% and 80% context usage
+  - Uses Claude Code's native `.context_window.used_percentage` field
+  - Created setup-claude-statusline.sh installer script for VM deployment
+  - Installer copies script to ~/scripts/ and updates ~/.claude/settings.json
+  - Full path used in settings.json for reliable execution
+  - Idempotent installer with JSON validation and backup
+  - Supports multiple color schemes (blue, green, yellow, orange, magenta, cyan, red, white)
+  - Implementation in scripts/statusline-command.sh and scripts/setup-claude-statusline.sh
