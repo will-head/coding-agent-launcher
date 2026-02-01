@@ -9,7 +9,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -52,6 +51,9 @@ type VMInfo struct {
 // TartListOutput is the JSON output from `tart list --format json`.
 type TartListOutput []VMInfo
 
+// commandRunner is a function type for executing commands (allows mocking in tests).
+type commandRunner func(args ...string) (string, error)
+
 // TartClient wraps the Tart CLI for VM operations.
 type TartClient struct {
 	tartPath      string
@@ -60,17 +62,21 @@ type TartClient struct {
 	errorWriter   io.Writer
 	pollInterval  time.Duration
 	pollTimeout   time.Duration
+	runCommand    commandRunner
 }
 
 // NewTartClient creates a new TartClient.
 func NewTartClient() *TartClient {
-	return &TartClient{
+	client := &TartClient{
 		installPrompt: TartInstallPrompt,
 		outputWriter:  os.Stdout,
 		errorWriter:   os.Stderr,
 		pollInterval:  defaultPollInterval,
 		pollTimeout:   defaultPollTimeout,
 	}
+	// Set default command runner (uses real tart commands)
+	client.runCommand = client.runTartCommand
+	return client
 }
 
 // ensureInstalled checks if Tart is installed and offers to install via Homebrew if not.
@@ -143,7 +149,7 @@ func (c *TartClient) runTartCommand(args ...string) (string, error) {
 
 // Clone clones a VM from an image or local VM.
 func (c *TartClient) Clone(image, name string) error {
-	if _, err := c.runTartCommand("clone", image, name); err != nil {
+	if _, err := c.runCommand("clone", image, name); err != nil {
 		return fmt.Errorf("failed to clone VM %s from %s: %w", name, image, err)
 	}
 	return nil
@@ -165,7 +171,7 @@ func (c *TartClient) Set(name string, cpu int, memory int, disk string) error {
 		args = append(args, fmt.Sprintf("--disk-size=%s", disk))
 	}
 
-	if _, err := c.runTartCommand(args...); err != nil {
+	if _, err := c.runCommand(args...); err != nil {
 		return fmt.Errorf("failed to configure VM %s: %w", name, err)
 	}
 
@@ -173,7 +179,8 @@ func (c *TartClient) Set(name string, cpu int, memory int, disk string) error {
 }
 
 // Run starts a VM with optional headless mode, VNC, and directory sharing.
-func (c *TartClient) Run(name string, headless, vnc, vncExp bool, dirs []string) error {
+// When vnc is true, always uses --vnc-experimental for bidirectional clipboard.
+func (c *TartClient) Run(name string, headless, vnc bool, dirs []string) error {
 	if err := c.ensureInstalled(); err != nil {
 		return err
 	}
@@ -185,10 +192,6 @@ func (c *TartClient) Run(name string, headless, vnc, vncExp bool, dirs []string)
 	}
 
 	if vnc {
-		args = append(args, "--vnc")
-	}
-
-	if vncExp {
 		args = append(args, "--vnc-experimental")
 	}
 
@@ -218,7 +221,7 @@ func (c *TartClient) Stop(name string, force bool) error {
 		args = append(args, "--timeout=0")
 	}
 
-	if _, err := c.runTartCommand(args...); err != nil {
+	if _, err := c.runCommand(args...); err != nil {
 		return fmt.Errorf("failed to stop VM %s: %w", name, err)
 	}
 
@@ -227,7 +230,7 @@ func (c *TartClient) Stop(name string, force bool) error {
 
 // Delete deletes a VM.
 func (c *TartClient) Delete(name string) error {
-	if _, err := c.runTartCommand("delete", name); err != nil {
+	if _, err := c.runCommand("delete", name); err != nil {
 		return fmt.Errorf("failed to delete VM %s: %w", name, err)
 	}
 	return nil
@@ -235,7 +238,7 @@ func (c *TartClient) Delete(name string) error {
 
 // List lists all VMs with JSON format for sizes.
 func (c *TartClient) List() (TartListOutput, error) {
-	output, err := c.runTartCommand("list", "--format", "json")
+	output, err := c.runCommand("list", "--format", "json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list VMs: %w", err)
 	}
@@ -258,7 +261,7 @@ func (c *TartClient) IP(name string, timeout time.Duration) (string, error) {
 	elapsed := 0 * time.Second
 
 	for time.Since(startTime) < timeout {
-		output, err := c.runTartCommand("ip", name)
+		output, err := c.runCommand("ip", name)
 		if err == nil {
 			ip := strings.TrimSpace(output)
 			if ip != "" {
@@ -311,18 +314,4 @@ func (c *TartClient) GetState(name string) VMState {
 		return StateNotFound
 	}
 	return vm.State
-}
-
-// ExpandTilde expands ~ to the home directory in paths.
-func ExpandTilde(path string) (string, error) {
-	if !strings.HasPrefix(path, "~") {
-		return path, nil
-	}
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get home directory: %w", err)
-	}
-
-	return filepath.Join(homeDir, strings.TrimPrefix(path, "~")), nil
 }
