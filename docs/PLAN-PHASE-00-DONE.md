@@ -449,3 +449,16 @@
   - Verifies tmux-continuum plugin is loaded and running
   - Checks plugin scripts are accessible (indicates plugins loaded)
   - Validates resurrect directory and session saves
+
+### Status Command Enhancement (Phase 0 Future Improvement - Complete)
+- [x] **Add `--status` option to cal-bootstrap** (completed 2026-02-01)
+  - Shows cal-dev VM state (running/stopped/not found)
+  - Displays IP address when VM is running
+  - Shows VM size in GB
+  - Provides helpful access commands (SSH, VNC)
+  - Shows context-appropriate next-step commands based on VM state
+  - Lists system VMs (cal-clean, cal-init) if present
+  - Shows snapshot count with link to list command
+  - Graceful fallback when jq not installed
+  - Shortcut: `-s` for `--status`
+  - Implementation in scripts/cal-bootstrap (do_status function)

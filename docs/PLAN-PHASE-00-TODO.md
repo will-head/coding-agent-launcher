@@ -50,10 +50,6 @@
 
 **Note:** These items are not essential for Phase 0 completion:
 
-- [ ] Add `--status` option to cal-bootstrap
-  - Show cal-dev VM IP address if running
-  - Display other useful VM information (state, resources, etc.)
-
 - [ ] Deploy Claude statusline integration
   - Install `scripts/statusline-command.sh` to VM `/Users/admin/scripts/` and make executable
   - Create helper script to add statusLine configuration to `~/.claude/settings.json`

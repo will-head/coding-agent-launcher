@@ -6,14 +6,15 @@ set -e
 SCRIPT_DIR="${0:A:h}"
 
 # CAL Bootstrap Script
-# Usage: ./cal-bootstrap [--init|-i] [--run] [--restart|-r] [--gui|-g] [--stop] [--snapshot <action> <name>]
+# Usage: ./cal-bootstrap [--init|-i] [--run] [--restart|-r] [--gui|-g] [--stop] [--status|-s] [--snapshot|-S <action> <name>]
 #
 # Options:
 #   --init, -i      Initialize VM environment (create cal-clean, cal-dev, cal-init)
 #   --run           Run cal-dev and SSH in with tmux (default if VMs exist)
 #   --restart, -r   Restart cal-dev and SSH in with tmux
 #   --gui, -g       Launch cal-dev with VNC GUI (experimental mode with clipboard support)
-#   --stop, -s      Stop cal-dev
+#   --stop          Stop cal-dev
+#   --status, -s    Show VM status and connection info
 #   --snapshot, -S  Manage snapshots (list, create, restore, delete)
 #   --yes, -y       Skip confirmation prompts
 #
@@ -1608,6 +1609,138 @@ do_gui() {
     echo ""
 }
 
+# === STATUS MODE ===
+do_status() {
+    echo "CAL Environment Status"
+    echo "======================"
+    echo ""
+
+    # Check if jq is available for JSON parsing
+    if ! command -v jq &>/dev/null; then
+        echo "⚠ jq not installed (install with: brew install jq)"
+        echo "  Using fallback status display"
+        echo ""
+
+        # Fallback to simple text output
+        echo "VMs:"
+        "$TART" list 2>/dev/null | while IFS= read -r line; do
+            echo "  $line"
+        done
+        echo ""
+
+        # Check cal-dev specifically
+        if vm_exists "$VM_DEV"; then
+            if vm_running "$VM_DEV"; then
+                echo "$VM_DEV: Running"
+                local dev_ip
+                dev_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
+                if [ -n "$dev_ip" ]; then
+                    echo "  IP: $dev_ip"
+                else
+                    echo "  IP: (not available)"
+                fi
+            else
+                echo "$VM_DEV: Stopped"
+            fi
+        else
+            echo "$VM_DEV: Not found"
+            echo ""
+            echo "Run './cal-bootstrap --init' to set up the environment."
+        fi
+        return 0
+    fi
+
+    # Get VM data using JSON for accurate information
+    local json_output
+    json_output=$("$TART" list --format json 2>&1)
+
+    if [ $? -ne 0 ] || [ -z "$json_output" ]; then
+        echo "Error: Failed to get VM list from tart"
+        exit 1
+    fi
+
+    # Check if cal-dev exists
+    local dev_exists
+    dev_exists=$(echo "$json_output" | jq -r ".[] | select(.Name == \"$VM_DEV\") | .Name" 2>/dev/null)
+
+    if [ -z "$dev_exists" ]; then
+        echo "Status: Not initialized"
+        echo ""
+        echo "Run './cal-bootstrap --init' to set up the environment."
+        exit 0
+    fi
+
+    # Get cal-dev info
+    local dev_state dev_size dev_ip
+    dev_state=$(echo "$json_output" | jq -r ".[] | select(.Name == \"$VM_DEV\") | .State" 2>/dev/null)
+    dev_size=$(echo "$json_output" | jq -r ".[] | select(.Name == \"$VM_DEV\") | .Size" 2>/dev/null)
+
+    # Size is already in GB from the JSON
+    local size_display
+    if [ -n "$dev_size" ] && [ "$dev_size" != "null" ]; then
+        size_display="${dev_size} GB"
+    else
+        size_display="unknown"
+    fi
+
+    echo "VM: $VM_DEV"
+    echo "State: $dev_state"
+    echo "Size: ${size_display}"
+
+    if [ "$dev_state" = "running" ]; then
+        dev_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
+        if [ -n "$dev_ip" ]; then
+            echo "IP: $dev_ip"
+            echo ""
+            echo "Access:"
+            echo "  SSH:  ssh ${VM_USER}@${dev_ip}"
+            echo "  VNC:  open vnc://${dev_ip}"
+            echo ""
+            echo "Commands:"
+            echo "  Connect: ./cal-bootstrap --run"
+            echo "  GUI:     ./cal-bootstrap --gui"
+            echo "  Stop:    ./cal-bootstrap --stop"
+        else
+            echo "IP: (not available yet)"
+            echo ""
+            echo "VM is booting..."
+        fi
+    else
+        echo ""
+        echo "Commands:"
+        echo "  Start:   ./cal-bootstrap --run"
+        echo "  GUI:     ./cal-bootstrap --gui"
+    fi
+
+    echo ""
+
+    # Show other VMs if they exist
+    local clean_exists init_exists
+    clean_exists=$(echo "$json_output" | jq -r ".[] | select(.Name == \"$VM_CLEAN\") | .Name" 2>/dev/null)
+    init_exists=$(echo "$json_output" | jq -r ".[] | select(.Name == \"$VM_INIT\") | .Name" 2>/dev/null)
+
+    if [ -n "$clean_exists" ] || [ -n "$init_exists" ]; then
+        echo "System VMs:"
+        if [ -n "$clean_exists" ]; then
+            echo "  ✓ $VM_CLEAN (base image)"
+        fi
+        if [ -n "$init_exists" ]; then
+            echo "  ✓ $VM_INIT (snapshot for restore)"
+        fi
+        echo ""
+    fi
+
+    # Show snapshot count
+    local snapshot_count
+    snapshot_count=$(echo "$json_output" | jq -r '[.[] | select(.Name != "'$VM_CLEAN'" and .Name != "'$VM_DEV'" and .Name != "'$VM_INIT'")] | length' 2>/dev/null)
+
+    if [ -n "$snapshot_count" ] && [ "$snapshot_count" -gt 0 ]; then
+        echo "Snapshots: $snapshot_count"
+        echo "  List: ./cal-bootstrap --snapshot list"
+        echo ""
+    fi
+}
+
 # === SNAPSHOT MODE ===
 do_snapshot() {
     local action="$1"
@@ -2063,8 +2196,12 @@ while [[ $# -gt 0 ]]; do
             MODE="gui"
             shift
             ;;
-        --stop|-s)
+        --stop)
             MODE="stop"
+            shift
+            ;;
+        --status|-s)
+            MODE="status"
             shift
             ;;
         --snapshot|-S)
@@ -2129,7 +2266,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --restart, -r                       Restart cal-dev and connect with tmux"
             echo "  --gui, -g                           Launch cal-dev with VNC GUI (experimental mode)"
             echo "                                        Provides full macOS desktop with clipboard support"
-            echo "  --stop, -s                          Stop cal-dev"
+            echo "  --stop                              Stop cal-dev"
+            echo "  --status, -s                        Show VM status and connection info"
             echo "  --snapshot, -S list                 List available snapshots"
             echo "  --snapshot, -S create <name>        Create a named snapshot"
             echo "  --snapshot, -S restore <name>       Restore from a snapshot"
@@ -2146,6 +2284,7 @@ while [[ $# -gt 0 ]]; do
             echo "Examples:"
             echo "  ./cal-bootstrap --init              # First-time setup"
             echo "  ./cal-bootstrap                     # Start cal-dev (auto-detects mode)"
+            echo "  ./cal-bootstrap --status            # Show VM status and IP"
             echo "  ./cal-bootstrap --restart           # Restart cal-dev and connect"
             echo "  ./cal-bootstrap --gui               # Launch GUI with clipboard support"
             echo "  ./cal-bootstrap --snapshot create pre-experiment"
@@ -2230,6 +2369,9 @@ case "$MODE" in
         ;;
     stop)
         do_stop
+        ;;
+    status)
+        do_status
         ;;
     snapshot)
         do_snapshot "$SNAPSHOT_ACTION" "$SNAPSHOT_NAME"
