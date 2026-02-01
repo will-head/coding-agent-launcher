@@ -253,6 +253,58 @@ isolation:
 			t.Errorf("Expected Memory 16384, got %d", cfg.Isolation.Defaults.VM.Memory)
 		}
 	})
+
+	t.Run("zero values from YAML fail validation", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config.yaml")
+
+		configContent := `
+version: 1
+isolation:
+  defaults:
+    vm:
+      cpu: 0
+      memory: 0
+      disk_size: 0
+`
+		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+			t.Fatalf("Failed to write config file: %v", err)
+		}
+
+		_, err := LoadConfig(configPath, "")
+		if err == nil {
+			t.Error("Expected validation error for zero values in config, got nil")
+		}
+		expectedMsg := "Invalid CPU '0'"
+		if err.Error()[:len(expectedMsg)] != expectedMsg {
+			t.Errorf("Expected error message to start with '%s', got '%s'", expectedMsg, err.Error())
+		}
+	})
+
+	t.Run("empty string from YAML fails validation", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config.yaml")
+
+		configContent := `
+version: 1
+isolation:
+  defaults:
+    vm:
+      base_image: ""
+`
+		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+			t.Fatalf("Failed to write config file: %v", err)
+		}
+
+		_, err := LoadConfig(configPath, "")
+		if err == nil {
+			t.Error("Expected validation error for empty base image in config, got nil")
+		}
+		expectedMsg := "Invalid base_image ''"
+		if err.Error()[:len(expectedMsg)] != expectedMsg {
+			t.Errorf("Expected error message to start with '%s', got '%s'", expectedMsg, err.Error())
+		}
+	})
 }
 
 func TestValidateConfig(t *testing.T) {

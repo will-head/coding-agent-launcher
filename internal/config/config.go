@@ -141,7 +141,29 @@ func loadConfigFile(cfg *Config, path string) error {
 		return fmt.Errorf("failed to read config file '%s': %w", path, err)
 	}
 
-	var loaded Config
+	var loaded struct {
+		Version   *int `yaml:"version"`
+		Isolation struct {
+			Defaults struct {
+				VM struct {
+					CPU       *int    `yaml:"cpu"`
+					Memory    *int    `yaml:"memory"`
+					DiskSize  *int    `yaml:"disk_size"`
+					BaseImage *string `yaml:"base_image"`
+				} `yaml:"vm"`
+				GitHub struct {
+					DefaultBranchPrefix *string `yaml:"default_branch_prefix"`
+				} `yaml:"github"`
+				Output struct {
+					SyncDir *string `yaml:"sync_dir"`
+				} `yaml:"output"`
+				Proxy struct {
+					Mode *string `yaml:"mode"`
+				} `yaml:"proxy"`
+			} `yaml:"defaults"`
+		} `yaml:"isolation"`
+	}
+
 	if err := yaml.Unmarshal(data, &loaded); err != nil {
 		return fmt.Errorf("failed to parse config file '%s': %w", path, err)
 	}
@@ -186,27 +208,48 @@ func loadVMConfigFile(cfg *Config, path string) error {
 	return nil
 }
 
-func mergeConfig(cfg *Config, loaded *Config) {
-	if loaded.Isolation.Defaults.VM.CPU != 0 {
-		cfg.Isolation.Defaults.VM.CPU = loaded.Isolation.Defaults.VM.CPU
+func mergeConfig(cfg *Config, loaded *struct {
+	Version   *int `yaml:"version"`
+	Isolation struct {
+		Defaults struct {
+			VM struct {
+				CPU       *int    `yaml:"cpu"`
+				Memory    *int    `yaml:"memory"`
+				DiskSize  *int    `yaml:"disk_size"`
+				BaseImage *string `yaml:"base_image"`
+			} `yaml:"vm"`
+			GitHub struct {
+				DefaultBranchPrefix *string `yaml:"default_branch_prefix"`
+			} `yaml:"github"`
+			Output struct {
+				SyncDir *string `yaml:"sync_dir"`
+			} `yaml:"output"`
+			Proxy struct {
+				Mode *string `yaml:"mode"`
+			} `yaml:"proxy"`
+		} `yaml:"defaults"`
+	} `yaml:"isolation"`
+}) {
+	if loaded.Isolation.Defaults.VM.CPU != nil {
+		cfg.Isolation.Defaults.VM.CPU = *loaded.Isolation.Defaults.VM.CPU
 	}
-	if loaded.Isolation.Defaults.VM.Memory != 0 {
-		cfg.Isolation.Defaults.VM.Memory = loaded.Isolation.Defaults.VM.Memory
+	if loaded.Isolation.Defaults.VM.Memory != nil {
+		cfg.Isolation.Defaults.VM.Memory = *loaded.Isolation.Defaults.VM.Memory
 	}
-	if loaded.Isolation.Defaults.VM.DiskSize != 0 {
-		cfg.Isolation.Defaults.VM.DiskSize = loaded.Isolation.Defaults.VM.DiskSize
+	if loaded.Isolation.Defaults.VM.DiskSize != nil {
+		cfg.Isolation.Defaults.VM.DiskSize = *loaded.Isolation.Defaults.VM.DiskSize
 	}
-	if loaded.Isolation.Defaults.VM.BaseImage != "" {
-		cfg.Isolation.Defaults.VM.BaseImage = loaded.Isolation.Defaults.VM.BaseImage
+	if loaded.Isolation.Defaults.VM.BaseImage != nil {
+		cfg.Isolation.Defaults.VM.BaseImage = *loaded.Isolation.Defaults.VM.BaseImage
 	}
-	if loaded.Isolation.Defaults.GitHub.DefaultBranchPrefix != "" {
-		cfg.Isolation.Defaults.GitHub.DefaultBranchPrefix = loaded.Isolation.Defaults.GitHub.DefaultBranchPrefix
+	if loaded.Isolation.Defaults.GitHub.DefaultBranchPrefix != nil {
+		cfg.Isolation.Defaults.GitHub.DefaultBranchPrefix = *loaded.Isolation.Defaults.GitHub.DefaultBranchPrefix
 	}
-	if loaded.Isolation.Defaults.Output.SyncDir != "" {
-		cfg.Isolation.Defaults.Output.SyncDir = loaded.Isolation.Defaults.Output.SyncDir
+	if loaded.Isolation.Defaults.Output.SyncDir != nil {
+		cfg.Isolation.Defaults.Output.SyncDir = *loaded.Isolation.Defaults.Output.SyncDir
 	}
-	if loaded.Isolation.Defaults.Proxy.Mode != "" {
-		cfg.Isolation.Defaults.Proxy.Mode = loaded.Isolation.Defaults.Proxy.Mode
+	if loaded.Isolation.Defaults.Proxy.Mode != nil {
+		cfg.Isolation.Defaults.Proxy.Mode = *loaded.Isolation.Defaults.Proxy.Mode
 	}
 }
 
