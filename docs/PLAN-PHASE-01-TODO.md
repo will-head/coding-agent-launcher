@@ -256,11 +256,15 @@
 3. Logout git status check
    - Configure `~/.zlogout` to scan ~/code for uncommitted/unpushed changes
    - Cancel logout starts new login shell with session flag preserved
-4. VM detection setup
+4. Tmux session persistence on logout
+   - Add tmux session save to `~/.zlogout` hook (before git status check)
+   - Run `tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh` on logout
+   - Ensures session state is captured even between auto-save intervals
+5. VM detection setup
    - Create `~/.cal-vm-info` with VM metadata
    - Add `CAL_VM=true` to `.zshrc`
    - Install helper functions (`is-cal-vm`, `cal-vm-info`)
-5. Tart cache sharing setup
+6. Tart cache sharing setup
    - Create symlink `~/.tart/cache -> /Volumes/My Shared Files/tart-cache`
    - Idempotent (safe to run multiple times)
    - Graceful degradation if sharing not available
@@ -270,6 +274,13 @@
 - Session guard (`CAL_SESSION_INITIALIZED`) persists through `exec zsh -l` (environment variable)
 - vm-first-run.sh only checks for updates, doesn't auto-pull (avoids surprise merge conflicts)
 
+**Key learnings from Phase 0.11 (Tmux Session Persistence):**
+- Session name must be `cal` (not `cal-dev`) for `cal isolation` commands
+- Auto-restore on tmux start via tmux-continuum (no manual intervention needed)
+- Auto-save every 15 minutes via tmux-continuum, plus manual save on logout
+- Pane contents (scrollback) preserved with 50,000 line limit
+- Resurrect data stored in `~/.tmux/resurrect/` — survives VM restarts and snapshot/restore
+
 ---
 
 ## 1.10 Helper Script Deployment
@@ -277,13 +288,25 @@
 **Tasks:**
 1. Deploy helper scripts to VM `~/scripts/` directory (idempotent)
 2. Scripts to deploy:
-   - `vm-setup.sh` - Tool installation and configuration
+   - `vm-setup.sh` - Tool installation and configuration (calls vm-tmux-resurrect.sh during --init)
    - `vm-auth.sh` - Interactive agent authentication
    - `vm-first-run.sh` - Post-restore repository update checker
    - `tmux-wrapper.sh` - TERM compatibility wrapper for tmux
-   - `vm-tmux-resurrect.sh` - Tmux session persistence (Phase 0 section 0.11)
-3. Add `~/scripts` to PATH in `.zshrc`
-4. Verify deployment after SCP (check exit codes)
+   - `vm-tmux-resurrect.sh` - Tmux session persistence setup (Phase 0.11)
+3. Deploy comprehensive tmux.conf with:
+   - Session persistence via tmux-resurrect and tmux-continuum plugins
+   - Auto-save every 15 minutes, auto-restore on tmux start
+   - Pane contents (scrollback) capture with 50,000 line limit
+   - Keybindings: `Ctrl+b R` reload config, `Ctrl+b r` resize pane to 67%
+   - Split bindings: `Ctrl+b |` horizontal, `Ctrl+b -` vertical
+4. Add `~/scripts` to PATH in `.zshrc`
+5. Verify deployment after SCP (check exit codes)
+
+**Key learnings from Phase 0.11 (Tmux Session Persistence):**
+- vm-tmux-resurrect.sh installs tmux-resurrect and tmux-continuum plugins via TPM
+- Must be integrated into vm-setup.sh `--init` path for fresh installations
+- tmux.conf is the single source for all tmux configuration and keybindings
+- Session name `cal` used by `tmux-wrapper.sh new-session -A -s cal`
 
 ---
 

@@ -107,3 +107,9 @@
 - Use tmux-wrapper.sh for TERM compatibility (never set TERM explicitly in command)
 - tmux sessions: `~/scripts/tmux-wrapper.sh new-session -A -s cal`
 - Sessions survive SSH disconnects (agents keep running)
+
+**Key learnings from Phase 0.11 (Tmux Session Persistence):**
+- Session name must be `cal` (not `cal-dev`) — matches `cal isolation` command naming
+- Sessions auto-restore on tmux start via tmux-continuum (pane layouts + scrollback preserved)
+- Auto-save every 15 minutes plus manual save on logout via `.zlogout` hook
+- Resurrect data in `~/.tmux/resurrect/` survives VM restarts and snapshot/restore
