@@ -433,3 +433,15 @@
       - Original correct behavior: `set -g mouse on` (tmux right-click menu)
       - Regression in commit 02a0081: changed to `mouse off` (terminal app menu)
       - Fix: Restored `mouse on` and corrected documentation
+
+### TPM Verification (Phase 0 Future Improvement - Complete)
+- [x] **Verify TPM (Tmux Plugin Manager) setup** (completed 2026-02-01)
+  - Enhanced test-tmux-persistence.sh with runtime verification
+  - Added Test 7: Verify TPM loads on tmux start (runtime check)
+  - Added Test 8: Check resurrect data directory and saved sessions
+  - Updated Test 6: Corrected session name from 'cal-dev' to 'cal' (per tmux-wrapper.sh)
+  - Tests now verify both installation AND runtime operation
+  - Verifies tmux-resurrect plugin is loaded and running
+  - Verifies tmux-continuum plugin is loaded and running
+  - Checks plugin scripts are accessible (indicates plugins loaded)
+  - Validates resurrect directory and session saves

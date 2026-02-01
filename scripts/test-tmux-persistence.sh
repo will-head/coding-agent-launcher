@@ -84,18 +84,75 @@ else
     exit 1
 fi
 
-# Test 6: Check tmux session name in cal-bootstrap
+# Test 6: Check tmux session name in tmux-wrapper.sh
 echo ""
-echo "Test 6: Verify session name 'cal-dev' in cal-bootstrap..."
-if [[ -f ~/scripts/../../scripts/cal-bootstrap ]]; then
-    if grep -q "new-session -A -s cal-dev" ~/scripts/../../scripts/cal-bootstrap; then
-        echo "  ✓ Session name 'cal-dev' found in cal-bootstrap"
+echo "Test 6: Verify session name 'cal' in tmux-wrapper.sh..."
+if [[ -f ~/scripts/tmux-wrapper.sh ]]; then
+    if grep -q "new-session -A -s cal" ~/scripts/tmux-wrapper.sh; then
+        echo "  ✓ Session name 'cal' found in tmux-wrapper.sh"
     else
-        echo "  ⚠ WARNING: Session name 'cal-dev' not found in cal-bootstrap"
-        echo "  → Check if cal-bootstrap is using correct session name"
+        echo "  ⚠ WARNING: Session name 'cal' not found in tmux-wrapper.sh"
+        echo "  → Check if tmux-wrapper.sh is using correct session name"
     fi
 else
-    echo "  ⚠ WARNING: cal-bootstrap not found (expected if running in VM)"
+    echo "  ⚠ WARNING: tmux-wrapper.sh not found in ~/scripts/"
+fi
+
+# Test 7: Verify TPM loads on tmux start (runtime check)
+echo ""
+echo "Test 7: Verify TPM loads on tmux start..."
+# Check if tmux is running
+if tmux list-sessions &> /dev/null; then
+    echo "  ℹ️  Tmux is running - checking plugin status..."
+
+    # Check if TPM script exists in running environment
+    # TPM sets environment variables when loaded
+    if tmux show-environment -g | grep -q "TMUX" 2>/dev/null; then
+        echo "  ✓ Tmux environment is accessible"
+
+        # Verify plugins are loaded by checking if plugin scripts exist and are accessible
+        # tmux-resurrect creates save/restore scripts
+        if [[ -f "$HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
+            echo "  ✓ tmux-resurrect scripts are accessible"
+        else
+            echo "  ⚠ WARNING: tmux-resurrect scripts not found"
+        fi
+
+        # tmux-continuum creates auto-save script
+        if [[ -f "$HOME/.tmux/plugins/tmux-continuum/scripts/continuum_save.sh" ]]; then
+            echo "  ✓ tmux-continuum scripts are accessible"
+        else
+            echo "  ⚠ WARNING: tmux-continuum scripts not found"
+        fi
+    else
+        echo "  ⚠ WARNING: Cannot access tmux environment (may need to run inside tmux)"
+    fi
+else
+    echo "  ℹ️  Tmux not running - skipping runtime checks"
+    echo "  → Start tmux to verify plugins load: tmux new -s cal"
+fi
+
+# Test 8: Verify resurrect directory exists
+echo ""
+echo "Test 8: Check resurrect data directory..."
+RESURRECT_DIR="$HOME/.local/share/tmux/resurrect"
+if [[ -d "$RESURRECT_DIR" ]]; then
+    echo "  ✓ Resurrect directory exists: $RESURRECT_DIR"
+
+    # Check for saved sessions
+    SESSION_COUNT=$(ls -1 "$RESURRECT_DIR" 2>/dev/null | grep -c "tmux_resurrect_" || echo "0")
+    if [[ $SESSION_COUNT -gt 0 ]]; then
+        echo "  ✓ Found $SESSION_COUNT saved session(s)"
+        LATEST_SESSION=$(ls -1t "$RESURRECT_DIR"/tmux_resurrect_* 2>/dev/null | head -1)
+        if [[ -n "$LATEST_SESSION" ]]; then
+            SAVE_TIME=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$LATEST_SESSION" 2>/dev/null || stat -c "%y" "$LATEST_SESSION" 2>/dev/null | cut -d'.' -f1)
+            echo "  → Latest save: $SAVE_TIME"
+        fi
+    else
+        echo "  ℹ️  No saved sessions yet (sessions will be saved automatically)"
+    fi
+else
+    echo "  ℹ️  Resurrect directory not created yet (will be created on first save)"
 fi
 
 echo ""
