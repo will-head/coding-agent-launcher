@@ -281,6 +281,7 @@
    - `vm-auth.sh` - Interactive agent authentication
    - `vm-first-run.sh` - Post-restore repository update checker
    - `tmux-wrapper.sh` - TERM compatibility wrapper for tmux
+   - `vm-tmux-resurrect.sh` - Tmux session persistence (Phase 0 section 0.11)
 3. Add `~/scripts` to PATH in `.zshrc`
 4. Verify deployment after SCP (check exit codes)
 
