@@ -52,6 +52,9 @@
 
 **Implementation:** Separate script `scripts/vm-tmux-resurrect.sh`
 
+**Session Naming Convention:**
+- Use session name `cal-dev` (not `cal`) to match VM naming convention
+
 **Tasks:**
 - [ ] Create `vm-tmux-resurrect.sh` script
 - [ ] Install tmux-resurrect plugin (https://github.com/tmux-plugins/tmux-resurrect)
@@ -63,6 +66,17 @@
   - Set continuum save interval: `set -g @continuum-save-interval '15'` (minutes)
   - Add keybinding to reload config: `bind R source-file ~/.tmux.conf \; display "Config reloaded!"`
   - Add keybinding to resize pane: `bind r resize-pane -y 67%`
+- [ ] Update all tmux session commands to use `cal-dev` session name (currently using `cal`)
+  - Update cal-bootstrap script (5 locations: lines 1213, 1311, 1357, 1410, 1503)
+  - Update ADR-002 documentation to reflect `cal-dev` session name
+- [ ] Implement reattach-or-recreate logic in cal-bootstrap and tmux wrapper:
+  - First try to attach to existing `cal-dev` session (`tmux attach -t cal-dev`)
+  - If session doesn't exist, create new session and restore from last save (`tmux new-session -s cal-dev` + resurrect restore)
+  - Use `-A` flag as shorthand: `tmux new-session -A -s cal-dev` (attach if exists, create if not)
+- [ ] Implement session save on disconnect/detach:
+  - Save session on tmux detach (Ctrl+b d or explicit detach)
+  - Save session on SSH disconnect (connection loss)
+  - Save session on logout via `.zlogout` hook
 - [ ] Hook into `.zshrc` to restore sessions on login
 - [ ] Hook into `.zlogout` to save sessions on logout
 - [ ] Call from `vm-setup.sh` during `cal-bootstrap --init`
@@ -71,11 +85,15 @@
 - [ ] Test session persistence across snapshot/restore (should restore to snapshot state)
 
 **Configuration:**
+- Session name: `cal-dev` (matches VM naming convention)
 - Pane contents (scrollback): Enabled (5000 line limit)
 - Vim/neovim sessions: Default tmux-resurrect behavior
 - Shell history per pane: Not implemented (too complex)
 - Auto-save: Every 15 minutes via tmux-continuum
-- Manual save: On logout via `.zlogout` hook
+- Manual save triggers:
+  - On tmux detach (Ctrl+b d)
+  - On SSH disconnect/connection loss
+  - On logout via `.zlogout` hook
 
 **Persistence Strategy:**
 - Resurrect data lives in VM (`~/.tmux/resurrect/`)
