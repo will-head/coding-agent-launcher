@@ -461,6 +461,18 @@ setup_scripts_folder() {
         echo "    ⚠ tmux-wrapper.sh not found"
     fi
 
+    # Copy vm-tmux-resurrect.sh
+    if [ -f "$SCRIPT_DIR/vm-tmux-resurrect.sh" ]; then
+        if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SCRIPT_DIR/vm-tmux-resurrect.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
+            echo "    ✓ vm-tmux-resurrect.sh"
+        else
+            echo "    ✗ vm-tmux-resurrect.sh (copy failed)"
+        fi
+    else
+        echo "    ⚠ vm-tmux-resurrect.sh not found"
+    fi
+
     # Make scripts executable
     if ! ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
         "${VM_USER}@${vm_ip}" "chmod +x ~/scripts/*.sh" 2>> "$CAL_LOG"; then
