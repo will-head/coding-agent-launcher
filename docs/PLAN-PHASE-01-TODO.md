@@ -12,7 +12,7 @@
 
 ---
 
-## 1.2 Configuration Management (PR #4 - approved, needs testing)
+## 1.2 Configuration Management (PR #4 - test failed, needs fixes)
 
 **Design Decisions:**
 - **Precedence:** Per-VM config overrides global config overrides hard-coded defaults

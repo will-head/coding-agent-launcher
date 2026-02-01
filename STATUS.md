@@ -26,7 +26,7 @@
 
 | PR | Branch | Description | Requested | Reason |
 |----|--------|-------------|-----------|--------|
-| *No PRs needing changes* | | | | |
+| [#4](https://github.com/will-head/coding-agent-launcher/pull/4) | create-pr/config-management | Add configuration management with validation | 2026-02-01 | Manual test failure: validation inconsistent for zero values (falls back to defaults instead of erroring) |
 
 ---
 
@@ -34,7 +34,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| [#4](https://github.com/will-head/coding-agent-launcher/pull/4) | create-pr/config-management | Add configuration management with validation | Claude Sonnet 4.5 | 2026-02-01 |
+| *No PRs awaiting testing* | | | | |
 
 ---
 
