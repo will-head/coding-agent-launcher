@@ -424,3 +424,10 @@
     - scripts/vm-setup.sh (modified - calls vm-tmux-resurrect.sh)
   - **Note:** ADR-002 intentionally NOT modified (ADRs are immutable)
   - **Future testing:** VM restart and snapshot/restore scenarios not yet tested (will work via resurrect data in `~/.tmux/resurrect/`)
+  - **Bug fixes:**
+    - BUG-002: Fixed missing vm-tmux-resurrect.sh deployment (completed 2026-02-01)
+    - BUG-003: Incorrectly disabled mouse mode (closed - wrong diagnosis, see BUG-004)
+    - BUG-004: Restored mouse mode to enabled by default (completed 2026-02-01)
+      - Original correct behavior: `set -g mouse on` (tmux right-click menu)
+      - Regression in commit 02a0081: changed to `mouse off` (terminal app menu)
+      - Fix: Restored `mouse on` and corrected documentation

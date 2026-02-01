@@ -56,11 +56,12 @@ cat > "$TMUX_CONF" <<'EOF'
 # Better terminal support
 set -g default-terminal "screen-256color"
 
-# Mouse support - when enabled, allows pane selection, resizing, and scrolling
-# Trade-off: Breaks terminal copy-on-select and right-click menus
-# Default: off (preserves terminal copy-paste behavior)
-# To enable mouse mode: change 'off' to 'on' and reload config (Ctrl+b R)
-set -g mouse off
+# Mouse support - enables pane selection, resizing, scrolling, and tmux right-click menu
+# When enabled: right-click shows tmux menu (Swap, Kill, Respawn, Mark, Rename, etc.)
+# When disabled: right-click shows terminal app menu (Copy, Paste, Split, etc.)
+# Default: on (provides tmux context menu functionality)
+# To disable mouse mode: change 'on' to 'off' and reload config (Ctrl+b R)
+set -g mouse on
 
 # Increase scrollback buffer
 set -g history-limit 50000

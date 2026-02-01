@@ -28,6 +28,7 @@ This file is for human browsing only. Agents should not read this file.
 
 | ID | Summary | Severity | Status | Component | Phase | Opened | Resolved |
 |----|---------|----------|--------|-----------|-------|--------|----------|
-| BUG-003 | Tmux mouse mode breaks terminal copy-on-select and right-click menu | Medium | Resolved | Bootstrap | 0 (Bootstrap) | 2026-02-01 | 2026-02-01 |
+| [BUG-004](BUG-004-tmux-mouse-mode-regression.md) | Tmux mouse mode disabled by default after incorrect BUG-003 fix | Medium | Resolved | Bootstrap | 0 (Bootstrap) | 2026-02-01 | 2026-02-01 |
+| BUG-003 | Tmux mouse mode breaks terminal copy-on-select and right-click menu | Medium | Closed | Bootstrap | 0 (Bootstrap) | 2026-02-01 | 2026-02-01 |
 | BUG-002 | vm-tmux-resurrect.sh not deployed to VM during --init | High | Resolved | Bootstrap | 0 (Bootstrap) | 2026-02-01 | 2026-02-01 |
 | [BUG-001](BUG-001-ccs-auth-clipboard.md) | CCS auth create clipboard keybinding failure | Medium | Won't Fix | CCS/VM | 0 (Bootstrap) | 2026-01-31 | 2026-01-31 |

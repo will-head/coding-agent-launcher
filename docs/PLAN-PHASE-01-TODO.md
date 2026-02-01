@@ -307,6 +307,10 @@
 - Must be integrated into vm-setup.sh `--init` path for fresh installations
 - tmux.conf is the single source for all tmux configuration and keybindings
 - Session name `cal` used by `tmux-wrapper.sh new-session -A -s cal`
+- **Mouse mode must be enabled by default** (`set -g mouse on`) for tmux right-click menu functionality
+  - `mouse on` = tmux context menu (Swap, Kill, Respawn, Mark, Rename, etc.)
+  - `mouse off` = terminal app menu (Copy, Paste, Split, etc.)
+  - See BUG-004 for regression details
 
 ---
 
