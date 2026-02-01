@@ -53,6 +53,7 @@
 - [ ] Update CCS installation in vm-setup.sh
   - Change from current install command to: `npm install -g @kaitranntt/ccs --force`
   - Run `ccs sync` after installation
+  - TODO: Add automated tests for CCS installation and sync verification
 
 - [ ] Add `--status` option to cal-bootstrap
   - Show cal-dev VM IP address if running

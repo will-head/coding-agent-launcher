@@ -319,8 +319,14 @@ else
     # Ensure node/npm is in PATH (reload brew environment)
     eval "$(/opt/homebrew/bin/brew shellenv)"
 
-    if npm install -g @kaitranntt/ccs; then
+    if npm install -g @kaitranntt/ccs --force; then
         echo "  ✓ CCS installed"
+        # Sync CCS configuration after installation
+        if ccs sync; then
+            echo "  ✓ CCS configuration synced"
+        else
+            echo "  ⚠ CCS sync failed (you may need to run 'ccs sync' manually)"
+        fi
     else
         echo "  ✗ Failed to install CCS"
     fi
