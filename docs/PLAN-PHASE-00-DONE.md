@@ -124,6 +124,10 @@
 
 ### Installation Improvements (Phase 0.10 - Partial)
 - [x] Add CCS (Claude Code Switch) installation during --init (completed 2026-01-26)
+- [x] Update CCS installation to use --force flag and run sync (completed 2026-02-01)
+  - Updated to: `npm install -g @kaitranntt/ccs --force`
+  - Added `ccs sync` after installation with error handling
+  - Implementation in vm-setup.sh lines 322-329
 - [x] Fix Claude Code authentication detection (check settings.json content, not just existence) (completed 2026-01-26)
 - [x] Try to install Tart automatically during init if not present (completed 2026-01-30)
   - Auto-installs via Homebrew if not found in PATH
