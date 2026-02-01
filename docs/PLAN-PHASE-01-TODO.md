@@ -279,7 +279,9 @@
 - Auto-restore on tmux start via tmux-continuum (no manual intervention needed)
 - Auto-save every 15 minutes via tmux-continuum, plus manual save on logout
 - Pane contents (scrollback) preserved with 50,000 line limit
-- Resurrect data stored in `~/.tmux/resurrect/` — survives VM restarts and snapshot/restore
+- Resurrect data stored in `~/.local/share/tmux/resurrect/` (tmux-resurrect default) — survives VM restarts and snapshot/restore
+- Manual save (`Ctrl+b Ctrl+s`) runs silently without confirmation message
+- Manual restore keybinding: `Ctrl+b Ctrl+r`
 
 ---
 
@@ -307,6 +309,8 @@
 - Must be integrated into vm-setup.sh `--init` path for fresh installations
 - tmux.conf is the single source for all tmux configuration and keybindings
 - Session name `cal` used by `tmux-wrapper.sh new-session -A -s cal`
+- Session data stored in `~/.local/share/tmux/resurrect/` (tmux-resurrect default location)
+- Manual save (`Ctrl+b Ctrl+s`) runs silently; manual restore (`Ctrl+b Ctrl+r`)
 - **Mouse mode must be enabled by default** (`set -g mouse on`) for tmux right-click menu functionality
   - `mouse on` = tmux context menu (Swap, Kill, Respawn, Mark, Rename, etc.)
   - `mouse off` = terminal app menu (Copy, Paste, Split, etc.)
@@ -337,11 +341,18 @@
    - Display hard-coded default values
    - Help users understand what they get without a config file
    - Show which values are from defaults vs. config files
+6. **Tmux session save feedback** - Improve discoverability of tmux-resurrect functionality
+   - Current: `Ctrl+b Ctrl+s` saves silently with no confirmation
+   - Enhancement: Display brief confirmation message when session is saved
+   - Consider: `tmux display-message "Session saved to ~/.local/share/tmux/resurrect/"` after save
+   - Also consider: Status bar indicator showing last save time
+   - Trade-off: More feedback vs. silent operation preference
 
 **Notes:**
 - These enhancements improve UX but are not critical for Phase 1 functionality
 - Can be prioritized based on user feedback after Phase 1 completion
 - Interactive fixing and env var overrides are most valuable for daily use
+- Tmux save feedback is low priority (auto-save works, manual save is advanced feature)
 
 ---
 

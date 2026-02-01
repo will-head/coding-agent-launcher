@@ -423,7 +423,9 @@
     - scripts/cal-bootstrap (modified - session name updates)
     - scripts/vm-setup.sh (modified - calls vm-tmux-resurrect.sh)
   - **Note:** ADR-002 intentionally NOT modified (ADRs are immutable)
-  - **Future testing:** VM restart and snapshot/restore scenarios not yet tested (will work via resurrect data in `~/.tmux/resurrect/`)
+  - **Future testing:** VM restart and snapshot/restore scenarios not yet tested (will work via resurrect data in `~/.local/share/tmux/resurrect/`)
+  - **Save location:** tmux-resurrect uses default location `~/.local/share/tmux/resurrect/` (not `~/.tmux/resurrect/`)
+  - **Manual save:** `Ctrl+b Ctrl+s` runs silently without confirmation message
   - **Bug fixes:**
     - BUG-002: Fixed missing vm-tmux-resurrect.sh deployment (completed 2026-02-01)
     - BUG-003: Incorrectly disabled mouse mode (closed - wrong diagnosis, see BUG-004)

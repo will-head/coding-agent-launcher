@@ -112,5 +112,6 @@
 - Session name must be `cal` (not `cal-dev`) — matches `cal isolation` command naming
 - Sessions auto-restore on tmux start via tmux-continuum (pane layouts + scrollback preserved)
 - Auto-save every 15 minutes plus manual save on logout via `.zlogout` hook
-- Resurrect data in `~/.tmux/resurrect/` survives VM restarts and snapshot/restore
+- Resurrect data in `~/.local/share/tmux/resurrect/` survives VM restarts and snapshot/restore
+- Manual save (`Ctrl+b Ctrl+s`) runs silently; manual restore (`Ctrl+b Ctrl+r`)
 - Mouse mode enabled by default (`set -g mouse on`) for tmux right-click menu (see BUG-004)
