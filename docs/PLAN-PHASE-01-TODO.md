@@ -12,7 +12,7 @@
 
 ---
 
-## 1.3 Tart Wrapper **REFINED**
+## 1.3 Tart Wrapper **REFINED** (PR #5 - awaiting merge)
 
 **File:** `internal/isolation/tart.go`
 
