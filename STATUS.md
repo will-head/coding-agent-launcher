@@ -18,7 +18,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| [#5](https://github.com/will-head/coding-agent-launcher/pull/5) | create-pr/tart-wrapper | Add Tart wrapper with JSON parsing, auto-install, and cache sharing | 2026-02-01 |
+| *No PRs awaiting review* | | | |
 
 ---
 
@@ -34,7 +34,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| *No PRs awaiting testing* | | | | |
+| [#5](https://github.com/will-head/coding-agent-launcher/pull/5) | create-pr/tart-wrapper | Add Tart wrapper with JSON parsing, auto-install, and cache sharing | Claude Sonnet 4.5 | 2026-02-01 |
 
 ---
 

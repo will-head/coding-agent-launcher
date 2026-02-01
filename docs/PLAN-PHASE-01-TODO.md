@@ -12,7 +12,7 @@
 
 ---
 
-## 1.3 Tart Wrapper **REFINED** (PR #5 - awaiting merge)
+## 1.3 Tart Wrapper **REFINED** (PR #5 - approved, needs testing)
 
 **File:** `internal/isolation/tart.go`
 
@@ -21,7 +21,7 @@
 2. Wrap Tart CLI commands:
    - `Clone(image, name)` - clone from registry or local VM
    - `Set(name, cpu, memory, disk)` - configure VM resources
-   - `Run(name, headless, vnc, vncExperimental, dirs)` - start VM
+   - `Run(name, headless, vnc, dirs)` - start VM (vnc always uses experimental mode)
    - `Stop(name, force)` - stop VM
    - `Delete(name)` - delete VM
    - `List()` - list VMs with JSON format for sizes
