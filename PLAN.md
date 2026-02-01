@@ -13,7 +13,7 @@
 
 Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via cal-bootstrap, transparent proxy for network reliability, comprehensive git safety checks, VM detection capabilities, first-run/logout git automation, Tart cache sharing for nested VMs, and Ghostty terminal emulator are all operational.
 
-**Active Work:** Phase 1 (CLI Foundation) in progress. Project scaffolding complete (PR #3). Next: Configuration Management (1.2).
+**Active Work:** Phase 1 (CLI Foundation) in progress. Project scaffolding (PR #3) and Configuration Management (PR #4) complete. Next: Tart Wrapper (1.3).
 
 ---
 
