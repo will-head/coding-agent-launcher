@@ -122,10 +122,13 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
    - `CAL_VM=true`: Display "Running in cal-dev VM (isolated environment)" — approvals auto-granted
    - Any other value (empty, unset, etc.): Display "Running on HOST machine (not isolated)" — approvals required
    - If check fails: default to HOST (require approval)
-4. Run `git status` and `git fetch` (ask approval on HOST; auto-approved when `CAL_VM=true`)
-5. Read `PLAN.md` for overview and current phase status
-6. Read active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`) for current tasks
-7. Report status and suggest next steps using [Numbered Choice Presentation](docs/WORKFLOWS.md#numbered-choice-presentation)
+4. Run `git status` to see current branch, then **switch to main if not already there** with `git checkout main && git pull` (ask approval on HOST; auto-approved when `CAL_VM=true`)
+5. Run `git fetch` to get latest remote state
+6. Read `PLAN.md` for overview and current phase status (always read from main branch)
+7. Read active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`) for current tasks
+8. Report status and suggest next steps using [Numbered Choice Presentation](docs/WORKFLOWS.md#numbered-choice-presentation)
+
+**Why main branch?** STATUS.md and PLAN.md are only updated on main (per [Documentation Updates on Main](docs/WORKFLOWS.md#documentation-updates-on-main)). Reading from feature branches may show stale data.
 
 **Note:** Only read the active phase TODO file. Do not read future phase files until the current phase is complete.
 

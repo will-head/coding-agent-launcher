@@ -295,7 +295,16 @@ Every workflow follows this procedure at session start:
 1. **Read the workflow file** - Read the appropriate `docs/WORKFLOW-*.md`
 2. **Reiterate to user** - Summarize the workflow steps and key principles in your own words
 3. **Confirm understanding** - Acknowledge understanding before proceeding
-4. **Proceed with standard session start** - git status, PLAN.md, active phase TODO, environment check
+4. **Proceed with standard session start:**
+   - Run `echo $CAL_VM` to check environment (must happen before any approval-gated step)
+   - Run `git status` to see current branch
+   - **CRITICAL:** If not on main branch, switch to main with `git checkout main && git pull` before reading STATUS.md or PLAN.md
+   - Run `git fetch` to get latest remote state
+   - Read PLAN.md for overview and current phase status
+   - Read active phase TODO file (e.g., `docs/PLAN-PHASE-01-TODO.md`) for current tasks
+   - Report status and suggest next steps
+
+**Why main branch first?** STATUS.md and PLAN.md are the source of truth and only updated on main (per [Documentation Updates on Main](#documentation-updates-on-main)). Reading them from a feature branch may show stale data.
 
 This ensures both agent and user have shared understanding of the workflow being followed.
 

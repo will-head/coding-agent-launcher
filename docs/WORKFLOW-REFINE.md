@@ -60,6 +60,8 @@ Use Refine workflow when:
 
 ### Step 1: Read PLAN.md, Phase TODO File, and BUGS.md
 
+**Note:** Session Start Procedure ensures you're on main branch before this step (PLAN.md is only updated on main).
+
 **First, read `PLAN.md`** to determine the current active phase:
 - Check "Current Status" section to identify active phase (e.g., "Phase 0 (Bootstrap): Mostly Complete")
 - Note the active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`)

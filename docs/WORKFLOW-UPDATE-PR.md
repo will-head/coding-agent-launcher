@@ -55,6 +55,8 @@ This ensures fixes meet project standards and don't repeat known issues.
 
 ### Step 2: Read Changes Queue
 
+**Note:** Session Start Procedure ensures you're on main branch before this step (STATUS.md is only updated on main).
+
 Read `STATUS.md` to find the first PR in "Needs Changes" section:
 
 ```markdown

@@ -67,6 +67,8 @@ Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shar
 
 ### Step 1: Read Review Queue
 
+**Note:** Session Start Procedure ensures you're on main branch before this step (STATUS.md is only updated on main).
+
 Read `STATUS.md` to find the first PR in "Needs Review" section:
 
 ```markdown
