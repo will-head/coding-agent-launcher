@@ -12,7 +12,7 @@
 
 ---
 
-## 1.3 Tart Wrapper
+## 1.3 Tart Wrapper **REFINED**
 
 **File:** `internal/isolation/tart.go`
 
@@ -32,13 +32,81 @@
 5. Support `--dir` flag for Tart cache sharing (read-only)
 6. Auto-install Tart via Homebrew if missing
 
+**Implementation Details:**
+
+**JSON Parsing:**
+- Use Go's `encoding/json` package to parse `tart list --format json` output
+- No external dependency on jq CLI tool
+- Define Go structs for Tart's JSON schema (VM info, list output)
+- Handle parsing errors gracefully with context
+
+**Tart Auto-Install:**
+- Detect if Tart is installed by checking `tart version`
+- If missing, prompt user: "Tart is not installed. Install via Homebrew? [Y/n]"
+- On confirmation, run `brew install cirruslabs/cli/tart`
+- Also check if Homebrew is installed first; fail with helpful message if missing
+- Verify installation succeeded before proceeding
+
+**IP Polling Strategy:**
+- Poll `tart ip <vm>` every 2-3 seconds for up to 60 seconds total
+- Show progress indicator (spinner or dots) during polling
+- Clear feedback: "Waiting for VM to boot..." with elapsed time
+- Return error if timeout exceeded with helpful message
+- After IP obtained, optionally test SSH readiness (port 22) with `nc -z -w 2`
+
+**VNC Mode:**
+- Use `--vnc-experimental` flag by default for all GUI mode starts
+- Enables bidirectional clipboard (better UX)
+- No separate flag needed; always use experimental mode for VNC
+
+**Cache Sharing:**
+- Always add `--dir=tart-cache:~/.tart/cache:ro` to all `tart run` operations
+- Gracefully degrade if path doesn't exist (Tart will ignore invalid paths)
+- Read-only mount to prevent VM from corrupting host cache
+- Enables nested VM performance boost
+
+**Error Handling:**
+- Wrap all Tart command errors with operation context
+- Format: `fmt.Errorf("failed to clone VM %s: %w", name, err)`
+- Capture both stdout and stderr from Tart commands
+- Provide actionable error messages where possible
+- Distinguish between "not found", "already exists", and other failure modes
+
+**State Tracking:**
+- Always query Tart for fresh state (no caching)
+- Implement helper methods: `IsRunning(name)`, `Exists(name)`, `GetState(name)`
+- Use `tart list` output to determine state
+- States: running, stopped, not found
+
+**Testing:**
+- Unit tests: Mock `exec.Command` to test command generation and error handling
+- Integration tests: Separate test suite that requires real Tart installation
+- Test coverage: all methods, error paths, edge cases (missing VM, already running, etc.)
+- CI: Unit tests always run, integration tests optional (tagged with build tag)
+
 **Key learnings from Phase 0 (ADR-002):**
-- Use `tart list --format json` with jq for accurate size data
+- Use `tart list --format json` for accurate size data (parse with Go, not jq)
 - VM IP polling: `tart ip` may fail while VM boots (30-60s)
 - SSH readiness: test port 22 with `nc -z -w 2` after IP available
-- `vm_exists()` / `vm_running()`: use BSD-compatible awk (flag variable pattern, not `-qw`)
+- `vm_exists()` / `vm_running()`: query fresh state each time, no caching
 - VNC experimental mode (`--vnc-experimental`) for bidirectional clipboard
 - Cache sharing: `--dir=tart-cache:~/.tart/cache:ro` on all VM start operations
+
+**Acceptance Criteria:**
+- All Tart operations wrapped with clear Go API
+- Errors include helpful context and operation details
+- IP polling shows progress and completes within 60s or fails clearly
+- Auto-install prompts user and handles missing Homebrew gracefully
+- Cache sharing enabled on all runs without user configuration
+- Unit tests cover command generation and error handling
+- Integration tests verify real Tart interactions (optional in CI)
+- No external dependencies (jq not required)
+
+**Constraints:**
+- Must work on macOS only (Tart is macOS-specific)
+- Requires Homebrew for auto-install feature
+- VM IP polling timeout is 60s max (user may need to wait during boot)
+- Cache sharing path is hard-coded to `~/.tart/cache`
 
 ---
 

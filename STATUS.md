@@ -10,7 +10,7 @@
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| | | | | |
+| Tart Wrapper | PLAN-PHASE-01-TODO.md § 1.3 | Wrap Tart CLI for VM operations with Go's encoding/json, auto-install prompts, IP polling with progress, error context wrapping | 2026-02-01 | No jq dependency, always-on cache sharing, VNC experimental default |
 
 ---
 
