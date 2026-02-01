@@ -50,4 +50,18 @@
 
 **Note:** These items are not essential for Phase 0 completion:
 
+- [ ] **Investigate tmux-resurrect persistence across VM lifecycle**
+  - Issue: tmux-resurrect and tmux-continuum don't survive --stop or --restart
+  - Expected: Sessions should persist when VM is stopped and restarted
+  - Current: Sessions are lost after VM stop/restart
+  - Action: Debug why resurrect data doesn't survive VM lifecycle events
+  - Location: Resurrect data should be in ~/.local/share/tmux/resurrect/
+
+- [ ] **Add tmux status prompt for new shells**
+  - Show message when new shell starts: "tmux status saved automatically - use [prefix] d to close"
+  - Detect current tmux prefix key (in case user has changed from default Ctrl+b)
+  - Display actual prefix in prompt message
+  - Only show when inside tmux session
+  - Add to .zshrc or tmux configuration
+
 - [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning
