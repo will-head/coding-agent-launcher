@@ -34,7 +34,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| [#4](https://github.com/will-head/coding-agent-launcher/pull/4) | create-pr/config-management | Add configuration management with validation | Claude Sonnet 4.5 | 2026-02-01 |
+| *No PRs awaiting testing* | | | | |
 
 ---
 
@@ -42,7 +42,7 @@
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|
-| *No PRs ready to merge* | | | | |
+| [#4](https://github.com/will-head/coding-agent-launcher/pull/4) | create-pr/config-management | Add configuration management with validation | User | 2026-02-01 |
 
 ---
 
