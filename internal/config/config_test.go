@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -32,6 +33,22 @@ func TestLoadConfig(t *testing.T) {
 		}
 		if cfg.Isolation.Defaults.Proxy.Mode != "auto" {
 			t.Errorf("Expected Proxy mode default 'auto', got %s", cfg.Isolation.Defaults.Proxy.Mode)
+		}
+	})
+
+	// Test loading config when both paths are empty (should use defaults)
+	t.Run("empty paths use defaults", func(t *testing.T) {
+		cfg, err := LoadConfig("", "")
+		if err != nil {
+			t.Fatalf("LoadConfig with empty paths returned unexpected error: %v", err)
+		}
+
+		// Verify defaults are loaded
+		if cfg.Isolation.Defaults.VM.CPU != 4 {
+			t.Errorf("Expected CPU default 4, got %d", cfg.Isolation.Defaults.VM.CPU)
+		}
+		if cfg.Isolation.Defaults.VM.Memory != 8192 {
+			t.Errorf("Expected Memory default 8192, got %d", cfg.Isolation.Defaults.VM.Memory)
 		}
 	})
 
@@ -124,6 +141,31 @@ isolation:
 		}
 		if cfg.Isolation.Defaults.VM.BaseImage != "ghcr.io/cirruslabs/macos-sequoia-base:latest" {
 			t.Errorf("Expected BaseImage default, got %s", cfg.Isolation.Defaults.VM.BaseImage)
+		}
+	})
+
+	// Test malformed YAML file (should return error)
+	t.Run("malformed YAML returns error", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config.yaml")
+
+		malformedContent := `
+version: 1
+isolation:
+  defaults:
+    vm:
+      cpu: [this is not valid yaml syntax
+`
+		if err := os.WriteFile(configPath, []byte(malformedContent), 0644); err != nil {
+			t.Fatalf("Failed to write malformed config: %v", err)
+		}
+
+		_, err := LoadConfig(configPath, "")
+		if err == nil {
+			t.Error("Expected error for malformed YAML, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to parse config file") {
+			t.Errorf("Expected parse error message, got: %v", err)
 		}
 	})
 }
@@ -265,8 +307,8 @@ func TestValidateConfig(t *testing.T) {
 			Isolation: IsolationConfig{
 				Defaults: DefaultsConfig{
 					VM: VMConfig{
-						CPU:    4, // Valid
-						Memory: 0, // Invalid
+						CPU:    4,   // Valid
+						Memory: 100, // Invalid (below 256 MB minimum)
 					},
 				},
 			},
@@ -276,9 +318,32 @@ func TestValidateConfig(t *testing.T) {
 		if err == nil {
 			t.Error("Expected validation error for invalid memory, got nil")
 		}
-		expectedMsg := "Invalid memory '0'"
+		expectedMsg := "Invalid memory '100'"
 		if err.Error()[:len(expectedMsg)] != expectedMsg {
 			t.Errorf("Expected error message to start with '%s', got '%s'", expectedMsg, err.Error())
+		}
+	})
+
+	t.Run("minimum valid memory passes validation", func(t *testing.T) {
+		cfg := &Config{
+			Version: 1,
+			Isolation: IsolationConfig{
+				Defaults: DefaultsConfig{
+					VM: VMConfig{
+						CPU:       4,
+						Memory:    256, // Tart minimum (v2.4.3+)
+						DiskSize:  80,
+						BaseImage: "test-image",
+					},
+					Proxy: ProxyConfig{
+						Mode: "auto",
+					},
+				},
+			},
+		}
+
+		if err := cfg.Validate(""); err != nil {
+			t.Errorf("Validate returned unexpected error for minimum valid memory: %v", err)
 		}
 	})
 
@@ -380,7 +445,7 @@ func TestConfigPathValidation(t *testing.T) {
 		if err == nil {
 			t.Error("Expected validation error, got nil")
 		}
-		if !contains(err.Error(), configPath) {
+		if !strings.Contains(err.Error(), configPath) {
 			t.Errorf("Expected error message to include config path '%s', got '%s'", configPath, err.Error())
 		}
 	})
@@ -404,21 +469,8 @@ func TestConfigPathValidation(t *testing.T) {
 		if err == nil {
 			t.Error("Expected validation error, got nil")
 		}
-		if !contains(err.Error(), vmConfigPath) {
+		if !strings.Contains(err.Error(), vmConfigPath) {
 			t.Errorf("Expected error message to include VM config path '%s', got '%s'", vmConfigPath, err.Error())
 		}
 	})
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && s[:len(substr)] == substr || (len(s) > len(substr) && findSubstring(s, substr))
-}
-
-func findSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

@@ -22,8 +22,7 @@ var configShowCmd = &cobra.Command{
 }
 
 func init() {
-	configShowCmd.Flags().StringVar(&vmName, "vm", "", "VM name to show config for")
-	configShowCmd.Flags().StringVar(&vmName, "v", "", "VM name to show config for (shorthand)")
+	configShowCmd.Flags().StringVarP(&vmName, "vm", "v", "", "VM name to show config for")
 	configCmd.AddCommand(configShowCmd)
 	rootCmd.AddCommand(configCmd)
 }

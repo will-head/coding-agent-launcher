@@ -1,3 +1,7 @@
+// Package config provides configuration management for CAL.
+// It supports loading from global (~/.cal/config.yaml) and per-VM
+// (~/.cal/isolation/vms/{name}/vm.yaml) configuration files with
+// proper precedence: hard-coded defaults → global config → per-VM config.
 package config
 
 import (
@@ -9,24 +13,34 @@ import (
 )
 
 const (
-	minCPU         = 1
-	maxCPU         = 32
-	minMemory      = 2048
-	maxMemory      = 65536
-	minDiskSize    = 10
-	maxDiskSize    = 500
+	// Validation limits based on Tart's actual constraints.
+	// Source: https://github.com/cirruslabs/tart/issues/692
+	// Tart v2.4.3+ supports: CPU >= 1, Memory >= 256 MB
+	//
+	// Note: While Tart allows 256 MB minimum, practical macOS VMs
+	// need 2GB+ memory. These are technical limits, not recommendations.
+	minCPU      = 1     // Tart minimum (v2.4.3+)
+	maxCPU      = 32    // Practical limit for M-series Max/Ultra
+	minMemory   = 256   // Tart minimum in MB (v2.4.3+)
+	maxMemory   = 65536 // 64 GB, practical limit
+	minDiskSize = 10    // Reasonable minimum in GB
+	maxDiskSize = 500   // Reasonable maximum in GB
+
 	currentVersion = 1
 )
 
+// Config represents the top-level CAL configuration structure.
 type Config struct {
 	Version   int             `yaml:"version"`
 	Isolation IsolationConfig `yaml:"isolation"`
 }
 
+// IsolationConfig contains isolation-specific settings.
 type IsolationConfig struct {
 	Defaults DefaultsConfig `yaml:"defaults"`
 }
 
+// DefaultsConfig holds default configuration values for various subsystems.
 type DefaultsConfig struct {
 	VM     VMConfig     `yaml:"vm"`
 	GitHub GitHubConfig `yaml:"github"`
@@ -34,25 +48,33 @@ type DefaultsConfig struct {
 	Proxy  ProxyConfig  `yaml:"proxy"`
 }
 
+// VMConfig specifies VM resource configuration.
 type VMConfig struct {
-	CPU       int    `yaml:"cpu"`
-	Memory    int    `yaml:"memory"`
-	DiskSize  int    `yaml:"disk_size"`
+	CPU       int    `yaml:"cpu"`       // Number of CPU cores
+	Memory    int    `yaml:"memory"`    // Memory in MB
+	DiskSize  int    `yaml:"disk_size"` // Disk size in GB
 	BaseImage string `yaml:"base_image"`
 }
 
+// GitHubConfig contains GitHub-related settings.
 type GitHubConfig struct {
 	DefaultBranchPrefix string `yaml:"default_branch_prefix"`
 }
 
+// OutputConfig specifies output synchronization settings.
 type OutputConfig struct {
 	SyncDir string `yaml:"sync_dir"`
 }
 
+// ProxyConfig contains proxy mode settings.
 type ProxyConfig struct {
-	Mode string `yaml:"mode"`
+	Mode string `yaml:"mode"` // One of: auto, on, off
 }
 
+// LoadConfig loads configuration from global and per-VM paths with proper precedence.
+// If paths are empty or files don't exist, hard-coded defaults are used.
+// Per-VM config overrides global config, which overrides defaults.
+// Returns error if files exist but cannot be read/parsed, or if validation fails.
 func LoadConfig(globalPath, vmPath string) (*Config, error) {
 	cfg := &Config{
 		Version: currentVersion,
@@ -61,26 +83,29 @@ func LoadConfig(globalPath, vmPath string) (*Config, error) {
 		},
 	}
 
+	// Load global config if path provided
 	if globalPath != "" {
 		if err := loadConfigFile(cfg, globalPath); err != nil {
 			return nil, err
 		}
 	}
 
+	// Load per-VM config if path provided (overrides global)
 	if vmPath != "" {
 		if err := loadVMConfigFile(cfg, vmPath); err != nil {
 			return nil, err
 		}
 	}
 
-	path := ""
+	// Use the most specific path for validation error messages
+	validationPath := ""
 	if vmPath != "" {
-		path = vmPath
+		validationPath = vmPath
 	} else if globalPath != "" {
-		path = globalPath
+		validationPath = globalPath
 	}
 
-	if err := cfg.Validate(path); err != nil {
+	if err := cfg.Validate(validationPath); err != nil {
 		return nil, err
 	}
 
@@ -185,6 +210,9 @@ func mergeConfig(cfg *Config, loaded *Config) {
 	}
 }
 
+// Validate checks that all configuration values are within valid ranges.
+// Returns a detailed error message including field name, invalid value,
+// expected range, and file path (if provided).
 func (c *Config) Validate(path string) error {
 	if c.Isolation.Defaults.VM.CPU < minCPU || c.Isolation.Defaults.VM.CPU > maxCPU {
 		return c.validationError("CPU", c.Isolation.Defaults.VM.CPU, fmt.Sprintf("between %d and %d", minCPU, maxCPU), path)
@@ -211,6 +239,7 @@ func (c *Config) validationError(field string, value interface{}, expected strin
 	return fmt.Errorf("Invalid %s '%v': must be %s", field, value, expected)
 }
 
+// GetDefaultConfigPath returns the path to the global config file (~/.cal/config.yaml).
 func GetDefaultConfigPath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -219,6 +248,8 @@ func GetDefaultConfigPath() (string, error) {
 	return filepath.Join(homeDir, ".cal", "config.yaml"), nil
 }
 
+// GetVMConfigPath returns the path to a specific VM's config file
+// (~/.cal/isolation/vms/{vmName}/vm.yaml).
 func GetVMConfigPath(vmName string) (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
