@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-cal
+/cal
 *.test
 *.out
 
@@ -70,6 +70,7 @@ logs/
 tmp/
 temp/
 *.tmp
+test-output/
 
 # VM output directory
 cal-output/
