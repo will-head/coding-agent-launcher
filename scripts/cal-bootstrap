@@ -163,6 +163,42 @@ stop_vm() {
     fi
 }
 
+# Save tmux sessions before stopping VM
+save_tmux_sessions() {
+    local vm="$1"
+
+    # Only save if VM is running
+    if ! vm_running "$vm"; then
+        return 0
+    fi
+
+    # Get VM IP
+    local vm_ip
+    vm_ip=$("$TART" ip "$vm" 2>/dev/null || echo "")
+
+    if [ -z "$vm_ip" ]; then
+        echo "  ⚠ Could not get VM IP to save tmux sessions"
+        return 0  # Non-fatal
+    fi
+
+    echo "  Saving tmux sessions..."
+
+    # SSH and trigger synchronous tmux save using display-message (blocks until complete)
+    # Use full path to tmux since Homebrew isn't in PATH for non-login shells
+    save_result=$(ssh -o ConnectTimeout=5 \
+        -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        "$VM_USER@$vm_ip" \
+        "/opt/homebrew/bin/tmux run-shell -b '~/.tmux/plugins/tmux-resurrect/scripts/save.sh'; sleep 0.5; echo done" 2>&1)
+
+    if echo "$save_result" | grep -q "done"; then
+        echo "  ✓ Tmux sessions saved"
+    else
+        echo "  ⚠ Could not save tmux sessions: $save_result"
+    fi
+}
+
 # Start VM in background and wait for IP/SSH
 start_vm_background() {
     local vm="$1"
@@ -1320,8 +1356,9 @@ do_init() {
 
     # SSH into the VM with tmux (always)
     # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
+    # Start server, explicitly trigger restore, then attach to cal-dev (or create if not restored)
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal-dev"
+        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh start-server; ~/scripts/tmux-wrapper.sh run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; sleep 1; ~/scripts/tmux-wrapper.sh attach -t cal-dev 2>/dev/null || ~/scripts/tmux-wrapper.sh new-session -s cal-dev"
 }
 
 # === RUN MODE ===
@@ -1419,8 +1456,9 @@ do_run() {
 
     # SSH into the VM with tmux (always)
     # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
+    # Start server, explicitly trigger restore, then attach to cal-dev (or create if not restored)
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal-dev"
+        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh start-server; ~/scripts/tmux-wrapper.sh run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; sleep 1; ~/scripts/tmux-wrapper.sh attach -t cal-dev 2>/dev/null || ~/scripts/tmux-wrapper.sh new-session -s cal-dev"
 }
 
 # === STOP MODE ===
@@ -1439,6 +1477,10 @@ do_stop() {
         echo "$VM_DEV is not running."
         exit 0
     fi
+
+    # Save tmux sessions before stopping
+    save_tmux_sessions "$VM_DEV"
+    echo ""
 
     echo "Stopping $VM_DEV..."
     "$TART" stop "$VM_DEV"
@@ -1462,6 +1504,10 @@ do_restart() {
 
     # Stop if running
     if vm_running "$VM_DEV"; then
+        # Save tmux sessions before stopping
+        save_tmux_sessions "$VM_DEV"
+        echo ""
+
         echo "Stopping $VM_DEV..."
         "$TART" stop "$VM_DEV"
         sleep 2
@@ -1512,8 +1558,9 @@ do_restart() {
 
     # SSH into the VM with tmux (always)
     # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
+    # Start server, explicitly trigger restore, then attach to cal-dev (or create if not restored)
     ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal-dev"
+        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh start-server; ~/scripts/tmux-wrapper.sh run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; sleep 1; ~/scripts/tmux-wrapper.sh attach -t cal-dev 2>/dev/null || ~/scripts/tmux-wrapper.sh new-session -s cal-dev"
 }
 
 # === GUI MODE ===
