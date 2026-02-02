@@ -2,7 +2,7 @@
 
 > [← Back to PLAN.md](../PLAN.md)
 
-**Status:** Mostly Complete
+**Status:** Complete
 
 **Goal:** Manual VM setup and bootstrap automation documented and implemented.
 
@@ -545,3 +545,50 @@
     - scripts/vm-setup.sh (added tmux prompt to .zshrc)
     - scripts/test-tmux-status-prompt.sh (new unit test)
   - **Result:** Users see helpful reminder with correct prefix key when opening new shells in tmux
+
+### Tmux-Resurrect First-Run Fix (Phase 0 Future Improvement - Complete)
+- [x] **Prevent tmux-resurrect from capturing authentication screen** (completed 2026-02-02)
+  - **Problem:** tmux-resurrect auto-save captured vm-auth authentication screen on first boot, showing stale auth prompts when session restored
+  - **Solution:** Conditionally load TPM plugins only after ~/.cal-first-run flag is removed
+  - **Implementation:**
+    - Modified tmux.conf generation to check for ~/.cal-first-run before loading TPM
+    - Added client-detached hook to save sessions on Ctrl+b d
+    - Updated script header to document first-run behavior
+  - **Behavior:**
+    - During first-run (flag exists): TPM doesn't load, no session capture
+    - After first-run (flag removed): TPM loads normally, full session persistence
+  - **Testing:**
+    - ✅ Verified plugins don't load when first-run flag exists
+    - ✅ Verified plugins load correctly after flag removal
+    - ✅ Verified detach hook is properly configured
+  - **Files Modified:**
+    - scripts/vm-tmux-resurrect.sh
+  - **Commit:** d94c3b3
+  - **Result:** Clean shell after authentication, no stale auth screen in restored sessions
+
+### First Login Git Updates (Complete)
+- [x] Created vm-first-run.sh for post-restore repo sync (completed 2026-01-26)
+- [x] Separated vm-auth.sh (--init only) from vm-first-run.sh (restore only) (completed 2026-01-26)
+- [x] Added logout git status check in vm-setup.sh (completed 2026-01-26)
+- [x] Fixed first-run flag setting reliability (completed 2026-01-26)
+- [x] Simplified vm-first-run.sh to check for remote updates only (completed 2026-01-26)
+- [x] Fixed logout cancel to not re-run keychain unlock (completed 2026-01-26)
+
+### Console Access & Clipboard Solutions (Complete)
+- [x] **Console Access & Clipboard Solutions** (completed 2026-01-31)
+  - All implementation and documentation complete
+  - GUI console with VNC experimental mode implemented
+  - Bidirectional clipboard support working
+  - Documented in bootstrap.md with comprehensive troubleshooting
+
+### Known Issues Resolved
+- [x] **Opencode VM issues** (investigated 2026-01-25, resolved)
+  - **Status:** ✅ Resolved - opencode works correctly in VM
+  - **Finding:** `opencode run` works when TERM is inherited from environment, but hangs when TERM is explicitly set in command environment
+  - **Root cause:** Opencode bug in TERM environment variable handling (not a VM issue)
+  - **Workaround:** Use `opencode run` normally (TERM inherited) - works correctly
+  - **Documentation:**
+    - [opencode-vm-summary.md](opencode-vm-summary.md) - Quick reference
+    - [opencode-vm-investigation.md](opencode-vm-investigation.md) - Full investigation
+    - [zai-glm-concurrency-error-investigation.md](zai-glm-concurrency-error-investigation.md) - Previous investigation (superseded)
+  - **Test script:** [test-opencode-vm.sh](../../scripts/test-opencode-vm.sh) - Automated testing
