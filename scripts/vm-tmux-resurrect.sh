@@ -53,6 +53,10 @@ cat > "$TMUX_CONF" <<'EOF'
 # CAL Tmux Configuration
 # Session persistence with tmux-resurrect and tmux-continuum
 
+# Set PATH to include Homebrew so tmux-resurrect scripts can find tmux command
+# This is critical for auto-save and manual save to work correctly
+set-environment -g PATH "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
 # Better terminal support
 set -g default-terminal "screen-256color"
 

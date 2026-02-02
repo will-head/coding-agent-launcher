@@ -475,3 +475,13 @@
   - Idempotent installer with JSON validation and backup
   - Supports multiple color schemes (blue, green, yellow, orange, magenta, cyan, red, white)
   - Implementation in scripts/statusline-command.sh and scripts/setup-claude-statusline.sh
+
+### Tmux-Resurrect PATH Fix (Phase 0 Future Improvement - Complete)
+- [x] **Fix tmux-resurrect session persistence across VM lifecycle** (completed 2026-02-02)
+  - **Issue:** tmux sessions lost on VM restart, save files contained only "state state state"
+  - **Root Cause:** tmux-resurrect scripts couldn't find `tmux` command - Homebrew not in PATH
+  - **Solution:** Added `set-environment -g PATH` to tmux.conf template in vm-tmux-resurrect.sh
+  - **Verification:** Tested save/restore across VM restart, all windows/panes preserved correctly
+  - **Known Behavior:** Extra prompts may appear in restored panes (harmless visual artifact from pane contents restoration)
+  - **Files Modified:** scripts/vm-tmux-resurrect.sh
+  - **Bug Resolved:** BUG-005

@@ -1,8 +1,9 @@
 # BUG-005: tmux-resurrect Session Persistence Fails Across VM Restart
 
-**Status:** 🔴 OPEN
+**Status:** 🟢 RESOLVED
 **Priority:** Medium
 **Discovered:** 2026-02-02
+**Resolved:** 2026-02-02
 **Phase:** 0 (Bootstrap)
 **Component:** tmux-resurrect, VM lifecycle
 
@@ -304,3 +305,45 @@ The corrupted save data ("state state state") suggests:
 - Possible missing dependencies for save script
 
 This needs deeper investigation into the tmux-resurrect plugin itself, not just the cal-bootstrap integration.
+
+---
+
+## Resolution
+
+**Resolved:** 2026-02-02
+
+### Root Cause
+
+The tmux-resurrect save scripts were unable to find the `tmux` command because `/opt/homebrew/bin` was not in the PATH when scripts were executed via `tmux run-shell`. The PATH in tmux's environment was `/usr/bin:/bin:/usr/sbin:/sbin`, which does not include Homebrew's installation directory.
+
+When the save script ran and couldn't find `tmux`, it produced the corrupted output "state state state" instead of actual session data.
+
+### Solution
+
+Added `set-environment -g PATH` to the tmux.conf template in `scripts/vm-tmux-resurrect.sh` to include Homebrew directories:
+
+```tmux
+# Set PATH to include Homebrew so tmux-resurrect scripts can find tmux command
+# This is critical for auto-save and manual save to work correctly
+set-environment -g PATH "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+```
+
+This ensures all processes spawned by tmux (including resurrect scripts run via `tmux run-shell`) have access to the Homebrew-installed `tmux` command.
+
+### Verification
+
+Tested and verified:
+- ✅ Save files now contain valid session data (panes, windows, layouts, directories)
+- ✅ Manual save (Ctrl+b Ctrl+s) works correctly
+- ✅ Auto-save (every 15 minutes) produces valid data
+- ✅ Sessions restore correctly after VM restart
+- ✅ Multiple windows and panes preserved
+- ✅ Window layouts restored correctly
+
+### Known Behavior
+
+When `@resurrect-capture-pane-contents 'on'` is enabled, extra shell prompts may appear at the top of restored panes. This is expected behavior - the pane scrollback contents are restored, then a new shell spawns and adds its own prompt. This is a harmless visual artifact that can be cleared with `clear` or Ctrl+L.
+
+### Files Modified
+
+- `scripts/vm-tmux-resurrect.sh` - Added PATH setting to tmux.conf template
