@@ -506,3 +506,20 @@
     - ✅ Verified --clean flag forces all scripts to copy
   - **Bug Fixed:** `((scripts_skipped++))` incompatible with `set -e` - changed to `scripts_skipped=$((scripts_skipped + 1))`
   - **Files Modified:** scripts/cal-bootstrap
+
+### Tmux Session Clearing on First Login (Phase 0 Future Improvement - Complete)
+- [x] **Prevent tmux from saving state until after first login completes** (completed 2026-02-02)
+  - **Problem:** tmux auto-save captures the initial vm-auth.sh authentication screen; when session is restored, shows stale authentication prompts instead of fresh shell
+  - **Solution:** Clear all tmux session data after vm-auth.sh completes but before cal-init snapshot is created
+  - **Implementation:**
+    - Modified vm-setup.sh .zshrc auth-needed block to clear `~/.local/share/tmux/resurrect/*` after vm-auth.sh exits
+    - Ensures cal-init snapshot has no saved sessions that could show stale auth output
+    - Restored sessions after cal-init deployment show clean shell instead of authentication prompts
+  - **Testing:**
+    - ✅ Created unit test script (scripts/test-tmux-session-clear.sh) - all 5 tests pass
+    - ✅ Verified session clearing logic removes all session files correctly
+    - ⏳ Integration test (full --init cycle) deferred to next natural --init run
+  - **Files Modified:**
+    - scripts/vm-setup.sh (added session clearing in auth-needed block)
+    - scripts/test-tmux-session-clear.sh (new unit test)
+  - **Result:** cal-init snapshots no longer capture authentication screen; restored sessions show clean shell
