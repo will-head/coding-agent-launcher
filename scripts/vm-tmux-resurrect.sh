@@ -11,6 +11,7 @@
 # - Save on logout via .zlogout hook
 # - Restore pane contents (scrollback up to 5000 lines)
 # - Restore sessions on login
+# - Disabled during first-run to prevent capturing authentication screen
 #
 # Usage: Run this script during VM setup (called from vm-setup.sh)
 
@@ -138,8 +139,13 @@ set -g @resurrect-capture-pane-contents 'on'
 set -g @continuum-restore 'on'
 set -g @continuum-save-interval '15'
 
-# Initialize TPM (keep this line at the very bottom)
-run '~/.tmux/plugins/tpm/tpm'
+# Save session state on detach (Ctrl+b d)
+set-hook -g client-detached 'run-shell "~/.tmux/plugins/tmux-resurrect/scripts/save.sh"'
+
+# Initialize TPM only after first-run completes
+# This prevents tmux-resurrect from capturing the authentication screen during initial setup
+# The ~/.cal-first-run flag is removed by vm-first-run.sh after first login
+run-shell 'if [ ! -f ~/.cal-first-run ]; then ~/.tmux/plugins/tpm/tpm; fi'
 EOF
 
 echo "✓ tmux.conf configured"
