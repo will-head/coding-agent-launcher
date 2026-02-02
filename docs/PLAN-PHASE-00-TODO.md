@@ -58,11 +58,3 @@
   - Add to .zshrc or tmux configuration
 
 - [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning
-
-- [ ] **Optimize cal-bootstrap --run and --restart startup time**
-  - Investigate if script deployment is needed on every --run/--restart
-  - Scripts are already in VM from --init, may only need deployment on first run
-  - Current behavior: copies 5 scripts (~60KB) on every run/restart
-  - Question: Can we skip script deployment if scripts already exist and are current?
-  - Identify other operations in --run/--restart that could be skipped or optimized
-  - Goal: Minimize startup latency for daily use

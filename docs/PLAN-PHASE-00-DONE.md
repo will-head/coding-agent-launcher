@@ -485,3 +485,24 @@
   - **Known Behavior:** Extra prompts may appear in restored panes (harmless visual artifact from pane contents restoration)
   - **Files Modified:** scripts/vm-tmux-resurrect.sh
   - **Bug Resolved:** BUG-005
+
+### Script Deployment Optimization (Phase 0 Future Improvement - Complete)
+- [x] **Optimize cal-bootstrap --run and --restart startup time** (completed 2026-02-02)
+  - **Problem:** cal-bootstrap copied all 5 scripts (~60KB) on every --run and --restart, even when unchanged
+  - **Solution:** Implemented MD5 checksum comparison to detect changes before copying
+  - **Implementation:**
+    - Added `CLEAN_MODE` variable and `--clean` flag for safety escape hatch
+    - Modified `setup_scripts_folder()` to compare MD5 checksums between host and VM
+    - Only copies scripts that are new or changed (skips unchanged scripts)
+    - Clear visual feedback: ↻ (unchanged), ↑ (updated), + (new)
+    - `--clean` flag forces full copy regardless of checksums (for troubleshooting)
+  - **Performance Improvement:**
+    - Before: Always copies 5 scripts (~60KB, ~2-3 seconds)
+    - After: Skips all scripts if unchanged (~0.5 seconds for checksum checks)
+    - Savings: ~2 seconds per --run/--restart when scripts are current
+  - **Testing:**
+    - ✅ Verified unchanged scripts are skipped (all 5 skipped)
+    - ✅ Verified only changed scripts are copied (1 of 5 copied)
+    - ✅ Verified --clean flag forces all scripts to copy
+  - **Bug Fixed:** `((scripts_skipped++))` incompatible with `set -e` - changed to `scripts_skipped=$((scripts_skipped + 1))`
+  - **Files Modified:** scripts/cal-bootstrap

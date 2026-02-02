@@ -448,66 +448,72 @@ setup_scripts_folder() {
         return 1
     fi
 
-    echo "  Copying scripts to ~/scripts..."
+    # List of scripts to deploy
+    local scripts=("vm-setup.sh" "vm-auth.sh" "vm-first-run.sh" "tmux-wrapper.sh" "vm-tmux-resurrect.sh")
+    local scripts_to_copy=()
+    local scripts_skipped=0
 
-    # Copy vm-setup.sh
-    if [ -f "$SCRIPT_DIR/vm-setup.sh" ]; then
-        if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$SCRIPT_DIR/vm-setup.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
-            echo "    ✓ vm-setup.sh"
-        else
-            echo "    ✗ vm-setup.sh (copy failed)"
-        fi
+    # If --clean mode, always copy all scripts (skip checksum optimization)
+    if [ "$CLEAN_MODE" = true ]; then
+        echo "  Copying scripts to ~/scripts (--clean mode, skipping optimization)..."
+        scripts_to_copy=("${scripts[@]}")
     else
-        echo "    ⚠ vm-setup.sh not found"
+        echo "  Checking scripts (comparing checksums)..."
+
+        # Check each script and only copy if different or missing
+        for script in "${scripts[@]}"; do
+            local script_path="$SCRIPT_DIR/$script"
+
+            # Skip if script doesn't exist on host
+            if [ ! -f "$script_path" ]; then
+                echo "    ⚠ $script not found on host"
+                continue
+            fi
+
+            # Compute MD5 of host script
+            local host_md5
+            host_md5=$(md5 -q "$script_path" 2>> "$CAL_LOG")
+
+            # Get MD5 of VM script (if it exists)
+            local vm_md5
+            vm_md5=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                "${VM_USER}@${vm_ip}" "[ -f ~/scripts/$script ] && md5 -q ~/scripts/$script || echo 'missing'" 2>> "$CAL_LOG")
+
+            # Compare checksums
+            if [ "$host_md5" = "$vm_md5" ]; then
+                echo "    ↻ $script (unchanged)"
+                scripts_skipped=$((scripts_skipped + 1))
+            else
+                if [ "$vm_md5" = "missing" ]; then
+                    echo "    + $script (new)"
+                else
+                    echo "    ↑ $script (updated)"
+                fi
+                scripts_to_copy+=("$script")
+            fi
+        done
     fi
 
-    # Copy vm-auth.sh
-    if [ -f "$SCRIPT_DIR/vm-auth.sh" ]; then
-        if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$SCRIPT_DIR/vm-auth.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
-            echo "    ✓ vm-auth.sh"
-        else
-            echo "    ✗ vm-auth.sh (copy failed)"
+    # Copy scripts that need updating
+    if [ ${#scripts_to_copy[@]} -gt 0 ]; then
+        if [ "$CLEAN_MODE" != true ]; then
+            echo "  Copying ${#scripts_to_copy[@]} script(s)..."
         fi
-    else
-        echo "    ⚠ vm-auth.sh not found"
-    fi
 
-    # Copy vm-first-run.sh
-    if [ -f "$SCRIPT_DIR/vm-first-run.sh" ]; then
-        if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$SCRIPT_DIR/vm-first-run.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
-            echo "    ✓ vm-first-run.sh"
-        else
-            echo "    ✗ vm-first-run.sh (copy failed)"
-        fi
-    else
-        echo "    ⚠ vm-first-run.sh not found"
-    fi
+        for script in "${scripts_to_copy[@]}"; do
+            local script_path="$SCRIPT_DIR/$script"
 
-    # Copy tmux-wrapper.sh
-    if [ -f "$SCRIPT_DIR/tmux-wrapper.sh" ]; then
-        if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$SCRIPT_DIR/tmux-wrapper.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
-            echo "    ✓ tmux-wrapper.sh"
-        else
-            echo "    ✗ tmux-wrapper.sh (copy failed)"
-        fi
+            if [ -f "$script_path" ]; then
+                if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                    "$script_path" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
+                    echo "    ✓ $script"
+                else
+                    echo "    ✗ $script (copy failed)"
+                fi
+            fi
+        done
     else
-        echo "    ⚠ tmux-wrapper.sh not found"
-    fi
-
-    # Copy vm-tmux-resurrect.sh
-    if [ -f "$SCRIPT_DIR/vm-tmux-resurrect.sh" ]; then
-        if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$SCRIPT_DIR/vm-tmux-resurrect.sh" "${VM_USER}@${vm_ip}":~/scripts/ 2>> "$CAL_LOG"; then
-            echo "    ✓ vm-tmux-resurrect.sh"
-        else
-            echo "    ✗ vm-tmux-resurrect.sh (copy failed)"
-        fi
-    else
-        echo "    ⚠ vm-tmux-resurrect.sh not found"
+        echo "  All scripts up to date (skipped ${scripts_skipped})"
     fi
 
     # Make scripts executable
@@ -2221,6 +2227,7 @@ do_snapshot() {
 # Parse arguments
 MODE=""
 SKIP_CONFIRM=false
+CLEAN_MODE=false
 SNAPSHOT_ACTION=""
 SNAPSHOT_NAME=""
 SNAPSHOT_NAMES=()
@@ -2302,6 +2309,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_CONFIRM=true
             shift
             ;;
+        --clean)
+            CLEAN_MODE=true
+            shift
+            ;;
         --help|-h)
             echo "CAL Bootstrap - VM Environment Setup"
             echo ""
@@ -2326,6 +2337,7 @@ while [[ $# -gt 0 ]]; do
             echo "                                        off  - Disable transparent proxy"
             echo "                                        auto - Test github.com, enable if needed"
             echo "  --yes, -y                           Skip confirmation prompts"
+            echo "  --clean                             Force script deployment (skip checksum optimization)"
             echo "  --help, -h                          Show this help"
             echo ""
             echo "Examples:"
