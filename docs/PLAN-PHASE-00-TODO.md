@@ -50,4 +50,3 @@
 
 **Note:** These items are not essential for Phase 0 completion:
 
-- [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning

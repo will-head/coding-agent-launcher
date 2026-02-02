@@ -37,6 +37,11 @@
 2. Support `--branch` for existing branch
 3. Support `--new-branch` with prefix (default: `agent/`)
 4. Clone into `~/code/github.com/[owner]/[repo]` in VM (matches Phase 0 convention)
+5. **Support multiple GitHub servers** (github.com, enterprise)
+   - Allow specifying GitHub server in repo format: `server:owner/repo`
+   - Default to github.com if no server specified
+   - Support enterprise GitHub instances
+   - Store server configuration in CAL config
 
 **Key learnings from Phase 0 (ADR-002):**
 - Repository directory structure: `~/code/github.com/[owner]/[repo]`
