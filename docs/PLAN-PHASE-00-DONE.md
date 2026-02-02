@@ -523,3 +523,25 @@
     - scripts/vm-setup.sh (added session clearing in auth-needed block)
     - scripts/test-tmux-session-clear.sh (new unit test)
   - **Result:** cal-init snapshots no longer capture authentication screen; restored sessions show clean shell
+
+### Tmux Status Prompt for New Shells (Phase 0 Future Improvement - Complete)
+- [x] **Add tmux status prompt for new shells** (completed 2026-02-02)
+  - **Goal:** Show helpful message when users open new shells inside tmux to remind them about session persistence and detach key
+  - **Implementation:**
+    - Added tmux status prompt to .zshrc that displays on every new shell inside tmux
+    - Dynamically detects current tmux prefix key using `tmux show-options -gv prefix`
+    - Converts tmux prefix notation to human-readable format (C-b → Ctrl+b, C-a → Ctrl+a, M-b → Alt+b)
+    - Only displays when TMUX environment variable is set (inside tmux session)
+    - Graceful fallback to Ctrl+b if tmux command unavailable
+  - **Message format:** `💡 tmux: Sessions saved automatically - use [prefix] d to detach`
+  - **Testing:**
+    - ✅ Created comprehensive unit test (scripts/test-tmux-status-prompt.sh) - all 6 tests pass
+    - ✅ Tested default prefix (Ctrl+b) detection
+    - ✅ Tested custom prefix (Ctrl+a, M-b) detection
+    - ✅ Verified prompt hidden outside tmux
+    - ✅ Verified fallback behavior when tmux unavailable
+    - ✅ User confirmed working in live tmux session
+  - **Files Modified:**
+    - scripts/vm-setup.sh (added tmux prompt to .zshrc)
+    - scripts/test-tmux-status-prompt.sh (new unit test)
+  - **Result:** Users see helpful reminder with correct prefix key when opening new shells in tmux

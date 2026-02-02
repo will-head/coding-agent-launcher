@@ -514,6 +514,31 @@ else
     echo "  ✓ Keychain auto-unlock already in ~/.zshrc"
 fi
 
+# Add tmux status prompt (shows on every new shell inside tmux)
+if ! grep -q '# CAL Tmux Status Prompt' ~/.zshrc; then
+    cat >> ~/.zshrc <<'TMUX_PROMPT_EOF'
+
+# CAL Tmux Status Prompt
+# Show helpful message when starting new shells inside tmux
+if [ -n "$TMUX" ]; then
+    # Get current tmux prefix key
+    TMUX_PREFIX=$(tmux show-options -gv prefix 2>/dev/null || echo "C-b")
+    # Convert tmux prefix notation to human-readable format
+    case "$TMUX_PREFIX" in
+        C-b) PREFIX_DISPLAY="Ctrl+b" ;;
+        C-a) PREFIX_DISPLAY="Ctrl+a" ;;
+        C-*) PREFIX_DISPLAY="Ctrl+${TMUX_PREFIX#C-}" ;;
+        M-*) PREFIX_DISPLAY="Alt+${TMUX_PREFIX#M-}" ;;
+        *) PREFIX_DISPLAY="$TMUX_PREFIX" ;;
+    esac
+    echo "💡 tmux: Sessions saved automatically - use ${PREFIX_DISPLAY} d to detach"
+fi
+TMUX_PROMPT_EOF
+    echo "  ✓ Added tmux status prompt to ~/.zshrc"
+else
+    echo "  ✓ Tmux status prompt already in ~/.zshrc"
+fi
+
 # Configure shell environment
 echo ""
 echo "⚙️  Configuring shell environment..."

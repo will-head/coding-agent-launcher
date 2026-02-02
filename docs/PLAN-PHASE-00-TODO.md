@@ -50,11 +50,4 @@
 
 **Note:** These items are not essential for Phase 0 completion:
 
-- [ ] **Add tmux status prompt for new shells**
-  - Show message when new shell starts: "tmux status saved automatically - use [prefix] d to close"
-  - Detect current tmux prefix key (in case user has changed from default Ctrl+b)
-  - Display actual prefix in prompt message
-  - Only show when inside tmux session
-  - Add to .zshrc or tmux configuration
-
 - [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning
