@@ -53,6 +53,9 @@ The `cal-bootstrap` script automates VM setup and management.
 
 # Stop cal-dev
 ./scripts/cal-bootstrap --stop
+
+# Show VM status and connection info
+./scripts/cal-bootstrap --status
 ./scripts/cal-bootstrap -s
 
 # Snapshot management
@@ -65,6 +68,10 @@ The `cal-bootstrap` script automates VM setup and management.
 
 # Skip confirmation prompts
 ./scripts/cal-bootstrap -y -S restore cal-init
+
+# Force script deployment (skip optimization, for troubleshooting)
+./scripts/cal-bootstrap --run --clean
+./scripts/cal-bootstrap --restart --clean
 ```
 
 ### Git Safety Features

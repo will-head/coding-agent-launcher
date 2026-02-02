@@ -58,3 +58,15 @@
   - Add to .zshrc or tmux configuration
 
 - [ ] Support multiple GitHub servers (github.com, enterprise) in vm-auth.sh repo cloning
+
+- [ ] **Prevent tmux from saving state until after first login completes**
+  - **Problem:** tmux auto-save captures the initial vm-auth.sh authentication screen
+  - When session is restored, shows stale authentication prompts instead of fresh shell
+  - **Current behavior:** Auto-save runs every 15 minutes, captures first-run output
+  - **Desired behavior:** Skip auto-save during first login, start saving after vm-auth.sh completes
+  - **Possible solutions:**
+    - Disable tmux-continuum auto-save during first login, re-enable after completion
+    - Add flag file (e.g., ~/.cal-first-login-complete) to control save behavior
+    - Modify tmux-continuum configuration to check for first-run flag before saving
+    - Clear saved session data after first login completes
+  - **Goal:** Ensure restored sessions show clean shell, not initial setup output

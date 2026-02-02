@@ -1,6 +1,6 @@
 # CAL - Coding Agent Loader
 
-> **Status:** Phase 0 (Bootstrap) Mostly Complete | Phase 1 (CLI Foundation) Not Started
+> **Status:** Phase 0 (Bootstrap) Complete | Phase 1 (CLI Foundation) In Progress
 
 VM-based sandbox for running AI coding agents (Claude Code, Cursor, opencode) safely in isolated Tart macOS VMs.
 
