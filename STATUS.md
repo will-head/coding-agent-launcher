@@ -10,7 +10,6 @@
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| Package Download Caching (Homebrew) | PLAN-PHASE-01-TODO.md § 1.1.1 | Cache Homebrew downloads via symlink to Tart shared volume with graceful degradation; includes `cal cache status` command | 2026-02-03 | Phase 1.1.1: Implement first; 30%+ bootstrap speedup; ~500-800 MB cache |
 | Package Download Caching (npm) | PLAN-PHASE-01-TODO.md § 1.1.2 | Cache npm packages via symlink pattern; extends CacheManager and status command | 2026-02-03 | Phase 1.1.2: Depends on 1.1.1; 15-20% additional speedup; ~100-200 MB cache |
 | Package Download Caching (Go) | PLAN-PHASE-01-TODO.md § 1.1.3 | Cache Go modules via symlink pattern; extends CacheManager and status command | 2026-02-03 | Phase 1.1.3: Depends on 1.1.2; 10-15% additional speedup; ~50-150 MB cache |
 | Package Download Caching (Git) | PLAN-PHASE-01-TODO.md § 1.1.4 | Selective git clone caching for frequently cloned repos (TPM, etc.) | 2026-02-03 | Phase 1.1.4: Depends on 1.1.3; offline bootstrap capability; ~10-50 MB per repo |
@@ -22,7 +21,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| *No PRs awaiting review* | | | |
+| [#6](https://github.com/will-head/coding-agent-launcher/pull/6) | create-pr/homebrew-cache | Add Homebrew package download cache management | 2026-02-03 |
 
 ---
 
