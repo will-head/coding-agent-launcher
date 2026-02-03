@@ -30,6 +30,12 @@
 4. Environment status
 5. Proxy status (running/stopped, mode, connectivity)
 6. Agent authentication status
+7. **Tmux session persistence status:**
+   - Last auto-save timestamp (from `~/.local/share/tmux/resurrect/last` symlink)
+   - Number of saved sessions/windows/panes
+   - Session data directory size
+   - TPM plugin status (loaded/not loaded based on first-run flag)
+   - Indicator if session restore is available
 
 ---
 
@@ -63,3 +69,11 @@
 4. Allow session continuation across Claude Code restarts
 
 **Note:** Moved from Phase 0 (originally section 0.11) to Phase 5 as this is a polish/UX enhancement rather than bootstrap requirement.
+
+**Existing VM-level session persistence (Phase 0.11):**
+- tmux-resurrect already provides VM-level session persistence for terminal sessions
+- Auto-saves every 15 minutes, auto-restores on tmux start
+- Pane contents (scrollback) preserved with 50,000 line limit
+- Session data in `~/.local/share/tmux/resurrect/` survives VM restarts and snapshot/restore
+- This task focuses on **host-level CAL state** (which VMs exist, their configurations, active workspaces)
+- Consider integration: CAL session state could trigger tmux session save before VM stop/snapshot

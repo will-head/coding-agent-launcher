@@ -115,3 +115,12 @@
 - Resurrect data in `~/.local/share/tmux/resurrect/` survives VM restarts and snapshot/restore
 - Manual save (`Ctrl+b Ctrl+s`) runs silently; manual restore (`Ctrl+b Ctrl+r`)
 - Mouse mode enabled by default (`set -g mouse on`) for tmux right-click menu (see BUG-004)
+
+**Tmux status prompt for new shells:**
+- When users open a new shell inside tmux, display helpful reminder:
+  `💡 tmux: Sessions saved automatically - use Ctrl+b d to detach`
+- Dynamically detect current tmux prefix key using `tmux show-options -gv prefix`
+- Convert tmux prefix notation to human-readable format (e.g., `C-b` → `Ctrl+b`, `C-a` → `Ctrl+a`, `M-b` → `Alt+b`)
+- Only display when `TMUX` environment variable is set (inside tmux session)
+- Graceful fallback to `Ctrl+b` if tmux command unavailable
+- Improves discoverability of session persistence and detach functionality
