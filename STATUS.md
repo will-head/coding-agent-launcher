@@ -21,7 +21,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| [#6](https://github.com/will-head/coding-agent-launcher/pull/6) | create-pr/homebrew-cache | Add Homebrew package download cache management | 2026-02-03 |
+| *No PRs awaiting review* | | | |
 
 ---
 
@@ -37,7 +37,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| *No PRs awaiting testing* | | | | |
+| [#6](https://github.com/will-head/coding-agent-launcher/pull/6) | create-pr/homebrew-cache | Add Homebrew package download cache management | Claude Opus 4.5 | 2026-02-03 |
 
 ---
 
