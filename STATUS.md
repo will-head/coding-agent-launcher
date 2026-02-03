@@ -21,7 +21,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| [#6](https://github.com/will-head/coding-agent-launcher/pull/6) | create-pr/homebrew-cache | Add Homebrew package download cache management | 2026-02-03 |
+| *No PRs awaiting review* | | | |
 
 ---
 
@@ -29,7 +29,7 @@
 
 | PR | Branch | Description | Requested | Reason |
 |----|--------|-------------|-----------|--------|
-| *No PRs needing changes* | | | | |
+| [#6](https://github.com/will-head/coding-agent-launcher/pull/6) | create-pr/homebrew-cache | Add Homebrew package download cache management | 2026-02-03 | Missing VM integration (symlink, env config, lifecycle integration) |
 
 ---
 
