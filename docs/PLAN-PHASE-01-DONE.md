@@ -271,3 +271,57 @@ memory: 16384
 **Related:**
 - Section 1.9: VM lifecycle automation (Tart cache sharing pattern reference)
 - BUG-006: Network timeout during bootstrap (Homebrew cache will help prevent)
+
+---
+
+## 1.1.2 npm Package Download Cache (PR #7, merged 2026-02-03)
+
+**Cache Location:**
+- **Host:** `~/.cal-cache/npm/` (persistent across VM operations)
+- **VM:** Symlink `~/.cal-cache/npm/` → `/Volumes/My Shared Files/cal-cache/npm/`
+- **Pattern:** Same as Phase 1.1.1 (proven approach)
+
+**Implementation Details:**
+
+1. **Code Location:** `internal/isolation/cache.go` (extend existing `CacheManager`)
+   - Add npm-specific setup method
+   - Integrate into VM init/setup process
+
+2. **Host Cache Setup:**
+   - Create `~/.cal-cache/npm/` on host if doesn't exist
+   - No host environment configuration needed
+
+3. **VM Cache Passthrough:**
+   - Create Tart shared directory: `/Volumes/My Shared Files/cal-cache/npm/`
+   - Copy host cache: `rsync -a ~/.cal-cache/npm/ "/Volumes/My Shared Files/cal-cache/npm/"`
+   - Create symlink in VM: `ln -sf "/Volumes/My Shared Files/cal-cache/npm" ~/.cal-cache/npm`
+   - Configure in VM: `npm config set cache ~/.cal-cache/npm` (run during vm-setup.sh)
+   - Verify symlink writable
+
+4. **Error Handling:** Graceful degradation (same as Phase 1.1.1)
+
+5. **Cache Status:** Update `cal cache status` to include npm cache info
+
+6. **Cache Invalidation:** Let npm handle it (validates cache metadata automatically)
+
+**Benefits:**
+- **Speed:** Saves ~2-3 minutes per bootstrap
+- **Bandwidth:** Saves ~50-100 MB per bootstrap
+- **Packages:** claude, agent, ccs, codex CLI tools
+
+**Constraints:**
+- Disk space: ~100-200 MB for npm cache
+
+**Testing Strategy:**
+- Unit tests for npm cache setup logic
+- Integration tests with mocks
+- Manual: Bootstrap twice, verify npm uses cache
+
+**Acceptance Criteria:**
+- [x] npm cache directory created on host
+- [x] Symlink created in VM
+- [x] `npm config get cache` returns `~/.cal-cache/npm` in VM
+- [x] `cal cache status` shows npm cache info
+- [x] Bootstrap time reduced by additional 15-20% with npm cache
+- [x] Graceful degradation works
+- [x] Tests pass
