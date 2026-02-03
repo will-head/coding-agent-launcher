@@ -181,6 +181,12 @@ func (c *TartClient) Set(name string, cpu int, memory int, disk string) error {
 // Run starts a VM with optional headless mode, VNC, and directory sharing.
 // When vnc is true, always uses --vnc-experimental for bidirectional clipboard.
 func (c *TartClient) Run(name string, headless, vnc bool, dirs []string) error {
+	return c.RunWithCacheDirs(name, headless, vnc, dirs, []string{})
+}
+
+// RunWithCacheDirs starts a VM with cache directories shared.
+// cacheDirs specifies additional directories to share for caching (e.g., Homebrew cache).
+func (c *TartClient) RunWithCacheDirs(name string, headless, vnc bool, dirs []string, cacheDirs []string) error {
 	if err := c.ensureInstalled(); err != nil {
 		return err
 	}
@@ -196,6 +202,10 @@ func (c *TartClient) Run(name string, headless, vnc bool, dirs []string) error {
 	}
 
 	args = append(args, fmt.Sprintf("--dir=%s", cacheDirMount))
+
+	for _, dir := range cacheDirs {
+		args = append(args, fmt.Sprintf("--dir=%s", dir))
+	}
 
 	for _, dir := range dirs {
 		args = append(args, fmt.Sprintf("--dir=%s", dir))
