@@ -5,7 +5,7 @@
 **ADR:** 002
 **Status:** Accepted
 **Created:** 2026-01-21
-**Updated:** 2026-01-31
+**Updated:** 2026-02-03
 **Purpose:** Comprehensive operational reference for managing Tart macOS VMs in CAL, capturing all Phase 0 learnings
 
 ---
@@ -31,6 +31,7 @@ We established a three-VM architecture with automated setup, transparent network
 7. **First-run and logout automation** for seamless VM lifecycle
 8. **Tart cache sharing** for nested VM support
 9. **TERM wrapper** for cross-terminal compatibility
+10. **Tmux session persistence** with auto-save, auto-restore, and pane contents preservation
 
 ---
 
@@ -137,6 +138,10 @@ Step 8: Run vm-setup.sh
         +- Install Go tools: golangci-lint, staticcheck, goimports, dlv, mockgen, air
         +- Configure: auto-login, keychain, terminal, VM detection
         +- Configure: logout git check, proxy functions
+        +- Run vm-tmux-resurrect.sh for session persistence setup
+          +- Install TPM (Tmux Plugin Manager) with retry logic (3 attempts)
+          +- Install tmux-resurrect and tmux-continuum plugins
+          +- Configure tmux.conf with session persistence settings
         +- Set ~/.cal-auth-needed flag
 
 Step 9: Setup Tart cache sharing
@@ -153,7 +158,12 @@ Step 12: SSH into VM
          +- Runs vm-auth.sh for interactive authentication
          +- User completes OAuth flows and repository cloning
 
-Step 13: Create cal-init snapshot
+Step 13: Finalize cal-dev configuration
+         +- Remove ~/.cal-first-run flag from cal-dev (with verification)
+         +- This ensures cal-dev uses auto-restore for tmux sessions
+         +- cal-init retains the flag (triggers first-run behavior after restore)
+
+Step 14: Create cal-init snapshot
          +- Stop cal-dev
          +- tart clone cal-dev cal-init
 ```
@@ -545,6 +555,16 @@ export TERM=xterm-256color
 bindkey "^[[A" up-line-or-history
 ```
 
+### Tmux Status Prompt
+
+When opening a new shell inside tmux, a helpful reminder is displayed:
+
+```
+💡 tmux: Sessions saved automatically - use Ctrl+b d to detach
+```
+
+The prompt dynamically detects the current tmux prefix key and converts it to human-readable format (e.g., `C-b` → `Ctrl+b`, `C-a` → `Ctrl+a`, `M-b` → `Alt+b`). Only displays when `TMUX` environment variable is set (inside tmux session).
+
 ### tmux Configuration
 
 Default config installed to `~/.tmux.conf`:
@@ -553,9 +573,92 @@ Default config installed to `~/.tmux.conf`:
 - Vi-style keybindings
 - Custom CAL status bar styling
 - Window/pane numbering starts at 1
-- Easy config reload with Ctrl+b r
+- Easy config reload with `Ctrl+b R`
+- Pane resize to 67% with `Ctrl+b r`
 - Vim-style pane navigation (h/j/k/l)
-- Pipe/dash splitting preserving current path
+- Pipe/dash splitting preserving current path (`Ctrl+b |` horizontal, `Ctrl+b -` vertical)
+
+### tmux Session Persistence
+
+Tmux sessions are automatically saved and restored across VM restarts and snapshots using tmux-resurrect and tmux-continuum plugins.
+
+**Session Management:**
+- **Session name:** `cal` (used by `tmux-wrapper.sh new-session -A -s cal`)
+- **Auto-save:** Every 15 minutes via tmux-continuum
+- **Auto-restore:** On tmux start via tmux-continuum
+- **Save on logout:** Via `.zlogout` hook before git status check
+- **Save on detach:** `Ctrl+b d` triggers immediate save via client-detached hook
+- **Manual save:** `Ctrl+b Ctrl+s` (runs silently, no confirmation message)
+- **Manual restore:** `Ctrl+b Ctrl+r`
+
+**What Is Preserved:**
+- Window layouts and pane arrangements
+- Current working directories
+- Pane contents (scrollback) with 50,000 line limit
+- Running programs (restored as new shells at same directory)
+
+**Session Data Location:**
+```
+~/.local/share/tmux/resurrect/
+├── last                    # Symlink to most recent save
+├── tmux_resurrect_*.txt    # Session state files (timestamped)
+└── pane_contents/          # Captured scrollback (when enabled)
+```
+
+**PATH Requirement:**
+
+tmux-resurrect scripts run via `tmux run-shell` which has a minimal PATH (`/usr/bin:/bin:/usr/sbin:/sbin`). This doesn't include Homebrew directories where tmux is installed. The fix is setting PATH in tmux.conf:
+
+```bash
+# In ~/.tmux.conf - enables tmux-resurrect to find tmux command
+set-environment -g PATH "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+```
+
+Without this, save files contain only "state state state" instead of actual session data.
+
+**First-Run Conditional Loading:**
+
+TPM (Tmux Plugin Manager) is conditionally loaded based on the `~/.cal-first-run` flag:
+- **Flag exists (first-run):** TPM doesn't load, no session capture occurs
+- **Flag absent (normal operation):** TPM loads, full session persistence active
+
+This prevents tmux-resurrect from capturing the vm-auth authentication screen during initial setup. After first-run completes and the flag is removed, session persistence works normally.
+
+```bash
+# In ~/.tmux.conf - conditional TPM loading
+if-shell '[ ! -f ~/.cal-first-run ]' 'run ~/.tmux/plugins/tpm/tpm'
+```
+
+**TPM Installation Reliability:**
+
+TPM installation uses retry logic to handle network failures:
+- 3 attempts with 5-second delay between retries
+- Cached clone reused if available (`~/.tmux/plugins/tpm`)
+- Clear error messages if all attempts fail
+- Explicit cleanup on init failure (deletes cal-dev)
+
+**Troubleshooting Session Persistence:**
+
+```bash
+# Check if plugins are loaded
+tmux list-keys | grep -i resurrect  # Should show save/restore bindings
+
+# Check session data
+ls -la ~/.local/share/tmux/resurrect/
+
+# Verify TPM is running
+ls ~/.tmux/plugins/  # Should show tpm/, tmux-resurrect/, tmux-continuum/
+
+# Force reload config
+tmux source-file ~/.tmux.conf
+
+# Manual save (if auto-save not working)
+~/.tmux/plugins/tmux-resurrect/scripts/save.sh
+```
+
+**Known Behavior:**
+
+Extra prompts may appear in restored panes when pane contents restoration is enabled. This is expected - pane scrollback is restored, then a new shell adds its prompt. This is a harmless visual artifact.
 
 ---
 
@@ -713,12 +816,23 @@ During `--init`, `vm-setup.sh` creates `~/.cal-auth-needed`. On next login, `.zs
 
 When restoring from `cal-init`, the `~/.cal-first-run` flag triggers `vm-first-run.sh` on first login. This script:
 1. Checks network connectivity (auto-starts proxy if needed)
-2. Scans `~/code` for git repositories
-3. Fetches remote updates for each repo
-4. Reports which repos have available updates (doesn't auto-pull)
-5. Categorizes fetch failures (authentication, network, other)
+2. Displays keychain unlock status
+3. Scans `~/code` for git repositories
+4. Fetches remote updates for each repo
+5. Reports which repos have available updates (doesn't auto-pull)
+6. Categorizes fetch failures (authentication, network, other)
 
 **Key design decision:** vm-first-run.sh only *checks* for updates, it doesn't pull them. This avoids surprising merge conflicts on login.
+
+**First-Run Flag and tmux Session Restore:**
+
+The `~/.cal-first-run` flag also controls tmux session restore behavior:
+- **Flag exists:** `tmux new-session -s cal` (creates fresh session, no auto-restore)
+- **Flag absent:** `tmux new-session -A -s cal` (attaches to existing or creates with auto-restore)
+
+This prevents the vm-auth authentication screen from appearing inside a restored tmux session on first boot. The flag is checked by `cal-bootstrap` before starting tmux.
+
+Additionally, the first-run flag prevents TPM plugins from loading (see [tmux Session Persistence](#tmux-session-persistence)), ensuring no session data is captured during the authentication phase.
 
 ### First-Run Flag Reliability
 
@@ -729,10 +843,11 @@ When restoring from `cal-init`, the `~/.cal-first-run` flag triggers `vm-first-r
 ### Logout Git Status Check
 
 Configured in `~/.zlogout`:
-1. Scans `~/code` for repositories with uncommitted or unpushed changes
-2. Shows warnings listing affected repositories
-3. Prompts user to continue or cancel logout
-4. Cancel starts a new login shell (`exec zsh -l`) with `CAL_SESSION_INITIALIZED` preserved (avoids re-running keychain unlock)
+1. **Saves tmux session** via `tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh` (ensures session state captured even between auto-save intervals)
+2. Scans `~/code` for repositories with uncommitted or unpushed changes
+3. Shows warnings listing affected repositories
+4. Prompts user to continue or cancel logout
+5. Cancel starts a new login shell (`exec zsh -l`) with `CAL_SESSION_INITIALIZED` preserved (avoids re-running keychain unlock)
 
 ### Session Initialization Guard
 
@@ -912,11 +1027,13 @@ tart list --format json | jq -r '.[] | select(.Source == "OCI") | .Name'
 | `~/.cal-vm-config` | VM password for keychain unlock | 600 |
 | `~/.cal-proxy-config` | Proxy settings (HOST_GATEWAY, HOST_USER, PROXY_MODE) | Default |
 | `~/.cal-auth-needed` | Flag: run vm-auth.sh on next login (during --init) | Default |
-| `~/.cal-first-run` | Flag: run vm-first-run.sh on next login (after restore) | Default |
+| `~/.cal-first-run` | Flag: run vm-first-run.sh on next login; controls tmux auto-restore | Default |
 | `~/.cal-proxy.log` | sshuttle proxy logs | Default |
 | `~/.cal-proxy.pid` | sshuttle process ID | Default |
-| `~/.tmux.conf` | tmux configuration | Default |
-| `~/.zlogout` | Logout git status check | Default |
+| `~/.tmux.conf` | tmux configuration with session persistence | Default |
+| `~/.zlogout` | Logout: tmux session save, then git status check | Default |
+| `~/.local/share/tmux/resurrect/` | tmux session data (windows, panes, scrollback) | Default |
+| `~/.tmux/plugins/` | TPM and plugins (tmux-resurrect, tmux-continuum) | Default |
 
 ---
 
@@ -1068,6 +1185,38 @@ ls -la ~/.cal-first-run
 ~/scripts/vm-first-run.sh
 ```
 
+### Tmux Sessions Not Persisting
+
+```bash
+# Check if TPM plugins are loaded
+ls ~/.tmux/plugins/  # Should show tpm/, tmux-resurrect/, tmux-continuum/
+
+# Check session data directory
+ls -la ~/.local/share/tmux/resurrect/
+
+# If save files contain "state state state", PATH is wrong
+# Verify tmux.conf has set-environment -g PATH with Homebrew paths
+
+# Force plugin reload
+tmux source-file ~/.tmux.conf
+
+# Manual save to test
+~/.tmux/plugins/tmux-resurrect/scripts/save.sh
+
+# Check if first-run flag is blocking plugins
+ls ~/.cal-first-run  # If exists, TPM won't load
+```
+
+### Auth Screen Appears in Restored Session
+
+```bash
+# This happens if tmux captured the authentication screen
+# Clear session data and start fresh
+rm -rf ~/.local/share/tmux/resurrect/*
+tmux kill-server
+# Then reconnect via cal-bootstrap --run
+```
+
 ---
 
 ## Script Architecture
@@ -1077,19 +1226,22 @@ ls -la ~/.cal-first-run
 Main orchestration script. Modes:
 - `--init` / `-i`: Full VM creation and setup
 - `--run` (default): Start VM and SSH in with tmux
-- `--stop` / `-s`: Stop cal-dev
+- `--stop`: Stop cal-dev
 - `--restart` / `-r`: Restart VM and reconnect
 - `--gui` / `-g`: Launch with VNC experimental mode
+- `--status` / `-s`: Show VM state, IP, size, and helpful commands
 - `--snapshot` / `-S`: List, create, restore, delete snapshots
 - `--proxy on/off/auto`: Control proxy mode
 - `--yes` / `-y`: Skip confirmation prompts
+- `--clean`: Force full script deployment (skip checksum optimization)
 
 Key functions:
 - `start_vm_background()`: Starts VM with cache sharing, waits for IP and SSH
 - `setup_tart_cache_sharing()`: Creates cache symlink in VM
-- `setup_scripts_folder()`: Copies helper scripts to VM (idempotent)
+- `setup_scripts_folder()`: Copies helper scripts to VM using checksum-based deployment
 - `check_vm_git_changes()`: Reusable git safety check
 - `do_gui()`: Starts VM with `--vnc-experimental`, displays connection info
+- `do_status()`: Displays VM state, IP, size, and context-appropriate commands
 
 ### vm-setup.sh (VM)
 
@@ -1130,6 +1282,26 @@ TERM compatibility wrapper:
 - Launches tmux with passed arguments
 - Solves Ghostty/opencode compatibility issues
 
+### vm-tmux-resurrect.sh (VM)
+
+Tmux session persistence setup (called by vm-setup.sh during --init):
+- Installs TPM (Tmux Plugin Manager) with retry logic (3 attempts, 5s delay)
+- Installs tmux-resurrect and tmux-continuum plugins
+- Generates comprehensive `~/.tmux.conf` with:
+  - PATH environment for plugin scripts
+  - Conditional TPM loading based on first-run flag
+  - Auto-save (15 min) and auto-restore configuration
+  - Pane contents preservation (50,000 line limit)
+  - Client-detached hook for save on `Ctrl+b d`
+- Idempotent (safe to run multiple times)
+
+### statusline-command.sh (VM, optional)
+
+Claude Code session metrics display:
+- Shows model name, context usage %, session duration, total cost
+- Color-coded warnings at 50% and 80% context usage
+- Installed via setup-claude-statusline.sh
+
 ### Script Locations
 
 ```
@@ -1138,12 +1310,31 @@ Host: scripts/cal-bootstrap
       scripts/vm-auth.sh
       scripts/vm-first-run.sh
       scripts/tmux-wrapper.sh
+      scripts/vm-tmux-resurrect.sh
+      scripts/statusline-command.sh (optional)
+      scripts/setup-claude-statusline.sh (optional)
 
 VM:   ~/scripts/vm-setup.sh
       ~/scripts/vm-auth.sh
       ~/scripts/vm-first-run.sh
       ~/scripts/tmux-wrapper.sh
+      ~/scripts/vm-tmux-resurrect.sh
+      ~/scripts/statusline-command.sh (if installed)
 ```
+
+### Script Deployment Optimization
+
+`setup_scripts_folder()` uses MD5 checksum comparison to avoid copying unchanged scripts during `--run` and `--restart` operations:
+
+- **Before:** Always copies all scripts (~60KB, ~2-3 seconds)
+- **After:** Only copies new or changed scripts (~0.5 seconds for checksum checks)
+
+Visual feedback during deployment:
+- `↻` - Script unchanged (skipped)
+- `↑` - Script updated (copied)
+- `+` - Script new (copied)
+
+Use `--clean` flag to force full deployment (bypasses checksum optimization). Useful for troubleshooting or after manual VM modifications.
 
 ---
 
@@ -1161,6 +1352,11 @@ Issues discovered and fixed during Phase 0:
 8. **Snapshot delete**: Don't stop running VM before git check (use it while running)
 9. **Filesystem sync**: Flag files need `sync` before VM reboot
 10. **Network timeout**: Use git's built-in timeouts, not macOS `timeout` command
+11. **tmux-resurrect PATH**: Scripts run via `tmux run-shell` have minimal PATH - must set `set-environment -g PATH` in tmux.conf to include Homebrew
+12. **TPM installation network failures**: Use retry logic (3 attempts, 5s delay) with caching for reliability
+13. **First-run flag and session restore**: Must check flag before tmux start; use `-A` flag only when flag absent
+14. **Arithmetic in set -e**: `((counter++))` fails with `set -e` - use `counter=$((counter + 1))`
+15. **Tmux capturing auth screen**: Conditionally load TPM only after first-run completes; clear session data after auth
 
 ---
 
@@ -1205,11 +1401,12 @@ Phase 1 must preserve all behaviors documented in this ADR:
 - Bootstrap SOCKS proxy during init
 - TERM wrapper for tmux sessions
 - Keychain auto-unlock mechanism
-- First-run and auth-needed flag system
+- First-run and auth-needed flag system (including tmux auto-restore behavior)
 - Tart cache sharing for nested VMs
 - VNC experimental mode for GUI access
+- Tmux session persistence (auto-save, auto-restore, conditional TPM loading)
 - All VM configuration files and their purposes
-- Helper script deployment and PATH setup
+- Helper script deployment with checksum optimization
 
 ### VM Configuration Files to Manage
 
@@ -1217,10 +1414,12 @@ The CLI must be aware of and manage:
 - `~/.cal-vm-info` (read by agents for VM detection)
 - `~/.cal-vm-config` (password for keychain unlock)
 - `~/.cal-proxy-config` (proxy settings)
-- `~/.cal-auth-needed` / `~/.cal-first-run` (lifecycle flags)
-- `~/.tmux.conf` (tmux configuration)
-- `~/.zshrc` (shell configuration blocks)
-- `~/.zlogout` (logout git check)
+- `~/.cal-auth-needed` / `~/.cal-first-run` (lifecycle flags, affects tmux auto-restore)
+- `~/.tmux.conf` (tmux configuration with session persistence)
+- `~/.tmux/plugins/` (TPM and plugins: tmux-resurrect, tmux-continuum)
+- `~/.local/share/tmux/resurrect/` (session data)
+- `~/.zshrc` (shell configuration blocks, tmux status prompt)
+- `~/.zlogout` (tmux session save, then git status check)
 
 ---
 
@@ -1231,6 +1430,9 @@ The CLI must be aware of and manage:
 - [vm-auth.sh](../../scripts/vm-auth.sh) - Agent authentication
 - [vm-first-run.sh](../../scripts/vm-first-run.sh) - Post-restore update checker
 - [tmux-wrapper.sh](../../scripts/tmux-wrapper.sh) - TERM compatibility wrapper
+- [vm-tmux-resurrect.sh](../../scripts/vm-tmux-resurrect.sh) - Tmux session persistence setup
+- [statusline-command.sh](../../scripts/statusline-command.sh) - Claude Code session metrics (optional)
+- [setup-claude-statusline.sh](../../scripts/setup-claude-statusline.sh) - Statusline installer (optional)
 - [Bootstrap Guide](../bootstrap.md) - Quick start documentation
 - [Proxy Documentation](../proxy.md) - Network proxy details
 - [VM Detection](../vm-detection.md) - Agent environment detection
