@@ -181,7 +181,7 @@ go build -o cal ./cmd/cal
 
 5. **Commit documentation updates** using [Commit Message Format](WORKFLOWS.md#commit-message-format). Push after commit.
 
-**Next: run workflow 6 (Review & Fix PR) to re-review the updated PR.**
+**Suggest next workflow** by checking STATUS.md — see [Next Workflow Guidance](WORKFLOWS.md#next-workflow-guidance).
 
 ---
 

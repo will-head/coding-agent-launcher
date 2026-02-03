@@ -187,7 +187,7 @@ After approval (user approval on HOST; auto-approved when `CAL_VM=true`), stage 
 
 **Done!** TODO is now implementation-ready.
 
-**Next: run workflow 5 (Create PR) to implement the refined TODO, or workflow 1 (Interactive) for direct main branch changes.**
+**Suggest next workflow** by checking STATUS.md — see [Next Workflow Guidance](WORKFLOWS.md#next-workflow-guidance).
 
 ---
 

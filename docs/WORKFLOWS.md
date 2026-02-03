@@ -360,20 +360,29 @@ This applies to:
 
 ### Next Workflow Guidance
 
-At the end of workflows 4-9, tell the user which numbered workflow to run next:
+At the end of workflows 4-9, read STATUS.md and suggest the next workflow based on what's actually queued. Check sections in **priority order** (items further along the pipeline should be completed first):
 
-| Completed | Next Workflow |
-|-----------|---------------|
-| 4 (Refine) | **5** (Create PR) or **1** (Interactive) |
-| 5 (Create PR) | **6** (Review & Fix PR) |
-| 6 (Review & Fix PR) — approved | **8** (Test PR) |
-| 6 (Review & Fix PR) — changes requested | **7** (Update PR) |
-| 7 (Update PR) | **6** (Review & Fix PR) |
-| 8 (Test PR) — passed | **9** (Merge PR) |
-| 8 (Test PR) — failed | **7** (Update PR) |
-| 9 (Merge PR) | **5** (Create PR) if refined TODOs remain |
+| Priority | STATUS.md Section | Suggested Workflow |
+|----------|-------------------|--------------------|
+| 1 (highest) | Needs Merging (has entries) | **9** (Merge PR) |
+| 2 | Needs Testing (has entries) | **8** (Test PR) |
+| 3 | Needs Changes (has entries) | **7** (Update PR) |
+| 4 | Needs Review (has entries) | **6** (Review & Fix PR) |
+| 5 | Refined (has entries) | **5** (Create PR) |
+| 6 (lowest) | Nothing queued | **4** (Refine) to prepare more TODOs |
 
-**Format:** At the end of the workflow, display: `Next: run workflow X (Workflow Name)`
+**How to apply:**
+
+1. Read STATUS.md after the workflow completes (already on main branch at this point)
+2. Find the highest-priority non-empty section from the table above
+3. Display: `Next: run workflow X (Workflow Name) — N items in queue`
+4. If multiple sections have entries, mention them: `Also: N PRs in Needs Testing, N refined TODOs ready`
+
+**Example output:**
+```
+Next: run workflow 8 (Test PR) — 1 PR in Needs Testing
+Also: 3 refined TODOs ready for Create PR
+```
 
 ### Sequential Question and Test Presentation
 

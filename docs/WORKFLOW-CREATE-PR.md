@@ -241,7 +241,7 @@ EOF
 
 4. **Commit documentation updates** (on main) using [Commit Message Format](WORKFLOWS.md#commit-message-format)
 
-5. **Next: run workflow 6 (Review & Fix PR) to review the new PR.**
+5. **Suggest next workflow** by checking STATUS.md — see [Next Workflow Guidance](WORKFLOWS.md#next-workflow-guidance).
 
 ---
 

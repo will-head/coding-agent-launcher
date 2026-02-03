@@ -174,7 +174,7 @@ Update PLAN.md and phase TODO files to reflect current project status after merg
 
 **Verify push succeeds** - ensures documentation updates are preserved.
 
-**Next: run workflow 5 (Create PR) if refined TODOs remain in STATUS.md.**
+**Suggest next workflow** by checking STATUS.md — see [Next Workflow Guidance](WORKFLOWS.md#next-workflow-guidance).
 
 ---
 
