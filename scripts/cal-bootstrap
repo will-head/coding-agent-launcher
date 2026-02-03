@@ -227,6 +227,12 @@ start_vm_background() {
         tart_cmd+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
     fi
 
+    # Share host's package cache with VM (read-write) for Homebrew, npm, Go, Git caches
+    # Mounted to /Volumes/My Shared Files/cal-cache
+    if [ -d ~/.cal-cache ]; then
+        tart_cmd+=("--dir" "cal-cache:${HOME}/.cal-cache:rw,tag=com.apple.virtio-fs.automount")
+    fi
+
     tart_cmd+=("$vm")
 
     "${tart_cmd[@]}" >/dev/null 2>&1 &
@@ -1697,6 +1703,11 @@ do_gui() {
     # Share host's Tart cache with VM (read-only) to avoid duplicate downloads
     if [ -d ~/.tart/cache ]; then
         tart_cmd+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
+    fi
+
+    # Share host's package cache with VM (read-write) for Homebrew, npm, Go, Git caches
+    if [ -d ~/.cal-cache ]; then
+        tart_cmd+=("--dir" "cal-cache:${HOME}/.cal-cache:rw,tag=com.apple.virtio-fs.automount")
     fi
 
     "${tart_cmd[@]}" >/dev/null 2>&1 &
