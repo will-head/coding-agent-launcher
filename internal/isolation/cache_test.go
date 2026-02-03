@@ -349,3 +349,178 @@ func TestFormatBytes(t *testing.T) {
 		})
 	}
 }
+
+func TestCacheManager_NpmSetup(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("SetupNpmCache creates host cache directory", func(t *testing.T) {
+		err := cm.SetupNpmCache()
+		if err != nil {
+			t.Fatalf("SetupNpmCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "npm")
+		info, err := os.Stat(hostCacheDir)
+		if err != nil {
+			t.Fatalf("host cache directory not created: %v", err)
+		}
+		if !info.IsDir() {
+			t.Fatalf("host cache is not a directory")
+		}
+	})
+
+	t.Run("SetupNpmCache is idempotent", func(t *testing.T) {
+		err := cm.SetupNpmCache()
+		if err != nil {
+			t.Fatalf("first SetupNpmCache failed: %v", err)
+		}
+
+		err = cm.SetupNpmCache()
+		if err != nil {
+			t.Fatalf("second SetupNpmCache failed: %v", err)
+		}
+	})
+
+	t.Run("SetupNpmCache gracefully handles missing home directory", func(t *testing.T) {
+		cmNoHome := &CacheManager{
+			homeDir:      "",
+			cacheBaseDir: "",
+		}
+
+		err := cmNoHome.SetupNpmCache()
+		if err != nil {
+			t.Fatalf("expected graceful degradation (nil error) when homeDir unavailable, got: %v", err)
+		}
+	})
+}
+
+func TestCacheManager_GetNpmCacheInfo(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("GetNpmCacheInfo returns zero size when cache doesn't exist", func(t *testing.T) {
+		info, err := cm.GetNpmCacheInfo()
+		if err != nil {
+			t.Fatalf("GetNpmCacheInfo failed: %v", err)
+		}
+
+		if info.Size != 0 {
+			t.Fatalf("expected size 0, got %d", info.Size)
+		}
+
+		if info.Path == "" {
+			t.Fatalf("expected non-empty path")
+		}
+
+		if info.Available {
+			t.Fatalf("expected cache to be unavailable")
+		}
+	})
+
+	t.Run("GetNpmCacheInfo returns size when cache exists", func(t *testing.T) {
+		err := cm.SetupNpmCache()
+		if err != nil {
+			t.Fatalf("SetupNpmCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "npm")
+		testFile := filepath.Join(hostCacheDir, "test-package.tar.gz")
+		if err := os.WriteFile(testFile, []byte("test npm cache data"), 0644); err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
+		info, err := cm.GetNpmCacheInfo()
+		if err != nil {
+			t.Fatalf("GetNpmCacheInfo failed: %v", err)
+		}
+
+		if info.Size == 0 {
+			t.Fatalf("expected non-zero size")
+		}
+
+		if !info.Available {
+			t.Fatalf("expected cache to be available")
+		}
+	})
+}
+
+func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("SetupVMNpmCache returns commands when host cache exists", func(t *testing.T) {
+		err := cm.SetupNpmCache()
+		if err != nil {
+			t.Fatalf("SetupNpmCache failed: %v", err)
+		}
+
+		commands := cm.SetupVMNpmCache()
+		if commands == nil {
+			t.Fatalf("expected non-nil commands")
+		}
+
+		if len(commands) == 0 {
+			t.Fatalf("expected at least one command")
+		}
+
+		commandsStr := strings.Join(commands, " ")
+		if !strings.Contains(commandsStr, "mkdir -p ~/.cal-cache") {
+			t.Fatalf("expected mkdir command in VM setup")
+		}
+		if !strings.Contains(commandsStr, "ln -sf") {
+			t.Fatalf("expected symlink command in VM setup")
+		}
+		if !strings.Contains(commandsStr, "npm config set cache") {
+			t.Fatalf("expected npm cache configuration")
+		}
+	})
+
+	t.Run("SetupVMNpmCache returns nil when home directory unavailable", func(t *testing.T) {
+		cmNoHome := &CacheManager{
+			homeDir:      "",
+			cacheBaseDir: "",
+		}
+
+		commands := cmNoHome.SetupVMNpmCache()
+		if commands != nil {
+			t.Fatalf("expected nil commands when homeDir unavailable, got: %v", commands)
+		}
+	})
+
+	t.Run("SetupVMNpmCache returns nil when host cache doesn't exist", func(t *testing.T) {
+		cmNoCache := &CacheManager{
+			homeDir:      tmpDir,
+			cacheBaseDir: filepath.Join(tmpDir, "nonexistent-cache"),
+		}
+
+		commands := cmNoCache.SetupVMNpmCache()
+		if commands != nil {
+			t.Fatalf("expected nil commands when host cache doesn't exist, got: %v", commands)
+		}
+	})
+}
