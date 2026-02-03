@@ -161,3 +161,30 @@ memory: 16384
 - `cal config validate` command
 - Config schema migration strategy for version changes
 - `cal config show --defaults` to display hard-coded defaults
+
+---
+
+## 1.3 Tart Wrapper (PR #5, merged 2026-02-03)
+
+**File:** `internal/isolation/tart.go`
+
+**Implementation:**
+- Implemented `TartClient` struct that wraps all Tart CLI operations
+- Methods: Clone, Set, Run (headless/VNC), Stop, Delete, List, IP, Get
+- JSON parsing using Go's `encoding/json` (no jq dependency)
+- Auto-install Tart via Homebrew with interactive user prompt
+- IP polling with progress indicator (2s interval, 60s timeout)
+- VNC experimental mode (`--vnc-experimental`) by default for better UX
+- Cache sharing (`--dir=tart-cache:~/.tart/cache:ro`) on all VM starts
+- VM state tracking (running/stopped/not_found) with fresh queries
+- Error wrapping with operation context for clear failure messages
+- Comprehensive unit tests (27 tests) covering all methods and error paths
+
+**Acceptance Criteria Met:**
+- [x] All Tart operations wrapped with clear Go API
+- [x] Errors include helpful context and operation details
+- [x] IP polling shows progress and completes within 60s or fails clearly
+- [x] Auto-install prompts user and handles missing Homebrew gracefully
+- [x] Cache sharing enabled on all runs without user configuration
+- [x] Unit tests cover command generation and error handling
+- [x] No external dependencies (jq not required)
