@@ -17,6 +17,39 @@ elif [ -x /usr/local/bin/brew ]; then
     eval "$(/usr/local/bin/brew shellenv)"
 fi
 
+# Configure package download caching (use shared cache from host)
+echo "📦 Configuring package download cache..."
+if [ -d "/Volumes/My Shared Files/cal-cache" ]; then
+    # Set cache environment variables for this script
+    export HOMEBREW_CACHE="/Volumes/My Shared Files/cal-cache/homebrew"
+    export npm_config_cache="/Volumes/My Shared Files/cal-cache/npm"
+    export GOMODCACHE="/Volumes/My Shared Files/cal-cache/go"
+
+    # Create symlinks for convenience
+    mkdir -p ~/.cal-cache
+    ln -sf "/Volumes/My Shared Files/cal-cache/homebrew" ~/.cal-cache/homebrew 2>/dev/null || true
+    ln -sf "/Volumes/My Shared Files/cal-cache/npm" ~/.cal-cache/npm 2>/dev/null || true
+    ln -sf "/Volumes/My Shared Files/cal-cache/go" ~/.cal-cache/go 2>/dev/null || true
+    ln -sf "/Volumes/My Shared Files/cal-cache/git" ~/.cal-cache/git 2>/dev/null || true
+
+    # Make cache configuration persistent in ~/.zshrc (only if not already present)
+    if ! grep -q "HOMEBREW_CACHE.*cal-cache" ~/.zshrc 2>/dev/null; then
+        echo '' >> ~/.zshrc
+        echo '# CAL: Package download cache (shared from host)' >> ~/.zshrc
+        echo 'export HOMEBREW_CACHE="$HOME/.cal-cache/homebrew"' >> ~/.zshrc
+        echo 'export npm_config_cache="$HOME/.cal-cache/npm"' >> ~/.zshrc
+        echo 'export GOMODCACHE="$HOME/.cal-cache/go"' >> ~/.zshrc
+    fi
+
+    echo "  ✓ Cache configured (shared from host)"
+    echo "    Homebrew: $HOMEBREW_CACHE"
+    echo "    npm: $npm_config_cache"
+    echo "    Go: $GOMODCACHE"
+else
+    echo "  ⚠ Shared cache not available, using default locations"
+fi
+echo ""
+
 # Helper function to check if a command exists
 command_exists() {
     command -v "$1" &>/dev/null
@@ -289,7 +322,8 @@ echo "🖱️  Installing Cursor CLI..."
 if command_exists agent; then
     echo "  ✓ Cursor CLI already installed"
 else
-    if curl -fsSL https://cursor.com/install | bash; then
+    # Install via Homebrew Cask (official, cacheable)
+    if brew install --cask cursor-cli; then
         echo "  ✓ Cursor CLI installed"
     else
         echo "  ✗ Failed to install Cursor CLI"

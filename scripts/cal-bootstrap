@@ -40,6 +40,14 @@ HOST_USER="${HOST_USER:-$(whoami)}"
 PROXY_MODE="${PROXY_MODE:-auto}"  # on, off, or auto (default)
 HOST_GATEWAY="${HOST_GATEWAY:-192.168.64.1}"
 
+# Package download cache (temporary for this script only, does not affect host system)
+# Downloads during --init will be cached and reused by VM
+if [ -d "$HOME/.cal-cache" ]; then
+    export HOMEBREW_CACHE="$HOME/.cal-cache/homebrew"
+    export npm_config_cache="$HOME/.cal-cache/npm"
+    export GOMODCACHE="$HOME/.cal-cache/go"
+fi
+
 # Log file for debugging
 CAL_LOG="${HOME}/.cal-bootstrap.log"
 
@@ -994,6 +1002,18 @@ do_init() {
     echo ""
     echo "CAL Bootstrap - Initialize"
     echo "==========================="
+    echo ""
+
+    # Setup cache directories on host (for package download caching)
+    echo "Setting up cache directories..."
+    if [ ! -d ~/.cal-cache ]; then
+        mkdir -p ~/.cal-cache/{homebrew,npm,go,git}
+        echo "  ✓ Created cache directories: homebrew, npm, go, git"
+    else
+        echo "  ✓ Cache directory already exists"
+        # Ensure all subdirectories exist
+        mkdir -p ~/.cal-cache/{homebrew,npm,go,git}
+    fi
     echo ""
 
     # Check upfront if we'll be deleting existing VMs

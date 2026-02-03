@@ -49,7 +49,7 @@ if [[ ! -d "$TPM_DIR" ]]; then
             if git -C "$TPM_CACHE" fetch --all &>/dev/null; then
                 echo "  ✓ Cache updated"
             fi
-            # Clone from local cache (faster, uses hard links)
+            # Clone from local cache (faster than GitHub, no network needed)
             if git clone "$TPM_CACHE" "$TPM_DIR"; then
                 echo "✓ TPM installed from cache"
                 TPM_INSTALLED=true
@@ -64,10 +64,14 @@ if [[ ! -d "$TPM_DIR" ]]; then
         if git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"; then
             echo "✓ TPM installed from GitHub"
 
-            # Update cache for future use (if shared volume exists)
+            # Populate cache for future use (if shared volume exists)
             if [[ -d "/Volumes/My Shared Files/cal-cache/git" ]]; then
-                if git -C "$TPM_DIR" fetch --all &>/dev/null; then
-                    echo "  ✓ Cache will be available on next bootstrap"
+                echo "  Populating git cache for future bootstraps..."
+                # Clone to cache directory (this will appear on host)
+                if git clone "$TPM_DIR" "$TPM_CACHE" 2>/dev/null; then
+                    echo "  ✓ TPM cached to host (reusable on next bootstrap)"
+                else
+                    echo "  ⚠ Failed to cache TPM (will re-download on next bootstrap)"
                 fi
             fi
 
