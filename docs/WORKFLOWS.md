@@ -8,17 +8,23 @@
 
 ## Quick Reference
 
-| Workflow | Steps | Approvals | Target | Use Case |
-|----------|-------|-----------|--------|----------|
-| [Interactive](#interactive-workflow) | 10 | Required on HOST | main branch | Default for code changes |
-| [Documentation](#documentation-workflow) | 3 | Required on HOST | main branch | Docs-only changes |
-| [Bug Cleanup](#bug-cleanup-workflow) | 10 | Required on HOST | main branch | Fix tracked bugs from BUGS.md |
-| [Refine](#refine-workflow) | 6 | Required on HOST | main branch | Refine PLAN.md TODOs and bugs |
-| [Create PR](#create-pr-workflow) | 8 | Not required | PR branch | PR-based development |
-| [Review & Fix PR](#review--fix-pr-workflow) | 8 | Not required | PR review + fix | Code review with direct fixes |
-| [Update PR](#update-pr-workflow) | 8 | Not required | PR branch | Architectural issue fixes (rare) |
-| [Test PR](#test-pr-workflow) | 7 | Test confirmation (always) | PR testing | Manual testing gate |
-| [Merge PR](#merge-pr-workflow) | 8 | Required on HOST | main branch | Merge tested PRs |
+| # | Workflow | Steps | Approvals | Target | Use Case |
+|---|----------|-------|-----------|--------|----------|
+| 1 | [Interactive](#interactive-workflow) | 10 | Required on HOST | main branch | Default for code changes |
+| 2 | [Documentation](#documentation-workflow) | 3 | Required on HOST | main branch | Docs-only changes |
+| 3 | [Bug Cleanup](#bug-cleanup-workflow) | 10 | Required on HOST | main branch | Fix tracked bugs from BUGS.md |
+| 4 | [Refine](#refine-workflow) | 6 | Required on HOST | main branch | Refine PLAN.md TODOs and bugs |
+| 5 | [Create PR](#create-pr-workflow) | 8 | Not required | PR branch | PR-based development |
+| 6 | [Review & Fix PR](#review--fix-pr-workflow) | 8 | Not required | PR review + fix | Code review with direct fixes |
+| 7 | [Update PR](#update-pr-workflow) | 8 | Not required | PR branch | Architectural issue fixes (rare) |
+| 8 | [Test PR](#test-pr-workflow) | 7 | Test confirmation (always) | PR testing | Manual testing gate |
+| 9 | [Merge PR](#merge-pr-workflow) | 8 | Required on HOST | main branch | Merge tested PRs |
+
+### Number Shortcuts
+
+Users can enter a workflow number (1-9) at the start of a session to skip the menu and launch that workflow directly. For example, entering `5` launches the Create PR workflow immediately.
+
+When the user enters `.`, present the numbered workflow list and wait for selection.
 
 ---
 
@@ -351,6 +357,23 @@ This applies to:
 - PR queue selection (Create PR, Review & Fix PR, Update PR, Test PR, Merge PR workflows)
 - Next step suggestions at workflow completion
 - Any time user must choose between multiple items
+
+### Next Workflow Guidance
+
+At the end of workflows 4-9, tell the user which numbered workflow to run next:
+
+| Completed | Next Workflow |
+|-----------|---------------|
+| 4 (Refine) | **5** (Create PR) or **1** (Interactive) |
+| 5 (Create PR) | **6** (Review & Fix PR) |
+| 6 (Review & Fix PR) — approved | **8** (Test PR) |
+| 6 (Review & Fix PR) — changes requested | **7** (Update PR) |
+| 7 (Update PR) | **6** (Review & Fix PR) |
+| 8 (Test PR) — passed | **9** (Merge PR) |
+| 8 (Test PR) — failed | **7** (Update PR) |
+| 9 (Merge PR) | **5** (Create PR) if refined TODOs remain |
+
+**Format:** At the end of the workflow, display: `Next: run workflow X (Workflow Name)`
 
 ### Sequential Question and Test Presentation
 

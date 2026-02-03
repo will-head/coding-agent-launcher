@@ -355,6 +355,9 @@ Review findings to determine if new error patterns should be added:
 
 **Commit documentation updates** using [Commit Message Format](WORKFLOWS.md#commit-message-format). Push after commit.
 
+**If approved: Next: run workflow 8 (Test PR) to test the PR.**
+**If changes requested: Next: run workflow 7 (Update PR) to address architectural issues.**
+
 ---
 
 ## Pre-Review Checklist

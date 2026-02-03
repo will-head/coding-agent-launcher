@@ -192,6 +192,9 @@ Update PLAN.md and phase TODO files with current project status:
 
 **Commit documentation updates** using [Commit Message Format](WORKFLOWS.md#commit-message-format). Push after commit.
 
+**If tests passed: Next: run workflow 9 (Merge PR) to merge the PR.**
+**If tests failed: Next: run workflow 7 (Update PR) to address the failures.**
+
 ---
 
 ## Pre-Test Checklist
