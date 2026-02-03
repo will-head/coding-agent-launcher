@@ -100,28 +100,6 @@ if [[ ! -d "$TPM_DIR" ]]; then
 else
     echo "✓ TPM already installed"
 fi
-            fi
-        done
-        
-        if [[ "$TPM_INSTALLED" == "false" ]]; then
-            echo ""
-            echo "✗ FATAL: Failed to install TPM after $MAX_RETRIES attempts"
-            echo ""
-            echo "Network connectivity issue detected."
-            echo "Bootstrap cannot continue with incomplete tmux setup."
-            echo ""
-            echo "Please check your network connection and re-run:"
-            echo "  ~/scripts/vm-tmux-resurrect.sh"
-            echo ""
-            echo "Or re-run the full bootstrap:"
-            echo "  cal-bootstrap --init"
-            echo ""
-            exit 1
-        fi
-    fi
-else
-    echo "✓ TPM already installed"
-fi
 
 # Create or update tmux.conf with session persistence settings
 TMUX_CONF="$HOME/.tmux.conf"
