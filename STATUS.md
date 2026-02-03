@@ -18,7 +18,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| [#9](https://github.com/will-head/coding-agent-launcher/pull/9) | create-pr/git-cache | Add Git clone caching for faster VM bootstraps | 2026-02-03 |
+| *No PRs awaiting review* | | | |
 
 ---
 
@@ -34,7 +34,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| *No PRs needing testing* | | | |
+| [#9](https://github.com/will-head/coding-agent-launcher/pull/9) | create-pr/git-cache | Add Git clone caching for faster VM bootstraps | Claude Sonnet 4.5 | 2026-02-03 |
 
 ---
 
