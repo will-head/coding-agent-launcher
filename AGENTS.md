@@ -44,14 +44,15 @@ When `CAL_VM` is not true (running on HOST):
 **Interactive** is the default workflow unless user specifies otherwise or changes are docs-only.
 
 Routing rules:
-- "bug cleanup" → Bug Cleanup workflow
-- "refine" / "refinement" → Refine workflow
-- "create PR" → Create PR workflow
-- "review PR" → Review & Fix PR workflow
-- "update PR" → Update PR workflow (rare fallback for architectural issues)
-- "test PR" → Test PR workflow
-- "merge PR" → Merge PR workflow
-- Documentation-only changes → Documentation workflow
+- Number `1`-`9` → Launch that workflow directly (see [Quick Reference](docs/WORKFLOWS.md#quick-reference))
+- "bug cleanup" → 3. Bug Cleanup workflow
+- "refine" / "refinement" → 4. Refine workflow
+- "create PR" → 5. Create PR workflow
+- "review PR" → 6. Review & Fix PR workflow
+- "update PR" → 7. Update PR workflow (rare fallback for architectural issues)
+- "test PR" → 8. Test PR workflow
+- "merge PR" → 9. Merge PR workflow
+- Documentation-only changes → 2. Documentation workflow
 
 **If unclear, ask user explicitly which workflow to use.**
 
@@ -112,11 +113,15 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 3. Wait for user to select a number
 4. Run the chosen workflow following its standard procedure
 
+**When user enters a number (1-9) as their prompt:**
+
+Skip the menu and launch that workflow directly (same as selecting it from the `.` menu).
+
 ---
 
 ## Session Start
 
-1. **Determine workflow** - If unclear, ask user (see [Workflow Modes](#workflow-modes) routing rules)
+1. **Determine workflow** - If user entered a number (1-9), use that workflow directly. Otherwise, if unclear, ask user (see [Workflow Modes](#workflow-modes) routing rules)
 2. **Read and reiterate workflow** - Follow [Session Start Procedure](docs/WORKFLOWS.md#session-start-procedure) from Shared Conventions
 3. **Check environment** - Run `echo $CAL_VM` (must happen before any approval-gated step):
    - `CAL_VM=true`: Display "Running in cal-dev VM (isolated environment)" — approvals auto-granted
