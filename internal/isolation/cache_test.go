@@ -524,3 +524,191 @@ func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
 		}
 	})
 }
+
+func TestCacheManager_GoSetup(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("SetupGoCache creates host cache directory", func(t *testing.T) {
+		err := cm.SetupGoCache()
+		if err != nil {
+			t.Fatalf("SetupGoCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "go")
+		info, err := os.Stat(hostCacheDir)
+		if err != nil {
+			t.Fatalf("host cache directory not created: %v", err)
+		}
+		if !info.IsDir() {
+			t.Fatalf("host cache is not a directory")
+		}
+
+		pkgModDir := filepath.Join(hostCacheDir, "pkg", "mod")
+		if _, err := os.Stat(pkgModDir); err != nil {
+			t.Fatalf("pkg/mod subdirectory not created: %v", err)
+		}
+
+		pkgSumdbDir := filepath.Join(hostCacheDir, "pkg", "sumdb")
+		if _, err := os.Stat(pkgSumdbDir); err != nil {
+			t.Fatalf("pkg/sumdb subdirectory not created: %v", err)
+		}
+	})
+
+	t.Run("SetupGoCache is idempotent", func(t *testing.T) {
+		err := cm.SetupGoCache()
+		if err != nil {
+			t.Fatalf("first SetupGoCache failed: %v", err)
+		}
+
+		err = cm.SetupGoCache()
+		if err != nil {
+			t.Fatalf("second SetupGoCache failed: %v", err)
+		}
+	})
+
+	t.Run("SetupGoCache gracefully handles missing home directory", func(t *testing.T) {
+		cmNoHome := &CacheManager{
+			homeDir:      "",
+			cacheBaseDir: "",
+		}
+
+		err := cmNoHome.SetupGoCache()
+		if err != nil {
+			t.Fatalf("expected graceful degradation (nil error) when homeDir unavailable, got: %v", err)
+		}
+	})
+}
+
+func TestCacheManager_GetGoCacheInfo(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("GetGoCacheInfo returns zero size when cache doesn't exist", func(t *testing.T) {
+		info, err := cm.GetGoCacheInfo()
+		if err != nil {
+			t.Fatalf("GetGoCacheInfo failed: %v", err)
+		}
+
+		if info.Size != 0 {
+			t.Fatalf("expected size 0, got %d", info.Size)
+		}
+
+		if info.Path == "" {
+			t.Fatalf("expected non-empty path")
+		}
+
+		if info.Available {
+			t.Fatalf("expected cache to be unavailable")
+		}
+	})
+
+	t.Run("GetGoCacheInfo returns size when cache exists", func(t *testing.T) {
+		err := cm.SetupGoCache()
+		if err != nil {
+			t.Fatalf("SetupGoCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "go", "pkg", "mod")
+		testFile := filepath.Join(hostCacheDir, "test-module@v1.0.0")
+		if err := os.WriteFile(testFile, []byte("test go module data"), 0644); err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
+		info, err := cm.GetGoCacheInfo()
+		if err != nil {
+			t.Fatalf("GetGoCacheInfo failed: %v", err)
+		}
+
+		if info.Size == 0 {
+			t.Fatalf("expected non-zero size")
+		}
+
+		if !info.Available {
+			t.Fatalf("expected cache to be available")
+		}
+	})
+}
+
+func TestCacheManager_VMGoCacheSetup(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("SetupVMGoCache returns commands when host cache exists", func(t *testing.T) {
+		err := cm.SetupGoCache()
+		if err != nil {
+			t.Fatalf("SetupGoCache failed: %v", err)
+		}
+
+		commands := cm.SetupVMGoCache()
+		if commands == nil {
+			t.Fatalf("expected non-nil commands")
+		}
+
+		if len(commands) == 0 {
+			t.Fatalf("expected at least one command")
+		}
+
+		commandsStr := strings.Join(commands, " ")
+		if !strings.Contains(commandsStr, "mkdir -p ~/.cal-cache") {
+			t.Fatalf("expected mkdir command in VM setup")
+		}
+		if !strings.Contains(commandsStr, "ln -sf") {
+			t.Fatalf("expected symlink command in VM setup")
+		}
+		if !strings.Contains(commandsStr, "GOMODCACHE") {
+			t.Fatalf("expected GOMODCACHE environment variable setup")
+		}
+		if !strings.Contains(commandsStr, "touch ~/.zshrc") {
+			t.Fatalf("expected touch command to ensure .zshrc exists before grep")
+		}
+	})
+
+	t.Run("SetupVMGoCache returns nil when home directory unavailable", func(t *testing.T) {
+		cmNoHome := &CacheManager{
+			homeDir:      "",
+			cacheBaseDir: "",
+		}
+
+		commands := cmNoHome.SetupVMGoCache()
+		if commands != nil {
+			t.Fatalf("expected nil commands when homeDir unavailable, got: %v", commands)
+		}
+	})
+
+	t.Run("SetupVMGoCache returns nil when host cache doesn't exist", func(t *testing.T) {
+		cmNoCache := &CacheManager{
+			homeDir:      tmpDir,
+			cacheBaseDir: filepath.Join(tmpDir, "nonexistent-cache"),
+		}
+
+		commands := cmNoCache.SetupVMGoCache()
+		if commands != nil {
+			t.Fatalf("expected nil commands when host cache doesn't exist, got: %v", commands)
+		}
+	})
+}

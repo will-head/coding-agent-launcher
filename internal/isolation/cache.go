@@ -36,6 +36,8 @@ const (
 	homebrewCaskDir = "Cask"
 	// npmCacheDir is the directory name for npm cache under .cal-cache.
 	npmCacheDir = "npm"
+	// goCacheDir is the directory name for Go cache under .cal-cache.
+	goCacheDir = "go"
 	// sharedCacheMount is the Tart directory mount specification for cache sharing.
 	sharedCacheMount = "cal-cache:~/.cal-cache"
 )
@@ -70,6 +72,11 @@ func (c *CacheManager) GetHomebrewCacheHostPath() string {
 // getNpmCachePath returns the host path for npm cache.
 func (c *CacheManager) getNpmCachePath() string {
 	return filepath.Join(c.cacheBaseDir, npmCacheDir)
+}
+
+// getGoCachePath returns the host path for Go cache.
+func (c *CacheManager) getGoCachePath() string {
+	return filepath.Join(c.cacheBaseDir, goCacheDir)
 }
 
 // SetupHomebrewCache sets up the Homebrew cache directory on the host.
@@ -244,6 +251,98 @@ func (c *CacheManager) GetNpmCacheInfo() (*CacheInfo, error) {
 	}, nil
 }
 
+// SetupGoCache sets up the Go cache directory on the host.
+// Creates the cache directory structure with graceful degradation on errors.
+func (c *CacheManager) SetupGoCache() error {
+	if c.homeDir == "" {
+		fmt.Fprintf(os.Stderr, "Warning: home directory not available, continuing without Go cache\n")
+		return nil
+	}
+
+	hostCacheDir := c.getGoCachePath()
+
+	if err := os.MkdirAll(hostCacheDir, 0755); err != nil {
+		return fmt.Errorf("failed to create host Go cache directory: %w", err)
+	}
+
+	pkgModDir := filepath.Join(hostCacheDir, "pkg", "mod")
+	if err := os.MkdirAll(pkgModDir, 0755); err != nil {
+		return fmt.Errorf("failed to create pkg/mod directory: %w", err)
+	}
+
+	pkgSumdbDir := filepath.Join(hostCacheDir, "pkg", "sumdb")
+	if err := os.MkdirAll(pkgSumdbDir, 0755); err != nil {
+		return fmt.Errorf("failed to create pkg/sumdb directory: %w", err)
+	}
+
+	return nil
+}
+
+// SetupVMGoCache returns shell commands to set up Go cache in the VM.
+// The commands create a symlink from the VM home directory to the shared cache volume
+// and configure the GOMODCACHE environment variable.
+// Returns nil if host cache is not available.
+func (c *CacheManager) SetupVMGoCache() []string {
+	if c.homeDir == "" {
+		return nil
+	}
+
+	hostCacheDir := c.getGoCachePath()
+	if _, err := os.Stat(hostCacheDir); os.IsNotExist(err) {
+		return nil
+	}
+
+	vmCacheDir := "~/.cal-cache/go"
+	sharedCachePath := "\"/Volumes/My Shared Files/cal-cache/go\""
+	gomodcachePath := "~/.cal-cache/go/pkg/mod"
+
+	commands := []string{
+		"mkdir -p ~/.cal-cache",
+		fmt.Sprintf("ln -sf %s %s", sharedCachePath, vmCacheDir),
+		fmt.Sprintf("touch ~/.zshrc && grep -q 'GOMODCACHE' ~/.zshrc || echo 'export GOMODCACHE=%s' >> ~/.zshrc", gomodcachePath),
+	}
+
+	return commands
+}
+
+// GetGoCacheInfo returns information about the Go cache.
+func (c *CacheManager) GetGoCacheInfo() (*CacheInfo, error) {
+	cachePath := c.getGoCachePath()
+
+	info, err := os.Stat(cachePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &CacheInfo{
+				Path:      cachePath,
+				Size:      0,
+				Available: false,
+			}, nil
+		}
+		return nil, fmt.Errorf("failed to stat Go cache directory: %w", err)
+	}
+
+	var size int64
+	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !fi.IsDir() {
+			size += fi.Size()
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate Go cache size: %w", err)
+	}
+
+	return &CacheInfo{
+		Path:       cachePath,
+		Size:       size,
+		Available:  true,
+		LastAccess: info.ModTime(),
+	}, nil
+}
+
 // Status displays cache status information to the writer.
 func (c *CacheManager) Status(w io.Writer) error {
 	homebrewInfo, err := c.GetHomebrewCacheInfo()
@@ -254,6 +353,11 @@ func (c *CacheManager) Status(w io.Writer) error {
 	npmInfo, err := c.GetNpmCacheInfo()
 	if err != nil {
 		return fmt.Errorf("failed to get npm cache info: %w", err)
+	}
+
+	goInfo, err := c.GetGoCacheInfo()
+	if err != nil {
+		return fmt.Errorf("failed to get Go cache info: %w", err)
 	}
 
 	fmt.Fprintf(w, "Cache Status:\n")
@@ -279,6 +383,19 @@ func (c *CacheManager) Status(w io.Writer) error {
 		fmt.Fprintf(w, "  Size: %s\n", formatBytes(npmInfo.Size))
 		if !npmInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", npmInfo.LastAccess.Format(time.RFC3339))
+		}
+	} else {
+		fmt.Fprintf(w, "✗ Not configured\n")
+	}
+	fmt.Fprintf(w, "\n")
+	fmt.Fprintf(w, "Go:\n")
+	fmt.Fprintf(w, "  Location: %s\n", goInfo.Path)
+	fmt.Fprintf(w, "  Status: ")
+	if goInfo.Available {
+		fmt.Fprintf(w, "✓ Ready\n")
+		fmt.Fprintf(w, "  Size: %s\n", formatBytes(goInfo.Size))
+		if !goInfo.LastAccess.IsZero() {
+			fmt.Fprintf(w, "  Last access: %s\n", goInfo.LastAccess.Format(time.RFC3339))
 		}
 	} else {
 		fmt.Fprintf(w, "✗ Not configured\n")
