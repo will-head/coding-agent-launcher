@@ -26,7 +26,7 @@
 
 ---
 
-### Phase 1.1.4: **REFINED:** Git Clones Cache
+### Phase 1.1.4: **REFINED:** Git Clones Cache (PR #9 - needs retesting after symlink fix)
 
 **Dependencies:** Phase 1.1.3 (Go modules cache) must be complete first.
 
@@ -72,6 +72,8 @@
 - Unit tests for git clone caching logic
 - Integration tests with mocks
 - Manual: Bootstrap with/without network, verify cache works offline
+- Manual TPM caching test (blocked by Tart environment issue - broken symlink in cache dir requiring filesystem repair)
+- Manual offline bootstrap verification (blocked by same Tart environment issue)
 
 **Acceptance Criteria:**
 - Git cache directory created on host
