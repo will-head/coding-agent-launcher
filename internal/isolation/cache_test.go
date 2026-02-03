@@ -255,6 +255,9 @@ func TestCacheManager_VMCacheSetup(t *testing.T) {
 		if !strings.Contains(commandsStr, "HOMEBREW_CACHE") {
 			t.Fatalf("expected HOMEBREW_CACHE environment variable setup")
 		}
+		if !strings.Contains(commandsStr, "touch ~/.zshrc") {
+			t.Fatalf("expected touch command to ensure .zshrc exists before grep")
+		}
 	})
 
 	t.Run("SetupVMHomebrewCache returns nil when home directory unavailable", func(t *testing.T) {
@@ -318,4 +321,31 @@ func TestCacheManager_SharedCacheMount(t *testing.T) {
 			t.Fatalf("expected 'homebrew' in host path")
 		}
 	})
+}
+
+func TestFormatBytes(t *testing.T) {
+	tests := []struct {
+		name     string
+		bytes    int64
+		expected string
+	}{
+		{"zero bytes", 0, "0 B"},
+		{"bytes only", 512, "512 B"},
+		{"exactly 1 KB", 1024, "1.0 KB"},
+		{"kilobytes", 1536, "1.5 KB"},
+		{"megabytes", 1048576, "1.0 MB"},
+		{"gigabytes", 1073741824, "1.0 GB"},
+		{"terabytes", 1099511627776, "1.0 TB"},
+		{"large size", 5368709120, "5.0 GB"},
+		{"fractional MB", 2621440, "2.5 MB"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatBytes(tt.bytes)
+			if result != tt.expected {
+				t.Errorf("formatBytes(%d) = %s, expected %s", tt.bytes, result, tt.expected)
+			}
+		})
+	}
 }

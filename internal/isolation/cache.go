@@ -96,7 +96,7 @@ func (c *CacheManager) SetupHomebrewCache() error {
 // SetupVMHomebrewCache returns shell commands to set up Homebrew cache in the VM.
 // The commands create a symlink from the VM home directory to the shared cache volume
 // and configure the HOMEBREW_CACHE environment variable.
-// Returns empty slice if host cache is not available.
+// Returns nil if host cache is not available.
 func (c *CacheManager) SetupVMHomebrewCache() []string {
 	if c.homeDir == "" {
 		return nil
@@ -107,13 +107,13 @@ func (c *CacheManager) SetupVMHomebrewCache() []string {
 		return nil
 	}
 
-	vmCacheDir := filepath.Join("~", ".cal-cache", homebrewCacheDir)
-	sharedCachePath := filepath.Join("/Volumes/My Shared Files", "cal-cache", homebrewCacheDir)
+	vmCacheDir := "~/.cal-cache/homebrew"
+	sharedCachePath := "\"/Volumes/My Shared Files/cal-cache/homebrew\""
 
 	commands := []string{
-		fmt.Sprintf("mkdir -p ~/.cal-cache"),
+		"mkdir -p ~/.cal-cache",
 		fmt.Sprintf("ln -sf %s %s", sharedCachePath, vmCacheDir),
-		fmt.Sprintf("grep -q 'HOMEBREW_CACHE' ~/.zshrc || echo 'export HOMEBREW_CACHE=%s' >> ~/.zshrc", vmCacheDir),
+		fmt.Sprintf("touch ~/.zshrc && grep -q 'HOMEBREW_CACHE' ~/.zshrc || echo 'export HOMEBREW_CACHE=%s' >> ~/.zshrc", vmCacheDir),
 	}
 
 	return commands
