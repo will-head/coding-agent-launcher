@@ -16,6 +16,14 @@ echo "  CAL VM First Run - Check Repository Updates"
 echo "============================================"
 echo ""
 
+# Show keychain status (unlocked in .zshrc before this script)
+if security show-keychain-info login.keychain 2>/dev/null | grep -q "no-timeout"; then
+    echo "🔐 Login keychain: ✓"
+else
+    echo "🔐 Login keychain: ⚠ Could not verify unlock status"
+fi
+echo ""
+
 # Network connectivity check
 echo "🌐 Checking network connectivity..."
 
@@ -100,9 +108,6 @@ else
         fi
     fi
 fi
-
-echo "💡 tmux: Ctrl+b d to detach if needed"
-echo ""
 
 # Check for repositories
 echo "🔄 Checking Repositories for Remote Updates"

@@ -46,6 +46,7 @@ CAL_LOG="${HOME}/.cal-bootstrap.log"
 # Cleanup tracking
 CLEANUP_VM=false
 CLEANUP_DONE=false
+CLEANUP_DELETE_CALDEV=false
 TART_PID=""
 
 # Force delete flag (skip git checks and avoid booting)
@@ -63,6 +64,17 @@ cleanup() {
         echo "Cleaning up background VM process (PID: $TART_PID)..."
         kill "$TART_PID" 2>/dev/null || true
         wait "$TART_PID" 2>/dev/null || true
+    fi
+    
+    # Delete cal-dev if init failed (leaves incomplete/unstable VM)
+    if [ "$CLEANUP_DELETE_CALDEV" = true ]; then
+        echo ""
+        echo "🗑️  Cleaning up incomplete VM..."
+        "$TART" stop "$VM_DEV" 2>/dev/null || true
+        sleep 1
+        if "$TART" delete "$VM_DEV" 2>/dev/null; then
+            echo "  ✓ Deleted $VM_DEV (incomplete initialization)"
+        fi
     fi
 }
 
@@ -433,8 +445,14 @@ run_vm_setup() {
         env_vars="${env_vars} ALL_PROXY='socks5h://localhost:1080' http_proxy='socks5h://localhost:1080' https_proxy='socks5h://localhost:1080'"
     fi
 
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" "${env_vars} ~/scripts/vm-setup.sh"
+    if ! ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${vm_ip}" "${env_vars} ~/scripts/vm-setup.sh"; then
+        echo ""
+        echo "✗ vm-setup.sh failed"
+        echo ""
+        echo "Check ~/.cal-bootstrap.log for details"
+        return 1
+    fi
 }
 
 # Setup scripts folder in VM with helper scripts
@@ -1161,6 +1179,9 @@ do_init() {
     "$TART" clone "$VM_CLEAN" "$VM_DEV"
     echo "  $VM_DEV created"
     
+    # Enable cleanup of cal-dev if init fails (incomplete/unstable VM)
+    CLEANUP_DELETE_CALDEV=true
+    
     # Step 3: Start cal-dev and setup
     echo ""
     echo "Step 3: Setup $VM_DEV"
@@ -1207,11 +1228,29 @@ do_init() {
     echo "Step 6: Setup scripts folder"
     setup_scripts_folder "$VM_IP"
 
+    # Step 6.5: Set first-run flag BEFORE vm-setup creates tmux config
+    # This prevents tmux-resurrect from capturing the vm-auth screen during initial setup
+    echo ""
+    echo "Step 6.5: Set first-run flag"
+    echo "  Setting first-run flag in $VM_DEV..."
+    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${VM_IP}" "touch ~/.cal-first-run && sync && [ -f ~/.cal-first-run ] && echo 'success'" 2>> "$CAL_LOG" | grep -q 'success'; then
+        echo "  ✓ First-run flag set (TPM will not load until after first login)"
+    else
+        echo "  ⚠ Failed to set first-run flag"
+        echo "  → vm-auth screen may be captured by tmux-resurrect"
+    fi
+
     # Step 7: Run vm-setup from ~/scripts
     # Pass proxy flag so vm-setup knows to use SOCKS proxy env vars
     echo ""
     echo "Step 7: Install tools"
-    run_vm_setup "$VM_IP" "$bootstrap_proxy_started"
+    if ! run_vm_setup "$VM_IP" "$bootstrap_proxy_started"; then
+        echo ""
+        echo "⚠️  Initialization failed - cleaning up..."
+        cleanup
+        exit 1
+    fi
 
     # Allow time for filesystem sync before reboot
     sleep 2
@@ -1270,17 +1309,18 @@ do_init() {
     echo ""
     echo "Continuing with setup..."
 
-    # Step 9.5: Set first-run flag in cal-dev (while it's running)
+    # Step 9.5: Verify first-run flag exists (set in Step 6.5, persisted through reboot)
     echo ""
     echo "Step 9.5: Prepare $VM_INIT snapshot"
-    echo "  Setting first-run flag in $VM_DEV (will be copied to $VM_INIT)..."
+    echo "  Verifying first-run flag in $VM_DEV (will be copied to $VM_INIT)..."
     if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-           "${VM_USER}@${VM_IP}" "touch ~/.cal-first-run && sync && [ -f ~/.cal-first-run ] && echo 'success'" 2>> "$CAL_LOG" | grep -q 'success'; then
-        echo "  ✓ First-run flag set in $VM_DEV"
+           "${VM_USER}@${VM_IP}" "[ -f ~/.cal-first-run ] && echo 'exists'" 2>> "$CAL_LOG" | grep -q 'exists'; then
+        echo "  ✓ First-run flag exists in $VM_DEV (will be copied to $VM_INIT)"
     else
-        echo "  ⚠ Failed to set first-run flag"
-        echo "  → You can manually run ~/scripts/vm-first-run.sh after restoring $VM_INIT"
-        echo "[$(date)] Failed to set first-run flag in $VM_DEV" >> "$CAL_LOG"
+        echo "  ⚠ First-run flag missing! Setting it now..."
+        ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${VM_IP}" "touch ~/.cal-first-run && sync" 2>> "$CAL_LOG"
+        echo "  → vm-first-run.sh will execute after restoring $VM_INIT"
     fi
 
     # Step 10: Create cal-init snapshot
@@ -1300,6 +1340,9 @@ do_init() {
     "$TART" clone "$VM_DEV" "$VM_INIT"
     echo "  $VM_INIT created"
     echo "  ✓ First-run flag copied to $VM_INIT (will run vm-first-run.sh when restored)"
+    
+    # Bootstrap succeeded - disable cal-dev cleanup
+    CLEANUP_DELETE_CALDEV=false
     
     echo ""
     echo "Bootstrap complete!"
@@ -1344,13 +1387,18 @@ do_init() {
     # Setup Tart cache sharing for nested VM support
     setup_tart_cache_sharing "$VM_IP"
 
-    # Step 10.5: Remove first-run flag from cal-dev (so it won't run vm-first-run.sh)
+    # Step 10.5: Remove first-run flag from cal-dev
+    # cal-dev is the working VM and needs TPM/session persistence enabled
+    # cal-init (cloned above) keeps the flag for first login after restore
     echo ""
     echo "Step 10.5: Prepare $VM_DEV for use"
     echo "  Removing first-run flag from $VM_DEV..."
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "rm -f ~/.cal-first-run && sync" 2>> "$CAL_LOG"
-    echo "  ✓ $VM_DEV ready (won't run vm-first-run.sh on next login)"
+    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${VM_IP}" "rm -f ~/.cal-first-run && sync && [ ! -f ~/.cal-first-run ] && echo 'success'" 2>> "$CAL_LOG" | grep -q 'success'; then
+        echo "  ✓ First-run flag removed (TPM will load normally, session persistence enabled)"
+    else
+        echo "  ⚠ Failed to remove first-run flag - vm-first-run.sh may run on connect"
+    fi
 
     echo ""
     echo "VNC:   open vnc://${VM_IP}"
@@ -1362,9 +1410,18 @@ do_init() {
 
     # SSH into the VM with tmux (always)
     # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
-    # Start server, explicitly trigger restore, then attach to cal-dev (or create if not restored)
-    ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh start-server; ~/scripts/tmux-wrapper.sh run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; sleep 1; ~/scripts/tmux-wrapper.sh attach -t cal-dev 2>/dev/null || ~/scripts/tmux-wrapper.sh new-session -s cal-dev"
+    # Check for first-run flag - if it exists, DON'T use auto-restore (let vm-first-run.sh run first)
+    # Only use -A flag (auto-restore) if flag doesn't exist
+    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${VM_IP}" "[ -f ~/.cal-first-run ]" 2>> "$CAL_LOG"; then
+        # First run - don't auto-restore (vm-first-run.sh needs to run first)
+        ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -s cal-dev"
+    else
+        # Normal run - use auto-restore
+        ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal-dev"
+    fi
 }
 
 # === RUN MODE ===
@@ -1462,9 +1519,18 @@ do_run() {
 
     # SSH into the VM with tmux (always)
     # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
-    # Start server, explicitly trigger restore, then attach to cal-dev (or create if not restored)
-    ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh start-server; ~/scripts/tmux-wrapper.sh run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; sleep 1; ~/scripts/tmux-wrapper.sh attach -t cal-dev 2>/dev/null || ~/scripts/tmux-wrapper.sh new-session -s cal-dev"
+    # Check for first-run flag - if it exists, DON'T use auto-restore (let vm-first-run.sh run first)
+    # Only use -A flag (auto-restore) if flag doesn't exist
+    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${VM_IP}" "[ -f ~/.cal-first-run ]" 2>> "$CAL_LOG"; then
+        # First run - don't auto-restore (vm-first-run.sh needs to run first)
+        ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -s cal-dev"
+    else
+        # Normal run - use auto-restore
+        ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal-dev"
+    fi
 }
 
 # === STOP MODE ===
@@ -1564,9 +1630,18 @@ do_restart() {
 
     # SSH into the VM with tmux (always)
     # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
-    # Start server, explicitly trigger restore, then attach to cal-dev (or create if not restored)
-    ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh start-server; ~/scripts/tmux-wrapper.sh run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; sleep 1; ~/scripts/tmux-wrapper.sh attach -t cal-dev 2>/dev/null || ~/scripts/tmux-wrapper.sh new-session -s cal-dev"
+    # Check for first-run flag - if it exists, DON'T use auto-restore (let vm-first-run.sh run first)
+    # Only use -A flag (auto-restore) if flag doesn't exist
+    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${VM_IP}" "[ -f ~/.cal-first-run ]" 2>> "$CAL_LOG"; then
+        # First run - don't auto-restore (vm-first-run.sh needs to run first)
+        ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -s cal-dev"
+    else
+        # Normal run - use auto-restore
+        ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s cal-dev"
+    fi
 }
 
 # === GUI MODE ===

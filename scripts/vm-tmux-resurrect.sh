@@ -30,10 +30,60 @@ fi
 
 # Create TPM (Tmux Plugin Manager) directory
 TPM_DIR="$HOME/.tmux/plugins/tpm"
+TPM_CACHE="$HOME/.cal-cache/tpm"
+
 if [[ ! -d "$TPM_DIR" ]]; then
     echo "Installing Tmux Plugin Manager (TPM)..."
-    git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
-    echo "✓ TPM installed"
+    
+    # Try to use cached TPM first
+    if [[ -d "$TPM_CACHE" ]]; then
+        echo "  Using cached TPM from ~/.cal-cache/tpm..."
+        mkdir -p "$HOME/.tmux/plugins"
+        cp -R "$TPM_CACHE" "$TPM_DIR"
+        echo "✓ TPM installed from cache"
+    else
+        # No cache, download with retry logic
+        mkdir -p "$HOME/.tmux/plugins"
+        RETRY_COUNT=0
+        MAX_RETRIES=3
+        RETRY_DELAY=5
+        TPM_INSTALLED=false
+        
+        while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
+            if git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"; then
+                echo "✓ TPM installed"
+                
+                # Cache for future use
+                mkdir -p "$(dirname "$TPM_CACHE")"
+                cp -R "$TPM_DIR" "$TPM_CACHE"
+                echo "  Cached TPM to ~/.cal-cache/tpm"
+                TPM_INSTALLED=true
+                break
+            else
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                if [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; then
+                    echo "  ⚠ Clone failed, retrying in ${RETRY_DELAY}s (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)..."
+                    sleep $RETRY_DELAY
+                fi
+            fi
+        done
+        
+        if [[ "$TPM_INSTALLED" == "false" ]]; then
+            echo ""
+            echo "✗ FATAL: Failed to install TPM after $MAX_RETRIES attempts"
+            echo ""
+            echo "Network connectivity issue detected."
+            echo "Bootstrap cannot continue with incomplete tmux setup."
+            echo ""
+            echo "Please check your network connection and re-run:"
+            echo "  ~/scripts/vm-tmux-resurrect.sh"
+            echo ""
+            echo "Or re-run the full bootstrap:"
+            echo "  cal-bootstrap --init"
+            echo ""
+            exit 1
+        fi
+    fi
 else
     echo "✓ TPM already installed"
 fi
@@ -61,7 +111,7 @@ set-environment -g PATH "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/us
 # Better terminal support
 set -g default-terminal "screen-256color"
 
-# Mouse support - enables pane selection, resizing, scrolling, and tmux right-click menu
+# Mouse support - enables pane selection, resizing, scrolling
 # When enabled: right-click shows tmux menu (Swap, Kill, Respawn, Mark, Rename, etc.)
 # When disabled: right-click shows terminal app menu (Copy, Paste, Split, etc.)
 # Default: on (provides tmux context menu functionality)
@@ -150,11 +200,40 @@ EOF
 
 echo "✓ tmux.conf configured"
 
-# Install plugins
+# Install plugins directly (TPM's auto-install only LOADS plugins, doesn't INSTALL them)
+# We need to run install_plugins explicitly during setup
 echo ""
 echo "Installing tmux plugins..."
-"$TPM_DIR/bin/install_plugins"
-echo "✓ Plugins installed"
+
+# Run install_plugins directly with correct PATH and TMUX_PLUGIN_MANAGER_PATH
+# The install_plugins script requires TMUX_PLUGIN_MANAGER_PATH to be set
+# Temporarily disable exit-on-error to capture failures gracefully
+set +e
+INSTALL_OUTPUT=$(TMUX_PLUGIN_MANAGER_PATH="$HOME/.tmux/plugins/" PATH="/opt/homebrew/bin:$PATH" "$TPM_DIR/bin/install_plugins" 2>&1)
+INSTALL_EXIT=$?
+set -e
+
+# Verify both plugins installed by checking directories
+if [ -d "$HOME/.tmux/plugins/tmux-resurrect" ] && [ -d "$HOME/.tmux/plugins/tmux-continuum" ]; then
+    echo "✓ Plugins installed (tmux-resurrect, tmux-continuum)"
+elif [ $INSTALL_EXIT -ne 0 ]; then
+    echo ""
+    echo "✗ Plugin installation failed with exit code $INSTALL_EXIT"
+    echo ""
+    echo "Output:"
+    echo "$INSTALL_OUTPUT"
+    echo ""
+    exit 1
+else
+    echo "⚠ Plugin installation incomplete (install_plugins succeeded but plugins missing):"
+    [ ! -d "$HOME/.tmux/plugins/tmux-resurrect" ] && echo "  - tmux-resurrect missing"
+    [ ! -d "$HOME/.tmux/plugins/tmux-continuum" ] && echo "  - tmux-continuum missing"
+    echo ""
+    echo "Output:"
+    echo "$INSTALL_OUTPUT"
+    echo ""
+    exit 1
+fi
 
 # Configure .zlogout to save sessions on logout
 ZLOGOUT="$HOME/.zlogout"
@@ -186,16 +265,19 @@ echo "============================================"
 echo "Tmux Session Persistence Setup Complete"
 echo "============================================"
 echo ""
-echo "Features enabled:"
+echo "Features configured:"
 echo "  • Auto-save every 15 minutes"
 echo "  • Save on logout"
 echo "  • Restore on login (automatic)"
-echo "  • Pane contents saved (5000 line scrollback)"
+echo "  • Pane contents saved (50,000 line scrollback)"
+echo "  • Plugins will auto-install on first tmux start"
 echo ""
-echo "Manual save: Ctrl+b Ctrl+s"
-echo "Manual restore: Ctrl+b Ctrl+r"
-echo "Reload config: Ctrl+b R"
-echo "Resize pane to 67%: Ctrl+b r"
+echo "Keybindings:"
+echo "  • Manual save: Ctrl+b Ctrl+s"
+echo "  • Manual restore: Ctrl+b Ctrl+r"
+echo "  • Reload config: Ctrl+b R"
+echo "  • Resize pane to 67%: Ctrl+b r"
 echo ""
-echo "Session data stored in: ~/.local/share/tmux/resurrect/"
+echo "Session data: ~/.local/share/tmux/resurrect/"
+echo "TPM cache: ~/.cal-cache/tpm/ (persists across snapshots)"
 echo ""

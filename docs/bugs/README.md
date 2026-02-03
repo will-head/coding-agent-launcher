@@ -28,6 +28,8 @@ This file is for human browsing only. Agents should not read this file.
 
 | ID | Summary | Severity | Status | Component | Phase | Opened | Resolved |
 |----|---------|----------|--------|-----------|-------|--------|----------|
+| [BUG-007](BUG-007-session-restore-broken-after-restart.md) | Session restore broken after restart (first-run flag regression) | Critical | Resolved | Bootstrap | 0 (Bootstrap) | 2026-02-02 | 2026-02-02 |
+| [BUG-006](BUG-006-tmux-mouse-mode-re-regression.md) | vm-tmux-resurrect.sh fails silently on network timeout during --init | High | Resolved | Bootstrap | 0 (Bootstrap) | 2026-02-02 | 2026-02-02 |
 | [BUG-005](BUG-005-tmux-resurrect-persistence.md) | tmux-resurrect session persistence fails across VM restart | Medium | Resolved | tmux/VM | 0 (Bootstrap) | 2026-02-02 | 2026-02-02 |
 | [BUG-004](BUG-004-tmux-mouse-mode-regression.md) | Tmux mouse mode disabled by default after incorrect BUG-003 fix | Medium | Resolved | Bootstrap | 0 (Bootstrap) | 2026-02-01 | 2026-02-01 |
 | BUG-003 | Tmux mouse mode breaks terminal copy-on-select and right-click menu | Medium | Closed | Bootstrap | 0 (Bootstrap) | 2026-02-01 | 2026-02-01 |

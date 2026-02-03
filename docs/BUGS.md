@@ -25,4 +25,4 @@ When bugs are resolved, remove the entry from this file and update `bugs/README.
 
 | ID | Summary | Severity | Status | Component | Phase | Opened |
 |----|---------|----------|--------|-----------|-------|--------|
-| *No active bugs* | | | | | | |
+| - | No active bugs | - | - | - | - | - |

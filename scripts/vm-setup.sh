@@ -497,8 +497,8 @@ if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
 
     # CAL First Run (after restoring cal-init)
     # Runs vm-first-run.sh to check for remote repository updates after restoring cal-init
+    # NOTE: Flag is removed AFTER script completes so tmux-resurrect doesn't load during first-run
     if [ -f ~/.cal-first-run ]; then
-        rm -f ~/.cal-first-run
         if [ -f ~/scripts/vm-first-run.sh ]; then
             echo ""
             echo "🔄 First login detected - checking for repository updates..."
@@ -506,6 +506,9 @@ if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
             zsh ~/scripts/vm-first-run.sh
             # Stay in cal-dev shell (don't exit like vm-auth does)
         fi
+        # Remove flag AFTER first-run completes so TPM doesn't load during the script
+        rm -f ~/.cal-first-run
+        sync
     fi
 fi
 KEYCHAIN_EOF
@@ -520,7 +523,8 @@ if ! grep -q '# CAL Tmux Status Prompt' ~/.zshrc; then
 
 # CAL Tmux Status Prompt
 # Show helpful message when starting new shells inside tmux
-if [ -n "$TMUX" ]; then
+# Skip during first-run (TPM not loaded yet due to first-run flag)
+if [ -n "$TMUX" ] && [ ! -f ~/.cal-first-run ]; then
     # Get current tmux prefix key
     TMUX_PREFIX=$(tmux show-options -gv prefix 2>/dev/null || echo "C-b")
     # Convert tmux prefix notation to human-readable format
@@ -737,11 +741,24 @@ export CAL_VM_INFO="$HOME/.cal-vm-info"
 echo ""
 echo "🖥️  Configuring tmux with session persistence..."
 if [ -f ~/scripts/vm-tmux-resurrect.sh ]; then
-    zsh ~/scripts/vm-tmux-resurrect.sh
+    if ! zsh ~/scripts/vm-tmux-resurrect.sh; then
+        echo ""
+        echo "✗ FATAL: Tmux session persistence setup failed"
+        echo ""
+        echo "Bootstrap cannot continue with incomplete configuration."
+        echo "Please check the error messages above and re-run:"
+        echo "  ~/scripts/vm-setup.sh --init"
+        echo ""
+        echo "Or re-run the full bootstrap from the host:"
+        echo "  cal-bootstrap --init"
+        echo ""
+        exit 1
+    fi
 else
-    echo "  ⚠ vm-tmux-resurrect.sh not found in ~/scripts/"
-    echo "  → Tmux session persistence not configured"
-    echo "  → Run ~/scripts/vm-tmux-resurrect.sh manually to enable"
+    echo "  ✗ FATAL: vm-tmux-resurrect.sh not found in ~/scripts/"
+    echo "  → Bootstrap cannot continue without required scripts"
+    echo "  → Re-run cal-bootstrap --init from the host"
+    exit 1
 fi
 
 # Enable auto-login for Screen Sharing

@@ -12,6 +12,105 @@
 
 ---
 
+## 1.1 Package Download Caching **HIGHEST PRIORITY**
+
+**Goal:** Cache all package downloads in host and pass through to VMs to avoid repeated downloads during development.
+
+**Scope:** Comprehensive caching for all package managers used during bootstrap.
+
+**Cache Location:**
+- **Host:** `~/.cal-cache/` (persistent across VM operations)
+- **VM:** `~/.cal-cache/` (symlinked or mounted from host via Tart shared directories)
+
+**Package Managers to Cache:**
+
+1. **Homebrew** (biggest win)
+   - Location: `~/.cal-cache/homebrew/`
+   - Configure: `export HOMEBREW_CACHE=~/.cal-cache/homebrew`
+   - Caches: Bottles (precompiled binaries), downloads, formula sources
+   - Impact: Saves ~5-10 minutes per bootstrap, hundreds of MB of downloads
+
+2. **npm** 
+   - Location: `~/.cal-cache/npm/`
+   - Configure: `npm config set cache ~/.cal-cache/npm`
+   - Caches: Packages for claude, agent, ccs, codex
+   - Impact: Saves ~2-3 minutes per bootstrap
+
+3. **Go modules**
+   - Location: `~/.cal-cache/go/pkg/mod/`
+   - Configure: `export GOMODCACHE=~/.cal-cache/go/pkg/mod`
+   - Caches: Modules for staticcheck, goimports, delve, mockgen, air
+   - Impact: Saves ~1-2 minutes per bootstrap
+
+4. **Git clones** (selective caching)
+   - Location: `~/.cal-cache/git/<repo-name>/`
+   - Manual implementation for frequently cloned repos
+   - Already implemented: TPM (tmux-plugins/tpm)
+   - Consider: Other repos cloned during setup
+
+**Implementation Tasks:**
+
+1. **Host cache setup (cal-bootstrap)**
+   - Create `~/.cal-cache/` on host if doesn't exist
+   - Configure environment variables in host shell
+   - Document cache location and cleanup in ADR-002
+
+2. **VM cache passthrough**
+   - Mount host `~/.cal-cache/` into VM via Tart `--dir` flag
+   - Or: Create symlink in VM to shared Tart cache directory
+   - Ensure cache directory is writable from VM
+
+3. **Update vm-setup.sh**
+   - Configure `HOMEBREW_CACHE` in VM environment
+   - Configure npm cache via `npm config set cache`
+   - Configure `GOMODCACHE` in VM environment
+   - Add cache configuration to `.zshrc`
+
+4. **Update cal-bootstrap**
+   - Pass cache directory to VM on all `tart run` operations
+   - Example: `--dir=cal-cache:~/.cal-cache` (if supported)
+   - Fallback: Manual file sync if Tart sharing not available
+
+5. **Cache maintenance**
+   - Add `cal cache clear` command to clear all caches
+   - Add `cal cache status` command to show cache sizes
+   - Document cache location and cleanup procedures
+
+**Benefits:**
+
+- **Speed:** Bootstrap time reduced from ~15 minutes to ~5 minutes (after first run)
+- **Reliability:** Reduced network dependency, fewer timeout failures
+- **Development:** Snapshot/restore operations become near-instant
+- **Bandwidth:** Save hundreds of MB per bootstrap iteration
+
+**Constraints:**
+
+- Cache directory must persist across VM operations
+- Cache must be accessible from both host and VM
+- Cache invalidation strategy needed (version changes)
+- Disk space consideration (~1-2 GB for full cache)
+
+**Testing:**
+
+- First bootstrap: Download everything, populate cache
+- Second bootstrap: Use cache, verify speed improvement
+- Snapshot/restore: Verify cache persists
+- Cache clearing: Verify cleanup works correctly
+
+**Related:**
+- BUG-006: Network timeout during bootstrap (this will help prevent)
+- Section 1.9: VM lifecycle automation (cache passthrough setup)
+
+**Acceptance Criteria:**
+
+- All package managers use shared cache
+- Cache persists across VM snapshots/restores
+- Bootstrap time reduced by at least 50% on second run
+- Cache maintenance commands available
+- Documentation updated in ADR-002
+
+---
+
 ## 1.3 Tart Wrapper **REFINED** (PR #5 - approved, needs testing)
 
 **File:** `internal/isolation/tart.go`
