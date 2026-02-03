@@ -35,7 +35,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| [#8](https://github.com/will-head/coding-agent-launcher/pull/8) | create-pr/go-cache | Add Go modules cache management | Claude Sonnet 4.5 | 2026-02-03 |
+| *No PRs needing testing* | | | |
 
 ---
 
@@ -43,7 +43,7 @@
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|
-| *No PRs ready to merge* | | | | |
+| [#8](https://github.com/will-head/coding-agent-launcher/pull/8) | create-pr/go-cache | Add Go modules cache management | User | 2026-02-03 |
 
 ---
 
