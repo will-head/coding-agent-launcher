@@ -26,7 +26,7 @@
 
 ---
 
-### Phase 1.1.4: **REFINED:** Git Clones Cache (PR #9 - tested, needs merge)
+### Phase 1.1.4: **REFINED:** Git Clones Cache (PR #9 - needs retesting after symlink fix)
 
 **Dependencies:** Phase 1.1.3 (Go modules cache) must be complete first.
 
