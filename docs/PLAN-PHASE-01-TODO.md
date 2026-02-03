@@ -22,7 +22,7 @@
 
 ---
 
-### Phase 1.1.2: **REFINED:** npm Cache [Depends on 1.1.1 PR]
+### Phase 1.1.2: npm Cache [PR #7 - awaiting merge]
 
 **Dependencies:** Phase 1.1.1 (Homebrew cache) must be complete first.
 
