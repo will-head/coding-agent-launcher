@@ -36,7 +36,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| [#7](https://github.com/will-head/coding-agent-launcher/pull/7) | create-pr/npm-cache | Add npm package download cache management | Claude Sonnet 4.5 | 2026-02-03 |
+| *No PRs awaiting testing* | | | | |
 
 ---
 
@@ -44,7 +44,7 @@
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|
-| *No PRs awaiting merge* | | | | |
+| [#7](https://github.com/will-head/coding-agent-launcher/pull/7) | create-pr/npm-cache | Add npm package download cache management | Claude Sonnet 4.5 | 2026-02-03 |
 
 ---
 
