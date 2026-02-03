@@ -10,7 +10,6 @@
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| Package Download Caching (Go) | PLAN-PHASE-01-TODO.md § 1.1.3 | Cache Go modules via symlink pattern; extends CacheManager and status command | 2026-02-03 | Phase 1.1.3: Depends on 1.1.2; 10-15% additional speedup; ~50-150 MB cache |
 | Package Download Caching (Git) | PLAN-PHASE-01-TODO.md § 1.1.4 | Selective git clone caching for frequently cloned repos (TPM, etc.) | 2026-02-03 | Phase 1.1.4: Depends on 1.1.3; offline bootstrap capability; ~10-50 MB per repo |
 | Cache Clear Command | PLAN-PHASE-01-TODO.md § 1.1.5 | Implement `cal cache clear` with per-cache confirmation and --all/--dry-run flags | 2026-02-03 | Phase 1.1.5: Depends on 1.1.1-1.1.4; disk management and troubleshooting |
 
@@ -20,7 +19,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| *No PRs awaiting review* | | | |
+| [#8](https://github.com/will-head/coding-agent-launcher/pull/8) | create-pr/go-cache | Add Go modules cache management | 2026-02-03 |
 
 ---
 
