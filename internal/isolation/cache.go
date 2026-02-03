@@ -11,9 +11,8 @@ import (
 
 // CacheManager manages package download caches for CAL VMs.
 type CacheManager struct {
-	homeDir        string
-	cacheBaseDir   string
-	sharedCacheDir string
+	homeDir      string
+	cacheBaseDir string
 }
 
 // CacheInfo contains information about a cache.
@@ -35,6 +34,8 @@ const (
 	homebrewDownloadsDir = "downloads"
 	// homebrewCaskDir is the subdirectory for Homebrew Cask downloads.
 	homebrewCaskDir = "Cask"
+	// npmCacheDir is the directory name for npm cache under .cal-cache.
+	npmCacheDir = "npm"
 	// sharedCacheMount is the Tart directory mount specification for cache sharing.
 	sharedCacheMount = "cal-cache:~/.cal-cache"
 )
@@ -64,6 +65,11 @@ func (c *CacheManager) GetSharedCacheMount() string {
 // GetHomebrewCacheHostPath returns the host path for Homebrew cache mounting.
 func (c *CacheManager) GetHomebrewCacheHostPath() string {
 	return fmt.Sprintf("cal-cache:%s", c.getHomebrewCachePath())
+}
+
+// getNpmCachePath returns the host path for npm cache.
+func (c *CacheManager) getNpmCachePath() string {
+	return filepath.Join(c.cacheBaseDir, npmCacheDir)
 }
 
 // SetupHomebrewCache sets up the Homebrew cache directory on the host.
@@ -157,11 +163,97 @@ func (c *CacheManager) GetHomebrewCacheInfo() (*CacheInfo, error) {
 	}, nil
 }
 
+// SetupNpmCache sets up the npm cache directory on the host.
+// Creates the cache directory with graceful degradation on errors.
+func (c *CacheManager) SetupNpmCache() error {
+	if c.homeDir == "" {
+		fmt.Fprintf(os.Stderr, "Warning: home directory not available, continuing without npm cache\n")
+		return nil
+	}
+
+	hostCacheDir := c.getNpmCachePath()
+
+	if err := os.MkdirAll(hostCacheDir, 0755); err != nil {
+		return fmt.Errorf("failed to create host npm cache directory: %w", err)
+	}
+
+	return nil
+}
+
+// SetupVMNpmCache returns shell commands to set up npm cache in the VM.
+// The commands create a symlink from the VM home directory to the shared cache volume
+// and configure the npm cache directory.
+// Returns nil if host cache is not available.
+func (c *CacheManager) SetupVMNpmCache() []string {
+	if c.homeDir == "" {
+		return nil
+	}
+
+	hostCacheDir := c.getNpmCachePath()
+	if _, err := os.Stat(hostCacheDir); os.IsNotExist(err) {
+		return nil
+	}
+
+	vmCacheDir := "~/.cal-cache/npm"
+	sharedCachePath := "\"/Volumes/My Shared Files/cal-cache/npm\""
+
+	commands := []string{
+		"mkdir -p ~/.cal-cache",
+		fmt.Sprintf("ln -sf %s %s", sharedCachePath, vmCacheDir),
+		fmt.Sprintf("npm config set cache %s", vmCacheDir),
+	}
+
+	return commands
+}
+
+// GetNpmCacheInfo returns information about the npm cache.
+func (c *CacheManager) GetNpmCacheInfo() (*CacheInfo, error) {
+	cachePath := c.getNpmCachePath()
+
+	info, err := os.Stat(cachePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &CacheInfo{
+				Path:      cachePath,
+				Size:      0,
+				Available: false,
+			}, nil
+		}
+		return nil, fmt.Errorf("failed to stat npm cache directory: %w", err)
+	}
+
+	var size int64
+	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !fi.IsDir() {
+			size += fi.Size()
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate npm cache size: %w", err)
+	}
+
+	return &CacheInfo{
+		Path:       cachePath,
+		Size:       size,
+		Available:  true,
+		LastAccess: info.ModTime(),
+	}, nil
+}
+
 // Status displays cache status information to the writer.
 func (c *CacheManager) Status(w io.Writer) error {
 	homebrewInfo, err := c.GetHomebrewCacheInfo()
 	if err != nil {
 		return fmt.Errorf("failed to get Homebrew cache info: %w", err)
+	}
+
+	npmInfo, err := c.GetNpmCacheInfo()
+	if err != nil {
+		return fmt.Errorf("failed to get npm cache info: %w", err)
 	}
 
 	fmt.Fprintf(w, "Cache Status:\n")
@@ -174,6 +266,19 @@ func (c *CacheManager) Status(w io.Writer) error {
 		fmt.Fprintf(w, "  Size: %s\n", formatBytes(homebrewInfo.Size))
 		if !homebrewInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", homebrewInfo.LastAccess.Format(time.RFC3339))
+		}
+	} else {
+		fmt.Fprintf(w, "✗ Not configured\n")
+	}
+	fmt.Fprintf(w, "\n")
+	fmt.Fprintf(w, "npm:\n")
+	fmt.Fprintf(w, "  Location: %s\n", npmInfo.Path)
+	fmt.Fprintf(w, "  Status: ")
+	if npmInfo.Available {
+		fmt.Fprintf(w, "✓ Ready\n")
+		fmt.Fprintf(w, "  Size: %s\n", formatBytes(npmInfo.Size))
+		if !npmInfo.LastAccess.IsZero() {
+			fmt.Fprintf(w, "  Last access: %s\n", npmInfo.LastAccess.Format(time.RFC3339))
 		}
 	} else {
 		fmt.Fprintf(w, "✗ Not configured\n")
