@@ -4,27 +4,25 @@
 >
 > See also: [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) (operational guide) | [SPEC](SPEC.md) (technical spec)
 
-## Phase 0: Bootstrap (Mostly Complete)
+## Phase 0: Bootstrap (Complete)
 Automated Tart setup for immediate safe agent use.
 
-**Complete:**
+**All tasks complete** — see [PLAN-PHASE-00-DONE.md](PLAN-PHASE-00-DONE.md) for full details.
+
+**Highlights:**
 - [x] Three-tier VM architecture (cal-clean → cal-dev → cal-init)
 - [x] Automated vm-setup and vm-auth scripts
-- [x] SSH/tmux session management
+- [x] SSH/tmux session management with session persistence (tmux-resurrect)
 - [x] Transparent proxy via sshuttle for corporate networks
 - [x] Git safety checks before destructive operations
 - [x] VM detection for agents (CAL_VM environment variable)
 - [x] Keychain auto-unlock for Cursor OAuth authentication
 - [x] First-run automation (vm-auth.sh runs automatically after init)
+- [x] GUI console with VNC experimental mode (bidirectional clipboard)
+- [x] Tart cache sharing for nested VM support
+- [x] Auto-install Tart during init if missing
+- [x] Full Go development tools in VM
 - [x] Documentation (ADR-002 comprehensive operational guide)
-
-**Outstanding (0.8/0.10/0.11):**
-- [ ] Investigate High Performance Screen Sharing issues
-- [ ] Auto-install Tart during init if missing
-- [ ] Sync git repos option on init
-- [ ] Fix authentication flows (GH CLI PAT, opencode status)
-- [ ] Full Go development tools in VM
-- [ ] Session state persistence
 
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.

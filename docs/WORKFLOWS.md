@@ -197,9 +197,9 @@ Merge tested PRs into main with user approvals.
 - User approval required on HOST for all commands (auto-approved when `CAL_VM=true`)
 - Use merge commit strategy (preserves history)
 - Delete branches after merge
-- Track in PRS.md "Merged" section
+- Track in STATUS.md "Merged" section
 
-**Steps:** Read Queue → Fetch PR → Merge PR → Update Local Main → Delete Branch → Update PRS.md → Update PLAN.md → Commit Docs
+**Steps:** Read Queue → Fetch PR → Merge PR → Update Local Main → Delete Branch → Update STATUS.md → Update PLAN.md → Commit Docs
 
 ---
 

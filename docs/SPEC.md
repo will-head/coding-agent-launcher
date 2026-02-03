@@ -29,8 +29,8 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 | CCS | `npm install -g @kaitranntt/ccs` | N/A | Working |
 | Codex CLI | `npm install -g @openai/codex` | N/A | Working |
 
-*opencode hangs when TERM is explicitly set in command environment. Use tmux-wrapper.sh (see ADR-002).
-**Cursor CLI requires automatic keychain unlock for OAuth. Implemented via .zshrc in Phase 0.8.5.
+*opencode hangs when TERM is explicitly set in command environment. Use tmux-wrapper.sh (see [ADR-002 § TERM Environment Variable Handling](adr/ADR-002-tart-vm-operational-guide.md#term-environment-variable-handling)).
+**Cursor CLI requires automatic keychain unlock for OAuth. Implemented via .zshrc (see [ADR-002 § Keychain Auto-Unlock](adr/ADR-002-tart-vm-operational-guide.md#keychain-auto-unlock)).
 
 ### 3. Environment Plugin System
 

@@ -1,6 +1,6 @@
 # CLI Reference
 
-> Future CLI commands. Current bootstrap commands are in [Bootstrap Guide](bootstrap.md).
+> Planned CLI commands (Phase 1 in progress). Current bootstrap commands are in [Bootstrap Guide](bootstrap.md).
 > See [ADR-002 § Phase 1 Readiness](adr/ADR-002-tart-vm-operational-guide.md) for command mapping from cal-bootstrap.
 
 ```bash
@@ -81,6 +81,7 @@ cleanup [--all] [--cache] [--stopped]
 ```bash
 --yes, -y                  # Skip confirmation prompts
 --proxy auto|on|off        # Control proxy mode
+--clean                    # Force full script deployment (skip checksum optimization)
 ```
 
 ## Future: CAL Core
@@ -101,6 +102,7 @@ cal status
 | `--stop` | `stop` |
 | `--restart` | `restart` |
 | `--gui` | `gui` |
+| `--status` | `status` |
 | `-S list` | `snapshot list` |
 | `-S create <name>` | `snapshot create <name>` |
 | `-S restore <name>` | `snapshot restore <name>` |
