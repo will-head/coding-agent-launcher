@@ -382,3 +382,67 @@ memory: 16384
 - [x] Bootstrap time reduced by additional 10-15% with Go cache
 - [x] Graceful degradation works
 - [x] Tests pass
+
+## 1.1.4 **REFINED:** Git Clones Cache (PR #9, merged 2026-02-03)
+
+**Dependencies:** Phase 1.1.3 (Go modules cache) complete.
+
+**Status:** Merged with complete cache integration
+
+**Cache Location:**
+- **Host:** `~/.cal-cache/git/<repo-name>/` (persistent across VM operations)
+- **VM:** Shared via `/Volumes/My Shared Files/cal-cache/git/<repo-name>/`
+- **Pattern:** Selective caching for frequently cloned repos (TPM)
+
+**Implementation Highlights:**
+
+1. **Code Location:** `internal/isolation/cache.go`
+   - Extended `CacheManager` with git cache methods
+   - `SetupGitCache()`, `GetGitCacheInfo()`, `CacheGitRepo()`, etc.
+   - Unit tests with full coverage
+
+2. **Bootstrap Integration:**
+   - `cal-bootstrap`: Cache directory creation during --init
+   - `vm-setup.sh`: VM cache configuration (permanent)
+   - `vm-tmux-resurrect.sh`: TPM caching from shared host cache
+   - Host cache temporary (script-only), VM cache permanent
+
+3. **Cache Population:**
+   - TPM cloned from GitHub on first install
+   - TPM cached to shared volume for future bootstraps
+   - Cache updated with `git fetch` before use
+   - Graceful fallback to GitHub if cache unavailable
+
+4. **Additional Improvements:**
+   - Homebrew/npm/Go cache integration into bootstrap
+   - Cursor CLI via Homebrew Cask (now cacheable)
+   - Complete package manager cache configuration
+   - 100% of downloads now cached
+
+**Testing Results:**
+- ✅ All manual tests passed (git cache, TPM caching, offline bootstrap)
+- ✅ Cache sharing verified working
+- ✅ Offline capability confirmed
+- ✅ Unit tests: 330 tests passing
+
+**Benefits Realized:**
+- **Speed:** ~30-60 seconds saved per bootstrap (TPM)
+- **Offline:** Works without network after first bootstrap
+- **Total Cache:** ~20-30GB (all package managers + git repos)
+- **Integration:** All package managers use shared cache
+
+**Documentation:**
+- docs/PR-9-TEST-RESULTS.md - Complete test results
+- docs/PR-9-INIT-REVIEW.md - Init integration review
+- docs/CACHE-INTEGRATION.md - Integration design and details
+
+**Acceptance Criteria Met:**
+- [x] Git cache directory created on host
+- [x] TPM cached and used during bootstrap
+- [x] Cache updated with `git fetch` before use
+- [x] `cal cache status` shows cached git repos
+- [x] Bootstrap works offline with cached repos
+- [x] Graceful degradation when cache unavailable
+- [x] All tests pass (unit + manual)
+- [x] Bootstrap integration complete
+

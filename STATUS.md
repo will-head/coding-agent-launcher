@@ -34,7 +34,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| [#9](https://github.com/will-head/coding-agent-launcher/pull/9) | create-pr/git-cache | Add Git clone caching for faster VM bootstraps | Claude Sonnet 4.5 | 2026-02-03 |
+| *No PRs needing testing* | | | | |
 
 ---
 
@@ -50,6 +50,7 @@
 
 | PR | Branch | Description | Merged |
 |----|--------|-------------|--------|
+| [#9](https://github.com/will-head/coding-agent-launcher/pull/9) | pr-9-test | Add Git clone caching with complete cache integration | 2026-02-03 |
 | [#8](https://github.com/will-head/coding-agent-launcher/pull/8) | create-pr/go-cache | Add Go modules cache management | 2026-02-03 |
 | [#7](https://github.com/will-head/coding-agent-launcher/pull/7) | create-pr/npm-cache | Add npm package download cache management | 2026-02-03 |
 | [#6](https://github.com/will-head/coding-agent-launcher/pull/6) | create-pr/homebrew-cache | Add Homebrew package download cache management | 2026-02-03 |
