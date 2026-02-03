@@ -712,3 +712,333 @@ func TestCacheManager_VMGoCacheSetup(t *testing.T) {
 		}
 	})
 }
+
+func TestCacheManager_GitSetup(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("SetupGitCache creates host cache directory", func(t *testing.T) {
+		err := cm.SetupGitCache()
+		if err != nil {
+			t.Fatalf("SetupGitCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "git")
+		info, err := os.Stat(hostCacheDir)
+		if err != nil {
+			t.Fatalf("host cache directory not created: %v", err)
+		}
+		if !info.IsDir() {
+			t.Fatalf("host cache is not a directory")
+		}
+	})
+
+	t.Run("SetupGitCache is idempotent", func(t *testing.T) {
+		err := cm.SetupGitCache()
+		if err != nil {
+			t.Fatalf("first SetupGitCache failed: %v", err)
+		}
+
+		err = cm.SetupGitCache()
+		if err != nil {
+			t.Fatalf("second SetupGitCache failed: %v", err)
+		}
+	})
+
+	t.Run("SetupGitCache gracefully handles missing home directory", func(t *testing.T) {
+		cmNoHome := &CacheManager{
+			homeDir:      "",
+			cacheBaseDir: "",
+		}
+
+		err := cmNoHome.SetupGitCache()
+		if err != nil {
+			t.Fatalf("expected graceful degradation (nil error) when homeDir unavailable, got: %v", err)
+		}
+	})
+}
+
+func TestCacheManager_GetGitCacheInfo(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("GetGitCacheInfo returns zero size when cache doesn't exist", func(t *testing.T) {
+		info, err := cm.GetGitCacheInfo()
+		if err != nil {
+			t.Fatalf("GetGitCacheInfo failed: %v", err)
+		}
+
+		if info.Size != 0 {
+			t.Fatalf("expected size 0, got %d", info.Size)
+		}
+
+		if info.Path == "" {
+			t.Fatalf("expected non-empty path")
+		}
+
+		if info.Available {
+			t.Fatalf("expected cache to be unavailable")
+		}
+	})
+
+	t.Run("GetGitCacheInfo returns size when cache exists", func(t *testing.T) {
+		err := cm.SetupGitCache()
+		if err != nil {
+			t.Fatalf("SetupGitCache failed: %v", err)
+		}
+
+		repoCacheDir := filepath.Join(cm.cacheBaseDir, "git", "test-repo")
+		if err := os.MkdirAll(repoCacheDir, 0755); err != nil {
+			t.Fatalf("failed to create test repo cache: %v", err)
+		}
+		testFile := filepath.Join(repoCacheDir, "test-file.bin")
+		if err := os.WriteFile(testFile, []byte("test git cache data"), 0644); err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
+		info, err := cm.GetGitCacheInfo()
+		if err != nil {
+			t.Fatalf("GetGitCacheInfo failed: %v", err)
+		}
+
+		if info.Size == 0 {
+			t.Fatalf("expected non-zero size")
+		}
+
+		if !info.Available {
+			t.Fatalf("expected cache to be available")
+		}
+	})
+}
+
+func TestCacheManager_VMGitCacheSetup(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("SetupVMGitCache returns commands when host cache exists", func(t *testing.T) {
+		err := cm.SetupGitCache()
+		if err != nil {
+			t.Fatalf("SetupGitCache failed: %v", err)
+		}
+
+		commands := cm.SetupVMGitCache()
+		if commands == nil {
+			t.Fatalf("expected non-nil commands")
+		}
+
+		if len(commands) == 0 {
+			t.Fatalf("expected at least one command")
+		}
+
+		commandsStr := strings.Join(commands, " ")
+		if !strings.Contains(commandsStr, "mkdir -p ~/.cal-cache") {
+			t.Fatalf("expected mkdir command in VM setup")
+		}
+		if !strings.Contains(commandsStr, "ln -sf") {
+			t.Fatalf("expected symlink command in VM setup")
+		}
+	})
+
+	t.Run("SetupVMGitCache returns nil when home directory unavailable", func(t *testing.T) {
+		cmNoHome := &CacheManager{
+			homeDir:      "",
+			cacheBaseDir: "",
+		}
+
+		commands := cmNoHome.SetupVMGitCache()
+		if commands != nil {
+			t.Fatalf("expected nil commands when homeDir unavailable, got: %v", commands)
+		}
+	})
+
+	t.Run("SetupVMGitCache returns nil when host cache doesn't exist", func(t *testing.T) {
+		cmNoCache := &CacheManager{
+			homeDir:      tmpDir,
+			cacheBaseDir: filepath.Join(tmpDir, "nonexistent-cache"),
+		}
+
+		commands := cmNoCache.SetupVMGitCache()
+		if commands != nil {
+			t.Fatalf("expected nil commands when host cache doesn't exist, got: %v", commands)
+		}
+	})
+}
+
+func TestCacheManager_GetCachedGitRepos(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("GetCachedGitRepos returns empty list when cache doesn't exist", func(t *testing.T) {
+		repos, err := cm.GetCachedGitRepos()
+		if err != nil {
+			t.Fatalf("GetCachedGitRepos failed: %v", err)
+		}
+
+		if len(repos) != 0 {
+			t.Fatalf("expected empty list, got %d repos", len(repos))
+		}
+	})
+
+	t.Run("GetCachedGitRepos returns list of cached repos", func(t *testing.T) {
+		err := cm.SetupGitCache()
+		if err != nil {
+			t.Fatalf("SetupGitCache failed: %v", err)
+		}
+
+		repo1Dir := filepath.Join(cm.cacheBaseDir, "git", "repo1")
+		repo2Dir := filepath.Join(cm.cacheBaseDir, "git", "repo2")
+		if err := os.MkdirAll(repo1Dir, 0755); err != nil {
+			t.Fatalf("failed to create repo1: %v", err)
+		}
+		if err := os.MkdirAll(repo2Dir, 0755); err != nil {
+			t.Fatalf("failed to create repo2: %v", err)
+		}
+
+		repos, err := cm.GetCachedGitRepos()
+		if err != nil {
+			t.Fatalf("GetCachedGitRepos failed: %v", err)
+		}
+
+		if len(repos) != 2 {
+			t.Fatalf("expected 2 repos, got %d", len(repos))
+		}
+
+		foundRepo1 := false
+		foundRepo2 := false
+		for _, repo := range repos {
+			if repo == "repo1" {
+				foundRepo1 = true
+			}
+			if repo == "repo2" {
+				foundRepo2 = true
+			}
+		}
+
+		if !foundRepo1 || !foundRepo2 {
+			t.Fatalf("expected to find repo1 and repo2, got %v", repos)
+		}
+	})
+}
+
+func TestCacheManager_CacheGitRepo(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("CacheGitRepo returns false when repo already cached", func(t *testing.T) {
+		err := cm.SetupGitCache()
+		if err != nil {
+			t.Fatalf("SetupGitCache failed: %v", err)
+		}
+
+		repoDir := filepath.Join(cm.cacheBaseDir, "git", "test-repo")
+		if err := os.MkdirAll(repoDir, 0755); err != nil {
+			t.Fatalf("failed to create test repo: %v", err)
+		}
+
+		created, err := cm.CacheGitRepo("https://example.com/repo.git", "test-repo")
+		if err != nil {
+			t.Fatalf("CacheGitRepo failed: %v", err)
+		}
+
+		if created {
+			t.Fatalf("expected false when repo already exists, got true")
+		}
+	})
+
+	t.Run("CacheGitRepo gracefully handles missing home directory", func(t *testing.T) {
+		cmNoHome := &CacheManager{
+			homeDir:      "",
+			cacheBaseDir: "",
+		}
+
+		_, err := cmNoHome.CacheGitRepo("https://example.com/repo.git", "test-repo")
+		if err == nil {
+			t.Fatalf("expected error when homeDir unavailable")
+		}
+	})
+}
+
+func TestCacheManager_UpdateGitRepos(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("UpdateGitRepos returns 0 when no repos cached", func(t *testing.T) {
+		updated, err := cm.UpdateGitRepos()
+		if err != nil {
+			t.Fatalf("UpdateGitRepos failed: %v", err)
+		}
+
+		if updated != 0 {
+			t.Fatalf("expected 0 updates when no repos cached, got %d", updated)
+		}
+	})
+
+	t.Run("UpdateGitRepos skips non-git directories gracefully", func(t *testing.T) {
+		err := cm.SetupGitCache()
+		if err != nil {
+			t.Fatalf("SetupGitCache failed: %v", err)
+		}
+
+		repoDir := filepath.Join(cm.cacheBaseDir, "git", "not-a-repo")
+		if err := os.MkdirAll(repoDir, 0755); err != nil {
+			t.Fatalf("failed to create non-repo directory: %v", err)
+		}
+
+		updated, err := cm.UpdateGitRepos()
+		if err != nil {
+			t.Fatalf("UpdateGitRepos failed: %v", err)
+		}
+
+		if updated != 0 {
+			t.Fatalf("expected 0 updates for non-git directory, got %d", updated)
+		}
+	})
+}

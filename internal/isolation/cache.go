@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 )
@@ -38,6 +39,8 @@ const (
 	npmCacheDir = "npm"
 	// goCacheDir is the directory name for Go cache under .cal-cache.
 	goCacheDir = "go"
+	// gitCacheDir is the directory name for git cache under .cal-cache.
+	gitCacheDir = "git"
 	// sharedCacheMount is the Tart directory mount specification for cache sharing.
 	sharedCacheMount = "cal-cache:~/.cal-cache"
 )
@@ -343,6 +346,165 @@ func (c *CacheManager) GetGoCacheInfo() (*CacheInfo, error) {
 	}, nil
 }
 
+// getGitCachePath returns the host path for git cache.
+func (c *CacheManager) getGitCachePath() string {
+	return filepath.Join(c.cacheBaseDir, gitCacheDir)
+}
+
+// SetupGitCache sets up the git cache directory on the host.
+// Creates the cache directory with graceful degradation on errors.
+func (c *CacheManager) SetupGitCache() error {
+	if c.homeDir == "" {
+		fmt.Fprintf(os.Stderr, "Warning: home directory not available, continuing without git cache\n")
+		return nil
+	}
+
+	hostCacheDir := c.getGitCachePath()
+
+	if err := os.MkdirAll(hostCacheDir, 0755); err != nil {
+		return fmt.Errorf("failed to create host git cache directory: %w", err)
+	}
+
+	return nil
+}
+
+// SetupVMGitCache returns shell commands to set up git cache in the VM.
+// The commands create a symlink from the VM home directory to the shared cache volume.
+// Returns nil if host cache is not available.
+func (c *CacheManager) SetupVMGitCache() []string {
+	if c.homeDir == "" {
+		return nil
+	}
+
+	hostCacheDir := c.getGitCachePath()
+	if _, err := os.Stat(hostCacheDir); os.IsNotExist(err) {
+		return nil
+	}
+
+	vmCacheDir := "~/.cal-cache/git"
+	sharedCachePath := "\"/Volumes/My Shared Files/cal-cache/git\""
+
+	commands := []string{
+		"mkdir -p ~/.cal-cache",
+		fmt.Sprintf("ln -sf %s %s", sharedCachePath, vmCacheDir),
+	}
+
+	return commands
+}
+
+// GetGitCacheInfo returns information about the git cache.
+func (c *CacheManager) GetGitCacheInfo() (*CacheInfo, error) {
+	cachePath := c.getGitCachePath()
+
+	info, err := os.Stat(cachePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &CacheInfo{
+				Path:      cachePath,
+				Size:      0,
+				Available: false,
+			}, nil
+		}
+		return nil, fmt.Errorf("failed to stat git cache directory: %w", err)
+	}
+
+	var size int64
+	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !fi.IsDir() {
+			size += fi.Size()
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate git cache size: %w", err)
+	}
+
+	return &CacheInfo{
+		Path:       cachePath,
+		Size:       size,
+		Available:  true,
+		LastAccess: info.ModTime(),
+	}, nil
+}
+
+// GetCachedGitRepos returns a list of git repository names that are cached.
+func (c *CacheManager) GetCachedGitRepos() ([]string, error) {
+	cachePath := c.getGitCachePath()
+
+	entries, err := os.ReadDir(cachePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []string{}, nil
+		}
+		return nil, fmt.Errorf("failed to read git cache directory: %w", err)
+	}
+
+	repos := []string{}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			repos = append(repos, entry.Name())
+		}
+	}
+
+	return repos, nil
+}
+
+// CacheGitRepo clones a git repository to the cache directory.
+// repoURL should be the full git URL (e.g., https://github.com/user/repo.git)
+// repoName is the name for the cached repo directory (e.g., "repo")
+// Returns true if cache was created/updated, false if repo already exists and is up to date.
+func (c *CacheManager) CacheGitRepo(repoURL, repoName string) (bool, error) {
+	if c.homeDir == "" {
+		return false, fmt.Errorf("home directory not available")
+	}
+
+	repoCacheDir := filepath.Join(c.getGitCachePath(), repoName)
+
+	if _, err := os.Stat(repoCacheDir); err == nil {
+		return false, nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(repoCacheDir), 0755); err != nil {
+		return false, fmt.Errorf("failed to create cache directory: %w", err)
+	}
+
+	cmd := exec.Command("git", "clone", repoURL, repoCacheDir)
+	if err := cmd.Run(); err != nil {
+		return false, fmt.Errorf("failed to clone repo %s: %w", repoURL, err)
+	}
+
+	return true, nil
+}
+
+// UpdateGitRepos updates all cached git repositories by running git fetch.
+// Returns the number of repos updated and any errors encountered.
+func (c *CacheManager) UpdateGitRepos() (int, error) {
+	repos, err := c.GetCachedGitRepos()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get cached repos: %w", err)
+	}
+
+	if len(repos) == 0 {
+		return 0, nil
+	}
+
+	updated := 0
+	for _, repo := range repos {
+		repoPath := filepath.Join(c.getGitCachePath(), repo)
+		cmd := exec.Command("git", "-C", repoPath, "fetch", "--all")
+		if err := cmd.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to update git cache for %s: %v\n", repo, err)
+			continue
+		}
+		updated++
+	}
+
+	return updated, nil
+}
+
 // Status displays cache status information to the writer.
 func (c *CacheManager) Status(w io.Writer) error {
 	homebrewInfo, err := c.GetHomebrewCacheInfo()
@@ -358,6 +520,11 @@ func (c *CacheManager) Status(w io.Writer) error {
 	goInfo, err := c.GetGoCacheInfo()
 	if err != nil {
 		return fmt.Errorf("failed to get Go cache info: %w", err)
+	}
+
+	gitInfo, err := c.GetGitCacheInfo()
+	if err != nil {
+		return fmt.Errorf("failed to get git cache info: %w", err)
 	}
 
 	fmt.Fprintf(w, "Cache Status:\n")
@@ -396,6 +563,26 @@ func (c *CacheManager) Status(w io.Writer) error {
 		fmt.Fprintf(w, "  Size: %s\n", formatBytes(goInfo.Size))
 		if !goInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", goInfo.LastAccess.Format(time.RFC3339))
+		}
+	} else {
+		fmt.Fprintf(w, "✗ Not configured\n")
+	}
+	fmt.Fprintf(w, "\n")
+	fmt.Fprintf(w, "Git:\n")
+	fmt.Fprintf(w, "  Location: %s\n", gitInfo.Path)
+	fmt.Fprintf(w, "  Status: ")
+	if gitInfo.Available {
+		fmt.Fprintf(w, "✓ Ready\n")
+		fmt.Fprintf(w, "  Size: %s\n", formatBytes(gitInfo.Size))
+		if !gitInfo.LastAccess.IsZero() {
+			fmt.Fprintf(w, "  Last access: %s\n", gitInfo.LastAccess.Format(time.RFC3339))
+		}
+		repos, err := c.GetCachedGitRepos()
+		if err == nil && len(repos) > 0 {
+			fmt.Fprintf(w, "  Cached repos: %d\n", len(repos))
+			for _, repo := range repos {
+				fmt.Fprintf(w, "    - %s\n", repo)
+			}
 		}
 	} else {
 		fmt.Fprintf(w, "✗ Not configured\n")

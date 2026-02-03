@@ -30,41 +30,76 @@ fi
 
 # Create TPM (Tmux Plugin Manager) directory
 TPM_DIR="$HOME/.tmux/plugins/tpm"
-TPM_CACHE="$HOME/.cal-cache/tpm"
+TPM_CACHE="/Volumes/My Shared Files/cal-cache/git/tpm"
 
 if [[ ! -d "$TPM_DIR" ]]; then
     echo "Installing Tmux Plugin Manager (TPM)..."
-    
-    # Try to use cached TPM first
-    if [[ -d "$TPM_CACHE" ]]; then
-        echo "  Using cached TPM from ~/.cal-cache/tpm..."
-        mkdir -p "$HOME/.tmux/plugins"
-        cp -R "$TPM_CACHE" "$TPM_DIR"
-        echo "✓ TPM installed from cache"
-    else
-        # No cache, download with retry logic
-        mkdir -p "$HOME/.tmux/plugins"
-        RETRY_COUNT=0
-        MAX_RETRIES=3
-        RETRY_DELAY=5
-        TPM_INSTALLED=false
-        
-        while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
-            if git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"; then
-                echo "✓ TPM installed"
-                
-                # Cache for future use
-                mkdir -p "$(dirname "$TPM_CACHE")"
-                cp -R "$TPM_DIR" "$TPM_CACHE"
-                echo "  Cached TPM to ~/.cal-cache/tpm"
+
+    mkdir -p "$HOME/.tmux/plugins"
+    RETRY_COUNT=0
+    MAX_RETRIES=3
+    RETRY_DELAY=5
+    TPM_INSTALLED=false
+
+    while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
+        # Try to use cached TPM first (from host git cache)
+        if [[ -d "$TPM_CACHE" ]]; then
+            echo "  Using cached TPM from host git cache..."
+            # Update cache before using it
+            if git -C "$TPM_CACHE" fetch --all &>/dev/null; then
+                echo "  ✓ Cache updated"
+            fi
+            # Clone from local cache (faster, uses hard links)
+            if git clone "$TPM_CACHE" "$TPM_DIR"; then
+                echo "✓ TPM installed from cache"
                 TPM_INSTALLED=true
                 break
             else
-                RETRY_COUNT=$((RETRY_COUNT + 1))
-                if [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; then
-                    echo "  ⚠ Clone failed, retrying in ${RETRY_DELAY}s (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)..."
-                    sleep $RETRY_DELAY
+                echo "  ⚠ Cache clone failed, falling back to GitHub..."
+            fi
+        fi
+
+        # No cache or cache failed, download from GitHub
+        echo "  Cloning from GitHub..."
+        if git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"; then
+            echo "✓ TPM installed from GitHub"
+
+            # Update cache for future use (if shared volume exists)
+            if [[ -d "/Volumes/My Shared Files/cal-cache/git" ]]; then
+                if git -C "$TPM_DIR" fetch --all &>/dev/null; then
+                    echo "  ✓ Cache will be available on next bootstrap"
                 fi
+            fi
+
+            TPM_INSTALLED=true
+            break
+        else
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; then
+                echo "  ⚠ Clone failed, retrying in ${RETRY_DELAY}s (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)..."
+                sleep $RETRY_DELAY
+            fi
+        fi
+    done
+
+    if [[ "$TPM_INSTALLED" == "false" ]]; then
+        echo ""
+        echo "✗ FATAL: Failed to install TPM after $MAX_RETRIES attempts"
+        echo ""
+        echo "Network connectivity issue detected."
+        echo "Bootstrap cannot continue with incomplete tmux setup."
+        echo ""
+        echo "Please check your network connection and re-run:"
+        echo "  ~/scripts/vm-tmux-resurrect.sh"
+        echo ""
+        echo "Or re-run full bootstrap:"
+        echo "  cal-bootstrap --init"
+        echo ""
+        exit 1
+    fi
+else
+    echo "✓ TPM already installed"
+fi
             fi
         done
         
@@ -279,5 +314,5 @@ echo "  • Reload config: Ctrl+b R"
 echo "  • Resize pane to 67%: Ctrl+b r"
 echo ""
 echo "Session data: ~/.local/share/tmux/resurrect/"
-echo "TPM cache: ~/.cal-cache/tpm/ (persists across snapshots)"
+    echo "TPM cache: /Volumes/My Shared Files/cal-cache/git/tpm/ (persists across snapshots, shared from host)"
 echo ""
