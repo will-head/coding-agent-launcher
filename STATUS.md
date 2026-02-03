@@ -45,7 +45,7 @@
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|
-| [#6](https://github.com/will-head/coding-agent-launcher/pull/6) | create-pr/homebrew-cache | Add Homebrew package download cache management | Claude Opus 4.5 | 2026-02-03 |
+| *No PRs awaiting merge* | | | | |
 
 ---
 
@@ -53,6 +53,7 @@
 
 | PR | Branch | Description | Merged |
 |----|--------|-------------|--------|
+| [#6](https://github.com/will-head/coding-agent-launcher/pull/6) | create-pr/homebrew-cache | Add Homebrew package download cache management | 2026-02-03 |
 | [#5](https://github.com/will-head/coding-agent-launcher/pull/5) | create-pr/tart-wrapper | Add Tart wrapper with JSON parsing, auto-install, and cache sharing | 2026-02-03 |
 | [#4](https://github.com/will-head/coding-agent-launcher/pull/4) | create-pr/config-management | Add configuration management with validation | 2026-02-01 |
 | [#3](https://github.com/will-head/coding-agent-launcher/pull/3) | create-pr/project-scaffolding | Add project scaffolding for CAL CLI | 2026-02-01 |

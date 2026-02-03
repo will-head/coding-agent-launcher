@@ -13,7 +13,7 @@
 
 Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via cal-bootstrap, transparent proxy for network reliability, comprehensive git safety checks, VM detection capabilities, first-run/logout git automation, Tart cache sharing for nested VMs, Ghostty terminal emulator, and tmux session persistence are all operational.
 
-**Active Work:** Phase 1 (CLI Foundation) in progress. Project scaffolding (PR #3), Configuration Management (PR #4), and Tart Wrapper (PR #5) complete. **HIGHEST PRIORITY:** Package download caching (1.1) to improve bootstrap reliability and speed. Next: Snapshot Management (1.4) or SSH Management (1.5).
+**Active Work:** Phase 1 (CLI Foundation) in progress. Project scaffolding (PR #3), Configuration Management (PR #4), Tart Wrapper (PR #5), and Homebrew Cache (PR #6) complete. **HIGHEST PRIORITY:** Package download caching (1.1) - Homebrew cache done, npm/Go/Git caches and cache clear command remain. Next: Complete remaining caches (1.1.2-1.1.5) or begin Snapshot Management (1.4) or SSH Management (1.5).
 
 ---
 
@@ -22,7 +22,7 @@ Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via c
 | Phase | Name | Status | Outstanding TODOs | Detail Files |
 |-------|------|--------|-------------------|--------------|
 | 0 | Bootstrap | Complete | 0 | [TODO](docs/PLAN-PHASE-00-TODO.md) • [DONE](docs/PLAN-PHASE-00-DONE.md) |
-| 1 | CLI Foundation | In Progress | ~47 | [TODO](docs/PLAN-PHASE-01-TODO.md) • [DONE](docs/PLAN-PHASE-01-DONE.md) |
+| 1 | CLI Foundation | In Progress | ~46 | [TODO](docs/PLAN-PHASE-01-TODO.md) • [DONE](docs/PLAN-PHASE-01-DONE.md) |
 | 2 | Agent Integration & UX | Not Started | ~20 | [TODO](docs/PLAN-PHASE-02-TODO.md) • [DONE](docs/PLAN-PHASE-02-DONE.md) |
 | 3 | GitHub Workflow | Not Started | ~16 | [TODO](docs/PLAN-PHASE-03-TODO.md) • [DONE](docs/PLAN-PHASE-03-DONE.md) |
 | 4 | Environment Plugin System | Not Started | ~25 | [TODO](docs/PLAN-PHASE-04-TODO.md) • [DONE](docs/PLAN-PHASE-04-DONE.md) |

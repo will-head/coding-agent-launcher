@@ -188,3 +188,86 @@ memory: 16384
 - [x] Cache sharing enabled on all runs without user configuration
 - [x] Unit tests cover command generation and error handling
 - [x] No external dependencies (jq not required)
+
+---
+
+## 1.1.1 Homebrew Package Download Cache (PR #6, merged 2026-02-03)
+
+**Cache Location:**
+- **Host:** `~/.cal-cache/homebrew/` (persistent across VM operations)
+- **VM:** Symlink `~/.cal-cache/homebrew/` → `/Volumes/My Shared Files/cal-cache/homebrew/`
+- **Pattern:** Same as Tart cache sharing in section 1.9 (proven approach)
+
+**Implementation Details:**
+
+1. **Code Location:** `internal/isolation/cache.go`
+   - New `CacheManager` struct with methods for setup, status
+   - Integration point: Called from VM init/setup process
+   - Follows existing isolation subsystem patterns
+
+2. **Host Cache Setup:**
+   - Create `~/.cal-cache/homebrew/` on host if doesn't exist
+   - No host environment configuration needed (host uses default Homebrew cache)
+   - Host directory structure: `~/.cal-cache/homebrew/downloads/`, `~/.cal-cache/homebrew/Cask/`
+
+3. **VM Cache Passthrough (Symlink Approach):**
+   - Create Tart shared directory: Ensure `/Volumes/My Shared Files/cal-cache/` exists
+   - Copy host cache to shared volume: `rsync -a ~/.cal-cache/homebrew/ "/Volumes/My Shared Files/cal-cache/homebrew/"`
+   - Create symlink in VM: `ln -sf "/Volumes/My Shared Files/cal-cache/homebrew" ~/.cal-cache/homebrew`
+   - Configure in VM: `export HOMEBREW_CACHE=~/.cal-cache/homebrew` (add to `.zshrc`)
+   - Verify symlink writable from VM
+
+4. **Error Handling (Graceful Degradation):**
+   - If symlink creation fails: Log warning, continue without cache
+   - If shared volume unavailable: Log warning, continue without cache
+   - Bootstrap still works, just slower (no hard failure)
+   - Consistent with Tart cache sharing pattern in section 1.9
+
+5. **Cache Status Command:** `cal cache status`
+   - Display information:
+     - Cache sizes per package manager (e.g., "Homebrew: 450 MB")
+     - Cache location path (e.g., "~/.cal-cache/homebrew/")
+     - Cache availability status (✓ Homebrew cache ready, ✗ npm cache not configured)
+     - Last access time (from filesystem mtime)
+   - Output format: Human-readable table or list
+   - Implementation: `internal/isolation/cache.go` → `Status()` method
+
+6. **Cache Invalidation Strategy:**
+   - **Let package managers handle it** - no manual invalidation logic
+   - Homebrew validates cache integrity and checksums automatically
+   - Invalid or outdated cache entries are re-downloaded by Homebrew
+   - Simplest approach: just set `HOMEBREW_CACHE` and let Homebrew manage lifetime
+
+**Benefits:**
+- **Speed:** Saves ~5-10 minutes per bootstrap (biggest single win)
+- **Reliability:** Reduces network dependency, fewer timeout failures
+- **Bandwidth:** Saves hundreds of MB per bootstrap iteration
+- **Development:** Faster snapshot/restore testing cycles
+
+**Constraints:**
+- Requires Tart shared directories feature (graceful degradation if unavailable)
+- Disk space: ~500-800 MB for Homebrew cache
+- Cache persists across VM operations (intended behavior)
+
+**Testing Strategy:**
+- **Unit Tests:** Cache setup logic, symlink creation, graceful degradation paths
+- **Integration Tests (with mocks):** Mock filesystem operations, verify environment configuration
+- **Manual Testing:**
+  - First bootstrap: Download everything, populate cache
+  - Second bootstrap: Verify cache used, measure time improvement
+  - Snapshot/restore: Verify cache persists and remains functional
+  - Symlink failure: Verify graceful degradation (bootstrap completes without cache)
+
+**Acceptance Criteria:**
+- [x] Homebrew cache directory created on host
+- [x] Symlink created in VM pointing to shared cache
+- [x] `HOMEBREW_CACHE` environment variable set in VM
+- [x] `cal cache status` shows Homebrew cache info (size, location, availability, last access)
+- [x] Bootstrap time reduced by at least 30% on second run (Homebrew portion)
+- [x] Graceful degradation works if symlink fails
+- [x] Unit and integration tests pass
+- [x] Documentation updated in ADR-002
+
+**Related:**
+- Section 1.9: VM lifecycle automation (Tart cache sharing pattern reference)
+- BUG-006: Network timeout during bootstrap (Homebrew cache will help prevent)
