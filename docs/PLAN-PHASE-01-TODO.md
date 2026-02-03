@@ -18,7 +18,7 @@
 
 **Implementation Strategy:** Incremental rollout - implement one package manager at a time, starting with Homebrew (highest impact).
 
-### Phase 1.1.1: Homebrew Cache (First Implementation)
+### Phase 1.1.1: Homebrew Cache (First Implementation) [PR #6]
 
 **Cache Location:**
 - **Host:** `~/.cal-cache/homebrew/` (persistent across VM operations)
@@ -105,7 +105,7 @@
 
 ---
 
-### Phase 1.1.2: **REFINED:** npm Cache
+### Phase 1.1.2: **REFINED:** npm Cache [Depends on 1.1.1 PR]
 
 **Dependencies:** Phase 1.1.1 (Homebrew cache) must be complete first.
 

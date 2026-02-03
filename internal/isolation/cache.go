@@ -18,16 +18,23 @@ type CacheManager struct {
 
 // CacheInfo contains information about a cache.
 type CacheInfo struct {
-	Path       string
-	Size       int64
-	Available  bool
+	// Path is the filesystem path to the cache directory.
+	Path string
+	// Size is the total size of the cache in bytes.
+	Size int64
+	// Available indicates whether the cache is configured and ready to use.
+	Available bool
+	// LastAccess is the last modification time of the cache directory.
 	LastAccess time.Time
 }
 
 const (
-	homebrewCacheDir     = "homebrew"
+	// homebrewCacheDir is the directory name for Homebrew cache under .cal-cache.
+	homebrewCacheDir = "homebrew"
+	// homebrewDownloadsDir is the subdirectory for Homebrew package downloads.
 	homebrewDownloadsDir = "downloads"
-	homebrewCaskDir      = "Cask"
+	// homebrewCaskDir is the subdirectory for Homebrew Cask downloads.
+	homebrewCaskDir = "Cask"
 )
 
 // NewCacheManager creates a new CacheManager with default paths.
@@ -51,7 +58,8 @@ func (c *CacheManager) getHomebrewCachePath() string {
 // Creates the cache directory structure with graceful degradation on errors.
 func (c *CacheManager) SetupHomebrewCache() error {
 	if c.homeDir == "" {
-		return fmt.Errorf("home directory not available")
+		fmt.Fprintf(os.Stderr, "Warning: home directory not available, continuing without Homebrew cache\n")
+		return nil
 	}
 
 	hostCacheDir := c.getHomebrewCachePath()

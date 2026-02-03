@@ -176,6 +176,19 @@ func TestCacheManager_NewCacheManager(t *testing.T) {
 }
 
 func TestCacheManager_gracefulDegradation(t *testing.T) {
+	t.Run("SetupHomebrewCache gracefully handles missing home directory", func(t *testing.T) {
+		cm := &CacheManager{
+			homeDir:      "",
+			cacheBaseDir: "",
+		}
+
+		// Should not return error when home directory unavailable (graceful degradation)
+		err := cm.SetupHomebrewCache()
+		if err != nil {
+			t.Fatalf("expected graceful degradation (nil error) when homeDir unavailable, got: %v", err)
+		}
+	})
+
 	t.Run("SetupHomebrewCache handles permission errors gracefully", func(t *testing.T) {
 		tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
 		if err != nil {
@@ -195,10 +208,10 @@ func TestCacheManager_gracefulDegradation(t *testing.T) {
 			cacheBaseDir: readonlyDir,
 		}
 
+		// Should return error for permission issues (not graceful degradation case)
 		err = cm.SetupHomebrewCache()
-		// Should not fail hard - graceful degradation
 		if err == nil {
-			// Either success or graceful degradation is acceptable
+			t.Fatalf("expected error for permission denied, got nil")
 		}
 	})
 }
