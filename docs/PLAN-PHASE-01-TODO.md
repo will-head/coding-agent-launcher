@@ -12,102 +12,336 @@
 
 ---
 
-## 1.1 Package Download Caching **HIGHEST PRIORITY**
+## 1.1 **REFINED:** Package Download Caching **HIGHEST PRIORITY**
 
 **Goal:** Cache all package downloads in host and pass through to VMs to avoid repeated downloads during development.
 
-**Scope:** Comprehensive caching for all package managers used during bootstrap.
+**Implementation Strategy:** Incremental rollout - implement one package manager at a time, starting with Homebrew (highest impact).
+
+### Phase 1.1.1: Homebrew Cache (First Implementation)
 
 **Cache Location:**
-- **Host:** `~/.cal-cache/` (persistent across VM operations)
-- **VM:** `~/.cal-cache/` (symlinked or mounted from host via Tart shared directories)
+- **Host:** `~/.cal-cache/homebrew/` (persistent across VM operations)
+- **VM:** Symlink `~/.cal-cache/homebrew/` → `/Volumes/My Shared Files/cal-cache/homebrew/`
+- **Pattern:** Same as Tart cache sharing in section 1.9 (proven approach)
 
-**Package Managers to Cache:**
+**Implementation Details:**
 
-1. **Homebrew** (biggest win)
-   - Location: `~/.cal-cache/homebrew/`
-   - Configure: `export HOMEBREW_CACHE=~/.cal-cache/homebrew`
-   - Caches: Bottles (precompiled binaries), downloads, formula sources
-   - Impact: Saves ~5-10 minutes per bootstrap, hundreds of MB of downloads
+1. **Code Location:** `internal/isolation/cache.go`
+   - New `CacheManager` struct with methods for setup, status
+   - Integration point: Called from VM init/setup process
+   - Follows existing isolation subsystem patterns
 
-2. **npm** 
-   - Location: `~/.cal-cache/npm/`
-   - Configure: `npm config set cache ~/.cal-cache/npm`
-   - Caches: Packages for claude, agent, ccs, codex
-   - Impact: Saves ~2-3 minutes per bootstrap
+2. **Host Cache Setup:**
+   - Create `~/.cal-cache/homebrew/` on host if doesn't exist
+   - No host environment configuration needed (host uses default Homebrew cache)
+   - Host directory structure: `~/.cal-cache/homebrew/downloads/`, `~/.cal-cache/homebrew/Cask/`
 
-3. **Go modules**
-   - Location: `~/.cal-cache/go/pkg/mod/`
-   - Configure: `export GOMODCACHE=~/.cal-cache/go/pkg/mod`
-   - Caches: Modules for staticcheck, goimports, delve, mockgen, air
-   - Impact: Saves ~1-2 minutes per bootstrap
+3. **VM Cache Passthrough (Symlink Approach):**
+   - Create Tart shared directory: Ensure `/Volumes/My Shared Files/cal-cache/` exists
+   - Copy host cache to shared volume: `rsync -a ~/.cal-cache/homebrew/ "/Volumes/My Shared Files/cal-cache/homebrew/"`
+   - Create symlink in VM: `ln -sf "/Volumes/My Shared Files/cal-cache/homebrew" ~/.cal-cache/homebrew`
+   - Configure in VM: `export HOMEBREW_CACHE=~/.cal-cache/homebrew` (add to `.zshrc`)
+   - Verify symlink writable from VM
 
-4. **Git clones** (selective caching)
-   - Location: `~/.cal-cache/git/<repo-name>/`
-   - Manual implementation for frequently cloned repos
-   - Already implemented: TPM (tmux-plugins/tpm)
-   - Consider: Other repos cloned during setup
+4. **Error Handling (Graceful Degradation):**
+   - If symlink creation fails: Log warning, continue without cache
+   - If shared volume unavailable: Log warning, continue without cache
+   - Bootstrap still works, just slower (no hard failure)
+   - Consistent with Tart cache sharing pattern in section 1.9
 
-**Implementation Tasks:**
+5. **Cache Status Command:** `cal cache status`
+   - Display information:
+     - Cache sizes per package manager (e.g., "Homebrew: 450 MB")
+     - Cache location path (e.g., "~/.cal-cache/homebrew/")
+     - Cache availability status (✓ Homebrew cache ready, ✗ npm cache not configured)
+     - Last access time (from filesystem mtime)
+   - Output format: Human-readable table or list
+   - Implementation: `internal/isolation/cache.go` → `Status()` method
 
-1. **Host cache setup (cal-bootstrap)**
-   - Create `~/.cal-cache/` on host if doesn't exist
-   - Configure environment variables in host shell
-   - Document cache location and cleanup in ADR-002
-
-2. **VM cache passthrough**
-   - Mount host `~/.cal-cache/` into VM via Tart `--dir` flag
-   - Or: Create symlink in VM to shared Tart cache directory
-   - Ensure cache directory is writable from VM
-
-3. **Update vm-setup.sh**
-   - Configure `HOMEBREW_CACHE` in VM environment
-   - Configure npm cache via `npm config set cache`
-   - Configure `GOMODCACHE` in VM environment
-   - Add cache configuration to `.zshrc`
-
-4. **Update cal-bootstrap**
-   - Pass cache directory to VM on all `tart run` operations
-   - Example: `--dir=cal-cache:~/.cal-cache` (if supported)
-   - Fallback: Manual file sync if Tart sharing not available
-
-5. **Cache maintenance**
-   - Add `cal cache clear` command to clear all caches
-   - Add `cal cache status` command to show cache sizes
-   - Document cache location and cleanup procedures
+6. **Cache Invalidation Strategy:**
+   - **Let package managers handle it** - no manual invalidation logic
+   - Homebrew validates cache integrity and checksums automatically
+   - Invalid or outdated cache entries are re-downloaded by Homebrew
+   - Simplest approach: just set `HOMEBREW_CACHE` and let Homebrew manage lifetime
 
 **Benefits:**
 
-- **Speed:** Bootstrap time reduced from ~15 minutes to ~5 minutes (after first run)
-- **Reliability:** Reduced network dependency, fewer timeout failures
-- **Development:** Snapshot/restore operations become near-instant
-- **Bandwidth:** Save hundreds of MB per bootstrap iteration
+- **Speed:** Saves ~5-10 minutes per bootstrap (biggest single win)
+- **Reliability:** Reduces network dependency, fewer timeout failures
+- **Bandwidth:** Saves hundreds of MB per bootstrap iteration
+- **Development:** Faster snapshot/restore testing cycles
 
 **Constraints:**
 
-- Cache directory must persist across VM operations
-- Cache must be accessible from both host and VM
-- Cache invalidation strategy needed (version changes)
-- Disk space consideration (~1-2 GB for full cache)
+- Requires Tart shared directories feature (graceful degradation if unavailable)
+- Disk space: ~500-800 MB for Homebrew cache
+- Cache persists across VM operations (intended behavior)
 
-**Testing:**
+**Testing Strategy:**
 
-- First bootstrap: Download everything, populate cache
-- Second bootstrap: Use cache, verify speed improvement
-- Snapshot/restore: Verify cache persists
-- Cache clearing: Verify cleanup works correctly
+- **Unit Tests:** Cache setup logic, symlink creation, graceful degradation paths
+- **Integration Tests (with mocks):** Mock filesystem operations, verify environment configuration
+- **Manual Testing:**
+  - First bootstrap: Download everything, populate cache
+  - Second bootstrap: Verify cache used, measure time improvement
+  - Snapshot/restore: Verify cache persists and remains functional
+  - Symlink failure: Verify graceful degradation (bootstrap completes without cache)
+
+**Acceptance Criteria (Phase 1.1.1 - Homebrew Only):**
+
+- Homebrew cache directory created on host
+- Symlink created in VM pointing to shared cache
+- `HOMEBREW_CACHE` environment variable set in VM
+- `cal cache status` shows Homebrew cache info (size, location, availability, last access)
+- Bootstrap time reduced by at least 30% on second run (Homebrew portion)
+- Graceful degradation works if symlink fails
+- Unit and integration tests pass
+- Documentation updated in ADR-002
 
 **Related:**
-- BUG-006: Network timeout during bootstrap (this will help prevent)
-- Section 1.9: VM lifecycle automation (cache passthrough setup)
+- Section 1.9: VM lifecycle automation (Tart cache sharing pattern reference)
+- BUG-006: Network timeout during bootstrap (Homebrew cache will help prevent)
+
+---
+
+### Phase 1.1.2: **REFINED:** npm Cache
+
+**Dependencies:** Phase 1.1.1 (Homebrew cache) must be complete first.
+
+**Cache Location:**
+- **Host:** `~/.cal-cache/npm/` (persistent across VM operations)
+- **VM:** Symlink `~/.cal-cache/npm/` → `/Volumes/My Shared Files/cal-cache/npm/`
+- **Pattern:** Same as Phase 1.1.1 (proven approach)
+
+**Implementation Details:**
+
+1. **Code Location:** `internal/isolation/cache.go` (extend existing `CacheManager`)
+   - Add npm-specific setup method
+   - Integrate into VM init/setup process
+
+2. **Host Cache Setup:**
+   - Create `~/.cal-cache/npm/` on host if doesn't exist
+   - No host environment configuration needed
+
+3. **VM Cache Passthrough:**
+   - Create Tart shared directory: `/Volumes/My Shared Files/cal-cache/npm/`
+   - Copy host cache: `rsync -a ~/.cal-cache/npm/ "/Volumes/My Shared Files/cal-cache/npm/"`
+   - Create symlink in VM: `ln -sf "/Volumes/My Shared Files/cal-cache/npm" ~/.cal-cache/npm`
+   - Configure in VM: `npm config set cache ~/.cal-cache/npm` (run during vm-setup.sh)
+   - Verify symlink writable
+
+4. **Error Handling:** Graceful degradation (same as Phase 1.1.1)
+
+5. **Cache Status:** Update `cal cache status` to include npm cache info
+
+6. **Cache Invalidation:** Let npm handle it (validates cache metadata automatically)
+
+**Benefits:**
+- **Speed:** Saves ~2-3 minutes per bootstrap
+- **Bandwidth:** Saves ~50-100 MB per bootstrap
+- **Packages:** claude, agent, ccs, codex CLI tools
+
+**Constraints:**
+- Disk space: ~100-200 MB for npm cache
+
+**Testing Strategy:**
+- Unit tests for npm cache setup logic
+- Integration tests with mocks
+- Manual: Bootstrap twice, verify npm uses cache
 
 **Acceptance Criteria:**
+- npm cache directory created on host
+- Symlink created in VM
+- `npm config get cache` returns `~/.cal-cache/npm` in VM
+- `cal cache status` shows npm cache info
+- Bootstrap time reduced by additional 15-20% with npm cache
+- Graceful degradation works
+- Tests pass
 
-- All package managers use shared cache
-- Cache persists across VM snapshots/restores
-- Bootstrap time reduced by at least 50% on second run
-- Cache maintenance commands available
-- Documentation updated in ADR-002
+---
+
+### Phase 1.1.3: **REFINED:** Go Modules Cache
+
+**Dependencies:** Phase 1.1.2 (npm cache) must be complete first.
+
+**Cache Location:**
+- **Host:** `~/.cal-cache/go/pkg/mod/` (persistent across VM operations)
+- **VM:** Symlink `~/.cal-cache/go/` → `/Volumes/My Shared Files/cal-cache/go/`
+- **Pattern:** Same as Phases 1.1.1 and 1.1.2
+
+**Implementation Details:**
+
+1. **Code Location:** `internal/isolation/cache.go` (extend existing `CacheManager`)
+   - Add Go-specific setup method
+
+2. **Host Cache Setup:**
+   - Create `~/.cal-cache/go/pkg/mod/` on host if doesn't exist
+   - Create `~/.cal-cache/go/pkg/sumdb/` for checksum database
+
+3. **VM Cache Passthrough:**
+   - Create Tart shared directory: `/Volumes/My Shared Files/cal-cache/go/`
+   - Copy host cache: `rsync -a ~/.cal-cache/go/ "/Volumes/My Shared Files/cal-cache/go/"`
+   - Create symlink in VM: `ln -sf "/Volumes/My Shared Files/cal-cache/go" ~/.cal-cache/go`
+   - Configure in VM: `export GOMODCACHE=~/.cal-cache/go/pkg/mod` (add to `.zshrc`)
+   - Verify symlink writable
+
+4. **Error Handling:** Graceful degradation (same as previous phases)
+
+5. **Cache Status:** Update `cal cache status` to include Go cache info
+
+6. **Cache Invalidation:** Let Go handle it (uses `go.sum` checksums for validation)
+
+**Benefits:**
+- **Speed:** Saves ~1-2 minutes per bootstrap
+- **Bandwidth:** Saves ~20-50 MB per bootstrap
+- **Modules:** staticcheck, goimports, delve, mockgen, air
+
+**Constraints:**
+- Disk space: ~50-150 MB for Go module cache
+
+**Testing Strategy:**
+- Unit tests for Go cache setup logic
+- Integration tests with mocks
+- Manual: Bootstrap twice, verify Go uses cache
+
+**Acceptance Criteria:**
+- Go cache directory created on host
+- Symlink created in VM
+- `go env GOMODCACHE` returns `~/.cal-cache/go/pkg/mod` in VM
+- `cal cache status` shows Go cache info
+- Bootstrap time reduced by additional 10-15% with Go cache
+- Graceful degradation works
+- Tests pass
+
+---
+
+### Phase 1.1.4: **REFINED:** Git Clones Cache
+
+**Dependencies:** Phase 1.1.3 (Go modules cache) must be complete first.
+
+**Cache Location:**
+- **Host:** `~/.cal-cache/git/<repo-name>/` (persistent across VM operations)
+- **VM:** Symlink per repository to `/Volumes/My Shared Files/cal-cache/git/<repo-name>/`
+- **Pattern:** Selective caching for frequently cloned repos
+
+**Implementation Details:**
+
+1. **Code Location:** `internal/isolation/cache.go` (extend existing `CacheManager`)
+   - Add git clone caching method
+   - Maintain list of cached repos
+
+2. **Host Cache Setup:**
+   - Create `~/.cal-cache/git/` on host if doesn't exist
+   - Cache TPM (already implemented in vm-setup.sh as reference)
+   - Identify other frequently cloned repos during bootstrap
+
+3. **VM Cache Passthrough:**
+   - Create Tart shared directory: `/Volumes/My Shared Files/cal-cache/git/`
+   - For each cached repo:
+     - Copy to shared volume: `rsync -a ~/.cal-cache/git/tpm/ "/Volumes/My Shared Files/cal-cache/git/tpm/"`
+     - Clone from cache instead of GitHub: `git clone /Volumes/My Shared Files/cal-cache/git/tpm ~/.tmux/plugins/tpm`
+   - Update cached repos: `git -C <cache-path> fetch --all` before each use
+
+4. **Error Handling:** Graceful degradation - if cache missing, clone from GitHub normally
+
+5. **Cache Status:** Update `cal cache status` to show cached git repos and their update status
+
+6. **Cache Invalidation:** Update cache repos via `git fetch` before each bootstrap
+
+**Benefits:**
+- **Speed:** Saves ~30-60 seconds per bootstrap (depends on repos)
+- **Reliability:** Works offline after first bootstrap
+- **Repos:** TPM (tmux-plugins/tpm), potentially others identified during testing
+
+**Constraints:**
+- Disk space: ~10-50 MB per cached repo
+- Need to keep cache updated with `git fetch`
+
+**Testing Strategy:**
+- Unit tests for git clone caching logic
+- Integration tests with mocks
+- Manual: Bootstrap with/without network, verify cache works offline
+
+**Acceptance Criteria:**
+- Git cache directory created on host
+- TPM cached and used during bootstrap
+- Cache updated with `git fetch` before use
+- `cal cache status` shows cached git repos
+- Bootstrap works offline with cached repos
+- Graceful degradation works if cache unavailable
+- Tests pass
+
+---
+
+### Phase 1.1.5: **REFINED:** Cache Clear Command
+
+**Dependencies:** Phases 1.1.1-1.1.4 must be complete first (all caches implemented).
+
+**Command:** `cal cache clear`
+
+**Implementation Details:**
+
+1. **Code Location:** `internal/isolation/cache.go` (extend existing `CacheManager`)
+   - Add `Clear()` method with per-cache confirmation
+
+2. **Behavior:**
+   - Prompt user to confirm clearing each cache type individually
+   - Example flow:
+     ```
+     Clear Homebrew cache (450 MB)? [y/N]: y
+     Clearing Homebrew cache...
+     Clear npm cache (120 MB)? [y/N]: n
+     Skipping npm cache
+     Clear Go modules cache (80 MB)? [y/N]: y
+     Clearing Go modules cache...
+     Clear git clones cache (25 MB)? [y/N]: y
+     Clearing git clones cache...
+
+     Summary: Cleared 555 MB (3/4 caches)
+     ```
+
+3. **Implementation:**
+   - For each cache type (Homebrew, npm, Go, Git):
+     - Calculate cache size: `du -sh <cache-dir>`
+     - Prompt user: `Clear <type> cache (<size>)? [y/N]:`
+     - If confirmed: `rm -rf <cache-dir>` and recreate empty directory
+     - Track cleared caches for summary
+   - Display summary of total space freed
+
+4. **Flags:**
+   - `--all` or `-a`: Clear all caches without prompting (dangerous)
+   - `--dry-run`: Show what would be cleared without actually clearing
+
+5. **Safety:**
+   - Default to "No" for each prompt (require explicit "y")
+   - Warn if clearing will slow down next bootstrap
+   - Suggest alternatives: "Consider clearing individual caches if low on disk space"
+
+**Benefits:**
+- **Disk Management:** Users can reclaim 1-2 GB when needed
+- **Troubleshooting:** Clear corrupted caches
+- **Flexibility:** Per-cache granularity with confirmation
+
+**Constraints:**
+- Clearing cache means next bootstrap will be slow again
+- No undo (must re-download everything)
+
+**Testing Strategy:**
+- Unit tests for clear logic with mocks
+- Integration tests for confirmation prompts
+- Manual: Test clearing each cache individually and all together
+
+**Acceptance Criteria:**
+- `cal cache clear` prompts for each cache individually
+- Each cache cleared only after user confirms "y"
+- Summary shows total space freed
+- `--all` flag clears all without prompting
+- `--dry-run` shows what would be cleared
+- Graceful handling if cache doesn't exist
+- Tests pass
+
+---
 
 ---
 
