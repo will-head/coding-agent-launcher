@@ -215,3 +215,107 @@ func TestCacheManager_gracefulDegradation(t *testing.T) {
 		}
 	})
 }
+
+func TestCacheManager_VMCacheSetup(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("SetupVMHomebrewCache returns commands when host cache exists", func(t *testing.T) {
+		// Setup host cache
+		err := cm.SetupHomebrewCache()
+		if err != nil {
+			t.Fatalf("SetupHomebrewCache failed: %v", err)
+		}
+
+		commands := cm.SetupVMHomebrewCache()
+		if commands == nil {
+			t.Fatalf("expected non-nil commands")
+		}
+
+		if len(commands) == 0 {
+			t.Fatalf("expected at least one command")
+		}
+
+		// Verify commands contain expected operations
+		commandsStr := strings.Join(commands, " ")
+		if !strings.Contains(commandsStr, "mkdir -p ~/.cal-cache") {
+			t.Fatalf("expected mkdir command in VM setup")
+		}
+		if !strings.Contains(commandsStr, "ln -sf") {
+			t.Fatalf("expected symlink command in VM setup")
+		}
+		if !strings.Contains(commandsStr, "HOMEBREW_CACHE") {
+			t.Fatalf("expected HOMEBREW_CACHE environment variable setup")
+		}
+	})
+
+	t.Run("SetupVMHomebrewCache returns nil when home directory unavailable", func(t *testing.T) {
+		cmNoHome := &CacheManager{
+			homeDir:      "",
+			cacheBaseDir: "",
+		}
+
+		commands := cmNoHome.SetupVMHomebrewCache()
+		if commands != nil {
+			t.Fatalf("expected nil commands when homeDir unavailable, got: %v", commands)
+		}
+	})
+
+	t.Run("SetupVMHomebrewCache returns nil when host cache doesn't exist", func(t *testing.T) {
+		cmNoCache := &CacheManager{
+			homeDir:      tmpDir,
+			cacheBaseDir: filepath.Join(tmpDir, "nonexistent-cache"),
+		}
+
+		commands := cmNoCache.SetupVMHomebrewCache()
+		if commands != nil {
+			t.Fatalf("expected nil commands when host cache doesn't exist, got: %v", commands)
+		}
+	})
+}
+
+func TestCacheManager_SharedCacheMount(t *testing.T) {
+	t.Run("GetSharedCacheMount returns correct mount specification", func(t *testing.T) {
+		cm := NewCacheManager()
+		mount := cm.GetSharedCacheMount()
+
+		expected := "cal-cache:~/.cal-cache"
+		if mount != expected {
+			t.Fatalf("expected mount spec %s, got %s", expected, mount)
+		}
+	})
+
+	t.Run("GetHomebrewCacheHostPath returns correct host path", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+		if err != nil {
+			t.Fatalf("failed to create temp dir: %v", err)
+		}
+		defer os.RemoveAll(tmpDir)
+
+		cm := &CacheManager{
+			homeDir:      tmpDir,
+			cacheBaseDir: filepath.Join(tmpDir, "cache"),
+		}
+
+		hostPath := cm.GetHomebrewCacheHostPath()
+		if hostPath == "" {
+			t.Fatalf("expected non-empty host path")
+		}
+
+		if !strings.Contains(hostPath, "cal-cache:") {
+			t.Fatalf("expected 'cal-cache:' prefix in host path")
+		}
+
+		if !strings.Contains(hostPath, "homebrew") {
+			t.Fatalf("expected 'homebrew' in host path")
+		}
+	})
+}

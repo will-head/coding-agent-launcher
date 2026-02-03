@@ -35,6 +35,8 @@ const (
 	homebrewDownloadsDir = "downloads"
 	// homebrewCaskDir is the subdirectory for Homebrew Cask downloads.
 	homebrewCaskDir = "Cask"
+	// sharedCacheMount is the Tart directory mount specification for cache sharing.
+	sharedCacheMount = "cal-cache:~/.cal-cache"
 )
 
 // NewCacheManager creates a new CacheManager with default paths.
@@ -52,6 +54,16 @@ func NewCacheManager() *CacheManager {
 // getHomebrewCachePath returns the host path for Homebrew cache.
 func (c *CacheManager) getHomebrewCachePath() string {
 	return filepath.Join(c.cacheBaseDir, homebrewCacheDir)
+}
+
+// GetSharedCacheMount returns the Tart directory mount specification for cache sharing.
+func (c *CacheManager) GetSharedCacheMount() string {
+	return sharedCacheMount
+}
+
+// GetHomebrewCacheHostPath returns the host path for Homebrew cache mounting.
+func (c *CacheManager) GetHomebrewCacheHostPath() string {
+	return fmt.Sprintf("cal-cache:%s", c.getHomebrewCachePath())
 }
 
 // SetupHomebrewCache sets up the Homebrew cache directory on the host.
@@ -79,6 +91,32 @@ func (c *CacheManager) SetupHomebrewCache() error {
 	}
 
 	return nil
+}
+
+// SetupVMHomebrewCache returns shell commands to set up Homebrew cache in the VM.
+// The commands create a symlink from the VM home directory to the shared cache volume
+// and configure the HOMEBREW_CACHE environment variable.
+// Returns empty slice if host cache is not available.
+func (c *CacheManager) SetupVMHomebrewCache() []string {
+	if c.homeDir == "" {
+		return nil
+	}
+
+	hostCacheDir := c.getHomebrewCachePath()
+	if _, err := os.Stat(hostCacheDir); os.IsNotExist(err) {
+		return nil
+	}
+
+	vmCacheDir := filepath.Join("~", ".cal-cache", homebrewCacheDir)
+	sharedCachePath := filepath.Join("/Volumes/My Shared Files", "cal-cache", homebrewCacheDir)
+
+	commands := []string{
+		fmt.Sprintf("mkdir -p ~/.cal-cache"),
+		fmt.Sprintf("ln -sf %s %s", sharedCachePath, vmCacheDir),
+		fmt.Sprintf("grep -q 'HOMEBREW_CACHE' ~/.zshrc || echo 'export HOMEBREW_CACHE=%s' >> ~/.zshrc", vmCacheDir),
+	}
+
+	return commands
 }
 
 // GetHomebrewCacheInfo returns information about the Homebrew cache.
