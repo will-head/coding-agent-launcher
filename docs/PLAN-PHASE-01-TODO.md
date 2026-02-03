@@ -22,62 +22,7 @@
 
 **Phase 1.1.2 (npm Cache) completed:** See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) § 1.1.2 (PR #7, merged 2026-02-03)
 
----
-
-### Phase 1.1.3: Go Modules Cache
-
-**Dependencies:** Phase 1.1.2 (npm cache) must be complete first.
-
-**Status:** Ready for merge (PR #8 - tested, needs merge)
-
-**Cache Location:**
-- **Host:** `~/.cal-cache/go/pkg/mod/` (persistent across VM operations)
-- **VM:** Symlink `~/.cal-cache/go/` → `/Volumes/My Shared Files/cal-cache/go/`
-- **Pattern:** Same as Phases 1.1.1 and 1.1.2
-
-**Implementation Details:**
-
-1. **Code Location:** `internal/isolation/cache.go` (extend existing `CacheManager`)
-   - Add Go-specific setup method
-
-2. **Host Cache Setup:**
-   - Create `~/.cal-cache/go/pkg/mod/` on host if doesn't exist
-   - Create `~/.cal-cache/go/pkg/sumdb/` for checksum database
-
-3. **VM Cache Passthrough:**
-   - Create Tart shared directory: `/Volumes/My Shared Files/cal-cache/go/`
-   - Copy host cache: `rsync -a ~/.cal-cache/go/ "/Volumes/My Shared Files/cal-cache/go/"`
-   - Create symlink in VM: `ln -sf "/Volumes/My Shared Files/cal-cache/go" ~/.cal-cache/go`
-   - Configure in VM: `export GOMODCACHE=~/.cal-cache/go/pkg/mod` (add to `.zshrc`)
-   - Verify symlink writable
-
-4. **Error Handling:** Graceful degradation (same as previous phases)
-
-5. **Cache Status:** Update `cal cache status` to include Go cache info
-
-6. **Cache Invalidation:** Let Go handle it (uses `go.sum` checksums for validation)
-
-**Benefits:**
-- **Speed:** Saves ~1-2 minutes per bootstrap
-- **Bandwidth:** Saves ~20-50 MB per bootstrap
-- **Modules:** staticcheck, goimports, delve, mockgen, air
-
-**Constraints:**
-- Disk space: ~50-150 MB for Go module cache
-
-**Testing Strategy:**
-- Unit tests for Go cache setup logic
-- Integration tests with mocks
-- Manual: Bootstrap twice, verify Go uses cache
-
-**Acceptance Criteria:**
-- Go cache directory created on host
-- Symlink created in VM
-- `go env GOMODCACHE` returns `~/.cal-cache/go/pkg/mod` in VM
-- `cal cache status` shows Go cache info
-- Bootstrap time reduced by additional 10-15% with Go cache
-- Graceful degradation works
-- Tests pass
+**Phase 1.1.3 (Go Modules Cache) completed:** See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) § 1.1.3 (PR #8, merged 2026-02-03)
 
 ---
 

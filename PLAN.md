@@ -13,7 +13,7 @@
 
 Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via cal-bootstrap, transparent proxy for network reliability, comprehensive git safety checks, VM detection capabilities, first-run/logout git automation, Tart cache sharing for nested VMs, Ghostty terminal emulator, and tmux session persistence are all operational.
 
-**Active Work:** Phase 1 (CLI Foundation) in progress. Project scaffolding (PR #3), Configuration Management (PR #4), Tart Wrapper (PR #5), Homebrew Cache (PR #6), and npm Cache (PR #7) all merged. **HIGHEST PRIORITY:** Package download caching (1.1) — Homebrew and npm caches done, Go (1.1.3), Git (1.1.4) caches and cache clear command (1.1.5) remain as refined TODOs. Next: Implement remaining caches (1.1.3-1.1.5) or begin Snapshot Management (1.4) or SSH Management (1.5).
+**Active Work:** Phase 1 (CLI Foundation) in progress. Project scaffolding (PR #3), Configuration Management (PR #4), Tart Wrapper (PR #5), Homebrew Cache (PR #6), npm Cache (PR #7), and Go Modules Cache (PR #8) all merged. **HIGHEST PRIORITY:** Package download caching (1.1) — Homebrew, npm, and Go caches done, Git (1.1.4) cache and cache clear command (1.1.5) remain as refined TODOs. Next: Implement remaining caches (1.1.4-1.1.5) or begin Snapshot Management (1.4) or SSH Management (1.5).
 
 ---
 
