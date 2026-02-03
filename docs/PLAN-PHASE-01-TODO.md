@@ -111,7 +111,7 @@
 
 ---
 
-## 1.3 Tart Wrapper (PR #5 - approved, needs testing)
+## 1.3 Tart Wrapper (PR #5 - tested, needs merge)
 
 **File:** `internal/isolation/tart.go`
 
