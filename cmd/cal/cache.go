@@ -76,6 +76,8 @@ func runCacheClear(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 	}
 
+	reader := bufio.NewReader(os.Stdin)
+
 	for _, ct := range cacheTypes {
 		info, err := ct.getInfo()
 		if err != nil {
@@ -101,7 +103,7 @@ func runCacheClear(cmd *cobra.Command, args []string) error {
 			}
 		} else {
 			fmt.Printf("Clear %s cache (%s)? [y/N]: ", ct.name, sizeStr)
-			input, err := bufio.NewReader(os.Stdin).ReadString('\n')
+			input, err := reader.ReadString('\n')
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					shouldClear = false
