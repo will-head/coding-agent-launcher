@@ -1359,6 +1359,12 @@ do_init() {
     echo ""
     echo "Step 10: Create $VM_INIT snapshot"
 
+    # Clear tmux session data before snapshot (prevents auth screen capture)
+    echo "  Clearing tmux session data..."
+    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${VM_IP}" "rm -rf ~/.local/share/tmux/resurrect/* 2>/dev/null || true" 2>> "$CAL_LOG"
+    echo "  ✓ Tmux sessions cleared"
+
     # Stop VM first
     CLEANUP_VM=false
     echo "  Stopping $VM_DEV..."

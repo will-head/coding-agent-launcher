@@ -517,13 +517,8 @@ if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
             echo ""
             CAL_AUTH_NEEDED=1 zsh ~/scripts/vm-auth.sh
 
-            # Clear tmux session data to prevent cal-init from capturing auth screen
-            # This ensures restored sessions show a clean shell, not authentication prompts
-            if [ -d ~/.local/share/tmux/resurrect ]; then
-                rm -rf ~/.local/share/tmux/resurrect/*
-            fi
-
             # Exit to allow cal-bootstrap to continue with cal-init creation
+            # Note: cal-bootstrap will clear tmux session data before creating snapshot
             # User will be automatically reconnected after cal-init is ready
             exit 0
         fi
