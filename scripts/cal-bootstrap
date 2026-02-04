@@ -1588,10 +1588,11 @@ do_stop() {
         exit 0
     fi
 
-    # Save tmux sessions before stopping
-    save_tmux_sessions "$VM_DEV"
-    echo ""
-
+    # Note: We don't explicitly save tmux sessions here because:
+    # 1. The detach hook already saves on every detach
+    # 2. The background save was corrupting the saved state (race condition with VM stop)
+    # Wait to allow any pending detach saves to complete
+    sleep 10
     echo "Stopping $VM_DEV..."
     "$TART" stop "$VM_DEV"
     echo ""
@@ -1614,10 +1615,11 @@ do_restart() {
 
     # Stop if running
     if vm_running "$VM_DEV"; then
-        # Save tmux sessions before stopping
-        save_tmux_sessions "$VM_DEV"
-        echo ""
-
+        # Note: We don't explicitly save tmux sessions here because:
+        # 1. The detach hook already saves on every detach
+        # 2. The background save was corrupting the saved state (race condition with VM stop)
+        # Wait to allow any pending detach saves to complete
+        sleep 10
         echo "Stopping $VM_DEV..."
         "$TART" stop "$VM_DEV"
         sleep 2
@@ -1700,6 +1702,8 @@ do_gui() {
     # Stop if already running (need to restart with VNC flags)
     if vm_running "$VM_DEV"; then
         echo "$VM_DEV is already running. Stopping to restart with VNC..."
+        # Wait to allow any pending detach saves to complete
+        sleep 10
         "$TART" stop "$VM_DEV"
         sleep 2
         echo ""
