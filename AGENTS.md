@@ -145,7 +145,7 @@ Skip the menu and launch that workflow directly (same as selecting it from the `
 
 **Important:** Read only the active phase TODO file per session.
 
-**Operational:** [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) | [bootstrap.md](docs/bootstrap.md)
+**Operational:** [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) | [ADR-003](docs/adr/ADR-003-package-download-caching.md) | [bootstrap.md](docs/bootstrap.md)
 
 **Reference:** [WORKFLOWS.md](docs/WORKFLOWS.md) (index + shared conventions) | [WORKFLOW-*.md](docs/) | [architecture.md](docs/architecture.md) | [cli.md](docs/cli.md) | [SPEC.md](docs/SPEC.md) | [CODING_STANDARDS.md](CODING_STANDARDS.md)
 

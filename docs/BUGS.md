@@ -25,4 +25,4 @@ When bugs are resolved, remove the entry from this file and update `bugs/README.
 
 | ID | Summary | Severity | Status | Component | Phase | Opened |
 |----|---------|----------|--------|-----------|-------|--------|
-| - | No active bugs | - | - | - | - | - |
+| BUG-008 | [Cursor agent command not found after --init](bugs/BUG-008-cursor-agent-not-found-after-init.md) | High | Open | Bootstrap / VM Setup | 0 | 2026-02-03 |
