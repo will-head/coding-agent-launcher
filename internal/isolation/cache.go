@@ -409,6 +409,11 @@ func (c *CacheManager) resolveRealCachePath(localPath string) (string, error) {
 	if info.Mode()&os.ModeSymlink != 0 {
 		target, err := filepath.EvalSymlinks(localPath)
 		if err != nil {
+			// If the symlink exists but its target doesn't exist, treat as unavailable
+			// This happens when ~/.cal-cache/{type} is a symlink to a shared volume that isn't mounted
+			if os.IsNotExist(err) {
+				return "", nil
+			}
 			return "", fmt.Errorf("failed to resolve symlink: %w", err)
 		}
 		return target, nil
