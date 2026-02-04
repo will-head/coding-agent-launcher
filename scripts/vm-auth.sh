@@ -4,6 +4,11 @@
 eval "$(/opt/homebrew/bin/brew shellenv)"
 export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/go/bin:/opt/homebrew/bin:$PATH"
 
+# Load shell configuration for aliases (including agent='cursor-agent')
+if [ -f ~/.zshrc ]; then
+    source ~/.zshrc
+fi
+
 # Load proxy configuration if available
 if [ -f ~/.cal-proxy-config ]; then
     source ~/.cal-proxy-config

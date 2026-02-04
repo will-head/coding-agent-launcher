@@ -162,16 +162,24 @@ cursor-agent --version 2>/dev/null || echo "not found"
 Added `alias agent='cursor-agent'` to ~/.zshrc during vm-setup.sh shell configuration phase.
 
 **Changes:**
-- Modified `scripts/vm-setup.sh` line ~620 to add agent alias check and configuration
-- Alias is added after Cursor CLI installation and before shell config reload
-- Idempotent check prevents duplicate entries on subsequent runs
+1. Modified `scripts/vm-setup.sh` line ~620 to add agent alias check and configuration
+   - Alias is added after Cursor CLI installation and before shell config reload
+   - Idempotent check prevents duplicate entries on subsequent runs
+
+2. Modified `scripts/vm-auth.sh` line ~7 to source ~/.zshrc at startup
+   - Ensures aliases are available when vm-auth.sh runs in new SSH session
+   - Required because vm-auth.sh runs in separate shell context
+
+**Why both changes needed:**
+- vm-setup.sh fix: Adds alias to ~/.zshrc during initial setup
+- vm-auth.sh fix: Loads aliases when vm-auth runs (new shell doesn't inherit aliases automatically)
 
 **Verification:**
 After this fix, `cal-bootstrap --init` will:
 1. Install cursor-cli via Homebrew Cask (creates cursor-agent binary)
-2. Add `alias agent='cursor-agent'` to ~/.zshrc
-3. Source ~/.zshrc (makes alias available)
-4. Verification section confirms `agent` command is found
+2. Add `alias agent='cursor-agent'` to ~/.zshrc (vm-setup.sh)
+3. Source ~/.zshrc during vm-auth (vm-auth.sh)
+4. Agent command available for authentication
 
 **Testing Status:**
 Code review and syntax validation complete. VM testing deferred to next bootstrap run.
