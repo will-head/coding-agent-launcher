@@ -605,3 +605,56 @@ func formatBytes(b int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
+
+// Clear removes the specified cache type and recreates an empty cache directory.
+// cacheType must be one of: "homebrew", "npm", "go", "git"
+// dryRun if true, simulates clearing without actually deleting files
+// Returns true if cache was cleared (or would be cleared in dry run), false if cache didn't exist
+func (c *CacheManager) Clear(cacheType string, dryRun bool) (bool, error) {
+	if c.homeDir == "" {
+		return false, fmt.Errorf("home directory not available")
+	}
+
+	var cachePath string
+	var setupFunc func() error
+
+	switch cacheType {
+	case "homebrew":
+		cachePath = c.getHomebrewCachePath()
+		setupFunc = c.SetupHomebrewCache
+	case "npm":
+		cachePath = c.getNpmCachePath()
+		setupFunc = c.SetupNpmCache
+	case "go":
+		cachePath = c.getGoCachePath()
+		setupFunc = c.SetupGoCache
+	case "git":
+		cachePath = c.getGitCachePath()
+		setupFunc = c.SetupGitCache
+	default:
+		return false, fmt.Errorf("invalid cache type: %s (must be homebrew, npm, go, or git)", cacheType)
+	}
+
+	info, err := os.Stat(cachePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check cache directory: %w", err)
+	}
+
+	if !info.IsDir() {
+		return false, fmt.Errorf("cache path is not a directory: %s", cachePath)
+	}
+
+	if !dryRun {
+		if err := os.RemoveAll(cachePath); err != nil {
+			return false, fmt.Errorf("failed to remove cache directory: %w", err)
+		}
+		if err := setupFunc(); err != nil {
+			return false, fmt.Errorf("failed to recreate cache directory: %w", err)
+		}
+	}
+
+	return true, nil
+}

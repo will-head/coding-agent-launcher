@@ -1042,3 +1042,165 @@ func TestCacheManager_UpdateGitRepos(t *testing.T) {
 		}
 	})
 }
+
+func TestCacheManager_Clear(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("Clear removes cache directory and recreates it", func(t *testing.T) {
+		err := cm.SetupHomebrewCache()
+		if err != nil {
+			t.Fatalf("SetupHomebrewCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "homebrew")
+		testFile := filepath.Join(hostCacheDir, "test-file.bin")
+		if err := os.WriteFile(testFile, []byte("test data"), 0644); err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
+		cleared, err := cm.Clear("homebrew", false)
+		if err != nil {
+			t.Fatalf("Clear failed: %v", err)
+		}
+
+		if !cleared {
+			t.Fatalf("expected cleared=true, got false")
+		}
+
+		if _, err := os.Stat(testFile); !os.IsNotExist(err) {
+			t.Fatalf("expected test file to be deleted, but it still exists")
+		}
+
+		info, err := os.Stat(hostCacheDir)
+		if err != nil {
+			t.Fatalf("expected cache directory to be recreated: %v", err)
+		}
+		if !info.IsDir() {
+			t.Fatalf("expected cache directory to be a directory")
+		}
+	})
+
+	t.Run("Clear with dryRun does not delete cache", func(t *testing.T) {
+		err := cm.SetupHomebrewCache()
+		if err != nil {
+			t.Fatalf("SetupHomebrewCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "homebrew")
+		testFile := filepath.Join(hostCacheDir, "test-file.bin")
+		if err := os.WriteFile(testFile, []byte("test data"), 0644); err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
+		cleared, err := cm.Clear("homebrew", true)
+		if err != nil {
+			t.Fatalf("Clear failed: %v", err)
+		}
+
+		if !cleared {
+			t.Fatalf("expected cleared=true in dry run mode")
+		}
+
+		if _, err := os.Stat(testFile); os.IsNotExist(err) {
+			t.Fatalf("expected test file to exist in dry run mode, but it was deleted")
+		}
+	})
+
+	t.Run("Clear returns cleared=false when cache doesn't exist", func(t *testing.T) {
+		freshTmpDir, err := os.MkdirTemp("", "cal-cache-clear-test-*")
+		if err != nil {
+			t.Fatalf("failed to create temp dir: %v", err)
+		}
+		defer os.RemoveAll(freshTmpDir)
+
+		freshCm := &CacheManager{
+			homeDir:      freshTmpDir,
+			cacheBaseDir: filepath.Join(freshTmpDir, "cache"),
+		}
+
+		cleared, err := freshCm.Clear("homebrew", false)
+		if err != nil {
+			t.Fatalf("Clear failed: %v", err)
+		}
+
+		if cleared {
+			t.Fatalf("expected cleared=false when cache doesn't exist")
+		}
+	})
+
+	t.Run("Clear handles all cache types", func(t *testing.T) {
+		testCases := []string{"homebrew", "npm", "go", "git"}
+
+		for _, cacheType := range testCases {
+			t.Run(cacheType, func(t *testing.T) {
+				switch cacheType {
+				case "homebrew":
+					err := cm.SetupHomebrewCache()
+					if err != nil {
+						t.Fatalf("SetupHomebrewCache failed: %v", err)
+					}
+				case "npm":
+					err := cm.SetupNpmCache()
+					if err != nil {
+						t.Fatalf("SetupNpmCache failed: %v", err)
+					}
+				case "go":
+					err := cm.SetupGoCache()
+					if err != nil {
+						t.Fatalf("SetupGoCache failed: %v", err)
+					}
+				case "git":
+					err := cm.SetupGitCache()
+					if err != nil {
+						t.Fatalf("SetupGitCache failed: %v", err)
+					}
+				}
+
+				cleared, err := cm.Clear(cacheType, false)
+				if err != nil {
+					t.Fatalf("Clear failed for %s: %v", cacheType, err)
+				}
+
+				if !cleared {
+					t.Fatalf("expected cleared=true for %s", cacheType)
+				}
+			})
+		}
+	})
+
+	t.Run("Clear recreates Go cache subdirectories", func(t *testing.T) {
+		err := cm.SetupGoCache()
+		if err != nil {
+			t.Fatalf("SetupGoCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "go")
+		testFile := filepath.Join(hostCacheDir, "pkg", "mod", "test-file.bin")
+		if err := os.WriteFile(testFile, []byte("test data"), 0644); err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
+		cleared, err := cm.Clear("go", false)
+		if err != nil {
+			t.Fatalf("Clear failed: %v", err)
+		}
+
+		if !cleared {
+			t.Fatalf("expected cleared=true, got false")
+		}
+
+		pkgModDir := filepath.Join(hostCacheDir, "pkg", "mod")
+		if _, err := os.Stat(pkgModDir); err != nil {
+			t.Fatalf("expected pkg/mod subdirectory to be recreated: %v", err)
+		}
+	})
+}
