@@ -5,8 +5,13 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/go/bin:/opt/homebrew/bin:$PATH"
 
 # Load shell configuration for aliases (including agent='cursor-agent')
+# Note: During --init (CAL_AUTH_NEEDED=1), parent .zshrc called this script with 'zsh vm-auth.sh'
+# which creates a new shell without inherited aliases, so we must source .zshrc here
 if [ -f ~/.zshrc ]; then
-    source ~/.zshrc
+    # Temporarily disable exit-on-error for sourcing (in case .zshrc has interactive-only commands)
+    setopt LOCAL_OPTIONS
+    setopt NO_ERR_EXIT
+    source ~/.zshrc 2>/dev/null || true
 fi
 
 # Load proxy configuration if available

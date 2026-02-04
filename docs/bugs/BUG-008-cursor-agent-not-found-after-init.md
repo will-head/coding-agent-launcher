@@ -167,8 +167,9 @@ Added `alias agent='cursor-agent'` to ~/.zshrc during vm-setup.sh shell configur
    - Idempotent check prevents duplicate entries on subsequent runs
 
 2. Modified `scripts/vm-auth.sh` line ~7 to source ~/.zshrc at startup
-   - Ensures aliases are available when vm-auth.sh runs in new SSH session
-   - Required because vm-auth.sh runs in separate shell context
+   - Ensures aliases are available when vm-auth.sh runs in new zsh process
+   - Required because `zsh vm-auth.sh` creates new shell without inherited aliases
+   - Added error handling to prevent .zshrc sourcing failures from breaking vm-auth
 
 **Why both changes needed:**
 - vm-setup.sh fix: Adds alias to ~/.zshrc during initial setup
