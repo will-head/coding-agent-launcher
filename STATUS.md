@@ -17,7 +17,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| *No PRs awaiting review* | | | |
+| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | 2026-02-04 |
 
 ---
 
@@ -25,7 +25,7 @@
 
 | PR | Branch | Description | Requested | Reason |
 |----|--------|-------------|-----------|--------|
-| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | 2026-02-04 | Cache clear reports success but doesn't clear shared volume data (1.0 GB) |
+| *No PRs needing changes* | | | | |
 
 ---
 
