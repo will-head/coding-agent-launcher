@@ -1203,4 +1203,61 @@ func TestCacheManager_Clear(t *testing.T) {
 			t.Fatalf("expected pkg/mod subdirectory to be recreated: %v", err)
 		}
 	})
+
+	t.Run("Clear handles read-only files in Go cache", func(t *testing.T) {
+		err := cm.SetupGoCache()
+		if err != nil {
+			t.Fatalf("SetupGoCache failed: %v", err)
+		}
+
+		// Create test files with read-only permissions (simulates Go module cache)
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "go")
+		modDir := filepath.Join(hostCacheDir, "pkg", "mod")
+		testModuleDir := filepath.Join(modDir, "gopkg.in", "yaml.v3@v3.0.1")
+		if err := os.MkdirAll(testModuleDir, 0755); err != nil {
+			t.Fatalf("failed to create test module directory: %v", err)
+		}
+
+		// Create read-only files
+		readOnlyFile := filepath.Join(testModuleDir, "decode_test.go")
+		if err := os.WriteFile(readOnlyFile, []byte("package yaml"), 0444); err != nil {
+			t.Fatalf("failed to create read-only test file: %v", err)
+		}
+
+		// Make parent directories read-only too
+		if err := os.Chmod(testModuleDir, 0555); err != nil {
+			t.Fatalf("failed to make test module directory read-only: %v", err)
+		}
+		parentDir := filepath.Join(modDir, "gopkg.in")
+		if err := os.Chmod(parentDir, 0555); err != nil {
+			t.Fatalf("failed to make parent directory read-only: %v", err)
+		}
+
+		// Ensure cleanup happens even if test fails
+		defer func() {
+			os.Chmod(parentDir, 0755)
+			os.Chmod(testModuleDir, 0755)
+			os.Chmod(readOnlyFile, 0644)
+		}()
+
+		// Clear should succeed despite read-only permissions
+		cleared, err := cm.Clear("go", false)
+		if err != nil {
+			t.Fatalf("Clear failed with read-only files: %v", err)
+		}
+
+		if !cleared {
+			t.Fatalf("expected cleared=true with read-only files")
+		}
+
+		// Verify cache directory was recreated
+		if _, err := os.Stat(modDir); err != nil {
+			t.Fatalf("expected pkg/mod subdirectory to be recreated: %v", err)
+		}
+
+		// Verify test file was actually deleted
+		if _, err := os.Stat(readOnlyFile); !os.IsNotExist(err) {
+			t.Fatalf("expected read-only test file to be deleted")
+		}
+	})
 }

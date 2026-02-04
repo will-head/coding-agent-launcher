@@ -606,6 +606,37 @@ func FormatBytes(b int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
+// removeAllWithPermFix removes a directory tree, fixing permissions as needed.
+// Go module cache files may have read-only permissions that prevent deletion.
+// This function makes all files and directories writable before attempting to delete.
+func removeAllWithPermFix(path string) error {
+	// First, try the fast path - works for most caches
+	err := os.RemoveAll(path)
+	if err == nil {
+		return nil
+	}
+
+	// If we got a permission error, walk the tree and fix permissions
+	if os.IsPermission(err) {
+		// Make everything in the tree writable
+		filepath.Walk(path, func(p string, info os.FileInfo, walkErr error) error {
+			if walkErr != nil {
+				// Ignore walk errors - we'll try to delete what we can
+				return nil
+			}
+			// Make writable: add owner write permission (0200)
+			// Ignore chmod errors - we'll try to delete anyway
+			os.Chmod(p, info.Mode()|0200)
+			return nil
+		})
+
+		// Try removing again after fixing permissions
+		err = os.RemoveAll(path)
+	}
+
+	return err
+}
+
 // Clear removes the specified cache type and recreates an empty cache directory.
 // cacheType must be one of: "homebrew", "npm", "go", "git"
 // dryRun if true, simulates clearing without actually deleting files
@@ -648,7 +679,7 @@ func (c *CacheManager) Clear(cacheType string, dryRun bool) (bool, error) {
 	}
 
 	if !dryRun {
-		if err := os.RemoveAll(cachePath); err != nil {
+		if err := removeAllWithPermFix(cachePath); err != nil {
 			return false, fmt.Errorf("failed to remove cache directory: %w", err)
 		}
 		if err := setupFunc(); err != nil {
