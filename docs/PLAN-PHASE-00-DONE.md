@@ -581,6 +581,38 @@
   - Bidirectional clipboard support working
   - Documented in bootstrap.md with comprehensive troubleshooting
 
+### Post-Cache-Integration Bug Fixes (Complete)
+
+Bug fixes discovered after cache integration PRs (#6-#9) merged on 2026-02-03. See [ADR-003 § Bug Fixes Post-Integration](adr/ADR-003-package-download-caching.md#bug-fixes-post-integration) for full details.
+
+- [x] **BUG-008: Cursor agent command not found after --init** (completed 2026-02-04)
+  - **Problem:** Cursor CLI installed as `cursor-agent` but bootstrap verification and docs referenced `agent`
+  - **Root Cause:** Homebrew Cask only installs `cursor-agent` binary, no alias created
+  - **Fix (4 iterations):** Final solution creates alias directly in vm-auth.sh (avoids sourcing side effects)
+  - **Files Modified:** scripts/vm-setup.sh, scripts/vm-auth.sh
+
+- [x] **BUG-009: Repository clones lost during --init** (completed 2026-02-04)
+  - **Problem:** Repos cloned during vm-auth lost when cal-init snapshot created (silent data loss)
+  - **Root Cause:** VM stopped before filesystem buffers flushed
+  - **Fix:** Added `sync && sleep 2` after vm-auth completes before VM stop
+  - **Files Modified:** scripts/cal-bootstrap
+
+- [x] **BUG-005 Edge Case: Auth screens captured during --init** (completed 2026-02-04)
+  - **Problem:** Save hooks ran unconditionally during --init, capturing auth screens into session data
+  - **Root Cause:** Save triggers not gated by first-run flag
+  - **Fix:** Gate all save triggers on `~/.cal-first-run` flag; architectural change separating vm-auth.sh (auth only) from vm-first-run.sh (persistence enablement)
+  - **Commit:** 823059a
+  - **Files Modified:** scripts/cal-bootstrap, scripts/vm-tmux-resurrect.sh, scripts/vm-auth.sh, scripts/vm-first-run.sh
+
+- [x] **BUG-005 Edge Case: Stale state after --restart** (completed 2026-02-04)
+  - **Problem:** Detach + immediate --restart restored old session (background save corrupted by VM stop)
+  - **Root Cause:** Explicit save used `tmux run-shell -b` with 0.5s wait; VM stop killed save mid-write
+  - **Fix:** Removed explicit saves (detach hook already saves); added 10s delay before VM stop
+  - **Commit:** fc2a4a4
+  - **Files Modified:** scripts/cal-bootstrap
+
+- [x] **Minor fixes:** tmux-resurrect clearing with rm -rf (7453dd0), first-run flag timing (bf17a90), session data clearing (e7e2bef, 2574804)
+
 ### Known Issues Resolved
 - [x] **Opencode VM issues** (investigated 2026-01-25, resolved)
   - **Status:** ✅ Resolved - opencode works correctly in VM

@@ -10,7 +10,7 @@
 
 ## Current Status
 
-**Phase 0 (Bootstrap): Complete** - Core functionality documented in [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md). Tmux session persistence (section 0.11) implemented and tested. All Phase 0 tasks complete.
+**Phase 0 (Bootstrap): Complete** - Core functionality documented in [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md). Tmux session persistence (section 0.11) implemented and tested. Post-integration bug fixes (BUG-005 edge cases, BUG-008, BUG-009) all resolved — see [ADR-003 § Bug Fixes Post-Integration](docs/adr/ADR-003-package-download-caching.md#bug-fixes-post-integration). All Phase 0 tasks complete. No active bugs remaining.
 
 Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via cal-bootstrap, transparent proxy for network reliability, comprehensive git safety checks, VM detection capabilities, first-run/logout git automation, Tart cache sharing for nested VMs, Ghostty terminal emulator, and tmux session persistence are all operational.
 

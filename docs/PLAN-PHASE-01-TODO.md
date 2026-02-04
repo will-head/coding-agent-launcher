@@ -120,6 +120,7 @@
 - Git safety checks must run before restore and delete (see 1.7)
 - Don't stop a running VM before git check - use it while running
 - Snapshot names are case-sensitive, no prefix required
+- **Filesystem sync before snapshot creation** (BUG-009): Call `sync && sleep 2` via SSH before stopping VM for snapshot. Without this, data written by SSH operations (e.g., repo clones during vm-auth) may be lost due to unflushed filesystem buffers
 
 ---
 
@@ -252,13 +253,25 @@
    - Cancel logout starts new login shell with session flag preserved
 4. Tmux session persistence on logout
    - Add tmux session save to `~/.zlogout` hook (before git status check)
+   - **Must gate save on first-run flag** (BUG-005): only save if `~/.cal-first-run` does NOT exist
+   - Prevents capturing auth screens during --init into session data
    - Run `tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh` on logout
    - Ensures session state is captured even between auto-save intervals
-5. VM detection setup
+5. Filesystem sync before VM stop (BUG-009)
+   - Call `sync && sleep 2` via SSH after vm-auth or any critical write operation completes
+   - Must happen before VM stop or snapshot creation
+   - Prevents data loss from unflushed filesystem buffers
+   - Mirrors existing sync pattern used for flag files
+6. Delay before VM stop for session save (BUG-005)
+   - Add 10-second delay before `tart stop` in stop/restart/gui operations
+   - Allows detach hook saves to complete before VM shutdown
+   - **Do NOT add explicit tmux saves** in stop/restart/gui — detach hook already saves
+   - Explicit background saves can corrupt save files if VM stops mid-write
+7. VM detection setup
    - Create `~/.cal-vm-info` with VM metadata
    - Add `CAL_VM=true` to `.zshrc`
    - Install helper functions (`is-cal-vm`, `cal-vm-info`)
-6. Tart cache sharing setup
+8. Tart cache sharing setup
    - Create symlink `~/.tart/cache -> /Volumes/My Shared Files/tart-cache`
    - Idempotent (safe to run multiple times)
    - Graceful degradation if sharing not available
@@ -285,8 +298,15 @@
 1. Deploy helper scripts to VM `~/scripts/` directory (idempotent)
 2. Scripts to deploy:
    - `vm-setup.sh` - Tool installation and configuration (calls vm-tmux-resurrect.sh during --init)
-   - `vm-auth.sh` - Interactive agent authentication
-   - `vm-first-run.sh` - Post-restore repository update checker
+     - Must create `alias agent='cursor-agent'` in ~/.zshrc (idempotent check) (BUG-008)
+   - `vm-auth.sh` - Interactive agent authentication **ONLY** (no state management) (BUG-008)
+     - Creates agent alias directly if `agent` command missing (not by sourcing ~/.zshrc — avoids side effects like early tmux-resurrect loading)
+     - Does NOT manage first-run flag or tmux session state
+   - `vm-first-run.sh` - Post-restore initialization (BUG-005/BUG-008 architecture)
+     - Checks git repositories for updates
+     - Loads TPM to enable tmux session persistence: `~/.tmux/plugins/tpm/tpm`
+     - Removes `~/.cal-first-run` flag AFTER tmux history is enabled
+     - Session persistence only starts on first user login, never during --init
    - `tmux-wrapper.sh` - TERM compatibility wrapper for tmux
    - `vm-tmux-resurrect.sh` - Tmux session persistence setup (Phase 0.11)
 3. Deploy comprehensive tmux.conf with:
@@ -295,7 +315,7 @@
    - Session persistence via tmux-resurrect and tmux-continuum plugins
    - Auto-save every 15 minutes, auto-restore on tmux start
    - Pane contents (scrollback) capture with 50,000 line limit
-   - Client-detached hook for save on `Ctrl+b d`
+   - Client-detached hook for save on `Ctrl+b d` — **must gate on first-run flag** (BUG-005): `if [ ! -f ~/.cal-first-run ]; then save; fi`
    - Keybindings: `Ctrl+b R` reload config, `Ctrl+b r` resize pane to 67%
    - Split bindings: `Ctrl+b |` horizontal, `Ctrl+b -` vertical
 4. Add `~/scripts` to PATH in `.zshrc`
@@ -409,3 +429,11 @@
 - **First-run flag and session restore:** Must check flag before tmux start; use `-A` flag only when flag absent to prevent auth screen in restored session
 - **Arithmetic in set -e:** `((counter++))` fails with `set -e` - use `counter=$((counter + 1))` instead
 - **Tmux capturing auth screen:** Conditionally load TPM only after first-run completes; clear session data after auth if needed
+
+**Key testing lessons from post-cache-integration bugs (ADR-003 § Bug Fixes):**
+- **Agent alias (BUG-008):** Never source ~/.zshrc in scripts — causes side effects (tmux-resurrect loading early). Create aliases directly instead
+- **Filesystem sync timing (BUG-009):** Always call `sync && sleep 2` via SSH after operations that write data, before VM stop or snapshot creation. Silent data loss occurs without this
+- **Save hook gating (BUG-005):** All tmux save triggers (detach hook, .zlogout, auto-save) must check `~/.cal-first-run` flag. Ungated saves capture auth screens during --init
+- **No explicit saves before VM stop (BUG-005):** Rely on detach hook saves only. Explicit background saves (`tmux run-shell -b`) can be killed mid-write by VM stop, corrupting save files
+- **Delay before VM stop (BUG-005):** 10-second delay before `tart stop` lets detach hook saves complete. Without delay, save may be killed mid-write
+- **Script architecture (BUG-008):** vm-auth.sh = authentication only; vm-first-run.sh = state management (TPM loading, flag removal). Mixing concerns caused cascading issues
