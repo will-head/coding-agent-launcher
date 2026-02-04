@@ -25,7 +25,7 @@
 
 | PR | Branch | Description | Requested | Reason |
 |----|--------|-------------|-----------|--------|
-| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | 2026-02-04 | Size calculation: uses file size instead of disk usage (du -sh). Under-reports by 4-17% |
+| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | 2026-02-04 | Size calculation: uses file size instead of disk usage (du -sh). EOF error on interactive prompts with piped input |
 
 ---
 
