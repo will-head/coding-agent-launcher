@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -101,9 +103,15 @@ func runCacheClear(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Clear %s cache (%s)? [y/N]: ", ct.name, sizeStr)
 			input, err := bufio.NewReader(os.Stdin).ReadString('\n')
 			if err != nil {
-				return fmt.Errorf("failed to read input: %w", err)
+				if errors.Is(err, io.EOF) {
+					shouldClear = false
+					fmt.Printf("Skipping %s cache (EOF)\n", ct.name)
+				} else {
+					return fmt.Errorf("failed to read input: %w", err)
+				}
+			} else {
+				shouldClear = strings.TrimSpace(strings.ToLower(input)) == "y"
 			}
-			shouldClear = strings.TrimSpace(strings.ToLower(input)) == "y"
 		}
 
 		if shouldClear {

@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -44,6 +46,29 @@ const (
 	// sharedCacheMount is the Tart directory mount specification for cache sharing.
 	sharedCacheMount = "cal-cache:~/.cal-cache"
 )
+
+// getDiskUsage returns the disk usage in bytes for a path using du -sk.
+// Returns 0 if path doesn't exist or on error.
+func getDiskUsage(path string) int64 {
+	cmd := exec.Command("du", "-sk", path)
+	output, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+
+	parts := strings.Fields(string(output))
+	if len(parts) == 0 {
+		return 0
+	}
+
+	size, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return 0
+	}
+
+	// du -sk returns size in kilobytes, convert to bytes
+	return size * 1024
+}
 
 // NewCacheManager creates a new CacheManager with default paths.
 func NewCacheManager() *CacheManager {
@@ -151,19 +176,7 @@ func (c *CacheManager) GetHomebrewCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat cache directory: %w", err)
 	}
 
-	var size int64
-	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fi.IsDir() {
-			size += fi.Size()
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate cache size: %w", err)
-	}
+	size := getDiskUsage(cachePath)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -232,19 +245,7 @@ func (c *CacheManager) GetNpmCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat npm cache directory: %w", err)
 	}
 
-	var size int64
-	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fi.IsDir() {
-			size += fi.Size()
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate npm cache size: %w", err)
-	}
+	size := getDiskUsage(cachePath)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -324,19 +325,7 @@ func (c *CacheManager) GetGoCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat Go cache directory: %w", err)
 	}
 
-	var size int64
-	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fi.IsDir() {
-			size += fi.Size()
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate Go cache size: %w", err)
-	}
+	size := getDiskUsage(cachePath)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -408,19 +397,7 @@ func (c *CacheManager) GetGitCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat git cache directory: %w", err)
 	}
 
-	var size int64
-	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fi.IsDir() {
-			size += fi.Size()
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate git cache size: %w", err)
-	}
+	size := getDiskUsage(cachePath)
 
 	return &CacheInfo{
 		Path:       cachePath,
