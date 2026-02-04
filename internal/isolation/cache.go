@@ -674,6 +674,24 @@ func FormatBytes(b int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
+// clearDirectoryContents removes all contents of a directory without removing the directory itself.
+// Used when clearing symlinked caches to preserve the symlink.
+func clearDirectoryContents(dirPath string) error {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		entryPath := filepath.Join(dirPath, entry.Name())
+		if err := removeAllWithPermFix(entryPath); err != nil {
+			return fmt.Errorf("failed to remove %s: %w", entry.Name(), err)
+		}
+	}
+
+	return nil
+}
+
 // removeAllWithPermFix removes a directory tree, fixing permissions as needed.
 // Go module cache files may have read-only permissions that prevent deletion.
 // This function makes all files and directories writable before attempting to delete.
@@ -710,6 +728,7 @@ func removeAllWithPermFix(path string) error {
 // dryRun if true, simulates clearing without actually deleting files
 // Returns true if cache was cleared (or would be cleared in dry run), false if cache didn't exist
 // Always starts at ~/.cal-cache/{type} and follows symlinks to clear actual data.
+// If the cache path is a symlink (e.g., in a VM), preserves the symlink and only clears contents.
 func (c *CacheManager) Clear(cacheType string, dryRun bool) (bool, error) {
 	if c.homeDir == "" {
 		return false, fmt.Errorf("home directory not available")
@@ -736,13 +755,16 @@ func (c *CacheManager) Clear(cacheType string, dryRun bool) (bool, error) {
 	}
 
 	// Check if local path exists
-	_, err := os.Lstat(localCachePath) // Use Lstat to detect symlinks
+	info, err := os.Lstat(localCachePath) // Use Lstat to detect symlinks
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil // Cache doesn't exist
 		}
 		return false, fmt.Errorf("failed to check cache directory: %w", err)
 	}
+
+	// Check if this is a symlink (e.g., inside a VM pointing to shared volume)
+	isSymlink := info.Mode()&os.ModeSymlink != 0
 
 	// Resolve symlink to find where data actually lives
 	realPath, err := c.resolveRealCachePath(localCachePath)
@@ -751,22 +773,24 @@ func (c *CacheManager) Clear(cacheType string, dryRun bool) (bool, error) {
 	}
 
 	if !dryRun {
-		// If it's a symlink, clear the target first (where actual data lives)
-		if realPath != "" {
-			if err := removeAllWithPermFix(realPath); err != nil {
-				return false, fmt.Errorf("failed to remove cache data: %w", err)
+		if isSymlink && realPath != "" {
+			// For symlinked caches (VM scenario):
+			// - Clear contents of the target directory (shared volume)
+			// - Preserve the symlink itself so cache continues working after clear
+			if err := clearDirectoryContents(realPath); err != nil {
+				return false, fmt.Errorf("failed to clear cache contents: %w", err)
 			}
-		}
+		} else {
+			// For regular directory caches (host scenario):
+			// - Remove the entire directory
+			// - Recreate empty structure
+			if err := removeAllWithPermFix(localCachePath); err != nil {
+				return false, fmt.Errorf("failed to remove cache directory: %w", err)
+			}
 
-		// Remove the local path (whether it's a symlink or a directory)
-		// Use removeAllWithPermFix to handle read-only files (e.g., Go module cache)
-		if err := removeAllWithPermFix(localCachePath); err != nil {
-			return false, fmt.Errorf("failed to remove cache directory: %w", err)
-		}
-
-		// Recreate the local cache directory structure
-		if err := setupFunc(); err != nil {
-			return false, fmt.Errorf("failed to recreate cache directory: %w", err)
+			if err := setupFunc(); err != nil {
+				return false, fmt.Errorf("failed to recreate cache directory: %w", err)
+			}
 		}
 	}
 
