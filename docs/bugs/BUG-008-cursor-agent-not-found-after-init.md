@@ -166,10 +166,10 @@ Added `alias agent='cursor-agent'` to ~/.zshrc during vm-setup.sh shell configur
    - Alias is added after Cursor CLI installation and before shell config reload
    - Idempotent check prevents duplicate entries on subsequent runs
 
-2. Modified `scripts/vm-auth.sh` line ~7 to source ~/.zshrc at startup
-   - Ensures aliases are available when vm-auth.sh runs in new zsh process
-   - Required because `zsh vm-auth.sh` creates new shell without inherited aliases
-   - Added error handling to prevent .zshrc sourcing failures from breaking vm-auth
+2. Modified `scripts/vm-auth.sh` line ~7 to create agent alias on the fly
+   - Checks if `agent` command exists, creates alias if not
+   - Avoids sourcing ~/.zshrc (which triggers tmux-resurrect to start early)
+   - Clean, localized solution without side effects
 
 **Why both changes needed:**
 - vm-setup.sh fix: Adds alias to ~/.zshrc during initial setup
