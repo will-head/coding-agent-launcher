@@ -525,9 +525,10 @@ if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
     fi
 
     # CAL First Run (after restoring cal-init)
-    # Runs vm-first-run.sh to check for remote repository updates after restoring cal-init
-    # NOTE: Flag is removed AFTER script completes so tmux-resurrect doesn't load during first-run
-    if [ -f ~/.cal-first-run ]; then
+    # Runs vm-first-run.sh to check for remote repository updates and enable session persistence
+    # The script will enable tmux history and remove the first-run flag when complete
+    # NOTE: Only runs if auth-needed flag is NOT present (skips during --init, runs after restore)
+    if [ -f ~/.cal-first-run ] && [ ! -f ~/.cal-auth-needed ]; then
         if [ -f ~/scripts/vm-first-run.sh ]; then
             echo ""
             echo "🔄 First login detected - checking for repository updates..."
@@ -535,8 +536,6 @@ if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
             zsh ~/scripts/vm-first-run.sh
             # Stay in cal-dev shell (don't exit like vm-auth does)
         fi
-        # Note: first-run flag is NOT removed here - it stays active until vm-auth.sh completes
-        # This prevents TPM/tmux-resurrect from loading during initial authentication
     fi
 fi
 KEYCHAIN_EOF

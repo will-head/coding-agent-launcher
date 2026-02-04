@@ -479,20 +479,5 @@ echo "💡 To sync repositories after restoring cal-init, run:"
 echo "   ~/scripts/vm-first-run.sh"
 echo ""
 
-# Clear tmux session data to prevent capturing auth prompts
-# This ensures subsequent logins show a clean shell, not authentication screens
-if [ -d ~/.local/share/tmux/resurrect ]; then
-    rm -rf ~/.local/share/tmux/resurrect/* 2>/dev/null || true
-fi
-
-# Remove first-run flag to enable TPM/tmux-resurrect for subsequent sessions
-# Keep it active during authentication to prevent session capture
-if [ -f ~/.cal-first-run ]; then
-    rm -f ~/.cal-first-run
-    sync
-    echo "💡 Session persistence enabled - tmux sessions will now auto-save"
-    echo ""
-fi
-
 # Note: We no longer exit here - user stays in shell during --init
 # cal-bootstrap will handle the rest (create cal-init, then reconnect)

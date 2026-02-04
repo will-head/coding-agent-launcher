@@ -159,28 +159,41 @@ cursor-agent --version 2>/dev/null || echo "not found"
 **Resolved:** 2026-02-04
 
 **Fix Applied:**
-Added `alias agent='cursor-agent'` to ~/.zshrc during vm-setup.sh shell configuration phase.
+Added `alias agent='cursor-agent'` to enable the agent command after Cursor CLI installation.
 
 **Changes:**
 1. Modified `scripts/vm-setup.sh` line ~620 to add agent alias check and configuration
    - Alias is added after Cursor CLI installation and before shell config reload
    - Idempotent check prevents duplicate entries on subsequent runs
 
-2. Modified `scripts/vm-auth.sh` line ~7 to create agent alias on the fly
+2. Modified `scripts/vm-auth.sh` line ~7-10 to create agent alias on the fly
    - Checks if `agent` command exists, creates alias if not
-   - Avoids sourcing ~/.zshrc (which triggers tmux-resurrect to start early)
+   - Avoids sourcing ~/.zshrc (which would trigger tmux-resurrect to start early)
    - Clean, localized solution without side effects
 
-**Why both changes needed:**
-- vm-setup.sh fix: Adds alias to ~/.zshrc during initial setup
-- vm-auth.sh fix: Loads aliases when vm-auth runs (new shell doesn't inherit aliases automatically)
+3. **Session Persistence Architecture** (2026-02-04 evening):
+   - Redesigned first-run flag and tmux history initialization
+   - **vm-auth.sh**: ONLY handles authentication, no state management
+     - Removed first-run flag logic
+     - Removed tmux session clearing
+   - **vm-first-run.sh**: Handles session persistence enablement
+     - Checks git repositories for updates
+     - Loads TPM to enable tmux history: `~/.tmux/plugins/tpm/tpm`
+     - Removes first-run flag AFTER tmux history is enabled
+   - **vm-setup.sh**: Updated comments to reflect new flow
+
+**Why this architecture:**
+- tmux history never starts during `--init` (no setup script touches it)
+- tmux history only starts on first user login (via vm-first-run.sh)
+- vm-auth.sh can be run anytime without affecting system state
+- cal-init snapshot includes first-run flag, so restores enable session persistence correctly
 
 **Verification:**
-After this fix, `cal-bootstrap --init` will:
-1. Install cursor-cli via Homebrew Cask (creates cursor-agent binary)
-2. Add `alias agent='cursor-agent'` to ~/.zshrc (vm-setup.sh)
-3. Source ~/.zshrc during vm-auth (vm-auth.sh)
-4. Agent command available for authentication
+After this fix, the flow is:
+1. `cal-bootstrap --init`: Sets first-run flag, runs vm-auth (auth only), creates cal-init
+2. Restore from cal-init: First login triggers vm-first-run.sh
+3. vm-first-run.sh: Checks git, enables tmux history, removes flag
+4. Session persistence active for all subsequent logins
 
 **Testing Status:**
-Code review and syntax validation complete. VM testing deferred to next bootstrap run.
+Code review and syntax validation complete. VM testing pending next bootstrap run.

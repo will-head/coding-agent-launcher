@@ -200,6 +200,7 @@ set -g @plugin 'tmux-plugins/tmux-resurrect'
 set -g @plugin 'tmux-plugins/tmux-continuum'
 
 # Resurrect settings
+set -g @resurrect-dir '~/.local/share/tmux/resurrect'
 set -g @resurrect-capture-pane-contents 'on'
 
 # Continuum settings
@@ -207,7 +208,8 @@ set -g @continuum-restore 'on'
 set -g @continuum-save-interval '15'
 
 # Save session state on detach (Ctrl+b d)
-set-hook -g client-detached 'run-shell "~/.tmux/plugins/tmux-resurrect/scripts/save.sh"'
+# Only save if first-run flag doesn't exist (prevents capturing auth screens during --init)
+set-hook -g client-detached 'run-shell "if [ ! -f ~/.cal-first-run ]; then ~/.tmux/plugins/tmux-resurrect/scripts/save.sh; fi"'
 
 # Initialize TPM only after first-run completes
 # This prevents tmux-resurrect from capturing the authentication screen during initial setup
@@ -267,7 +269,8 @@ if ! grep -q "# CAL: Save tmux sessions on logout" "$ZLOGOUT" 2>/dev/null; then
     cat >> "$ZLOGOUT" <<'EOF'
 
 # CAL: Save tmux sessions on logout
-if command -v tmux &> /dev/null && tmux list-sessions &> /dev/null; then
+# Only save if first-run flag doesn't exist (prevents capturing auth screens during --init)
+if [ ! -f ~/.cal-first-run ] && command -v tmux &> /dev/null && tmux list-sessions &> /dev/null; then
     # Save all tmux sessions before logout
     tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh &> /dev/null || true
 fi

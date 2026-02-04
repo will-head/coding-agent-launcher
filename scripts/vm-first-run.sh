@@ -222,3 +222,32 @@ else
 fi
 
 echo ""
+
+# Enable tmux session persistence (only runs on first login after setup)
+echo "🔄 Enabling Tmux Session Persistence"
+echo "------------------------------------"
+echo ""
+
+# Turn on tmux history by loading TPM
+if [ -f ~/.tmux/plugins/tpm/tpm ]; then
+    echo "  Loading tmux plugins..."
+    ~/.tmux/plugins/tpm/tpm 2>/dev/null
+    echo "  ✓ Tmux plugins loaded"
+else
+    echo "  ⚠ TPM not found at ~/.tmux/plugins/tpm/tpm"
+    echo "  → Session persistence may not be available"
+fi
+
+# Remove first-run flag (only after tmux history is enabled)
+if [ -f ~/.cal-first-run ]; then
+    rm -f ~/.cal-first-run && sync
+    echo "  ✓ First-run flag removed"
+    echo ""
+    echo "✓ Tmux session persistence enabled"
+    echo "  → Sessions will auto-save every 15 minutes"
+    echo "  → Sessions will restore on login"
+else
+    echo "  → First-run flag already removed"
+fi
+
+echo ""
