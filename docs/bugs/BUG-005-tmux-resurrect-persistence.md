@@ -347,3 +347,109 @@ When `@resurrect-capture-pane-contents 'on'` is enabled, extra shell prompts may
 ### Files Modified
 
 - `scripts/vm-tmux-resurrect.sh` - Added PATH setting to tmux.conf template
+
+---
+
+## Edge Case: Auth Screens Captured During --init
+
+**Discovered:** 2026-02-04
+**Severity:** High
+
+### Problem
+
+After the initial PATH fix, tmux-resurrect was capturing authentication screens during `cal-bootstrap --init`, which would then restore on first user login, showing stale auth prompts instead of a clean shell.
+
+### Root Cause
+
+Save hooks (detach, logout) were running unconditionally during --init, even though session persistence should only start after first user login. The save triggers were not gated by the first-run flag.
+
+### Solution
+
+Gated all save triggers on the first-run flag:
+
+1. **tmux.conf detach hook** - Added flag check:
+   ```bash
+   set-hook -g client-detached 'run-shell "if [ ! -f ~/.cal-first-run ]; then ~/.tmux/plugins/tmux-resurrect/scripts/save.sh; fi"'
+   ```
+
+2. **.zlogout save** - Added flag check:
+   ```bash
+   if [ ! -f ~/.cal-first-run ] && command -v tmux &> /dev/null && tmux list-sessions &> /dev/null; then
+   ```
+
+3. **@resurrect-dir setting** - Explicitly configured directory:
+   ```bash
+   set -g @resurrect-dir '~/.local/share/tmux/resurrect'
+   ```
+
+4. **Architecture changes:**
+   - vm-auth.sh: ONLY handles authentication, no state management
+   - vm-first-run.sh: Enables tmux history by loading TPM, then removes flag
+   - vm-setup.sh: Only runs vm-first-run.sh after restore (not during --init)
+
+### Verification
+
+- ✅ During --init: No saves occur (first-run flag prevents all triggers)
+- ✅ After first login: All save triggers work (detach, logout, 15-min auto, Ctrl+b Ctrl+s)
+- ✅ No auth screens captured in saved sessions
+
+### Files Modified
+
+- `scripts/vm-tmux-resurrect.sh` - Gated save hooks on first-run flag
+- `scripts/vm-auth.sh` - Removed state management
+- `scripts/vm-first-run.sh` - Added TPM loading and flag removal
+- `scripts/vm-setup.sh` - Added auth-needed flag check
+
+---
+
+## Edge Case: Stale State After --restart
+
+**Discovered:** 2026-02-04
+**Severity:** High
+
+### Problem
+
+User detaches with 3 windows, immediately runs `--restart`, but only 2 windows restore (previous state). The most recent save was lost.
+
+**Reproduction:**
+1. Create 2 windows, detach (saves 2 windows)
+2. --run shows 2 windows ✓
+3. Create 3rd window, detach (should save 3 windows)
+4. --restart shows 2 windows ✗ (stale!)
+
+### Root Cause
+
+The `save_tmux_sessions()` function in cal-bootstrap used `tmux run-shell -b` (background) with only 0.5s wait. When user ran --restart immediately after detaching:
+
+1. Detach hook saved 3 windows to file A, `last -> A`
+2. --restart's explicit save started in background, created file B, updated `last -> B`
+3. 0.5 seconds passed, SSH returned
+4. VM stopped, killing the background save mid-write
+5. File B was incomplete, `last` pointed to corrupt file
+6. Restore fell back to previous save (2 windows)
+
+### Solution
+
+1. **Removed explicit saves** from --stop/--restart/--gui (detach hook already saves)
+2. **Added 10-second delay** before stopping VM to let detach hook save complete:
+   ```bash
+   # Wait to allow any pending detach saves to complete
+   sleep 10
+   echo "Stopping $VM_DEV..."
+   ```
+
+### Verification
+
+- ✅ Detach + immediate --restart preserves all windows
+- ✅ No more stale state restoration
+- ✅ Background save no longer corrupts saved state
+
+### Files Modified
+
+- `scripts/cal-bootstrap` - Removed explicit saves, added delays before VM stop
+
+---
+
+**Commits:**
+- `823059a` - Fix tmux session persistence: gate all save triggers on first-run flag
+- `fc2a4a4` - Fix tmux session save corruption on VM stop/restart
