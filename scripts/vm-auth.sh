@@ -235,7 +235,7 @@ if gh_authenticated; then
     echo ""
     if [[ "$reply" =~ ^[Yy]$ ]]; then
         # Set up trap for Ctrl+C during authentication
-        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
+        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT' INT
         gh auth login
         trap - INT
     else
@@ -249,7 +249,7 @@ else
         echo ""
         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
             # Set up trap for Ctrl+C during authentication
-            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
+            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT' INT
             gh auth login
             trap - INT
         else
@@ -271,7 +271,7 @@ if opencode_authenticated; then
     echo ""
     if [[ "$reply" =~ ^[Yy]$ ]]; then
         # Set up trap for Ctrl+C during authentication
-        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
+        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT' INT
         opencode auth login
         trap - INT
     else
@@ -285,7 +285,7 @@ else
         echo ""
         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
             # Set up trap for Ctrl+C during authentication
-            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
+            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT' INT
             opencode auth login
             trap - INT
         else
@@ -307,7 +307,7 @@ if cursor_authenticated; then
     echo ""
     if [[ "$reply" =~ ^[Yy]$ ]]; then
         # Set up trap for Ctrl+C during authentication
-        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
+        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT' INT
         agent
         trap - INT
     else
@@ -321,7 +321,7 @@ else
         echo ""
         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
             # Set up trap for Ctrl+C during authentication
-            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
+            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT' INT
             agent
             trap - INT
         else
@@ -345,7 +345,7 @@ if claude_authenticated; then
     if [[ "$reply" =~ ^[Yy]$ ]]; then
         echo "  Press Ctrl+C to exit when done."
         # Set up trap for Ctrl+C during authentication
-        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
+        trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT' INT
         claude
         trap - INT
     else
@@ -361,7 +361,7 @@ else
         if [[ ! "$reply" =~ ^[Nn]$ ]]; then
             echo "  Press Ctrl+C to exit when done."
             # Set up trap for Ctrl+C during authentication
-            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT; return 0' INT
+            trap 'echo ""; echo "  ⚠ Authentication interrupted"; trap - INT' INT
             claude
             trap - INT
         else
@@ -483,6 +483,15 @@ echo ""
 # This ensures subsequent logins show a clean shell, not authentication screens
 if [ -d ~/.local/share/tmux/resurrect ]; then
     rm -rf ~/.local/share/tmux/resurrect/* 2>/dev/null || true
+fi
+
+# Remove first-run flag to enable TPM/tmux-resurrect for subsequent sessions
+# Keep it active during authentication to prevent session capture
+if [ -f ~/.cal-first-run ]; then
+    rm -f ~/.cal-first-run
+    sync
+    echo "💡 Session persistence enabled - tmux sessions will now auto-save"
+    echo ""
 fi
 
 # Note: We no longer exit here - user stays in shell during --init

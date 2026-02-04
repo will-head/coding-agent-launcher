@@ -535,9 +535,8 @@ if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
             zsh ~/scripts/vm-first-run.sh
             # Stay in cal-dev shell (don't exit like vm-auth does)
         fi
-        # Remove flag AFTER first-run completes so TPM doesn't load during the script
-        rm -f ~/.cal-first-run
-        sync
+        # Note: first-run flag is NOT removed here - it stays active until vm-auth.sh completes
+        # This prevents TPM/tmux-resurrect from loading during initial authentication
     fi
 fi
 KEYCHAIN_EOF
