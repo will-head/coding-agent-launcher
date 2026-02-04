@@ -45,8 +45,6 @@ const (
 	gitCacheDir = "git"
 	// sharedCacheMount is the Tart directory mount specification for cache sharing.
 	sharedCacheMount = "cal-cache:~/.cal-cache"
-	// sharedVolumeBasePath is the path where Tart mounts shared volumes in VMs.
-	sharedVolumeBasePath = "/Volumes/My Shared Files/cal-cache"
 )
 
 // getDiskUsage returns the disk usage in bytes for a path using du -sk.
@@ -163,22 +161,20 @@ func (c *CacheManager) SetupVMHomebrewCache() []string {
 }
 
 // GetHomebrewCacheInfo returns information about the Homebrew cache.
-// When running in a VM, reports size from the shared volume path where actual data is stored.
+// Follows symlinks to report size from actual data location.
 func (c *CacheManager) GetHomebrewCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getHomebrewCachePath()
 
-	// Check for shared volume cache path (when running in a VM)
-	sharedVolumePath := c.getSharedVolumeCachePath(homebrewCacheDir)
-	if sharedVolumePath != "" {
-		if info, err := os.Stat(sharedVolumePath); err == nil {
-			size := getDiskUsage(sharedVolumePath)
-			return &CacheInfo{
-				Path:       cachePath, // Report local path for user clarity
-				Size:       size,      // But size from shared volume (actual data)
-				Available:  true,
-				LastAccess: info.ModTime(),
-			}, nil
-		}
+	// Resolve symlink to find where data actually lives
+	realPath, err := c.resolveRealCachePath(cachePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve cache path: %w", err)
+	}
+
+	// Use real path for size calculation if symlink was resolved
+	pathForSize := cachePath
+	if realPath != "" {
+		pathForSize = realPath
 	}
 
 	info, err := os.Stat(cachePath)
@@ -193,7 +189,7 @@ func (c *CacheManager) GetHomebrewCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat cache directory: %w", err)
 	}
 
-	size := getDiskUsage(cachePath)
+	size := getDiskUsage(pathForSize)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -247,22 +243,20 @@ func (c *CacheManager) SetupVMNpmCache() []string {
 }
 
 // GetNpmCacheInfo returns information about the npm cache.
-// When running in a VM, reports size from the shared volume path where actual data is stored.
+// Follows symlinks to report size from actual data location.
 func (c *CacheManager) GetNpmCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getNpmCachePath()
 
-	// Check for shared volume cache path (when running in a VM)
-	sharedVolumePath := c.getSharedVolumeCachePath(npmCacheDir)
-	if sharedVolumePath != "" {
-		if info, err := os.Stat(sharedVolumePath); err == nil {
-			size := getDiskUsage(sharedVolumePath)
-			return &CacheInfo{
-				Path:       cachePath, // Report local path for user clarity
-				Size:       size,      // But size from shared volume (actual data)
-				Available:  true,
-				LastAccess: info.ModTime(),
-			}, nil
-		}
+	// Resolve symlink to find where data actually lives
+	realPath, err := c.resolveRealCachePath(cachePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve cache path: %w", err)
+	}
+
+	// Use real path for size calculation if symlink was resolved
+	pathForSize := cachePath
+	if realPath != "" {
+		pathForSize = realPath
 	}
 
 	info, err := os.Stat(cachePath)
@@ -277,7 +271,7 @@ func (c *CacheManager) GetNpmCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat npm cache directory: %w", err)
 	}
 
-	size := getDiskUsage(cachePath)
+	size := getDiskUsage(pathForSize)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -342,22 +336,20 @@ func (c *CacheManager) SetupVMGoCache() []string {
 }
 
 // GetGoCacheInfo returns information about the Go cache.
-// When running in a VM, reports size from the shared volume path where actual data is stored.
+// Follows symlinks to report size from actual data location.
 func (c *CacheManager) GetGoCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getGoCachePath()
 
-	// Check for shared volume cache path (when running in a VM)
-	sharedVolumePath := c.getSharedVolumeCachePath(goCacheDir)
-	if sharedVolumePath != "" {
-		if info, err := os.Stat(sharedVolumePath); err == nil {
-			size := getDiskUsage(sharedVolumePath)
-			return &CacheInfo{
-				Path:       cachePath, // Report local path for user clarity
-				Size:       size,      // But size from shared volume (actual data)
-				Available:  true,
-				LastAccess: info.ModTime(),
-			}, nil
-		}
+	// Resolve symlink to find where data actually lives
+	realPath, err := c.resolveRealCachePath(cachePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve cache path: %w", err)
+	}
+
+	// Use real path for size calculation if symlink was resolved
+	pathForSize := cachePath
+	if realPath != "" {
+		pathForSize = realPath
 	}
 
 	info, err := os.Stat(cachePath)
@@ -372,7 +364,7 @@ func (c *CacheManager) GetGoCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat Go cache directory: %w", err)
 	}
 
-	size := getDiskUsage(cachePath)
+	size := getDiskUsage(pathForSize)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -389,22 +381,41 @@ func (c *CacheManager) getGitCachePath() string {
 
 // getSharedVolumeCachePath returns the shared volume path for a cache type when running in a VM.
 // Returns empty string if not in a VM environment or if using a non-default cache base directory (e.g., in tests).
-func (c *CacheManager) getSharedVolumeCachePath(cacheType string) string {
-	// Only check shared volume if using the default cache base directory
-	// This prevents tests with temporary directories from accessing the shared volume
+// resolveRealCachePath resolves the real cache path by following symlinks.
+// Always starts from the local cache path (~/.cal-cache/{type}) and follows symlinks if present.
+// Returns the real path where data is stored, or empty string if path doesn't exist.
+// Only resolves symlinks when using default cache base directory (prevents test interference).
+func (c *CacheManager) resolveRealCachePath(localPath string) (string, error) {
+	// Only resolve symlinks if using the default cache base directory
+	// This prevents tests with temporary directories from accessing shared volumes
 	if c.homeDir == "" {
-		return ""
+		return "", nil
 	}
 	expectedCacheBaseDir := filepath.Join(c.homeDir, ".cal-cache")
 	if c.cacheBaseDir != expectedCacheBaseDir {
-		return ""
+		return "", nil
 	}
 
-	// Check if the shared volume base path exists (indicates we're in a VM)
-	if _, err := os.Stat(sharedVolumeBasePath); os.IsNotExist(err) {
-		return ""
+	// Check if path exists
+	info, err := os.Lstat(localPath) // Use Lstat to not follow symlinks yet
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil // Path doesn't exist
+		}
+		return "", fmt.Errorf("failed to stat path: %w", err)
 	}
-	return filepath.Join(sharedVolumeBasePath, cacheType)
+
+	// If it's a symlink, resolve it to find where data actually lives
+	if info.Mode()&os.ModeSymlink != 0 {
+		target, err := filepath.EvalSymlinks(localPath)
+		if err != nil {
+			return "", fmt.Errorf("failed to resolve symlink: %w", err)
+		}
+		return target, nil
+	}
+
+	// Not a symlink - path doesn't exist yet or is a regular directory
+	return "", nil
 }
 
 // SetupGitCache sets up the git cache directory on the host.
@@ -449,22 +460,20 @@ func (c *CacheManager) SetupVMGitCache() []string {
 }
 
 // GetGitCacheInfo returns information about the git cache.
-// When running in a VM, reports size from the shared volume path where actual data is stored.
+// Follows symlinks to report size from actual data location.
 func (c *CacheManager) GetGitCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getGitCachePath()
 
-	// Check for shared volume cache path (when running in a VM)
-	sharedVolumePath := c.getSharedVolumeCachePath(gitCacheDir)
-	if sharedVolumePath != "" {
-		if info, err := os.Stat(sharedVolumePath); err == nil {
-			size := getDiskUsage(sharedVolumePath)
-			return &CacheInfo{
-				Path:       cachePath, // Report local path for user clarity
-				Size:       size,      // But size from shared volume (actual data)
-				Available:  true,
-				LastAccess: info.ModTime(),
-			}, nil
-		}
+	// Resolve symlink to find where data actually lives
+	realPath, err := c.resolveRealCachePath(cachePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve cache path: %w", err)
+	}
+
+	// Use real path for size calculation if symlink was resolved
+	pathForSize := cachePath
+	if realPath != "" {
+		pathForSize = realPath
 	}
 
 	info, err := os.Stat(cachePath)
@@ -479,7 +488,7 @@ func (c *CacheManager) GetGitCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat git cache directory: %w", err)
 	}
 
-	size := getDiskUsage(cachePath)
+	size := getDiskUsage(pathForSize)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -700,7 +709,7 @@ func removeAllWithPermFix(path string) error {
 // cacheType must be one of: "homebrew", "npm", "go", "git"
 // dryRun if true, simulates clearing without actually deleting files
 // Returns true if cache was cleared (or would be cleared in dry run), false if cache didn't exist
-// When running in a VM, clears both the local cache and the shared volume cache.
+// Always starts at ~/.cal-cache/{type} and follows symlinks to clear actual data.
 func (c *CacheManager) Clear(cacheType string, dryRun bool) (bool, error) {
 	if c.homeDir == "" {
 		return false, fmt.Errorf("home directory not available")
@@ -726,43 +735,40 @@ func (c *CacheManager) Clear(cacheType string, dryRun bool) (bool, error) {
 		return false, fmt.Errorf("invalid cache type: %s (must be homebrew, npm, go, or git)", cacheType)
 	}
 
-	// Check for shared volume cache path (when running in a VM)
-	sharedVolumePath := c.getSharedVolumeCachePath(cacheType)
-
-	// Track if we cleared anything
-	clearedAny := false
-
-	// Clear shared volume cache first (this is where the bulk of data is in VM environments)
-	if sharedVolumePath != "" {
-		if info, err := os.Stat(sharedVolumePath); err == nil && info.IsDir() {
-			if !dryRun {
-				if err := removeAllWithPermFix(sharedVolumePath); err != nil {
-					return false, fmt.Errorf("failed to remove shared volume cache directory: %w", err)
-				}
-			}
-			clearedAny = true
+	// Check if local path exists
+	_, err := os.Lstat(localCachePath) // Use Lstat to detect symlinks
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil // Cache doesn't exist
 		}
-	}
-
-	// Clear local cache path
-	if info, err := os.Stat(localCachePath); err == nil {
-		if !info.IsDir() {
-			return false, fmt.Errorf("cache path is not a directory: %s", localCachePath)
-		}
-
-		if !dryRun {
-			if err := removeAllWithPermFix(localCachePath); err != nil {
-				return false, fmt.Errorf("failed to remove cache directory: %w", err)
-			}
-			// Recreate the local cache directory structure
-			if err := setupFunc(); err != nil {
-				return false, fmt.Errorf("failed to recreate cache directory: %w", err)
-			}
-		}
-		clearedAny = true
-	} else if !os.IsNotExist(err) {
 		return false, fmt.Errorf("failed to check cache directory: %w", err)
 	}
 
-	return clearedAny, nil
+	// Resolve symlink to find where data actually lives
+	realPath, err := c.resolveRealCachePath(localCachePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to resolve cache path: %w", err)
+	}
+
+	if !dryRun {
+		// If it's a symlink, clear the target first (where actual data lives)
+		if realPath != "" {
+			if err := removeAllWithPermFix(realPath); err != nil {
+				return false, fmt.Errorf("failed to remove cache data: %w", err)
+			}
+		}
+
+		// Remove the local path (whether it's a symlink or a directory)
+		// Use removeAllWithPermFix to handle read-only files (e.g., Go module cache)
+		if err := removeAllWithPermFix(localCachePath); err != nil {
+			return false, fmt.Errorf("failed to remove cache directory: %w", err)
+		}
+
+		// Recreate the local cache directory structure
+		if err := setupFunc(); err != nil {
+			return false, fmt.Errorf("failed to recreate cache directory: %w", err)
+		}
+	}
+
+	return true, nil
 }
