@@ -12,7 +12,7 @@
 |---|----------|-------|-----------|--------|----------|
 | 1 | [Interactive](#interactive-workflow) | 10 | Required on HOST | main branch | Default for code changes |
 | 2 | [Documentation](#documentation-workflow) | 3 | Required on HOST | main branch | Docs-only changes |
-| 3 | [Bug Cleanup](#bug-cleanup-workflow) | 10 | Required on HOST | main branch | Fix tracked bugs from BUGS.md |
+| 3 | [Bug Cleanup](#bug-cleanup-workflow) | 11 | Required on HOST | main branch | Fix tracked bugs from BUGS.md |
 | 4 | [Refine](#refine-workflow) | 6 | Required on HOST | main branch | Refine PLAN.md TODOs and bugs |
 | 5 | [Create PR](#create-pr-workflow) | 8 | Not required | PR branch | PR-based development |
 | 6 | [Review & Fix PR](#review--fix-pr-workflow) | 8 | Not required | PR review + fix | Code review with direct fixes |
@@ -89,11 +89,13 @@ Interactive workflow variant for resolving tracked bugs from BUGS.md.
 **When to use:** Fixing bugs tracked in `docs/BUGS.md`
 **Key features:**
 - Work items sourced from `docs/BUGS.md`
-- Same 10-step Interactive process with user approvals on HOST (auto-approved when `CAL_VM=true`)
+- **Analyze and propose solution before implementing** — no quick fixes or hacks
+- User approvals on HOST (auto-approved when `CAL_VM=true`)
+- **Prove fix is sound before asking user to test** — tests pass, evidence, reasoning
 - Bug lifecycle: resolved bugs move from BUGS.md to bugs/README.md
 - TDD with bug reproduction tests
 
-**Steps:** Select Bug → Implement → Test → Build → Code Review → Present Review → User Testing → Final Review → Update Docs → Commit → Complete
+**Steps:** Select Bug → Analyze & Propose → Implement → Test → Build → Code Review → Present Review → Prove & User Testing → Final Review → Update Docs → Commit → Complete
 
 ---
 

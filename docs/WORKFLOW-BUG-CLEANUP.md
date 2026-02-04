@@ -1,10 +1,15 @@
-# Bug Cleanup Workflow (10-Step)
+# Bug Cleanup Workflow (11-Step)
 
 > Interactive workflow for resolving tracked bugs from BUGS.md
 
 **Use When:** Fixing bugs tracked in `docs/BUGS.md`
 
 **Key Principles:**
+- **No quick fixes** - every solution must be thoroughly analyzed and well-considered. No hacks or shortcuts
+- **Understand first, act second** - fully understand the problem before proposing anything. Ask questions if there is any ambiguity
+- **Propose before implementing** - present the solution and wait for explicit approval before writing any code. This applies at session start AND at every subsequent interaction (e.g., if new issues surface during the fix)
+- **Prove before testing** - before asking the user to test, demonstrate the fix is sound: tests must pass, provide evidence and reasoning. Never run anything that could modify the host system — ask if unsure
+- **Value user time** - don't ask the user to test prematurely. Get it right first
 - **Bug-driven** - work items come from `docs/BUGS.md`, not phase TODO files
 - **User approval required on HOST** - ask permission before ALL commands (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
 - **Blocking checkpoints** - each step must complete before proceeding
@@ -15,19 +20,19 @@
 
 ## Overview
 
-The Bug Cleanup workflow is a variant of the Interactive workflow where work items are sourced from `docs/BUGS.md` instead of phase TODO files. It follows the same 10-step process with user approvals at each checkpoint on HOST (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve)).
+The Bug Cleanup workflow is a variant of the Interactive workflow where work items are sourced from `docs/BUGS.md` instead of phase TODO files. It adds a dedicated analysis and proposal step before any implementation begins, ensuring solutions are well-considered and user-approved. User approvals are required at each checkpoint on HOST (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve)).
 
 **Target:** main branch (direct commits)
 **Approvals:** Required on HOST for all commands (auto-approved when `CAL_VM=true`)
-**Steps:** 10 (same as Interactive)
+**Steps:** 11 (Interactive + analysis/proposal step)
 
 ---
 
 ## Session Start Procedure
 
 Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
-- This is the Bug Cleanup workflow (Interactive variant for bug fixes)
-- Key principles: bug-driven, user approval required on HOST (auto-approved when `CAL_VM=true`), blocking checkpoints, code review mandatory
+- This is the Bug Cleanup workflow (11-step, Interactive variant for bug fixes)
+- Key principles: no quick fixes, understand first, propose before implementing, prove before testing, value user time
 - Work items sourced from `docs/BUGS.md`
 
 **Then:**
@@ -35,6 +40,10 @@ Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shar
 2. Present active bugs using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation)
 3. Wait for user to select a bug
 4. Read the full bug report (e.g., `docs/bugs/BUG-NNN-slug.md`) for the selected bug
+5. **Analyze thoroughly** — Read all related code, surrounding context, and any referenced documentation. Understand the full picture before forming a solution
+6. **Ask clarifying questions** — If there is ANY ambiguity about the bug, its scope, expected behavior, or constraints, ask questions (one at a time per [Sequential Question Presentation](WORKFLOWS.md#sequential-question-and-test-presentation)). Do not guess or assume
+7. **Present proposed solution** — Explain the proposed approach with clear rationale: what will change, why it addresses the root cause, and any trade-offs. Do NOT write any code yet
+8. **STOP and wait for user approval** of the approach before proceeding to implementation. The user may have further questions or request a different approach
 
 ---
 
@@ -50,21 +59,40 @@ For bug fixes that only affect `.md` files or code comments:
 
 ---
 
-## Code/Script Changes (Full 10-Step Workflow)
+## Code/Script Changes (Full 11-Step Workflow)
 
 **Each step is a blocking checkpoint.**
 
-### Step 1: Implement
+### Step 1: Analyze and Propose
 
-- Read the full bug report for context, root cause, and resolution path
+- **Thoroughly analyze** the bug report, all related code, and surrounding context
+- Understand the root cause before proposing anything — no quick fixes or hacks
+- **Ask clarifying questions** if there is ANY ambiguity about the bug, its scope, expected behavior, or constraints (one at a time per [Sequential Question Presentation](WORKFLOWS.md#sequential-question-and-test-presentation))
+- **Present a proposed solution** with clear rationale:
+  - What will change (files, functions, approach)
+  - Why it addresses the root cause (not just the symptom)
+  - Any trade-offs or risks
+  - How it will be tested
+- **Do NOT write any code** until the approach is approved
+
+**STOP and wait for explicit user approval** before proceeding. The user may have further questions, request clarification, or prefer a different approach.
+
+**This principle applies throughout the entire session** — if new issues surface during implementation, testing, or review, analyze and propose a solution before acting. Never apply quick patches without user approval.
+
+**Exception:** Read/Grep/Glob tools for searching code do not require approval.
+
+### Step 2: Implement
+
+- Only proceed after approach is approved in Step 1
 - Use TDD: write failing test that reproduces the bug, implement fix, verify test passes
 - Follow Go conventions and shell script best practices
 - Make minimum changes needed to fix the bug
 - Avoid over-engineering or adding unnecessary features
+- If implementation reveals the approach needs to change, **stop and re-propose** — do not silently deviate from the approved plan
 
 **Exception:** Read/Grep/Glob tools for searching code do not require approval.
 
-### Step 2: Test
+### Step 3: Test
 
 - **Ask user approval** before running (auto-approved when `CAL_VM=true`)
 - Execute: `go test ./...`
@@ -72,7 +100,7 @@ For bug fixes that only affect `.md` files or code comments:
 
 All tests must pass to continue.
 
-### Step 3: Build
+### Step 4: Build
 
 - **Ask user approval** before running (auto-approved when `CAL_VM=true`)
 - Execute: `go build -o cal ./cmd/cal`
@@ -80,7 +108,7 @@ All tests must pass to continue.
 
 Build must succeed to continue.
 
-### Step 4: Code Review
+### Step 5: Code Review
 
 Review code changes for:
 - **Bug fix correctness** - Does the fix address the root cause documented in the bug report?
@@ -96,16 +124,25 @@ Document findings with:
 - Severity ratings (critical, moderate, minor)
 - Specific recommendations
 
-### Step 5: Present Review
+### Step 6: Present Review
 
 - Always present review findings to user
 - **STOP and wait for explicit user approval** (auto-approved when `CAL_VM=true`)
 - User responses like "approved", "looks good", "proceed" = approved
 - Do not proceed without approval on HOST
 
-### Step 6: Present User Testing Instructions
+### Step 7: Prove Fix and Present User Testing
 
-Present testing instructions to the user **one by one** (not as a batch list):
+**Before involving the user, prove the solution is sound:**
+
+1. **Confirm all automated tests pass** — tests must be green before proceeding
+2. **Provide evidence the fix addresses the root cause:**
+   - Explain why the root cause is resolved (not just the symptom)
+   - Show before/after analysis where applicable
+   - Reference the specific code changes and how they prevent recurrence
+3. **Never run anything that could modify the host system** — if unsure whether a verification step is safe, ask the user first
+
+**Only after demonstrating soundness**, present testing instructions to the user **one by one** (not as a batch list):
 - Include specific steps to verify the bug is fixed (from the bug report's "Steps to Reproduce")
 - Present each test instruction and wait for the user to confirm pass/fail
 - If a test fails, the user can choose to:
@@ -116,7 +153,7 @@ Present testing instructions to the user **one by one** (not as a batch list):
 
 **STOP and wait for user confirmation** on each test before presenting the next.
 
-### Step 7: Present Final Code Review
+### Step 8: Present Final Code Review
 
 After user testing is complete, present a final code review summarizing:
 - Confirmation the bug is fixed (root cause addressed)
@@ -126,7 +163,7 @@ After user testing is complete, present a final code review summarizing:
 
 **STOP and wait for explicit user approval** before proceeding (auto-approved when `CAL_VM=true`).
 
-### Step 8: Update Documentation
+### Step 9: Update Documentation
 
 Update affected documentation files as needed, plus bug-specific updates:
 
@@ -145,14 +182,14 @@ Update affected documentation files as needed, plus bug-specific updates:
 
 **Always update PLAN.md and phase TODO files** if the bug fix relates to a tracked TODO - follow [TODO → DONE Movement](WORKFLOWS.md#todo--done-movement) rules from Shared Conventions.
 
-### Step 9: Commit and Push
+### Step 10: Commit and Push
 
 - **Ask user approval** before committing (auto-approved when `CAL_VM=true`)
 - Follow [Commit Message Format](WORKFLOWS.md#commit-message-format) from Shared Conventions
 - Reference the bug ID in the commit message (e.g., "Fix BUG-001: ...")
 - Execute only after all previous steps complete successfully
 
-### Step 10: Complete
+### Step 11: Complete
 
 Report completion status:
 - Confirm bug status updated in all tracking files
@@ -164,9 +201,11 @@ Report completion status:
 ## Pre-Commit Checklist
 
 Before every commit:
+- [ ] Solution proposed and user approved approach (Step 1)
 - [ ] Tests pass (`go test ./...`)
 - [ ] Build succeeds (`go build -o cal ./cmd/cal`)
 - [ ] Code review presented and user approved (for code changes)
+- [ ] Fix proven sound with evidence and reasoning before user testing
 - [ ] User testing instructions presented one by one and resolved
 - [ ] Final code review presented and user approved
 - [ ] Bug report updated with resolution details
