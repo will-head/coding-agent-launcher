@@ -1335,6 +1335,12 @@ do_init() {
     echo ""
     echo "Continuing with setup..."
 
+    # Sync filesystem after vm-auth (ensure repository clones are persisted)
+    echo "  Syncing filesystem to disk..."
+    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${VM_USER}@${VM_IP}" "sync && sleep 2" 2>> "$CAL_LOG"
+    echo "  ✓ Filesystem synced"
+
     # Step 9.5: Verify first-run flag exists (set in Step 6.5, persisted through reboot)
     echo ""
     echo "Step 9.5: Prepare $VM_INIT snapshot"

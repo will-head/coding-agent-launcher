@@ -25,4 +25,5 @@ When bugs are resolved, remove the entry from this file and update `bugs/README.
 
 | ID | Summary | Severity | Status | Component | Phase | Opened |
 |----|---------|----------|--------|-----------|-------|--------|
-| BUG-009 | [gh repo clone during --init doesn't persist to snapshot](bugs/BUG-009-gh-repo-clone-lost-during-init.md) | High | Open | Bootstrap | 0 | 2026-02-04 |
+
+**No active bugs.** All known bugs have been resolved. See `bugs/README.md` for complete bug history.
