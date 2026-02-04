@@ -446,3 +446,72 @@ memory: 16384
 - [x] All tests pass (unit + manual)
 - [x] Bootstrap integration complete
 
+---
+
+## 1.1.5 Cache Clear Command (PR #10, merged 2026-02-04)
+
+**Dependencies:** Phases 1.1.1-1.1.4 must be complete first (all caches implemented).
+
+**Command:** `cal cache clear`
+
+**Implementation Details:**
+
+1. **Code Location:** `internal/isolation/cache.go` (extend existing `CacheManager`)
+   - Add `Clear()` method with per-cache confirmation
+
+2. **Behavior:**
+   - Prompt user to confirm clearing each cache type individually
+   - Example flow:
+     ```
+     Clear Homebrew cache (450 MB)? [y/N]: y
+     Clearing Homebrew cache...
+     Clear npm cache (120 MB)? [y/N]: n
+     Skipping npm cache
+     Clear Go modules cache (80 MB)? [y/N]: y
+     Clearing Go modules cache...
+     Clear git clones cache (25 MB)? [y/N]: y
+     Clearing git clones cache...
+
+     Summary: Cleared 555 MB (3/4 caches)
+     ```
+
+3. **Implementation:**
+   - For each cache type (Homebrew, npm, Go, Git):
+     - Calculate cache size: `du -sh <cache-dir>`
+     - Prompt user: `Clear <type> cache (<size>)? [y/N]:`
+     - If confirmed: `rm -rf <cache-dir>` and recreate empty directory
+     - Track cleared caches for summary
+   - Display summary of total space freed
+
+4. **Flags:**
+   - `--all` or `-a`: Clear all caches without prompting (dangerous)
+   - `--dry-run`: Show what would be cleared without actually clearing
+
+5. **Safety:**
+   - Default to "No" for each prompt (require explicit "y")
+   - Warn if clearing will slow down next bootstrap
+   - Suggest alternatives: "Consider clearing individual caches if low on disk space"
+
+**Benefits:**
+- **Disk Management:** Users can reclaim 1-2 GB when needed
+- **Troubleshooting:** Clear corrupted caches
+- **Flexibility:** Per-cache granularity with confirmation
+
+**Constraints:**
+- Clearing cache means next bootstrap will be slow again
+- No undo (must re-download everything)
+
+**Testing Strategy:**
+- Unit tests for clear logic with mocks
+- Integration tests for confirmation prompts
+- Manual: Test clearing each cache individually and all together
+
+**Acceptance Criteria Met:**
+- [x] `cal cache clear` prompts for each cache individually
+- [x] Each cache cleared only after user confirms "y"
+- [x] Summary shows total space freed
+- [x] `--all` flag clears all without prompting
+- [x] `--dry-run` shows what would be cleared
+- [x] Graceful handling if cache doesn't exist
+- [x] Tests pass
+

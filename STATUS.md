@@ -41,7 +41,7 @@
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|
-| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | Claude Sonnet 4.5 | 2026-02-04 |
+| *No PRs need merging* | | | | |
 
 ---
 
@@ -49,6 +49,7 @@
 
 | PR | Branch | Description | Merged |
 |----|--------|-------------|--------|
+| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | 2026-02-04 |
 | [#9](https://github.com/will-head/coding-agent-launcher/pull/9) | pr-9-test | Add Git clone caching with complete cache integration | 2026-02-03 |
 | [#8](https://github.com/will-head/coding-agent-launcher/pull/8) | create-pr/go-cache | Add Go modules cache management | 2026-02-03 |
 | [#7](https://github.com/will-head/coding-agent-launcher/pull/7) | create-pr/npm-cache | Add npm package download cache management | 2026-02-03 |
