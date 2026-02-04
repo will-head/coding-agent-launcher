@@ -342,9 +342,9 @@ func TestFormatBytes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatBytes(tt.bytes)
+			result := FormatBytes(tt.bytes)
 			if result != tt.expected {
-				t.Errorf("formatBytes(%d) = %s, expected %s", tt.bytes, result, tt.expected)
+				t.Errorf("FormatBytes(%d) = %s, expected %s", tt.bytes, result, tt.expected)
 			}
 		})
 	}
@@ -1039,6 +1039,336 @@ func TestCacheManager_UpdateGitRepos(t *testing.T) {
 
 		if updated != 0 {
 			t.Fatalf("expected 0 updates for non-git directory, got %d", updated)
+		}
+	})
+}
+
+func TestCacheManager_Clear(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm := &CacheManager{
+		homeDir:      tmpDir,
+		cacheBaseDir: filepath.Join(tmpDir, "cache"),
+	}
+
+	t.Run("Clear removes cache directory and recreates it", func(t *testing.T) {
+		err := cm.SetupHomebrewCache()
+		if err != nil {
+			t.Fatalf("SetupHomebrewCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "homebrew")
+		testFile := filepath.Join(hostCacheDir, "test-file.bin")
+		if err := os.WriteFile(testFile, []byte("test data"), 0644); err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
+		cleared, err := cm.Clear("homebrew", false)
+		if err != nil {
+			t.Fatalf("Clear failed: %v", err)
+		}
+
+		if !cleared {
+			t.Fatalf("expected cleared=true, got false")
+		}
+
+		if _, err := os.Stat(testFile); !os.IsNotExist(err) {
+			t.Fatalf("expected test file to be deleted, but it still exists")
+		}
+
+		info, err := os.Stat(hostCacheDir)
+		if err != nil {
+			t.Fatalf("expected cache directory to be recreated: %v", err)
+		}
+		if !info.IsDir() {
+			t.Fatalf("expected cache directory to be a directory")
+		}
+	})
+
+	t.Run("Clear with dryRun does not delete cache", func(t *testing.T) {
+		err := cm.SetupHomebrewCache()
+		if err != nil {
+			t.Fatalf("SetupHomebrewCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "homebrew")
+		testFile := filepath.Join(hostCacheDir, "test-file.bin")
+		if err := os.WriteFile(testFile, []byte("test data"), 0644); err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
+		cleared, err := cm.Clear("homebrew", true)
+		if err != nil {
+			t.Fatalf("Clear failed: %v", err)
+		}
+
+		if !cleared {
+			t.Fatalf("expected cleared=true in dry run mode")
+		}
+
+		if _, err := os.Stat(testFile); os.IsNotExist(err) {
+			t.Fatalf("expected test file to exist in dry run mode, but it was deleted")
+		}
+	})
+
+	t.Run("Clear returns cleared=false when cache doesn't exist", func(t *testing.T) {
+		freshTmpDir, err := os.MkdirTemp("", "cal-cache-clear-test-*")
+		if err != nil {
+			t.Fatalf("failed to create temp dir: %v", err)
+		}
+		defer os.RemoveAll(freshTmpDir)
+
+		freshCm := &CacheManager{
+			homeDir:      freshTmpDir,
+			cacheBaseDir: filepath.Join(freshTmpDir, "cache"),
+		}
+
+		cleared, err := freshCm.Clear("homebrew", false)
+		if err != nil {
+			t.Fatalf("Clear failed: %v", err)
+		}
+
+		if cleared {
+			t.Fatalf("expected cleared=false when cache doesn't exist")
+		}
+	})
+
+	t.Run("Clear handles all cache types", func(t *testing.T) {
+		testCases := []string{"homebrew", "npm", "go", "git"}
+
+		for _, cacheType := range testCases {
+			t.Run(cacheType, func(t *testing.T) {
+				switch cacheType {
+				case "homebrew":
+					err := cm.SetupHomebrewCache()
+					if err != nil {
+						t.Fatalf("SetupHomebrewCache failed: %v", err)
+					}
+				case "npm":
+					err := cm.SetupNpmCache()
+					if err != nil {
+						t.Fatalf("SetupNpmCache failed: %v", err)
+					}
+				case "go":
+					err := cm.SetupGoCache()
+					if err != nil {
+						t.Fatalf("SetupGoCache failed: %v", err)
+					}
+				case "git":
+					err := cm.SetupGitCache()
+					if err != nil {
+						t.Fatalf("SetupGitCache failed: %v", err)
+					}
+				}
+
+				cleared, err := cm.Clear(cacheType, false)
+				if err != nil {
+					t.Fatalf("Clear failed for %s: %v", cacheType, err)
+				}
+
+				if !cleared {
+					t.Fatalf("expected cleared=true for %s", cacheType)
+				}
+			})
+		}
+	})
+
+	t.Run("Clear recreates Go cache subdirectories", func(t *testing.T) {
+		err := cm.SetupGoCache()
+		if err != nil {
+			t.Fatalf("SetupGoCache failed: %v", err)
+		}
+
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "go")
+		testFile := filepath.Join(hostCacheDir, "pkg", "mod", "test-file.bin")
+		if err := os.WriteFile(testFile, []byte("test data"), 0644); err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
+		cleared, err := cm.Clear("go", false)
+		if err != nil {
+			t.Fatalf("Clear failed: %v", err)
+		}
+
+		if !cleared {
+			t.Fatalf("expected cleared=true, got false")
+		}
+
+		pkgModDir := filepath.Join(hostCacheDir, "pkg", "mod")
+		if _, err := os.Stat(pkgModDir); err != nil {
+			t.Fatalf("expected pkg/mod subdirectory to be recreated: %v", err)
+		}
+	})
+
+	t.Run("Clear handles read-only files in Go cache", func(t *testing.T) {
+		err := cm.SetupGoCache()
+		if err != nil {
+			t.Fatalf("SetupGoCache failed: %v", err)
+		}
+
+		// Create test files with read-only permissions (simulates Go module cache)
+		hostCacheDir := filepath.Join(cm.cacheBaseDir, "go")
+		modDir := filepath.Join(hostCacheDir, "pkg", "mod")
+		testModuleDir := filepath.Join(modDir, "gopkg.in", "yaml.v3@v3.0.1")
+		if err := os.MkdirAll(testModuleDir, 0755); err != nil {
+			t.Fatalf("failed to create test module directory: %v", err)
+		}
+
+		// Create read-only files
+		readOnlyFile := filepath.Join(testModuleDir, "decode_test.go")
+		if err := os.WriteFile(readOnlyFile, []byte("package yaml"), 0444); err != nil {
+			t.Fatalf("failed to create read-only test file: %v", err)
+		}
+
+		// Make parent directories read-only too
+		if err := os.Chmod(testModuleDir, 0555); err != nil {
+			t.Fatalf("failed to make test module directory read-only: %v", err)
+		}
+		parentDir := filepath.Join(modDir, "gopkg.in")
+		if err := os.Chmod(parentDir, 0555); err != nil {
+			t.Fatalf("failed to make parent directory read-only: %v", err)
+		}
+
+		// Ensure cleanup happens even if test fails
+		defer func() {
+			os.Chmod(parentDir, 0755)
+			os.Chmod(testModuleDir, 0755)
+			os.Chmod(readOnlyFile, 0644)
+		}()
+
+		// Clear should succeed despite read-only permissions
+		cleared, err := cm.Clear("go", false)
+		if err != nil {
+			t.Fatalf("Clear failed with read-only files: %v", err)
+		}
+
+		if !cleared {
+			t.Fatalf("expected cleared=true with read-only files")
+		}
+
+		// Verify cache directory was recreated
+		if _, err := os.Stat(modDir); err != nil {
+			t.Fatalf("expected pkg/mod subdirectory to be recreated: %v", err)
+		}
+
+		// Verify test file was actually deleted
+		if _, err := os.Stat(readOnlyFile); !os.IsNotExist(err) {
+			t.Fatalf("expected read-only test file to be deleted")
+		}
+	})
+
+	t.Run("Clear preserves symlinks and clears target contents", func(t *testing.T) {
+		// This simulates the VM scenario where ~/.cal-cache/{type} is a symlink
+		// to /Volumes/My Shared Files/cal-cache/{type}
+
+		// Create a directory structure simulating the shared volume
+		sharedVolume := filepath.Join(tmpDir, "shared-volume")
+		if err := os.MkdirAll(sharedVolume, 0755); err != nil {
+			t.Fatalf("failed to create shared volume dir: %v", err)
+		}
+
+		// Create actual cache data in the shared volume
+		sharedCacheDir := filepath.Join(sharedVolume, "npm")
+		if err := os.MkdirAll(sharedCacheDir, 0755); err != nil {
+			t.Fatalf("failed to create shared cache dir: %v", err)
+		}
+
+		// Create test files in the shared cache
+		testFile1 := filepath.Join(sharedCacheDir, "package1.tgz")
+		testFile2 := filepath.Join(sharedCacheDir, "package2.tgz")
+		if err := os.WriteFile(testFile1, []byte("package data 1"), 0644); err != nil {
+			t.Fatalf("failed to create test file 1: %v", err)
+		}
+		if err := os.WriteFile(testFile2, []byte("package data 2"), 0644); err != nil {
+			t.Fatalf("failed to create test file 2: %v", err)
+		}
+
+		// Create CacheManager with default .cal-cache directory (required for symlink resolution)
+		vmTmpDir, err := os.MkdirTemp("", "cal-vm-test-*")
+		if err != nil {
+			t.Fatalf("failed to create VM temp dir: %v", err)
+		}
+		defer os.RemoveAll(vmTmpDir)
+
+		vmCm := &CacheManager{
+			homeDir:      vmTmpDir,
+			cacheBaseDir: filepath.Join(vmTmpDir, ".cal-cache"),
+		}
+
+		// Create the .cal-cache base directory
+		if err := os.MkdirAll(vmCm.cacheBaseDir, 0755); err != nil {
+			t.Fatalf("failed to create .cal-cache dir: %v", err)
+		}
+
+		// Create symlink from .cal-cache/npm to the shared volume
+		symlinkPath := filepath.Join(vmCm.cacheBaseDir, "npm")
+		if err := os.Symlink(sharedCacheDir, symlinkPath); err != nil {
+			t.Fatalf("failed to create symlink: %v", err)
+		}
+
+		// Verify symlink exists and points to shared volume
+		target, err := filepath.EvalSymlinks(symlinkPath)
+		if err != nil {
+			t.Fatalf("failed to resolve symlink: %v", err)
+		}
+		// Normalize paths for comparison (macOS adds /private prefix)
+		expectedTarget, _ := filepath.EvalSymlinks(sharedCacheDir)
+		if target != expectedTarget {
+			t.Fatalf("symlink points to wrong target: got %s, want %s", target, expectedTarget)
+		}
+
+		// Clear the cache
+		cleared, err := vmCm.Clear("npm", false)
+		if err != nil {
+			t.Fatalf("Clear failed: %v", err)
+		}
+
+		if !cleared {
+			t.Fatalf("expected cleared=true")
+		}
+
+		// Verify symlink still exists
+		info, err := os.Lstat(symlinkPath)
+		if err != nil {
+			t.Fatalf("symlink was removed: %v", err)
+		}
+		if info.Mode()&os.ModeSymlink == 0 {
+			t.Fatalf("expected symlink to be preserved, but it's now a regular directory")
+		}
+
+		// Verify symlink still points to the same target
+		newTarget, err := filepath.EvalSymlinks(symlinkPath)
+		if err != nil {
+			t.Fatalf("failed to resolve symlink after clear: %v", err)
+		}
+		if newTarget != expectedTarget {
+			t.Fatalf("symlink target changed: got %s, want %s", newTarget, expectedTarget)
+		}
+
+		// Verify cache contents were deleted
+		if _, err := os.Stat(testFile1); !os.IsNotExist(err) {
+			t.Fatalf("expected test file 1 to be deleted")
+		}
+		if _, err := os.Stat(testFile2); !os.IsNotExist(err) {
+			t.Fatalf("expected test file 2 to be deleted")
+		}
+
+		// Verify shared cache directory still exists (not removed)
+		if _, err := os.Stat(sharedCacheDir); err != nil {
+			t.Fatalf("shared cache directory was removed: %v", err)
+		}
+
+		// Verify directory is empty
+		entries, err := os.ReadDir(sharedCacheDir)
+		if err != nil {
+			t.Fatalf("failed to read shared cache dir: %v", err)
+		}
+		if len(entries) != 0 {
+			t.Fatalf("expected empty directory, found %d entries", len(entries))
 		}
 	})
 }

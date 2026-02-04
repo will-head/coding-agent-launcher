@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -44,6 +46,29 @@ const (
 	// sharedCacheMount is the Tart directory mount specification for cache sharing.
 	sharedCacheMount = "cal-cache:~/.cal-cache"
 )
+
+// getDiskUsage returns the disk usage in bytes for a path using du -sk.
+// Returns 0 if path doesn't exist or on error.
+func getDiskUsage(path string) int64 {
+	cmd := exec.Command("du", "-sk", path)
+	output, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+
+	parts := strings.Fields(string(output))
+	if len(parts) == 0 {
+		return 0
+	}
+
+	size, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return 0
+	}
+
+	// du -sk returns size in kilobytes, convert to bytes
+	return size * 1024
+}
 
 // NewCacheManager creates a new CacheManager with default paths.
 func NewCacheManager() *CacheManager {
@@ -136,8 +161,21 @@ func (c *CacheManager) SetupVMHomebrewCache() []string {
 }
 
 // GetHomebrewCacheInfo returns information about the Homebrew cache.
+// Follows symlinks to report size from actual data location.
 func (c *CacheManager) GetHomebrewCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getHomebrewCachePath()
+
+	// Resolve symlink to find where data actually lives
+	realPath, err := c.resolveRealCachePath(cachePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve cache path: %w", err)
+	}
+
+	// Use real path for size calculation if symlink was resolved
+	pathForSize := cachePath
+	if realPath != "" {
+		pathForSize = realPath
+	}
 
 	info, err := os.Stat(cachePath)
 	if err != nil {
@@ -151,19 +189,7 @@ func (c *CacheManager) GetHomebrewCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat cache directory: %w", err)
 	}
 
-	var size int64
-	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fi.IsDir() {
-			size += fi.Size()
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate cache size: %w", err)
-	}
+	size := getDiskUsage(pathForSize)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -217,8 +243,21 @@ func (c *CacheManager) SetupVMNpmCache() []string {
 }
 
 // GetNpmCacheInfo returns information about the npm cache.
+// Follows symlinks to report size from actual data location.
 func (c *CacheManager) GetNpmCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getNpmCachePath()
+
+	// Resolve symlink to find where data actually lives
+	realPath, err := c.resolveRealCachePath(cachePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve cache path: %w", err)
+	}
+
+	// Use real path for size calculation if symlink was resolved
+	pathForSize := cachePath
+	if realPath != "" {
+		pathForSize = realPath
+	}
 
 	info, err := os.Stat(cachePath)
 	if err != nil {
@@ -232,19 +271,7 @@ func (c *CacheManager) GetNpmCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat npm cache directory: %w", err)
 	}
 
-	var size int64
-	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fi.IsDir() {
-			size += fi.Size()
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate npm cache size: %w", err)
-	}
+	size := getDiskUsage(pathForSize)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -309,8 +336,21 @@ func (c *CacheManager) SetupVMGoCache() []string {
 }
 
 // GetGoCacheInfo returns information about the Go cache.
+// Follows symlinks to report size from actual data location.
 func (c *CacheManager) GetGoCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getGoCachePath()
+
+	// Resolve symlink to find where data actually lives
+	realPath, err := c.resolveRealCachePath(cachePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve cache path: %w", err)
+	}
+
+	// Use real path for size calculation if symlink was resolved
+	pathForSize := cachePath
+	if realPath != "" {
+		pathForSize = realPath
+	}
 
 	info, err := os.Stat(cachePath)
 	if err != nil {
@@ -324,19 +364,7 @@ func (c *CacheManager) GetGoCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat Go cache directory: %w", err)
 	}
 
-	var size int64
-	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fi.IsDir() {
-			size += fi.Size()
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate Go cache size: %w", err)
-	}
+	size := getDiskUsage(pathForSize)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -349,6 +377,50 @@ func (c *CacheManager) GetGoCacheInfo() (*CacheInfo, error) {
 // getGitCachePath returns the host path for git cache.
 func (c *CacheManager) getGitCachePath() string {
 	return filepath.Join(c.cacheBaseDir, gitCacheDir)
+}
+
+// getSharedVolumeCachePath returns the shared volume path for a cache type when running in a VM.
+// Returns empty string if not in a VM environment or if using a non-default cache base directory (e.g., in tests).
+// resolveRealCachePath resolves the real cache path by following symlinks.
+// Always starts from the local cache path (~/.cal-cache/{type}) and follows symlinks if present.
+// Returns the real path where data is stored, or empty string if path doesn't exist.
+// Only resolves symlinks when using default cache base directory (prevents test interference).
+func (c *CacheManager) resolveRealCachePath(localPath string) (string, error) {
+	// Only resolve symlinks if using the default cache base directory
+	// This prevents tests with temporary directories from accessing shared volumes
+	if c.homeDir == "" {
+		return "", nil
+	}
+	expectedCacheBaseDir := filepath.Join(c.homeDir, ".cal-cache")
+	if c.cacheBaseDir != expectedCacheBaseDir {
+		return "", nil
+	}
+
+	// Check if path exists
+	info, err := os.Lstat(localPath) // Use Lstat to not follow symlinks yet
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil // Path doesn't exist
+		}
+		return "", fmt.Errorf("failed to stat path: %w", err)
+	}
+
+	// If it's a symlink, resolve it to find where data actually lives
+	if info.Mode()&os.ModeSymlink != 0 {
+		target, err := filepath.EvalSymlinks(localPath)
+		if err != nil {
+			// If the symlink exists but its target doesn't exist, treat as unavailable
+			// This happens when ~/.cal-cache/{type} is a symlink to a shared volume that isn't mounted
+			if os.IsNotExist(err) {
+				return "", nil
+			}
+			return "", fmt.Errorf("failed to resolve symlink: %w", err)
+		}
+		return target, nil
+	}
+
+	// Not a symlink - path doesn't exist yet or is a regular directory
+	return "", nil
 }
 
 // SetupGitCache sets up the git cache directory on the host.
@@ -393,8 +465,21 @@ func (c *CacheManager) SetupVMGitCache() []string {
 }
 
 // GetGitCacheInfo returns information about the git cache.
+// Follows symlinks to report size from actual data location.
 func (c *CacheManager) GetGitCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getGitCachePath()
+
+	// Resolve symlink to find where data actually lives
+	realPath, err := c.resolveRealCachePath(cachePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve cache path: %w", err)
+	}
+
+	// Use real path for size calculation if symlink was resolved
+	pathForSize := cachePath
+	if realPath != "" {
+		pathForSize = realPath
+	}
 
 	info, err := os.Stat(cachePath)
 	if err != nil {
@@ -408,19 +493,7 @@ func (c *CacheManager) GetGitCacheInfo() (*CacheInfo, error) {
 		return nil, fmt.Errorf("failed to stat git cache directory: %w", err)
 	}
 
-	var size int64
-	err = filepath.Walk(cachePath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fi.IsDir() {
-			size += fi.Size()
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate git cache size: %w", err)
-	}
+	size := getDiskUsage(pathForSize)
 
 	return &CacheInfo{
 		Path:       cachePath,
@@ -534,7 +607,7 @@ func (c *CacheManager) Status(w io.Writer) error {
 	fmt.Fprintf(w, "  Status: ")
 	if homebrewInfo.Available {
 		fmt.Fprintf(w, "✓ Ready\n")
-		fmt.Fprintf(w, "  Size: %s\n", formatBytes(homebrewInfo.Size))
+		fmt.Fprintf(w, "  Size: %s\n", FormatBytes(homebrewInfo.Size))
 		if !homebrewInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", homebrewInfo.LastAccess.Format(time.RFC3339))
 		}
@@ -547,7 +620,7 @@ func (c *CacheManager) Status(w io.Writer) error {
 	fmt.Fprintf(w, "  Status: ")
 	if npmInfo.Available {
 		fmt.Fprintf(w, "✓ Ready\n")
-		fmt.Fprintf(w, "  Size: %s\n", formatBytes(npmInfo.Size))
+		fmt.Fprintf(w, "  Size: %s\n", FormatBytes(npmInfo.Size))
 		if !npmInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", npmInfo.LastAccess.Format(time.RFC3339))
 		}
@@ -560,7 +633,7 @@ func (c *CacheManager) Status(w io.Writer) error {
 	fmt.Fprintf(w, "  Status: ")
 	if goInfo.Available {
 		fmt.Fprintf(w, "✓ Ready\n")
-		fmt.Fprintf(w, "  Size: %s\n", formatBytes(goInfo.Size))
+		fmt.Fprintf(w, "  Size: %s\n", FormatBytes(goInfo.Size))
 		if !goInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", goInfo.LastAccess.Format(time.RFC3339))
 		}
@@ -573,7 +646,7 @@ func (c *CacheManager) Status(w io.Writer) error {
 	fmt.Fprintf(w, "  Status: ")
 	if gitInfo.Available {
 		fmt.Fprintf(w, "✓ Ready\n")
-		fmt.Fprintf(w, "  Size: %s\n", formatBytes(gitInfo.Size))
+		fmt.Fprintf(w, "  Size: %s\n", FormatBytes(gitInfo.Size))
 		if !gitInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", gitInfo.LastAccess.Format(time.RFC3339))
 		}
@@ -592,8 +665,8 @@ func (c *CacheManager) Status(w io.Writer) error {
 	return nil
 }
 
-// formatBytes formats a byte count into a human-readable string.
-func formatBytes(b int64) string {
+// FormatBytes formats a byte count into a human-readable string.
+func FormatBytes(b int64) string {
 	const unit = 1024
 	if b < unit {
 		return fmt.Sprintf("%d B", b)
@@ -604,4 +677,127 @@ func formatBytes(b int64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
+}
+
+// clearDirectoryContents removes all contents of a directory without removing the directory itself.
+// Used when clearing symlinked caches to preserve the symlink.
+func clearDirectoryContents(dirPath string) error {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		entryPath := filepath.Join(dirPath, entry.Name())
+		if err := removeAllWithPermFix(entryPath); err != nil {
+			return fmt.Errorf("failed to remove %s: %w", entry.Name(), err)
+		}
+	}
+
+	return nil
+}
+
+// removeAllWithPermFix removes a directory tree, fixing permissions as needed.
+// Go module cache files may have read-only permissions that prevent deletion.
+// This function makes all files and directories writable before attempting to delete.
+func removeAllWithPermFix(path string) error {
+	// First, try the fast path - works for most caches
+	err := os.RemoveAll(path)
+	if err == nil {
+		return nil
+	}
+
+	// If we got a permission error, walk the tree and fix permissions
+	if os.IsPermission(err) {
+		// Make everything in the tree writable
+		filepath.Walk(path, func(p string, info os.FileInfo, walkErr error) error {
+			if walkErr != nil {
+				// Ignore walk errors - we'll try to delete what we can
+				return nil
+			}
+			// Make writable: add owner write permission (0200)
+			// Ignore chmod errors - we'll try to delete anyway
+			os.Chmod(p, info.Mode()|0200)
+			return nil
+		})
+
+		// Try removing again after fixing permissions
+		err = os.RemoveAll(path)
+	}
+
+	return err
+}
+
+// Clear removes the specified cache type and recreates an empty cache directory.
+// cacheType must be one of: "homebrew", "npm", "go", "git"
+// dryRun if true, simulates clearing without actually deleting files
+// Returns true if cache was cleared (or would be cleared in dry run), false if cache didn't exist
+// Always starts at ~/.cal-cache/{type} and follows symlinks to clear actual data.
+// If the cache path is a symlink (e.g., in a VM), preserves the symlink and only clears contents.
+func (c *CacheManager) Clear(cacheType string, dryRun bool) (bool, error) {
+	if c.homeDir == "" {
+		return false, fmt.Errorf("home directory not available")
+	}
+
+	var localCachePath string
+	var setupFunc func() error
+
+	switch cacheType {
+	case "homebrew":
+		localCachePath = c.getHomebrewCachePath()
+		setupFunc = c.SetupHomebrewCache
+	case "npm":
+		localCachePath = c.getNpmCachePath()
+		setupFunc = c.SetupNpmCache
+	case "go":
+		localCachePath = c.getGoCachePath()
+		setupFunc = c.SetupGoCache
+	case "git":
+		localCachePath = c.getGitCachePath()
+		setupFunc = c.SetupGitCache
+	default:
+		return false, fmt.Errorf("invalid cache type: %s (must be homebrew, npm, go, or git)", cacheType)
+	}
+
+	// Check if local path exists
+	info, err := os.Lstat(localCachePath) // Use Lstat to detect symlinks
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil // Cache doesn't exist
+		}
+		return false, fmt.Errorf("failed to check cache directory: %w", err)
+	}
+
+	// Check if this is a symlink (e.g., inside a VM pointing to shared volume)
+	isSymlink := info.Mode()&os.ModeSymlink != 0
+
+	// Resolve symlink to find where data actually lives
+	realPath, err := c.resolveRealCachePath(localCachePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to resolve cache path: %w", err)
+	}
+
+	if !dryRun {
+		if isSymlink && realPath != "" {
+			// For symlinked caches (VM scenario):
+			// - Clear contents of the target directory (shared volume)
+			// - Preserve the symlink itself so cache continues working after clear
+			if err := clearDirectoryContents(realPath); err != nil {
+				return false, fmt.Errorf("failed to clear cache contents: %w", err)
+			}
+		} else {
+			// For regular directory caches (host scenario):
+			// - Remove the entire directory
+			// - Recreate empty structure
+			if err := removeAllWithPermFix(localCachePath); err != nil {
+				return false, fmt.Errorf("failed to remove cache directory: %w", err)
+			}
+
+			if err := setupFunc(); err != nil {
+				return false, fmt.Errorf("failed to recreate cache directory: %w", err)
+			}
+		}
+	}
+
+	return true, nil
 }
