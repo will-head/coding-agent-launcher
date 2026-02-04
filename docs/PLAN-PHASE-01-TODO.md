@@ -26,7 +26,7 @@
 
 ---
 
-### Phase 1.1.5: **[ ]** Cache Clear Command (PR #10 - approved, needs testing)
+### Phase 1.1.5: **[ ]** Cache Clear Command (PR #10 - tested, needs merge)
 
 **Dependencies:** Phases 1.1.1-1.1.4 must be complete first (all caches implemented).
 

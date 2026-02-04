@@ -33,7 +33,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | Claude Sonnet 4.5 | 2026-02-04 |
+| *No PRs need testing* | | | | |
 
 ---
 
@@ -41,7 +41,7 @@
 
 | PR | Branch | Description | Tested By | Tested Date |
 |----|--------|-------------|-----------|-------------|
-| *No PRs ready to merge* | | | |
+| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | Claude Sonnet 4.5 | 2026-02-04 |
 
 ---
 
