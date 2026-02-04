@@ -520,7 +520,7 @@ if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
             # Clear tmux session data to prevent cal-init from capturing auth screen
             # This ensures restored sessions show a clean shell, not authentication prompts
             if [ -d ~/.local/share/tmux/resurrect ]; then
-                rm -f ~/.local/share/tmux/resurrect/*
+                rm -rf ~/.local/share/tmux/resurrect/*
             fi
 
             # Exit to allow cal-bootstrap to continue with cal-init creation
