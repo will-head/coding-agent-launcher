@@ -10,7 +10,6 @@
 
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
-| Cache Clear Command | PLAN-PHASE-01-TODO.md § 1.1.5 | Implement `cal cache clear` with per-cache confirmation and --all/--dry-run flags | 2026-02-03 | Phase 1.1.5: Depends on 1.1.1-1.1.4; disk management and troubleshooting |
 
 ---
 
@@ -18,7 +17,7 @@
 
 | PR | Branch | Description | Created |
 |----|--------|-------------|---------|
-| *No PRs awaiting review* | | | |
+| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | 2026-02-04 |
 
 ---
 
