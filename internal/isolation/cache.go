@@ -45,6 +45,8 @@ const (
 	gitCacheDir = "git"
 	// sharedCacheMount is the Tart directory mount specification for cache sharing.
 	sharedCacheMount = "cal-cache:~/.cal-cache"
+	// sharedVolumeBasePath is the path where Tart mounts shared volumes in VMs.
+	sharedVolumeBasePath = "/Volumes/My Shared Files/cal-cache"
 )
 
 // getDiskUsage returns the disk usage in bytes for a path using du -sk.
@@ -161,8 +163,23 @@ func (c *CacheManager) SetupVMHomebrewCache() []string {
 }
 
 // GetHomebrewCacheInfo returns information about the Homebrew cache.
+// When running in a VM, reports size from the shared volume path where actual data is stored.
 func (c *CacheManager) GetHomebrewCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getHomebrewCachePath()
+
+	// Check for shared volume cache path (when running in a VM)
+	sharedVolumePath := c.getSharedVolumeCachePath(homebrewCacheDir)
+	if sharedVolumePath != "" {
+		if info, err := os.Stat(sharedVolumePath); err == nil {
+			size := getDiskUsage(sharedVolumePath)
+			return &CacheInfo{
+				Path:       cachePath, // Report local path for user clarity
+				Size:       size,      // But size from shared volume (actual data)
+				Available:  true,
+				LastAccess: info.ModTime(),
+			}, nil
+		}
+	}
 
 	info, err := os.Stat(cachePath)
 	if err != nil {
@@ -230,8 +247,23 @@ func (c *CacheManager) SetupVMNpmCache() []string {
 }
 
 // GetNpmCacheInfo returns information about the npm cache.
+// When running in a VM, reports size from the shared volume path where actual data is stored.
 func (c *CacheManager) GetNpmCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getNpmCachePath()
+
+	// Check for shared volume cache path (when running in a VM)
+	sharedVolumePath := c.getSharedVolumeCachePath(npmCacheDir)
+	if sharedVolumePath != "" {
+		if info, err := os.Stat(sharedVolumePath); err == nil {
+			size := getDiskUsage(sharedVolumePath)
+			return &CacheInfo{
+				Path:       cachePath, // Report local path for user clarity
+				Size:       size,      // But size from shared volume (actual data)
+				Available:  true,
+				LastAccess: info.ModTime(),
+			}, nil
+		}
+	}
 
 	info, err := os.Stat(cachePath)
 	if err != nil {
@@ -310,8 +342,23 @@ func (c *CacheManager) SetupVMGoCache() []string {
 }
 
 // GetGoCacheInfo returns information about the Go cache.
+// When running in a VM, reports size from the shared volume path where actual data is stored.
 func (c *CacheManager) GetGoCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getGoCachePath()
+
+	// Check for shared volume cache path (when running in a VM)
+	sharedVolumePath := c.getSharedVolumeCachePath(goCacheDir)
+	if sharedVolumePath != "" {
+		if info, err := os.Stat(sharedVolumePath); err == nil {
+			size := getDiskUsage(sharedVolumePath)
+			return &CacheInfo{
+				Path:       cachePath, // Report local path for user clarity
+				Size:       size,      // But size from shared volume (actual data)
+				Available:  true,
+				LastAccess: info.ModTime(),
+			}, nil
+		}
+	}
 
 	info, err := os.Stat(cachePath)
 	if err != nil {
@@ -338,6 +385,26 @@ func (c *CacheManager) GetGoCacheInfo() (*CacheInfo, error) {
 // getGitCachePath returns the host path for git cache.
 func (c *CacheManager) getGitCachePath() string {
 	return filepath.Join(c.cacheBaseDir, gitCacheDir)
+}
+
+// getSharedVolumeCachePath returns the shared volume path for a cache type when running in a VM.
+// Returns empty string if not in a VM environment or if using a non-default cache base directory (e.g., in tests).
+func (c *CacheManager) getSharedVolumeCachePath(cacheType string) string {
+	// Only check shared volume if using the default cache base directory
+	// This prevents tests with temporary directories from accessing the shared volume
+	if c.homeDir == "" {
+		return ""
+	}
+	expectedCacheBaseDir := filepath.Join(c.homeDir, ".cal-cache")
+	if c.cacheBaseDir != expectedCacheBaseDir {
+		return ""
+	}
+
+	// Check if the shared volume base path exists (indicates we're in a VM)
+	if _, err := os.Stat(sharedVolumeBasePath); os.IsNotExist(err) {
+		return ""
+	}
+	return filepath.Join(sharedVolumeBasePath, cacheType)
 }
 
 // SetupGitCache sets up the git cache directory on the host.
@@ -382,8 +449,23 @@ func (c *CacheManager) SetupVMGitCache() []string {
 }
 
 // GetGitCacheInfo returns information about the git cache.
+// When running in a VM, reports size from the shared volume path where actual data is stored.
 func (c *CacheManager) GetGitCacheInfo() (*CacheInfo, error) {
 	cachePath := c.getGitCachePath()
+
+	// Check for shared volume cache path (when running in a VM)
+	sharedVolumePath := c.getSharedVolumeCachePath(gitCacheDir)
+	if sharedVolumePath != "" {
+		if info, err := os.Stat(sharedVolumePath); err == nil {
+			size := getDiskUsage(sharedVolumePath)
+			return &CacheInfo{
+				Path:       cachePath, // Report local path for user clarity
+				Size:       size,      // But size from shared volume (actual data)
+				Available:  true,
+				LastAccess: info.ModTime(),
+			}, nil
+		}
+	}
 
 	info, err := os.Stat(cachePath)
 	if err != nil {
@@ -618,51 +700,69 @@ func removeAllWithPermFix(path string) error {
 // cacheType must be one of: "homebrew", "npm", "go", "git"
 // dryRun if true, simulates clearing without actually deleting files
 // Returns true if cache was cleared (or would be cleared in dry run), false if cache didn't exist
+// When running in a VM, clears both the local cache and the shared volume cache.
 func (c *CacheManager) Clear(cacheType string, dryRun bool) (bool, error) {
 	if c.homeDir == "" {
 		return false, fmt.Errorf("home directory not available")
 	}
 
-	var cachePath string
+	var localCachePath string
 	var setupFunc func() error
 
 	switch cacheType {
 	case "homebrew":
-		cachePath = c.getHomebrewCachePath()
+		localCachePath = c.getHomebrewCachePath()
 		setupFunc = c.SetupHomebrewCache
 	case "npm":
-		cachePath = c.getNpmCachePath()
+		localCachePath = c.getNpmCachePath()
 		setupFunc = c.SetupNpmCache
 	case "go":
-		cachePath = c.getGoCachePath()
+		localCachePath = c.getGoCachePath()
 		setupFunc = c.SetupGoCache
 	case "git":
-		cachePath = c.getGitCachePath()
+		localCachePath = c.getGitCachePath()
 		setupFunc = c.SetupGitCache
 	default:
 		return false, fmt.Errorf("invalid cache type: %s (must be homebrew, npm, go, or git)", cacheType)
 	}
 
-	info, err := os.Stat(cachePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
+	// Check for shared volume cache path (when running in a VM)
+	sharedVolumePath := c.getSharedVolumeCachePath(cacheType)
+
+	// Track if we cleared anything
+	clearedAny := false
+
+	// Clear shared volume cache first (this is where the bulk of data is in VM environments)
+	if sharedVolumePath != "" {
+		if info, err := os.Stat(sharedVolumePath); err == nil && info.IsDir() {
+			if !dryRun {
+				if err := removeAllWithPermFix(sharedVolumePath); err != nil {
+					return false, fmt.Errorf("failed to remove shared volume cache directory: %w", err)
+				}
+			}
+			clearedAny = true
 		}
+	}
+
+	// Clear local cache path
+	if info, err := os.Stat(localCachePath); err == nil {
+		if !info.IsDir() {
+			return false, fmt.Errorf("cache path is not a directory: %s", localCachePath)
+		}
+
+		if !dryRun {
+			if err := removeAllWithPermFix(localCachePath); err != nil {
+				return false, fmt.Errorf("failed to remove cache directory: %w", err)
+			}
+			// Recreate the local cache directory structure
+			if err := setupFunc(); err != nil {
+				return false, fmt.Errorf("failed to recreate cache directory: %w", err)
+			}
+		}
+		clearedAny = true
+	} else if !os.IsNotExist(err) {
 		return false, fmt.Errorf("failed to check cache directory: %w", err)
 	}
 
-	if !info.IsDir() {
-		return false, fmt.Errorf("cache path is not a directory: %s", cachePath)
-	}
-
-	if !dryRun {
-		if err := removeAllWithPermFix(cachePath); err != nil {
-			return false, fmt.Errorf("failed to remove cache directory: %w", err)
-		}
-		if err := setupFunc(); err != nil {
-			return false, fmt.Errorf("failed to recreate cache directory: %w", err)
-		}
-	}
-
-	return true, nil
+	return clearedAny, nil
 }
