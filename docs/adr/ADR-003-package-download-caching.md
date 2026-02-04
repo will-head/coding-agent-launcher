@@ -208,6 +208,81 @@ After the first bootstrap populates the cache, subsequent runs are almost entire
 
 ---
 
+## Bug Fixes Post-Integration
+
+Bugs discovered and resolved after the cache integration PRs (#6-#9) were merged on 2026-02-03. All fixes relate to bootstrap and VM lifecycle issues encountered during cache integration testing.
+
+### BUG-008: Cursor agent command not found after --init
+
+**Severity:** High | **Resolved:** 2026-02-04
+
+Cursor CLI installed as `cursor-agent` but docs and verification referenced `agent`. Bootstrap reported `agent: not found` despite successful installation.
+
+**Root Cause:** Homebrew Cask only installs the `cursor-agent` binary. No alias was created during bootstrap.
+
+**Fix (4 iterations):**
+1. Added `alias agent='cursor-agent'` to ~/.zshrc in vm-setup.sh
+2. Sourced ~/.zshrc in vm-auth.sh to load alias during --init
+3. Added error handling for .zshrc sourcing failures
+4. **Final:** Create alias directly in vm-auth.sh (avoids sourcing side effects like early tmux-resurrect loading)
+
+**Files:** `scripts/vm-setup.sh`, `scripts/vm-auth.sh`
+
+### BUG-009: Repository clones lost during --init
+
+**Severity:** High | **Resolved:** 2026-02-04
+
+Repositories cloned during vm-auth (Step 9) were lost when cal-init snapshot was created. Silent data loss — no error messages.
+
+**Root Cause:** cal-bootstrap stopped the VM immediately after vm-auth exited without flushing filesystem buffers. Clone data in write buffers was lost before snapshot creation.
+
+**Fix:** Added explicit `sync && sleep 2` SSH call after vm-auth completes, before VM stop. Mirrors existing sync pattern used for flag files. Adds 2-3 seconds to --init for data integrity.
+
+**Files:** `scripts/cal-bootstrap` (line ~1338)
+
+### BUG-005 Edge Cases: tmux-resurrect Session Persistence
+
+**Severity:** High | **Resolved:** 2026-02-04
+
+Two edge cases discovered in the tmux-resurrect session persistence feature (originally resolved 2026-02-02 with PATH fix) during post-cache-integration testing.
+
+**Edge Case 1: Auth screens captured during --init**
+
+Save hooks ran unconditionally during --init, capturing authentication screens into session data. On first user login, stale auth prompts appeared instead of a clean shell.
+
+- **Root Cause:** Save triggers (detach hook, logout hook) not gated by first-run flag
+- **Fix:** Gate all save triggers on `~/.cal-first-run` flag. Architectural change: vm-auth.sh handles auth only, vm-first-run.sh enables persistence after first login
+- **Commit:** `823059a`
+
+**Edge Case 2: Stale state after --restart**
+
+Detach with 3 windows, immediate --restart, only 2 windows restored. Most recent save was lost.
+
+- **Root Cause:** Explicit save in cal-bootstrap used `tmux run-shell -b` (background) with 0.5s wait. VM stop killed the background save mid-write, corrupting the save file. Restore fell back to the previous (stale) save
+- **Fix:** Removed explicit saves from --stop/--restart/--gui (detach hook already saves). Added 10-second delay before VM stop to let detach hook save complete
+- **Commit:** `fc2a4a4`
+
+**Files:** `scripts/cal-bootstrap`, `scripts/vm-tmux-resurrect.sh`, `scripts/vm-auth.sh`, `scripts/vm-first-run.sh`
+
+### Additional Minor Fixes
+
+| Commit | Fix |
+|--------|-----|
+| `7453dd0` | tmux-resurrect clearing: use `rm -rf` to delete subdirectories |
+| `bf17a90` | Keep first-run flag until auth completes + fix Ctrl+C handling |
+| `e7e2bef` | Clear tmux session data at end of vm-auth.sh |
+| `2574804` | Move tmux session clearing to cal-bootstrap Step 10 |
+
+### Summary
+
+- **3 major bugs** resolved (BUG-005 edge cases, BUG-008, BUG-009)
+- **4 minor fixes** for flag timing and cleanup
+- **12 total commits** over 2026-02-04
+- All bugs were Phase 0 (Bootstrap) issues affecting agent auth, data persistence, and session restore
+- **No active bugs remaining** as of 2026-02-04
+
+---
+
 ## Future Work
 
 - **Cache clear command** (`cal cache clear`, TODO 1.1.5): Per-cache confirmation prompts, `--all` and `--dry-run` flags
