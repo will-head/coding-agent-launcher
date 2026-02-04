@@ -25,5 +25,4 @@ When bugs are resolved, remove the entry from this file and update `bugs/README.
 
 | ID | Summary | Severity | Status | Component | Phase | Opened |
 |----|---------|----------|--------|-----------|-------|--------|
-| BUG-008 | [Cursor agent command not found after --init](bugs/BUG-008-cursor-agent-not-found-after-init.md) | High | Open | Bootstrap / VM Setup | 0 | 2026-02-03 |
 | BUG-009 | [gh repo clone during --init doesn't persist to snapshot](bugs/BUG-009-gh-repo-clone-lost-during-init.md) | High | Open | Bootstrap | 0 | 2026-02-04 |

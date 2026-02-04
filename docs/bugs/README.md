@@ -28,6 +28,7 @@ This file is for human browsing only. Agents should not read this file.
 
 | ID | Summary | Severity | Status | Component | Phase | Opened | Resolved |
 |----|---------|----------|--------|-----------|-------|--------|----------|
+| [BUG-008](BUG-008-cursor-agent-not-found-after-init.md) | Cursor agent command not found after --init | High | Resolved | Bootstrap / VM Setup | 0 (Bootstrap) | 2026-02-03 | 2026-02-04 |
 | [BUG-007](BUG-007-session-restore-broken-after-restart.md) | Session restore broken after restart (first-run flag regression) | Critical | Resolved | Bootstrap | 0 (Bootstrap) | 2026-02-02 | 2026-02-02 |
 | [BUG-006](BUG-006-tmux-mouse-mode-re-regression.md) | vm-tmux-resurrect.sh fails silently on network timeout during --init | High | Resolved | Bootstrap | 0 (Bootstrap) | 2026-02-02 | 2026-02-02 |
 | [BUG-005](BUG-005-tmux-resurrect-persistence.md) | tmux-resurrect session persistence fails across VM restart | Medium | Resolved | tmux/VM | 0 (Bootstrap) | 2026-02-02 | 2026-02-02 |

@@ -617,6 +617,14 @@ else
     echo "  ✓ History keybinding already configured"
 fi
 
+# Add agent alias for Cursor CLI
+if ! grep -q "alias agent=" ~/.zshrc 2>/dev/null; then
+    echo "alias agent='cursor-agent'" >> ~/.zshrc
+    echo "  ✓ Added agent alias for Cursor CLI"
+else
+    echo "  ✓ Agent alias already configured"
+fi
+
 # Source the updated config
 if source ~/.zshrc 2>/dev/null; then
     echo "  ✓ Shell configuration reloaded"

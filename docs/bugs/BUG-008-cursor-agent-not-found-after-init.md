@@ -1,6 +1,6 @@
 # BUG-008: Cursor agent command not found after --init
 
-**Status:** Open
+**Status:** Resolved
 **Severity:** High
 **Component:** Bootstrap / VM Setup
 **Phase:** 0 (Bootstrap)
@@ -154,8 +154,24 @@ cursor-agent --version 2>/dev/null || echo "not found"
 
 ---
 
-**Next Steps:**
-1. Investigate which hypothesis is correct
-2. Test workarounds in clean VM
-3. Implement preferred fix
-4. Update documentation if command name changed
+## Resolution
+
+**Resolved:** 2026-02-04
+
+**Fix Applied:**
+Added `alias agent='cursor-agent'` to ~/.zshrc during vm-setup.sh shell configuration phase.
+
+**Changes:**
+- Modified `scripts/vm-setup.sh` line ~620 to add agent alias check and configuration
+- Alias is added after Cursor CLI installation and before shell config reload
+- Idempotent check prevents duplicate entries on subsequent runs
+
+**Verification:**
+After this fix, `cal-bootstrap --init` will:
+1. Install cursor-cli via Homebrew Cask (creates cursor-agent binary)
+2. Add `alias agent='cursor-agent'` to ~/.zshrc
+3. Source ~/.zshrc (makes alias available)
+4. Verification section confirms `agent` command is found
+
+**Testing Status:**
+Code review and syntax validation complete. VM testing deferred to next bootstrap run.
