@@ -342,9 +342,9 @@ func TestFormatBytes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatBytes(tt.bytes)
+			result := FormatBytes(tt.bytes)
 			if result != tt.expected {
-				t.Errorf("formatBytes(%d) = %s, expected %s", tt.bytes, result, tt.expected)
+				t.Errorf("FormatBytes(%d) = %s, expected %s", tt.bytes, result, tt.expected)
 			}
 		})
 	}

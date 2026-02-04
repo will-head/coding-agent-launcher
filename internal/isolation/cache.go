@@ -534,7 +534,7 @@ func (c *CacheManager) Status(w io.Writer) error {
 	fmt.Fprintf(w, "  Status: ")
 	if homebrewInfo.Available {
 		fmt.Fprintf(w, "✓ Ready\n")
-		fmt.Fprintf(w, "  Size: %s\n", formatBytes(homebrewInfo.Size))
+		fmt.Fprintf(w, "  Size: %s\n", FormatBytes(homebrewInfo.Size))
 		if !homebrewInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", homebrewInfo.LastAccess.Format(time.RFC3339))
 		}
@@ -547,7 +547,7 @@ func (c *CacheManager) Status(w io.Writer) error {
 	fmt.Fprintf(w, "  Status: ")
 	if npmInfo.Available {
 		fmt.Fprintf(w, "✓ Ready\n")
-		fmt.Fprintf(w, "  Size: %s\n", formatBytes(npmInfo.Size))
+		fmt.Fprintf(w, "  Size: %s\n", FormatBytes(npmInfo.Size))
 		if !npmInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", npmInfo.LastAccess.Format(time.RFC3339))
 		}
@@ -560,7 +560,7 @@ func (c *CacheManager) Status(w io.Writer) error {
 	fmt.Fprintf(w, "  Status: ")
 	if goInfo.Available {
 		fmt.Fprintf(w, "✓ Ready\n")
-		fmt.Fprintf(w, "  Size: %s\n", formatBytes(goInfo.Size))
+		fmt.Fprintf(w, "  Size: %s\n", FormatBytes(goInfo.Size))
 		if !goInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", goInfo.LastAccess.Format(time.RFC3339))
 		}
@@ -573,7 +573,7 @@ func (c *CacheManager) Status(w io.Writer) error {
 	fmt.Fprintf(w, "  Status: ")
 	if gitInfo.Available {
 		fmt.Fprintf(w, "✓ Ready\n")
-		fmt.Fprintf(w, "  Size: %s\n", formatBytes(gitInfo.Size))
+		fmt.Fprintf(w, "  Size: %s\n", FormatBytes(gitInfo.Size))
 		if !gitInfo.LastAccess.IsZero() {
 			fmt.Fprintf(w, "  Last access: %s\n", gitInfo.LastAccess.Format(time.RFC3339))
 		}
@@ -592,8 +592,8 @@ func (c *CacheManager) Status(w io.Writer) error {
 	return nil
 }
 
-// formatBytes formats a byte count into a human-readable string.
-func formatBytes(b int64) string {
+// FormatBytes formats a byte count into a human-readable string.
+func FormatBytes(b int64) string {
 	const unit = 1024
 	if b < unit {
 		return fmt.Sprintf("%d B", b)
