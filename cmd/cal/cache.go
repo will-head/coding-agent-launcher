@@ -87,7 +87,7 @@ func runCacheClear(cmd *cobra.Command, args []string) error {
 
 		totalCount++
 
-		sizeStr := formatBytes(info.Size)
+		sizeStr := isolation.FormatBytes(info.Size)
 		var shouldClear bool
 
 		if clearAll {
@@ -147,7 +147,7 @@ func runCacheClear(cmd *cobra.Command, args []string) error {
 		action = "Would clear"
 	}
 
-	fmt.Printf("%s %s (%d/%d caches)\n", action, formatBytes(totalFreed), clearedCount, totalCount)
+	fmt.Printf("%s %s (%d/%d caches)\n", action, isolation.FormatBytes(totalFreed), clearedCount, totalCount)
 
 	if !dryRun && clearedCount > 0 {
 		fmt.Println()
@@ -156,8 +156,4 @@ func runCacheClear(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-func formatBytes(b int64) string {
-	return isolation.FormatBytes(b)
 }

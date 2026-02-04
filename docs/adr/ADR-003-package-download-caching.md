@@ -161,7 +161,7 @@ Each package manager handles its own cache validation:
 - **Go**: Uses `go.sum` checksums; re-fetches on integrity failure
 - **Git**: Repositories updated with `git fetch --all` before use
 
-No custom invalidation logic is needed. The cache clear command (`cal cache clear`, TODO 1.1.5) provides manual cache management.
+No custom invalidation logic is needed. The cache clear command (`cal cache clear`) provides manual cache management for troubleshooting or disk space recovery.
 
 ---
 
@@ -283,9 +283,32 @@ Detach with 3 windows, immediate --restart, only 2 windows restored. Most recent
 
 ---
 
+## Cache Clear Command
+
+The `cal cache clear` command (implemented in PR #10) provides manual cache management:
+
+```bash
+# Interactive mode - prompts for each cache
+cal cache clear
+
+# Clear all caches without confirmation
+cal cache clear --all
+
+# Preview what would be cleared
+cal cache clear --dry-run
+```
+
+**Features:**
+- Per-cache confirmation prompts with size display
+- Handles read-only Go module cache files automatically
+- Recreates cache directories after clearing
+- Summary of space freed and caches cleared
+- Warnings about slower next bootstrap
+
+---
+
 ## Future Work
 
-- **Cache clear command** (`cal cache clear`, TODO 1.1.5): Per-cache confirmation prompts, `--all` and `--dry-run` flags
 - **Cache size monitoring**: Warn when cache exceeds configurable threshold
 - **Additional git repositories**: Cache more frequently-cloned repos beyond TPM
 
