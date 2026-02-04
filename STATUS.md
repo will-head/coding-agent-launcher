@@ -25,7 +25,7 @@
 
 | PR | Branch | Description | Requested | Reason |
 |----|--------|-------------|-----------|--------|
-| *No PRs needing changes* | | | | |
+| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | 2026-02-04 | Size calculation: uses file size instead of disk usage (du -sh). Under-reports by 4-17% |
 
 ---
 
@@ -33,7 +33,7 @@
 
 | PR | Branch | Description | Reviewer | Reviewed |
 |----|--------|-------------|----------|----------|
-| [#10](https://github.com/will-head/coding-agent-launcher/pull/10) | create-pr/cache-clear | Add cache clear command with per-cache confirmation | Claude Sonnet 4.5 | 2026-02-04 |
+| *No PRs need testing* | | | | |
 
 ---
 
