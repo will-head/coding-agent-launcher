@@ -12,6 +12,126 @@
 
 ---
 
+## Critical Issues - HIGHEST PRIORITY
+
+### 1. CLI Command Name Collision
+
+**Problem:** The `cal` command clashes with the system calendar command (also called `cal`), requiring users to use `./cal` instead.
+
+**Solution:** Rename the CLI binary to avoid collision. Potential names:
+- `calvm`
+- `cal-cli`
+- `coding-agent-launcher`
+- Other suggestions?
+
+**Impact:** High - affects all user interactions with the CLI
+
+---
+
+### 2. Cache Clear Confirmation UX
+
+**Problem:** `cal cache clear --all` currently clears all caches without any confirmation, which is dangerous.
+
+**Required Changes:**
+1. `cal cache clear --all` should present one final y/N confirmation before clearing
+2. Add `--force` flag to skip all confirmations (for automation/scripts)
+3. Behavior should be:
+   - `cal cache clear` → prompt for each cache (current behavior)
+   - `cal cache clear --all` → show warning + one final y/N confirmation (NEW)
+   - `cal cache clear --all --force` → no prompts at all (NEW)
+
+**Impact:** Medium - prevents accidental data loss
+
+---
+
+### 3. Shared Cache Symlink Fragility
+
+**Problem:** Current architecture uses individual symlinks for each cache type (`~/.cal-cache/homebrew` → `/Volumes/My Shared Files/cal-cache/homebrew`, etc.). These symlinks are:
+- Easily deleted during cache clear operations
+- Confusing for testing and troubleshooting
+- Not automatically repaired if broken
+
+**Explore Solutions:**
+1. **Preferred:** Mount Tart shared folder directly to `~/.cal-cache` instead of `/Volumes/My Shared Files/cal-cache`
+   - Eliminates symlinks entirely
+   - Need to verify if Tart supports custom mount points
+2. **Alternative:** Use single symlink `~/.cal-cache` → `/Volumes/My Shared Files/cal-cache` instead of per-cache-type symlinks
+   - Reduces from 4 symlinks to 1
+   - Simpler to manage and repair
+3. **Alternative:** Use hardlinks instead of symlinks
+   - May not work across mount points
+   - Need to verify feasibility
+4. **Fallback:** If symlinks are only option:
+   - Add symlink check/repair on VM login (via `.zshrc` or helper script)
+   - Warn user if repair not possible with clear fix instructions
+   - Make symlink restoration idempotent and automatic
+
+**Impact:** High - affects cache reliability and user experience
+
+**Investigation needed:** Test Tart mount point options, evaluate hardlink feasibility
+
+---
+
+## New Features - Normal Priority
+
+### 4. CLI Proxy Utility for VM↔Host Command Transport
+
+**Goal:** Enable VM-based applications to execute CLI commands on the host transparently.
+
+**Use Case:** 1Password's `op` CLI requires communication with the 1Password desktop app, which runs on the host and is not accessible from within the VM.
+
+**Concept:**
+1. Alias commands in VM (e.g., `op` → `cli-proxy op`)
+2. `cli-proxy` securely transports command and arguments from VM to host
+3. Host executes actual command against host resources (e.g., 1Password desktop app)
+4. Results returned securely to VM
+5. Transparent to user - feels like native command execution
+
+**Requirements:**
+- Secure transport mechanism (SSH-based, encrypted)
+- Verbatim command/response passing
+- Low latency for interactive commands
+- Error handling and exit code preservation
+- Support for stdin/stdout/stderr
+- Configurable command allowlist for security
+
+**Potential Implementation:**
+- SSH-based command forwarding
+- Host-side daemon/service to receive and execute commands
+- VM-side client wrapper (`cli-proxy`)
+- Configuration file for allowed commands
+
+---
+
+### 5. Screenshot Drag-and-Drop Support for VM-based Coding Agents
+
+**Goal:** Enable drag-and-drop of screenshots from host into coding agents running in the VM.
+
+**Current Limitation:** On the host system, users can drag and drop screenshots directly into coding agents. This functionality doesn't work when the coding agent runs in the VM.
+
+**Required Investigation:**
+1. How do coding agents currently receive drag-and-drop screenshots?
+   - Clipboard integration?
+   - File path passing?
+   - Direct image data?
+2. What's the technical barrier in the VM?
+   - Clipboard isolation?
+   - File system isolation?
+   - GUI application integration?
+3. Potential solutions:
+   - Shared clipboard between host and VM
+   - Automatic screenshot sync to VM filesystem
+   - VNC/remote desktop integration improvements
+   - Custom bridge application
+
+**Acceptance Criteria:**
+- User can drag screenshot from host desktop
+- Screenshot appears in coding agent running in VM
+- Works with common coding agents (Claude Code, Cursor, etc.)
+- Minimal latency (feels instant)
+
+---
+
 ## 1.1 **REFINED:** Package Download Caching **HIGHEST PRIORITY**
 
 **Goal:** Cache all package downloads in host and pass through to VMs to avoid repeated downloads during development.
