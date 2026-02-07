@@ -136,61 +136,21 @@
 
 ---
 
-### 3. Shared Cache Symlink Fragility — SOLUTION ACCEPTED
+### 3. Shared Cache Symlink Fragility — ✅ COMPLETED
 
-**Problem:** Current architecture uses individual symlinks for each cache type (`~/.calf-cache/homebrew` → `/Volumes/My Shared Files/calf-cache/homebrew`, etc.). These symlinks are:
-- Easily deleted during cache clear operations
-- Confusing for testing and troubleshooting
-- Not automatically repaired if broken
+**Status:** ✅ **COMPLETED** (2026-02-07)
 
-**Solution:** [ADR-004](adr/ADR-004-cache-mount-architecture.md) — Direct virtio-fs mounting with custom tags
+This issue has been fully implemented and tested. See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) for complete implementation details.
 
-**Status:** Accepted and tested (2026-02-07). Ready for implementation.
+**Summary of Changes:**
+- Direct virtio-fs mounts replace fragile symlinks
+- macOS-compatible mount verification (`mount | grep` instead of `mountpoint -q`)
+- LaunchDaemon for boot-time persistence
+- Self-healing fallback in .zshrc
+- Migration logic removed (simplified architecture)
+- All manual tests passed (8/8)
 
-**Implementation Tasks (in order):**
-
-- [ ] **3.1 Update calf-bootstrap Tart flags** — Change `--dir` to use custom mount tag
-  - From: `--dir calf-cache:${HOME}/.calf-cache:rw,tag=com.apple.virtio-fs.automount`
-  - To: `--dir=${HOME}/.calf-cache:tag=calf-cache`
-  - Update all `tart run` invocations in calf-bootstrap
-
-- [ ] **3.2 Create calf-mount-shares.sh script** — Mount script with retry logic
-  - Deploy to `/usr/local/bin/calf-mount-shares.sh`
-  - Include migration logic (remove old symlinks before mount)
-  - Retry logic for boot timing (5 attempts, 2s delay)
-  - Logging to `/tmp/calf-mount.log`
-  - Extensible for future mounts (iOS signing, etc.)
-
-- [ ] **3.3 Create LaunchDaemon plist** — Boot-time mount persistence
-  - Deploy to `/Library/LaunchDaemons/com.calf.mount-shares.plist`
-  - RunAtLoad with KeepAlive on failure
-  - Set HOME/USER environment for admin user
-
-- [ ] **3.4 Update vm-setup.sh deployment** — Install mount infrastructure
-  - Copy calf-mount-shares.sh to /usr/local/bin/
-  - Copy LaunchDaemon plist to /Library/LaunchDaemons/
-  - Load LaunchDaemon with launchctl
-  - Remove old symlink creation code
-
-- [ ] **3.5 Add .zshrc self-healing fallback** — Belt-and-suspenders recovery
-  - Quick mount check on shell start (<10ms)
-  - Remount if unmounted (handles manual unmount edge case)
-
-- [ ] **3.6 Update cache.go VM setup methods** — Remove symlink generation
-  - Update `SetupVMHomebrewCache()`, `SetupVMNpmCache()`, `SetupVMGoCache()`, `SetupVMGitCache()`
-  - Remove symlink creation commands
-  - Add mount verification commands instead
-
-- [ ] **3.7 End-to-end testing** — Verify full implementation
-  - Test fresh `--init` creates working mounts
-  - Test reboot persistence (LaunchDaemon)
-  - Test self-healing after manual unmount
-  - Test migration from existing symlink-based VM
-  - Test snapshot/restore behavior
-
-**Impact:** High - affects cache reliability and user experience
-
-**Reference:** [ADR-004](adr/ADR-004-cache-mount-architecture.md) for full implementation details
+**Reference:** [ADR-004](adr/ADR-004-cache-mount-architecture.md)
 
 ---
 
@@ -251,6 +211,48 @@
 - Screenshot appears in coding agent running in VM
 - Works with common coding agents (Claude Code, Cursor, etc.)
 - Minimal latency (feels instant)
+
+---
+
+### 6. Go Code Parity with Updated Cache Mount Architecture
+
+**Goal:** Update Go implementation (`internal/isolation/cache.go` and `internal/isolation/tart.go`) to match the new direct virtio-fs mount architecture implemented in cal-bootstrap and scripts.
+
+**Background:** Critical Issue #3 updated shell scripts to use direct mounts instead of symlinks, with macOS-compatible mount verification. The Go code has legacy/dead code and outdated patterns that need cleanup for consistency.
+
+**Required Changes:**
+
+#### 6.1 Remove Dead Code
+- [ ] Remove `sharedCacheMount` constant (cache.go:47) - unused, references old mount format
+- [ ] Remove `GetSharedCacheMount()` method (cache.go:90-93) - only used in tests, never in production
+- [ ] Remove test `TestCacheManager_SharedCacheMount` (cache_test.go:289-296) - tests dead code
+- [ ] Update `GetHomebrewCacheHostPath()` (cache.go:95-98) if it references old format
+
+#### 6.2 Verify Mount Specification Format
+- [ ] Check if tart.go needs cal-cache mount support (currently only has tart-cache mount)
+- [ ] If adding cal-cache mount to tart.go, use new format: `${HOME}/.cal-cache:tag=cal-cache`
+- [ ] Ensure consistency with cal-bootstrap lines 241 & 1747
+
+#### 6.3 Update Comments and Documentation
+- [ ] Update comment "Mount is handled by cal-mount-shares.sh via LaunchDaemon" (appears 4x) - verify accuracy
+- [ ] Review symlink-related comments - some may reference old architecture
+- [ ] Update package-level documentation if it references symlink-based caching
+
+#### 6.4 Verify Symlink Handling Logic
+- [ ] Review `resolveRealCachePath()` (cache.go:390-429) - confirm still needed for backwards compat
+- [ ] Review symlink preservation in `Clear()` (cache.go:744-792) - confirm still needed
+- [ ] Document if/when symlinks are still used vs. direct mounts
+
+**Impact:** Low urgency - Go code works correctly with new architecture, this is cleanup/consistency
+
+**Testing:**
+- Unit tests already pass (confirmed 2026-02-07)
+- No functional impact - purely cleanup
+
+**Reference:**
+- ADR-004 for mount architecture
+- cal-bootstrap lines 241, 1747 for mount specification format
+- Code review findings from Critical Issue #3 implementation
 
 ---
 

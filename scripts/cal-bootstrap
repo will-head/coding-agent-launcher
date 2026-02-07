@@ -236,9 +236,9 @@ start_vm_background() {
     fi
 
     # Share host's package cache with VM (read-write) for Homebrew, npm, Go, Git caches
-    # Mounted to /Volumes/My Shared Files/cal-cache
+    # Mounted to ~/.cal-cache via custom mount tag (handled by cal-mount-shares.sh)
     if [ -d ~/.cal-cache ]; then
-        tart_cmd+=("--dir" "cal-cache:${HOME}/.cal-cache:rw,tag=com.apple.virtio-fs.automount")
+        tart_cmd+=("--dir" "${HOME}/.cal-cache:tag=cal-cache")
     fi
 
     tart_cmd+=("$vm")
@@ -481,7 +481,7 @@ setup_scripts_folder() {
     fi
 
     # List of scripts to deploy
-    local scripts=("vm-setup.sh" "vm-auth.sh" "vm-first-run.sh" "tmux-wrapper.sh" "vm-tmux-resurrect.sh")
+    local scripts=("vm-setup.sh" "vm-auth.sh" "vm-first-run.sh" "tmux-wrapper.sh" "vm-tmux-resurrect.sh" "cal-mount-shares.sh" "com.cal.mount-shares.plist")
     local scripts_to_copy=()
     local scripts_skipped=0
 
@@ -1742,8 +1742,9 @@ do_gui() {
     fi
 
     # Share host's package cache with VM (read-write) for Homebrew, npm, Go, Git caches
+    # Mounted to ~/.cal-cache via custom mount tag (handled by cal-mount-shares.sh)
     if [ -d ~/.cal-cache ]; then
-        tart_cmd+=("--dir" "cal-cache:${HOME}/.cal-cache:rw,tag=com.apple.virtio-fs.automount")
+        tart_cmd+=("--dir" "${HOME}/.cal-cache:tag=cal-cache")
     fi
 
     "${tart_cmd[@]}" >/dev/null 2>&1 &

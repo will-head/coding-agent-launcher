@@ -5,7 +5,7 @@
 > - Phase completion is determined by checkboxes in phase TODO files
 > - All TODOs must be tracked in phase files (code TODOs should reference this file)
 > - Operational guide: [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md)
-> - Cache architecture: [ADR-003](docs/adr/ADR-003-package-download-caching.md)
+> - Cache architecture: [ADR-003](docs/adr/ADR-003-package-download-caching.md) (symlinks) → [ADR-004](docs/adr/ADR-004-cache-mount-architecture.md) (direct mounts)
 > - Original design: [ADR-001](docs/adr/ADR-001-cal-isolation.md) (immutable)
 
 ## Current Status
@@ -14,7 +14,7 @@
 
 Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via cal-bootstrap, transparent proxy for network reliability, comprehensive git safety checks, VM detection capabilities, first-run/logout git automation, Tart cache sharing for nested VMs, Ghostty terminal emulator, and tmux session persistence are all operational.
 
-**Active Work:** Phase 1 (CLI Foundation) in progress. Project scaffolding (PR #3), Configuration Management (PR #4), Tart Wrapper (PR #5), Homebrew Cache (PR #6), npm Cache (PR #7), Go Modules Cache (PR #8), Git Cache with complete cache integration (PR #9), and Cache Clear command (PR #10) all merged. **Package download caching (1.1) complete** — Homebrew, npm, Go, and Git caches all implemented with full bootstrap integration and cache clear command. Cache architecture documented in [ADR-003](docs/adr/ADR-003-package-download-caching.md). Next: Begin Snapshot Management (1.4) or SSH Management (1.5).
+**Active Work:** Phase 1 (CLI Foundation) in progress. Project scaffolding (PR #3), Configuration Management (PR #4), Tart Wrapper (PR #5), Homebrew Cache (PR #6), npm Cache (PR #7), Go Modules Cache (PR #8), Git Cache with complete cache integration (PR #9), and Cache Clear command (PR #10) all merged. **Package download caching (1.1) complete** — Homebrew, npm, Go, and Git caches all implemented with full bootstrap integration and cache clear command. **Cache Mount Architecture (Critical Issue #3) complete** — Replaced fragile symlinks with robust direct virtio-fs mounts (LaunchDaemon + self-healing), macOS-compatible mount verification, cannot be deleted with `rm -rf`. Cache architecture evolution: [ADR-003](docs/adr/ADR-003-package-download-caching.md) (symlinks) → [ADR-004](docs/adr/ADR-004-cache-mount-architecture.md) (direct mounts). Next: Begin Snapshot Management (1.4) or SSH Management (1.5).
 
 ---
 

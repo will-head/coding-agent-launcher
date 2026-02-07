@@ -244,13 +244,13 @@ func TestCacheManager_VMCacheSetup(t *testing.T) {
 			t.Fatalf("expected at least one command")
 		}
 
-		// Verify commands contain expected operations
+		// Verify commands contain expected operations (mount verification, not symlinks)
 		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mkdir -p ~/.cal-cache") {
-			t.Fatalf("expected mkdir command in VM setup")
+		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.cal-cache \"") {
+			t.Fatalf("expected mount verification in VM setup")
 		}
-		if !strings.Contains(commandsStr, "ln -sf") {
-			t.Fatalf("expected symlink command in VM setup")
+		if !strings.Contains(commandsStr, "test -d") {
+			t.Fatalf("expected cache directory verification in VM setup")
 		}
 		if !strings.Contains(commandsStr, "HOMEBREW_CACHE") {
 			t.Fatalf("expected HOMEBREW_CACHE environment variable setup")
@@ -489,11 +489,11 @@ func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
 		}
 
 		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mkdir -p ~/.cal-cache") {
-			t.Fatalf("expected mkdir command in VM setup")
+		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.cal-cache \"") {
+			t.Fatalf("expected mount verification in VM setup")
 		}
-		if !strings.Contains(commandsStr, "ln -sf") {
-			t.Fatalf("expected symlink command in VM setup")
+		if !strings.Contains(commandsStr, "test -d") {
+			t.Fatalf("expected cache directory verification in VM setup")
 		}
 		if !strings.Contains(commandsStr, "npm config set cache") {
 			t.Fatalf("expected npm cache configuration")
@@ -674,11 +674,11 @@ func TestCacheManager_VMGoCacheSetup(t *testing.T) {
 		}
 
 		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mkdir -p ~/.cal-cache") {
-			t.Fatalf("expected mkdir command in VM setup")
+		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.cal-cache \"") {
+			t.Fatalf("expected mount verification in VM setup")
 		}
-		if !strings.Contains(commandsStr, "ln -sf") {
-			t.Fatalf("expected symlink command in VM setup")
+		if !strings.Contains(commandsStr, "test -d") {
+			t.Fatalf("expected cache directory verification in VM setup")
 		}
 		if !strings.Contains(commandsStr, "GOMODCACHE") {
 			t.Fatalf("expected GOMODCACHE environment variable setup")
@@ -855,11 +855,11 @@ func TestCacheManager_VMGitCacheSetup(t *testing.T) {
 		}
 
 		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mkdir -p ~/.cal-cache") {
-			t.Fatalf("expected mkdir command in VM setup")
+		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.cal-cache \"") {
+			t.Fatalf("expected mount verification in VM setup")
 		}
-		if !strings.Contains(commandsStr, "ln -sf") {
-			t.Fatalf("expected symlink command in VM setup")
+		if !strings.Contains(commandsStr, "test -d") {
+			t.Fatalf("expected cache directory verification in VM setup")
 		}
 	})
 

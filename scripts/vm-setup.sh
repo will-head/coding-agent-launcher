@@ -17,36 +17,75 @@ elif [ -x /usr/local/bin/brew ]; then
     eval "$(/usr/local/bin/brew shellenv)"
 fi
 
-# Configure package download caching (use shared cache from host)
-echo "📦 Configuring package download cache..."
-if [ -d "/Volumes/My Shared Files/cal-cache" ]; then
-    # Set cache environment variables for this script
-    export HOMEBREW_CACHE="/Volumes/My Shared Files/cal-cache/homebrew"
-    export npm_config_cache="/Volumes/My Shared Files/cal-cache/npm"
-    export GOMODCACHE="/Volumes/My Shared Files/cal-cache/go"
+# Configure package download caching (use direct virtio-fs mounts)
+echo "📦 Setting up CAL cache mount infrastructure..."
 
-    # Create symlinks for convenience
-    mkdir -p ~/.cal-cache
-    ln -sf "/Volumes/My Shared Files/cal-cache/homebrew" ~/.cal-cache/homebrew 2>/dev/null || true
-    ln -sf "/Volumes/My Shared Files/cal-cache/npm" ~/.cal-cache/npm 2>/dev/null || true
-    ln -sf "/Volumes/My Shared Files/cal-cache/go" ~/.cal-cache/go 2>/dev/null || true
-    ln -sf "/Volumes/My Shared Files/cal-cache/git" ~/.cal-cache/git 2>/dev/null || true
+# Deploy mount script
+if [ -f ~/scripts/cal-mount-shares.sh ]; then
+    sudo cp ~/scripts/cal-mount-shares.sh /usr/local/bin/
+    sudo chmod 755 /usr/local/bin/cal-mount-shares.sh
+    echo "  ✓ Deployed mount script to /usr/local/bin/"
+else
+    echo "  ⚠ Mount script not found in ~/scripts/"
+fi
+
+# Deploy LaunchDaemon plist
+if [ -f ~/scripts/com.cal.mount-shares.plist ]; then
+    sudo cp ~/scripts/com.cal.mount-shares.plist /Library/LaunchDaemons/
+    sudo chmod 644 /Library/LaunchDaemons/com.cal.mount-shares.plist
+    sudo chown root:wheel /Library/LaunchDaemons/com.cal.mount-shares.plist
+
+    # Load LaunchDaemon
+    sudo launchctl load /Library/LaunchDaemons/com.cal.mount-shares.plist 2>/dev/null || true
+    echo "  ✓ Deployed and loaded LaunchDaemon"
+else
+    echo "  ⚠ LaunchDaemon plist not found in ~/scripts/"
+fi
+
+# Run mount script now to mount immediately (don't wait for reboot)
+if [ -x /usr/local/bin/cal-mount-shares.sh ]; then
+    /usr/local/bin/cal-mount-shares.sh
+    echo "  ✓ Cache mounted to ~/.cal-cache"
+fi
+
+# Configure cache environment variables if mount succeeded
+if mount | grep -q " on $HOME/.cal-cache " 2>/dev/null; then
+    # Set cache environment variables for this script
+    export HOMEBREW_CACHE="$HOME/.cal-cache/homebrew"
+    export npm_config_cache="$HOME/.cal-cache/npm"
+    export GOMODCACHE="$HOME/.cal-cache/go"
 
     # Make cache configuration persistent in ~/.zshrc (only if not already present)
     if ! grep -q "HOMEBREW_CACHE.*cal-cache" ~/.zshrc 2>/dev/null; then
         echo '' >> ~/.zshrc
-        echo '# CAL: Package download cache (shared from host)' >> ~/.zshrc
+        echo '# CAL: Package download cache (direct virtio-fs mount)' >> ~/.zshrc
         echo 'export HOMEBREW_CACHE="$HOME/.cal-cache/homebrew"' >> ~/.zshrc
         echo 'export npm_config_cache="$HOME/.cal-cache/npm"' >> ~/.zshrc
         echo 'export GOMODCACHE="$HOME/.cal-cache/go"' >> ~/.zshrc
     fi
 
-    echo "  ✓ Cache configured (shared from host)"
+    # Add self-healing fallback to .zshrc (belt-and-suspenders)
+    if ! grep -q "cal-cache.*self-healing" ~/.zshrc 2>/dev/null; then
+        cat >> ~/.zshrc <<'EOF'
+
+# CAL Cache Mount Check (self-healing fallback)
+# Runs on every shell start to ensure cache is available
+# Primary mount is handled by LaunchDaemon; this is backup
+if ! mount | grep -q " on $HOME/.cal-cache " 2>/dev/null; then
+    # Not mounted - try to mount (works if virtio-fs tag exists)
+    if mount_virtiofs cal-cache ~/.cal-cache 2>/dev/null; then
+        echo "📦 CAL cache mounted (recovered)"
+    fi
+fi
+EOF
+    fi
+
+    echo "  ✓ Cache configured and ready"
     echo "    Homebrew: $HOMEBREW_CACHE"
     echo "    npm: $npm_config_cache"
     echo "    Go: $GOMODCACHE"
 else
-    echo "  ⚠ Shared cache not available, using default locations"
+    echo "  ⚠ Cache mount not available, using default locations"
 fi
 echo ""
 

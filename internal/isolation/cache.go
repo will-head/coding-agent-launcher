@@ -135,8 +135,8 @@ func (c *CacheManager) SetupHomebrewCache() error {
 }
 
 // SetupVMHomebrewCache returns shell commands to set up Homebrew cache in the VM.
-// The commands create a symlink from the VM home directory to the shared cache volume
-// and configure the HOMEBREW_CACHE environment variable.
+// The commands verify that the cache mount exists and is accessible.
+// Mount is handled by cal-mount-shares.sh via LaunchDaemon.
 // Returns nil if host cache is not available.
 func (c *CacheManager) SetupVMHomebrewCache() []string {
 	if c.homeDir == "" {
@@ -149,11 +149,13 @@ func (c *CacheManager) SetupVMHomebrewCache() []string {
 	}
 
 	vmCacheDir := "~/.cal-cache/homebrew"
-	sharedCachePath := "\"/Volumes/My Shared Files/cal-cache/homebrew\""
 
 	commands := []string{
-		"mkdir -p ~/.cal-cache",
-		fmt.Sprintf("ln -sf %s %s", sharedCachePath, vmCacheDir),
+		// Verify mount exists (cal-mount-shares.sh should have created it)
+		"mount | grep -q \" on $HOME/.cal-cache \" 2>/dev/null || echo 'Warning: ~/.cal-cache not mounted'",
+		// Verify cache subdirectory is accessible
+		fmt.Sprintf("test -d %s || echo 'Warning: Homebrew cache directory not found'", vmCacheDir),
+		// Configure environment variable
 		fmt.Sprintf("touch ~/.zshrc && grep -q 'HOMEBREW_CACHE' ~/.zshrc || echo 'export HOMEBREW_CACHE=%s' >> ~/.zshrc", vmCacheDir),
 	}
 
@@ -217,8 +219,8 @@ func (c *CacheManager) SetupNpmCache() error {
 }
 
 // SetupVMNpmCache returns shell commands to set up npm cache in the VM.
-// The commands create a symlink from the VM home directory to the shared cache volume
-// and configure the npm cache directory.
+// The commands verify that the cache mount exists and configure npm.
+// Mount is handled by cal-mount-shares.sh via LaunchDaemon.
 // Returns nil if host cache is not available.
 func (c *CacheManager) SetupVMNpmCache() []string {
 	if c.homeDir == "" {
@@ -231,11 +233,13 @@ func (c *CacheManager) SetupVMNpmCache() []string {
 	}
 
 	vmCacheDir := "~/.cal-cache/npm"
-	sharedCachePath := "\"/Volumes/My Shared Files/cal-cache/npm\""
 
 	commands := []string{
-		"mkdir -p ~/.cal-cache",
-		fmt.Sprintf("ln -sf %s %s", sharedCachePath, vmCacheDir),
+		// Verify mount exists (cal-mount-shares.sh should have created it)
+		"mount | grep -q \" on $HOME/.cal-cache \" 2>/dev/null || echo 'Warning: ~/.cal-cache not mounted'",
+		// Verify cache subdirectory is accessible
+		fmt.Sprintf("test -d %s || echo 'Warning: npm cache directory not found'", vmCacheDir),
+		// Configure npm cache directory
 		fmt.Sprintf("npm config set cache %s", vmCacheDir),
 	}
 
@@ -309,8 +313,8 @@ func (c *CacheManager) SetupGoCache() error {
 }
 
 // SetupVMGoCache returns shell commands to set up Go cache in the VM.
-// The commands create a symlink from the VM home directory to the shared cache volume
-// and configure the GOMODCACHE environment variable.
+// The commands verify that the cache mount exists and configure GOMODCACHE.
+// Mount is handled by cal-mount-shares.sh via LaunchDaemon.
 // Returns nil if host cache is not available.
 func (c *CacheManager) SetupVMGoCache() []string {
 	if c.homeDir == "" {
@@ -323,12 +327,14 @@ func (c *CacheManager) SetupVMGoCache() []string {
 	}
 
 	vmCacheDir := "~/.cal-cache/go"
-	sharedCachePath := "\"/Volumes/My Shared Files/cal-cache/go\""
 	gomodcachePath := "~/.cal-cache/go/pkg/mod"
 
 	commands := []string{
-		"mkdir -p ~/.cal-cache",
-		fmt.Sprintf("ln -sf %s %s", sharedCachePath, vmCacheDir),
+		// Verify mount exists (cal-mount-shares.sh should have created it)
+		"mount | grep -q \" on $HOME/.cal-cache \" 2>/dev/null || echo 'Warning: ~/.cal-cache not mounted'",
+		// Verify cache subdirectory is accessible
+		fmt.Sprintf("test -d %s || echo 'Warning: Go cache directory not found'", vmCacheDir),
+		// Configure environment variable
 		fmt.Sprintf("touch ~/.zshrc && grep -q 'GOMODCACHE' ~/.zshrc || echo 'export GOMODCACHE=%s' >> ~/.zshrc", gomodcachePath),
 	}
 
@@ -441,7 +447,8 @@ func (c *CacheManager) SetupGitCache() error {
 }
 
 // SetupVMGitCache returns shell commands to set up git cache in the VM.
-// The commands create a symlink from the VM home directory to the shared cache volume.
+// The commands verify that the cache mount exists and is accessible.
+// Mount is handled by cal-mount-shares.sh via LaunchDaemon.
 // Returns nil if host cache is not available.
 func (c *CacheManager) SetupVMGitCache() []string {
 	if c.homeDir == "" {
@@ -454,11 +461,12 @@ func (c *CacheManager) SetupVMGitCache() []string {
 	}
 
 	vmCacheDir := "~/.cal-cache/git"
-	sharedCachePath := "\"/Volumes/My Shared Files/cal-cache/git\""
 
 	commands := []string{
-		"mkdir -p ~/.cal-cache",
-		fmt.Sprintf("ln -sf %s %s", sharedCachePath, vmCacheDir),
+		// Verify mount exists (cal-mount-shares.sh should have created it)
+		"mount | grep -q \" on $HOME/.cal-cache \" 2>/dev/null || echo 'Warning: ~/.cal-cache not mounted'",
+		// Verify cache subdirectory is accessible
+		fmt.Sprintf("test -d %s || echo 'Warning: Git cache directory not found'", vmCacheDir),
 	}
 
 	return commands
