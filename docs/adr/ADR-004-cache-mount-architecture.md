@@ -262,6 +262,99 @@ sudo launchctl load /Library/LaunchDaemons/com.cal.mount-shares.plist
 echo "  ✓ CAL cache mount infrastructure installed"
 ```
 
+### 6. No-Mount Mode (Isolated VMs)
+
+The mount architecture supports a `--no-mount` mode for creating fully isolated VMs with zero host filesystem mounts, providing maximum security for untrusted code execution.
+
+**Architecture (No-Mount Mode):**
+
+```
+Host (calf-bootstrap)                      VM (calf-dev)
+────────────────────                      ─────────────
+tart run --no-graphics vm-name            calf-mount-shares.sh detects
+  (NO --dir flags)                        NO_MOUNT=true in ~/.calf-vm-config
+                                                    │
+                                                    ▼
+                                          Creates local directories:
+                                          ~/.calf-cache/
+                                          ├── homebrew/  (local)
+                                          ├── npm/       (local)
+                                          ├── go/        (local)
+                                          └── git/       (local)
+```
+
+**Host-Side Behavior:**
+
+When `--no-mount` is enabled during `init`, both `start_vm_background()` and `do_gui()` skip all `--dir` flags:
+
+```bash
+# Normal mode (default):
+tart run --no-graphics \
+  --dir "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount" \
+  --dir="${HOME}/.calf-cache:tag=calf-cache" \
+  vm-name
+
+# No-mount mode:
+tart run --no-graphics vm-name    # No --dir flags
+```
+
+**Configuration Storage:**
+
+| Location | Purpose |
+|----------|---------|
+| VM: `~/.calf-vm-config` | `NO_MOUNT=true/false` — read by `calf-mount-shares.sh` |
+| Host: `~/.calf-vm-no-mount` | Marker file checked by `should_skip_mounts()` for subsequent operations |
+
+**Lifecycle:**
+- Set at VM creation time (`--init --no-mount`) — **permanent** for VM lifetime
+- Cannot be changed after creation (destroy and recreate to change modes)
+- `should_skip_mounts()` checks command-line flag during init, host marker file after init
+- `vm-setup.sh` preserves `NO_MOUNT` setting when rewriting `~/.calf-vm-config`
+
+**VM-Side Behavior (`calf-mount-shares.sh`):**
+
+```bash
+# Reads NO_MOUNT from ~/.calf-vm-config
+if [ "$NO_MOUNT" = true ]; then
+    # Create local cache directories (no host shares available)
+    mkdir -p "$HOME/.calf-cache"/{homebrew,npm,go,git}
+else
+    # Standard: mount calf-cache tag via virtio-fs
+    mount_share "calf-cache" "$HOME/.calf-cache" || true
+fi
+```
+
+### 7. Tart Cache: Planned Mount System Alignment
+
+The calf-cache and tart-cache currently use different mount strategies. The Go implementation (`calf isolation`) should align both to use the same direct virtio-fs mount system.
+
+**Current State (Two Approaches):**
+
+| Cache | Host `--dir` Flag | VM Location | Approach |
+|-------|-------------------|-------------|----------|
+| calf-cache | `--dir=${HOME}/.calf-cache:tag=calf-cache` | `~/.calf-cache` (direct mount) | Custom tag + virtio-fs mount |
+| tart-cache | `--dir tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount` | `/Volumes/My Shared Files/tart-cache` + symlink to `~/.tart/cache` | Automount + symlink |
+
+**Planned Alignment (Go Implementation — `calf isolation`):**
+
+```bash
+# Host: custom tag with read-only
+--dir=${HOME}/.tart/cache:tag=tart-cache:ro
+
+# VM: calf-mount-shares.sh mounts directly (read-only)
+mount_share "tart-cache" "$HOME/.tart/cache"
+```
+
+This eliminates the symlink for tart-cache in the Go implementation:
+- Consistent architecture (both caches use direct virtio-fs mounts)
+- Self-healing via LaunchDaemon and .zshrc fallback
+- Cannot be accidentally deleted (mount, not symlink)
+- No spaces in path (avoids `/Volumes/My Shared Files/` compatibility issues)
+
+**Note:** The `calf-bootstrap` shell script retains the automount/symlink approach for tart-cache. This is acceptable — the bootstrap script predates the mount architecture and works reliably. Only the Go implementation (`calf isolation`) needs alignment.
+
+**No-mount mode:** When `--no-mount` is active, tart-cache is also skipped entirely — VMs download Tart images independently.
+
 ---
 
 ## Alternatives Considered
@@ -376,6 +469,18 @@ export HOMEBREW_CACHE="/Volumes/My Shared Files/cal-cache/homebrew"
 
 **Mitigation:** Architecture designed for extensibility - add new `mount_share` calls to script.
 
+### No-Mount Mode
+
+**Issue:** VM created with `--no-mount` has no host filesystem shares available.
+
+**Mitigation:** `calf-mount-shares.sh` detects `NO_MOUNT=true` in `~/.calf-vm-config` and creates local cache directories instead of attempting mounts. Packages download fresh into VM-local storage. Setting is permanent — stored in both VM config and host marker file.
+
+### Tart Cache Symlink (Bootstrap Only)
+
+**Issue:** tart-cache uses automount/symlink approach in `calf-bootstrap`, inconsistent with calf-cache direct mount.
+
+**Mitigation:** Acceptable for bootstrap script. Go implementation (`calf isolation`) will use direct virtio-fs mount for consistency. See Implementation §7 (Tart Cache: Planned Mount System Alignment).
+
 ---
 
 ## Testing Requirements
@@ -441,7 +546,10 @@ If issues discovered:
 
 - [ADR-003](ADR-003-package-download-caching.md) - Original cache implementation (symlink-based)
 - [ADR-002](ADR-002-tart-vm-operational-guide.md) - Tart VM operational guide
-- [PLAN-PHASE-01-TODO.md](../PLAN-PHASE-01-TODO.md) - Critical issue #3 (Shared Cache Symlink Fragility)
+- [ADR-005](ADR-005-cli-rename-cal-to-calf.md) - CLI rename from cal to calf
+- [PLAN-PHASE-01-TODO.md](../PLAN-PHASE-01-TODO.md) - Critical Issue #3 (completed), New Feature #5 (no-mount), New Feature #7 (Go code parity)
+- [calf-mount-shares.sh](../../scripts/calf-mount-shares.sh) - VM-side mount script (no-mount mode support)
+- [internal/isolation/tart.go](../../internal/isolation/tart.go) - Go tart wrapper (tart-cache alignment TODO)
 
 ---
 
