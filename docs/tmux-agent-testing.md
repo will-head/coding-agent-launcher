@@ -13,7 +13,7 @@ Verify that Claude Code, Cursor agent, and opencode all function correctly when 
 
 ```bash
 # Start VM with tmux
-./scripts/cal-bootstrap --run
+./scripts/calf-bootstrap --run
 
 # Inside VM, verify tmux is active
 echo $TMUX  # Should output socket path
@@ -73,7 +73,7 @@ tmux -V     # Should show tmux version
 
 **Known Considerations:**
 - Cursor agent may use simpler TUI or plain output
-- Keychain unlock from cal-bootstrap should still work in tmux
+- Keychain unlock from calf-bootstrap should still work in tmux
 
 ---
 
@@ -111,7 +111,7 @@ tmux -V     # Should show tmux version
 2. Start a long-running task
 3. Detach from tmux (Ctrl+b d)
 4. Exit SSH session
-5. Reconnect: `./scripts/cal-bootstrap --run`
+5. Reconnect: `./scripts/calf-bootstrap --run`
 6. Verify agent still running and task in progress
 
 **Expected Result:**
@@ -385,7 +385,7 @@ If any agent has issues:
 If tmux causes issues:
 
 1. tmux is now default (no flag required)
-2. Users can continue using plain SSH: `./scripts/cal-bootstrap --run`
+2. Users can continue using plain SSH: `./scripts/calf-bootstrap --run`
 3. Can disable tmux installation in vm-setup.sh if needed
 4. Document known issues and workarounds
 

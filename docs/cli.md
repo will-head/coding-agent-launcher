@@ -1,7 +1,7 @@
 # CLI Reference
 
 > Planned CLI commands (Phase 1 in progress). Current bootstrap commands are in [Bootstrap Guide](bootstrap.md).
-> See [ADR-002 § Phase 1 Readiness](adr/ADR-002-tart-vm-operational-guide.md) for command mapping from cal-bootstrap.
+> See [ADR-002 § Phase 1 Readiness](adr/ADR-002-tart-vm-operational-guide.md) for command mapping from calf-bootstrap.
 
 ```bash
 cal isolation <command>    # or: cal iso <command>
@@ -93,9 +93,9 @@ cal list
 cal status
 ```
 
-## Command Mapping (cal-bootstrap -> cal isolation)
+## Command Mapping (calf-bootstrap -> cal isolation)
 
-| cal-bootstrap | cal isolation |
+| calf-bootstrap | cal isolation |
 |---------------|---------------|
 | `--init` | `init` |
 | `--run` | `start` |

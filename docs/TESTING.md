@@ -7,7 +7,7 @@
 Before starting these tests, ensure:
 - [ ] You have completed Phase 0.7 (VM setup with auto-login)
 - [ ] `cal-dev` VM exists and is accessible
-- [ ] You can run `./scripts/cal-bootstrap --run` successfully
+- [ ] You can run `./scripts/calf-bootstrap --run` successfully
 - [ ] Screen Sharing is available: `open vnc://$(tart ip cal-dev)`
 
 ## Test Environment
@@ -16,23 +16,23 @@ Run these tests from a clean state:
 
 ```bash
 # Stop the VM if running
-./scripts/cal-bootstrap --stop
+./scripts/calf-bootstrap --stop
 
 # Start fresh
-./scripts/cal-bootstrap --run
+./scripts/calf-bootstrap --run
 ```
 
 ---
 
-## Test 1: Keychain Unlock via cal-bootstrap
+## Test 1: Keychain Unlock via calf-bootstrap
 
 **What this tests:** Keychain is automatically unlocked when connecting to the VM.
 
 ### Steps
 
-1. Start the VM using cal-bootstrap:
+1. Start the VM using calf-bootstrap:
    ```bash
-   ./scripts/cal-bootstrap --run
+   ./scripts/calf-bootstrap --run
    ```
 
 2. Verify keychain unlock message appears:
@@ -47,7 +47,7 @@ Run these tests from a clean state:
 
 ### Expected Result
 
-- [ ] cal-bootstrap shows "✓ Keychain unlocked"
+- [ ] calf-bootstrap shows "✓ Keychain unlocked"
 - [ ] Keychain shows it's unlocked (no "locked" message)
 - [ ] Command completes without asking for password
 
@@ -133,9 +133,9 @@ If browser doesn't open:
    exit
    ```
 
-3. Reconnect via cal-bootstrap:
+3. Reconnect via calf-bootstrap:
    ```bash
-   ./scripts/cal-bootstrap --run
+   ./scripts/calf-bootstrap --run
    ```
 
 4. Verify agent authentication persists:
@@ -179,14 +179,14 @@ If authentication is lost:
 2. Stop the VM gracefully:
    ```bash
    exit  # from SSH session
-   ./scripts/cal-bootstrap --stop
+   ./scripts/calf-bootstrap --stop
    ```
 
 3. Wait for VM to stop completely (5-10 seconds)
 
 4. Start the VM again:
    ```bash
-   ./scripts/cal-bootstrap --run
+   ./scripts/calf-bootstrap --run
    ```
 
 5. Verify keychain unlock happens automatically:
@@ -227,7 +227,7 @@ If credentials are lost after reboot:
 
 ---
 
-## Test 5: Auto-Unlock on cal-bootstrap --run
+## Test 5: Auto-Unlock on calf-bootstrap --run
 
 **What this tests:** Every connection attempt unlocks keychain automatically.
 
@@ -240,13 +240,13 @@ If credentials are lost after reboot:
    exit
    ```
 
-3. Connect multiple times using cal-bootstrap:
+3. Connect multiple times using calf-bootstrap:
    ```bash
-   ./scripts/cal-bootstrap --run
+   ./scripts/calf-bootstrap --run
    # Verify keychain unlock message
    exit
 
-   ./scripts/cal-bootstrap --run
+   ./scripts/calf-bootstrap --run
    # Verify keychain unlock message again
    exit
    ```
@@ -303,7 +303,7 @@ If credentials are lost after reboot:
 
 Phase 0.8 is **COMPLETE** when:
 
-- ✅ Test 1: Keychain unlocks automatically via cal-bootstrap
+- ✅ Test 1: Keychain unlocks automatically via calf-bootstrap
 - ✅ Test 2: Agent authentication works via Screen Sharing
 - ✅ Test 3: Credentials persist across SSH reconnects
 - ✅ Test 4: **Credentials persist across VM reboots** (critical)
@@ -366,7 +366,7 @@ opencode
 1. Let VM go to sleep (or force sleep if possible)
 2. Wake VM
 3. Verify keychain status
-4. Reconnect via cal-bootstrap
+4. Reconnect via calf-bootstrap
 5. Check if auto-unlock still works
 
 ---
@@ -415,10 +415,10 @@ tart ip cal-dev
 tart list
 
 # Stop VM
-./scripts/cal-bootstrap --stop
+./scripts/calf-bootstrap --stop
 
 # Start VM
-./scripts/cal-bootstrap --run
+./scripts/calf-bootstrap --run
 
 # Screen Sharing
 open vnc://$(tart ip cal-dev)

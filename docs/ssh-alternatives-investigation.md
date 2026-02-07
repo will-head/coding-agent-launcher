@@ -152,7 +152,7 @@ if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] &&
   exec tmux new-session -A -s main
 fi
 
-# Or in cal-bootstrap --run mode
+# Or in calf-bootstrap --run mode
 ssh -t admin@$(tart ip cal-dev) "tmux new-session -A -s cal"
 ```
 
@@ -351,7 +351,7 @@ if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] &&
   exec tmux new-session -A -s main
 fi
 
-# 4. Update cal-bootstrap --run to use tmux
+# 4. Update calf-bootstrap --run to use tmux
 ssh -t admin@$(tart ip cal-dev) "tmux new-session -A -s cal"
 ```
 
@@ -379,7 +379,7 @@ open vnc://$(tart ip cal-dev)
    - Create default `.tmux.conf` with sensible defaults
    - Optional: Add auto-attach to `.zshrc`
 
-2. **Update `cal-bootstrap --run`:**
+2. **Update `calf-bootstrap --run`:**
    - tmux is default (no flag needed)
    - Default: SSH without tmux (backward compatible)
    - With flag: `ssh -t admin@IP "tmux new-session -A -s cal"`
@@ -478,7 +478,7 @@ opencode
 ### For Phase 2 (Future CLI):
 
 Implement ADR-specified "SSH tunnel with banner overlay":
-- `cal isolation run` wraps SSH
+- `calf isolation run` wraps SSH
 - Adds status banner at top
 - Handles hotkeys (S, C, P, R, Q)
 - Provides better UX than raw SSH

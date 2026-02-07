@@ -16,7 +16,7 @@ The Cursor agent (`agent` command) previously failed to authenticate in Tart VMs
 **Solution:**
 - Automatic keychain unlock on every SSH login (via .zshrc)
 - First-run automation triggers vm-auth.sh after init
-- VM password stored securely in ~/.cal-vm-config (mode 600)
+- VM password stored securely in ~/.calf-vm-config (mode 600)
 
 ## Solution Implemented
 
@@ -26,8 +26,8 @@ Based on the [official Tart FAQ](https://tart.run/faq/), we implemented automati
 
 ```bash
 # In .zshrc - runs on every login
-if [ -f ~/.cal-vm-config ]; then
-    source ~/.cal-vm-config
+if [ -f ~/.calf-vm-config ]; then
+    source ~/.calf-vm-config
     security unlock-keychain -p "${VM_PASSWORD:-admin}" login.keychain 2>/dev/null
 fi
 ```
@@ -40,8 +40,8 @@ Added automatic vm-auth.sh execution on first login after init:
 
 ```bash
 # In .zshrc - runs once after init
-if [ -f ~/.cal-first-run ]; then
-    rm -f ~/.cal-first-run
+if [ -f ~/.calf-first-run ]; then
+    rm -f ~/.calf-first-run
     CAL_FIRST_RUN=1 zsh ~/scripts/vm-auth.sh
     exit 0
 fi
@@ -66,7 +66,7 @@ else
 fi
 ```
 
-### cal-bootstrap
+### calf-bootstrap
 
 Added `unlock_keychain()` function that's called when:
 - Starting a stopped VM (`--run`)
@@ -84,12 +84,12 @@ unlock_keychain() {
 
 ## Usage
 
-### Automated (via cal-bootstrap)
+### Automated (via calf-bootstrap)
 
 The keychain is automatically unlocked when you connect:
 
 ```bash
-./scripts/cal-bootstrap --run
+./scripts/calf-bootstrap --run
 ```
 
 ### Manual (via SSH)
@@ -284,7 +284,7 @@ cat ~/.cursor/cli-config.json | grep -i user
 **Solution Summary:**
 - Automatic keychain unlock on every SSH login via .zshrc
 - First-run automation triggers vm-auth.sh after init
-- VM password stored securely in ~/.cal-vm-config (mode 600)
+- VM password stored securely in ~/.calf-vm-config (mode 600)
 - OAuth flows complete successfully with unlocked keychain
 
 **All agents work:** Cursor, Claude Code, and Opencode all authenticate reliably over SSH after initial setup.

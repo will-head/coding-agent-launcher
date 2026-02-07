@@ -5,7 +5,7 @@
 **Use When:** Merging PRs from "Needs Merging" section into main branch
 
 **Key Principles:**
-- **User approval required on HOST** - ask permission before all commands (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
+- **User approval required on HOST** - ask permission before all commands (auto-approved when `CALF_VM=true`; see [CALF_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
 - **Use merge commit** - preserves full PR history with `--merge` flag
 - **Delete branches after merge** - clean up both local and remote
 - **Track merged PRs** - move to "Merged" section in STATUS.md
@@ -15,10 +15,10 @@
 
 ## Overview
 
-The Merge PR workflow integrates tested PRs into the main branch. With user approval at each step on HOST (auto-approved when `CAL_VM=true`), the agent merges the PR, updates the local main branch, deletes the feature branch, and updates all documentation.
+The Merge PR workflow integrates tested PRs into the main branch. With user approval at each step on HOST (auto-approved when `CALF_VM=true`), the agent merges the PR, updates the local main branch, deletes the feature branch, and updates all documentation.
 
 **Target:** PR → main branch (integration)
-**Approvals:** Required on HOST for all commands (auto-approved when `CAL_VM=true`)
+**Approvals:** Required on HOST for all commands (auto-approved when `CALF_VM=true`)
 **Steps:** 8 (full merge and cleanup)
 
 ---
@@ -27,10 +27,10 @@ The Merge PR workflow integrates tested PRs into the main branch. With user appr
 
 Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
 - This is the Merge PR workflow (8-step with approvals)
-- Key principles: user approval required on HOST (auto-approved when `CAL_VM=true`), merge commit strategy, delete branches, track merged PRs, update PLAN.md
+- Key principles: user approval required on HOST (auto-approved when `CALF_VM=true`), merge commit strategy, delete branches, track merged PRs, update PLAN.md
 - 8 steps: Read Queue → Fetch PR → Merge PR → Update Local Main → Delete Branch → Update STATUS.md → Update PLAN.md → Commit Docs
 - Integrates tested PRs into main
-- All commands require user approval on HOST (auto-approved when `CAL_VM=true`)
+- All commands require user approval on HOST (auto-approved when `CALF_VM=true`)
 
 ---
 
@@ -59,7 +59,7 @@ Read `STATUS.md` to find the first PR in "Needs Merging" section:
 
 ### Step 2: Fetch PR Details
 
-**Ask user approval** (auto-approved when `CAL_VM=true`), then verify PR is ready to merge:
+**Ask user approval** (auto-approved when `CALF_VM=true`), then verify PR is ready to merge:
 
 ```bash
 gh pr view <PR#>
@@ -79,7 +79,7 @@ gh pr view <PR#>
 
 ### Step 3: Merge PR
 
-**Ask user approval** (auto-approved when `CAL_VM=true`), then merge with merge commit strategy:
+**Ask user approval** (auto-approved when `CALF_VM=true`), then merge with merge commit strategy:
 
 ```bash
 gh pr merge <PR#> --merge
@@ -101,7 +101,7 @@ The `--merge` flag creates a merge commit that preserves the full PR history, in
 
 ### Step 4: Update Local Main
 
-**Ask user approval** (auto-approved when `CAL_VM=true`), then update local main branch:
+**Ask user approval** (auto-approved when `CALF_VM=true`), then update local main branch:
 
 ```bash
 git checkout main
@@ -117,7 +117,7 @@ This ensures the local repository reflects the merged changes.
 
 ### Step 5: Delete Branch
 
-**Ask user approval** (auto-approved when `CAL_VM=true`), then delete both local and remote PR branch:
+**Ask user approval** (auto-approved when `CALF_VM=true`), then delete both local and remote PR branch:
 
 ```bash
 git branch -d <branch-name>
@@ -170,7 +170,7 @@ Update PLAN.md and phase TODO files to reflect current project status after merg
 
 ### Step 8: Commit Documentation
 
-**Ask user approval** (auto-approved when `CAL_VM=true`), then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format). Stage STATUS.md, PLAN.md, and phase TODO/DONE files. Push after commit.
+**Ask user approval** (auto-approved when `CALF_VM=true`), then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format). Stage STATUS.md, PLAN.md, and phase TODO/DONE files. Push after commit.
 
 **Verify push succeeds** - ensures documentation updates are preserved.
 
@@ -265,14 +265,14 @@ Local branch deletion with `-d` is safe:
 
 ### Approval Requirements
 
-User approval is required on HOST (auto-approved when `CAL_VM=true`) for:
+User approval is required on HOST (auto-approved when `CALF_VM=true`) for:
 - Fetching PR details (`gh pr view`)
 - Merging PR (`gh pr merge`)
 - Updating local main (`git checkout` + `git pull`)
 - Deleting branches (`git branch -d` + `git push --delete`)
 - Committing documentation (`git commit` + `git push`)
 
-**Note:** `git push --delete` is a destructive remote operation and always requires explicit approval, even when `CAL_VM=true`.
+**Note:** `git push --delete` is a destructive remote operation and always requires explicit approval, even when `CALF_VM=true`.
 
 ### Documentation Commit Format
 

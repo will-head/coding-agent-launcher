@@ -13,7 +13,7 @@
 
 | Test | Result | Notes |
 |------|--------|-------|
-| Custom tag syntax | ✅ Pass | `--dir=${HOME}/test-cal-cache:tag=test-cache` works with Tart 2.30.1 |
+| Custom tag syntax | ✅ Pass | `--dir=${HOME}/test-calf-cache:tag=test-cache` works with Tart 2.30.1 |
 | mount_virtiofs | ✅ Pass | `mount_virtiofs test-cache ~/test-mount` mounts successfully |
 | Bidirectional sync | ✅ Pass | Files created in VM appear on host immediately |
 | Permission inheritance | ✅ Pass | Files owned by `admin` in VM, host user on host |
@@ -28,11 +28,11 @@ The current cache sharing implementation uses symlinks inside the VM:
 
 ```
 Host Machine                              VM (cal-dev)
-~/.cal-cache/                             /Volumes/My Shared Files/cal-cache/
+~/.calf-cache/                             /Volumes/My Shared Files/cal-cache/
 ├── homebrew/                             (Tart virtio-fs automount)
 ├── npm/                                              │
 ├── go/                                               ▼
-└── git/                                  ~/.cal-cache/
+└── git/                                  ~/.calf-cache/
                                           ├── homebrew → /Volumes/.../homebrew
                                           ├── npm → /Volumes/.../npm
                                           ├── go → /Volumes/.../go
@@ -43,7 +43,7 @@ Host Machine                              VM (cal-dev)
 
 **4 symlinks = 4 points of failure.** These symlinks are:
 
-1. **Easily deleted** - User or coding agent can accidentally `rm -rf ~/.cal-cache`
+1. **Easily deleted** - User or coding agent can accidentally `rm -rf ~/.calf-cache`
 2. **Not self-healing** - Once deleted, cache breaks until manual intervention
 3. **Confusing for debugging** - Symlink chains obscure where data actually lives
 4. **Not protectable** - macOS `chflags schg` does not work on symlinks (only regular files)
@@ -65,19 +65,19 @@ Host Machine                              VM (cal-dev)
 ### New Architecture
 
 ```
-Host (cal-bootstrap)                      VM (cal-dev)
+Host (calf-bootstrap)                      VM (cal-dev)
 ────────────────────                      ─────────────
 tart run \                                LaunchDaemon runs at boot:
-  --dir=${HOME}/.cal-cache:               ┌─────────────────────────────┐
+  --dir=${HOME}/.calf-cache:               ┌─────────────────────────────┐
         tag=cal-cache \                   │ /usr/local/bin/             │
-  --dir=${HOME}/signing:                  │   cal-mount-shares.sh       │
+  --dir=${HOME}/signing:                  │   calf-mount-shares.sh       │
         tag=cal-signing \                 │ ├─ mount cal-cache          │
   vm-name                                 │ ├─ mount cal-signing        │
                                           │ └─ (future mounts)          │
                                           └─────────────────────────────┘
                                                       │
                                                       ▼
-                                          ~/.cal-cache (direct mount)
+                                          ~/.calf-cache (direct mount)
                                           ~/signing (direct mount)
 ```
 
@@ -96,21 +96,21 @@ tart run \                                LaunchDaemon runs at boot:
 
 ## Implementation
 
-### 1. Host-Side Changes (cal-bootstrap)
+### 1. Host-Side Changes (calf-bootstrap)
 
 **Change Tart `--dir` flag to use custom mount tag:**
 
 ```bash
 # Before (automount to /Volumes/My Shared Files/):
---dir cal-cache:${HOME}/.cal-cache:rw,tag=com.apple.virtio-fs.automount
+--dir calf-cache:${HOME}/.calf-cache:rw,tag=com.apple.virtio-fs.automount
 
 # After (custom tag for manual mount):
---dir=${HOME}/.cal-cache:tag=cal-cache
+--dir=${HOME}/.calf-cache:tag=cal-cache
 ```
 
 ### 2. VM-Side Mount Script
 
-**Create `/usr/local/bin/cal-mount-shares.sh`:**
+**Create `/usr/local/bin/calf-mount-shares.sh`:**
 
 ```bash
 #!/bin/bash
@@ -169,7 +169,7 @@ mount_share() {
 }
 
 # Mount CAL cache
-mount_share "cal-cache" "$HOME/.cal-cache" || true
+mount_share "cal-cache" "$HOME/.calf-cache" || true
 
 # Future: iOS code signing
 # mount_share "cal-signing" "$HOME/Library/MobileDevice" || true
@@ -194,7 +194,7 @@ echo "$(date): CAL mount script complete"
 
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/cal-mount-shares.sh</string>
+        <string>/usr/local/bin/calf-mount-shares.sh</string>
     </array>
 
     <key>RunAtLoad</key>
@@ -231,9 +231,9 @@ echo "$(date): CAL mount script complete"
 # CAL Cache Mount Check (self-healing fallback)
 # Runs on every shell start to ensure cache is available
 # Primary mount is handled by LaunchDaemon; this is backup
-if ! mountpoint -q ~/.cal-cache 2>/dev/null; then
+if ! mountpoint -q ~/.calf-cache 2>/dev/null; then
     # Not mounted - try to mount (works if virtio-fs tag exists)
-    if mount_virtiofs cal-cache ~/.cal-cache 2>/dev/null; then
+    if mount_virtiofs cal-cache ~/.calf-cache 2>/dev/null; then
         echo "📦 CAL cache mounted (recovered)"
     fi
 fi
@@ -248,8 +248,8 @@ fi
 echo "📦 Setting up CAL cache mount infrastructure..."
 
 # Deploy mount script
-sudo cp ~/scripts/cal-mount-shares.sh /usr/local/bin/
-sudo chmod 755 /usr/local/bin/cal-mount-shares.sh
+sudo cp ~/scripts/calf-mount-shares.sh /usr/local/bin/
+sudo chmod 755 /usr/local/bin/calf-mount-shares.sh
 
 # Deploy LaunchDaemon
 sudo cp ~/scripts/com.cal.mount-shares.plist /Library/LaunchDaemons/
@@ -271,14 +271,14 @@ echo "  ✓ CAL cache mount infrastructure installed"
 **Approach:** Replace 4 symlinks with 1 symlink at parent level.
 
 ```
-~/.cal-cache → /Volumes/My Shared Files/cal-cache
+~/.calf-cache → /Volumes/My Shared Files/cal-cache
 ```
 
 | Pros | Cons |
 |------|------|
 | Minimal code change | Still a symlink (can be deleted) |
 | Reduces failure points 4→1 | No self-healing |
-| Easier to understand | Agent could still `rm -rf ~/.cal-cache` |
+| Easier to understand | Agent could still `rm -rf ~/.calf-cache` |
 
 **Rejection reason:** Does not meet requirement #1 (cannot be accidentally deleted).
 
@@ -291,7 +291,7 @@ echo "  ✓ CAL cache mount infrastructure installed"
 ```bash
 # In .zshrc - recreate symlinks if missing
 for cache in homebrew npm go git; do
-    ln -sf "/Volumes/My Shared Files/cal-cache/$cache" ~/.cal-cache/$cache
+    ln -sf "/Volumes/My Shared Files/cal-cache/$cache" ~/.calf-cache/$cache
 done
 ```
 
@@ -346,15 +346,15 @@ export HOMEBREW_CACHE="/Volumes/My Shared Files/cal-cache/homebrew"
 
 ### Migration from Current Architecture
 
-**Issue:** Existing VMs have `~/.cal-cache` as directory with symlinks.
+**Issue:** Existing VMs have `~/.calf-cache` as directory with symlinks.
 
 **Mitigation:** Mount script detects and removes old symlink-based structure before mounting.
 
 ### Manual Unmount
 
-**Issue:** User could run `umount ~/.cal-cache`.
+**Issue:** User could run `umount ~/.calf-cache`.
 
-**Mitigation:** .zshrc fallback remounts on next shell start. Full self-healing requires reboot or manual `cal-mount-shares.sh`.
+**Mitigation:** .zshrc fallback remounts on next shell start. Full self-healing requires reboot or manual `calf-mount-shares.sh`.
 
 ### Snapshot/Restore
 
@@ -386,7 +386,7 @@ export HOMEBREW_CACHE="/Volumes/My Shared Files/cal-cache/homebrew"
    ```bash
    # On host:
    mkdir -p ~/test-cal-cache
-   tart run --dir=${HOME}/test-cal-cache:tag=test-cache vm-name
+   tart run --dir=${HOME}/test-calf-cache:tag=test-cache vm-name
 
    # In VM:
    mkdir -p ~/test-mount
@@ -423,7 +423,7 @@ No migration needed. New architecture deployed during vm-setup.sh.
 
 ### For Existing VMs
 
-1. Update scripts on host (cal-bootstrap changes)
+1. Update scripts on host (calf-bootstrap changes)
 2. SSH into VM and run updated vm-setup.sh
 3. Mount script handles cleanup of old symlinks automatically
 4. Reboot to activate LaunchDaemon
@@ -432,7 +432,7 @@ No migration needed. New architecture deployed during vm-setup.sh.
 
 If issues discovered:
 1. Remove LaunchDaemon: `sudo launchctl unload /Library/LaunchDaemons/com.cal.mount-shares.plist`
-2. Remove mount script: `sudo rm /usr/local/bin/cal-mount-shares.sh`
+2. Remove mount script: `sudo rm /usr/local/bin/calf-mount-shares.sh`
 3. Recreate symlinks manually or re-run old vm-setup.sh
 
 ---

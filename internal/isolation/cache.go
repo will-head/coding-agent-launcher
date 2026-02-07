@@ -1,4 +1,4 @@
-// Package isolation provides VM isolation and management for CAL.
+// Package isolation provides VM isolation and management for CALF.
 package isolation
 
 import (
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// CacheManager manages package download caches for CAL VMs.
+// CacheManager manages package download caches for CALF VMs.
 type CacheManager struct {
 	homeDir      string
 	cacheBaseDir string
@@ -31,20 +31,20 @@ type CacheInfo struct {
 }
 
 const (
-	// homebrewCacheDir is the directory name for Homebrew cache under .cal-cache.
+	// homebrewCacheDir is the directory name for Homebrew cache under .calf-cache.
 	homebrewCacheDir = "homebrew"
 	// homebrewDownloadsDir is the subdirectory for Homebrew package downloads.
 	homebrewDownloadsDir = "downloads"
 	// homebrewCaskDir is the subdirectory for Homebrew Cask downloads.
 	homebrewCaskDir = "Cask"
-	// npmCacheDir is the directory name for npm cache under .cal-cache.
+	// npmCacheDir is the directory name for npm cache under .calf-cache.
 	npmCacheDir = "npm"
-	// goCacheDir is the directory name for Go cache under .cal-cache.
+	// goCacheDir is the directory name for Go cache under .calf-cache.
 	goCacheDir = "go"
-	// gitCacheDir is the directory name for git cache under .cal-cache.
+	// gitCacheDir is the directory name for git cache under .calf-cache.
 	gitCacheDir = "git"
 	// sharedCacheMount is the Tart directory mount specification for cache sharing.
-	sharedCacheMount = "cal-cache:~/.cal-cache"
+	sharedCacheMount = "calf-cache:~/.calf-cache"
 )
 
 // getDiskUsage returns the disk usage in bytes for a path using du -sk.
@@ -78,7 +78,7 @@ func NewCacheManager() *CacheManager {
 	}
 	return &CacheManager{
 		homeDir:      homeDir,
-		cacheBaseDir: filepath.Join(homeDir, ".cal-cache"),
+		cacheBaseDir: filepath.Join(homeDir, ".calf-cache"),
 	}
 }
 
@@ -94,7 +94,7 @@ func (c *CacheManager) GetSharedCacheMount() string {
 
 // GetHomebrewCacheHostPath returns the host path for Homebrew cache mounting.
 func (c *CacheManager) GetHomebrewCacheHostPath() string {
-	return fmt.Sprintf("cal-cache:%s", c.getHomebrewCachePath())
+	return fmt.Sprintf("calf-cache:%s", c.getHomebrewCachePath())
 }
 
 // getNpmCachePath returns the host path for npm cache.
@@ -136,7 +136,7 @@ func (c *CacheManager) SetupHomebrewCache() error {
 
 // SetupVMHomebrewCache returns shell commands to set up Homebrew cache in the VM.
 // The commands verify that the cache mount exists and is accessible.
-// Mount is handled by cal-mount-shares.sh via LaunchDaemon.
+// Mount is handled by calf-mount-shares.sh via LaunchDaemon.
 // Returns nil if host cache is not available.
 func (c *CacheManager) SetupVMHomebrewCache() []string {
 	if c.homeDir == "" {
@@ -148,11 +148,11 @@ func (c *CacheManager) SetupVMHomebrewCache() []string {
 		return nil
 	}
 
-	vmCacheDir := "~/.cal-cache/homebrew"
+	vmCacheDir := "~/.calf-cache/homebrew"
 
 	commands := []string{
-		// Verify mount exists (cal-mount-shares.sh should have created it)
-		"mount | grep -q \" on $HOME/.cal-cache \" 2>/dev/null || echo 'Warning: ~/.cal-cache not mounted'",
+		// Verify mount exists (calf-mount-shares.sh should have created it)
+		"mount | grep -q \" on $HOME/.calf-cache \" 2>/dev/null || echo 'Warning: ~/.calf-cache not mounted'",
 		// Verify cache subdirectory is accessible
 		fmt.Sprintf("test -d %s || echo 'Warning: Homebrew cache directory not found'", vmCacheDir),
 		// Configure environment variable
@@ -220,7 +220,7 @@ func (c *CacheManager) SetupNpmCache() error {
 
 // SetupVMNpmCache returns shell commands to set up npm cache in the VM.
 // The commands verify that the cache mount exists and configure npm.
-// Mount is handled by cal-mount-shares.sh via LaunchDaemon.
+// Mount is handled by calf-mount-shares.sh via LaunchDaemon.
 // Returns nil if host cache is not available.
 func (c *CacheManager) SetupVMNpmCache() []string {
 	if c.homeDir == "" {
@@ -232,11 +232,11 @@ func (c *CacheManager) SetupVMNpmCache() []string {
 		return nil
 	}
 
-	vmCacheDir := "~/.cal-cache/npm"
+	vmCacheDir := "~/.calf-cache/npm"
 
 	commands := []string{
-		// Verify mount exists (cal-mount-shares.sh should have created it)
-		"mount | grep -q \" on $HOME/.cal-cache \" 2>/dev/null || echo 'Warning: ~/.cal-cache not mounted'",
+		// Verify mount exists (calf-mount-shares.sh should have created it)
+		"mount | grep -q \" on $HOME/.calf-cache \" 2>/dev/null || echo 'Warning: ~/.calf-cache not mounted'",
 		// Verify cache subdirectory is accessible
 		fmt.Sprintf("test -d %s || echo 'Warning: npm cache directory not found'", vmCacheDir),
 		// Configure npm cache directory
@@ -314,7 +314,7 @@ func (c *CacheManager) SetupGoCache() error {
 
 // SetupVMGoCache returns shell commands to set up Go cache in the VM.
 // The commands verify that the cache mount exists and configure GOMODCACHE.
-// Mount is handled by cal-mount-shares.sh via LaunchDaemon.
+// Mount is handled by calf-mount-shares.sh via LaunchDaemon.
 // Returns nil if host cache is not available.
 func (c *CacheManager) SetupVMGoCache() []string {
 	if c.homeDir == "" {
@@ -326,12 +326,12 @@ func (c *CacheManager) SetupVMGoCache() []string {
 		return nil
 	}
 
-	vmCacheDir := "~/.cal-cache/go"
-	gomodcachePath := "~/.cal-cache/go/pkg/mod"
+	vmCacheDir := "~/.calf-cache/go"
+	gomodcachePath := "~/.calf-cache/go/pkg/mod"
 
 	commands := []string{
-		// Verify mount exists (cal-mount-shares.sh should have created it)
-		"mount | grep -q \" on $HOME/.cal-cache \" 2>/dev/null || echo 'Warning: ~/.cal-cache not mounted'",
+		// Verify mount exists (calf-mount-shares.sh should have created it)
+		"mount | grep -q \" on $HOME/.calf-cache \" 2>/dev/null || echo 'Warning: ~/.calf-cache not mounted'",
 		// Verify cache subdirectory is accessible
 		fmt.Sprintf("test -d %s || echo 'Warning: Go cache directory not found'", vmCacheDir),
 		// Configure environment variable
@@ -388,7 +388,7 @@ func (c *CacheManager) getGitCachePath() string {
 // getSharedVolumeCachePath returns the shared volume path for a cache type when running in a VM.
 // Returns empty string if not in a VM environment or if using a non-default cache base directory (e.g., in tests).
 // resolveRealCachePath resolves the real cache path by following symlinks.
-// Always starts from the local cache path (~/.cal-cache/{type}) and follows symlinks if present.
+// Always starts from the local cache path (~/.calf-cache/{type}) and follows symlinks if present.
 // Returns the real path where data is stored, or empty string if path doesn't exist.
 // Only resolves symlinks when using default cache base directory (prevents test interference).
 func (c *CacheManager) resolveRealCachePath(localPath string) (string, error) {
@@ -397,7 +397,7 @@ func (c *CacheManager) resolveRealCachePath(localPath string) (string, error) {
 	if c.homeDir == "" {
 		return "", nil
 	}
-	expectedCacheBaseDir := filepath.Join(c.homeDir, ".cal-cache")
+	expectedCacheBaseDir := filepath.Join(c.homeDir, ".calf-cache")
 	if c.cacheBaseDir != expectedCacheBaseDir {
 		return "", nil
 	}
@@ -416,7 +416,7 @@ func (c *CacheManager) resolveRealCachePath(localPath string) (string, error) {
 		target, err := filepath.EvalSymlinks(localPath)
 		if err != nil {
 			// If the symlink exists but its target doesn't exist, treat as unavailable
-			// This happens when ~/.cal-cache/{type} is a symlink to a shared volume that isn't mounted
+			// This happens when ~/.calf-cache/{type} is a symlink to a shared volume that isn't mounted
 			if os.IsNotExist(err) {
 				return "", nil
 			}
@@ -448,7 +448,7 @@ func (c *CacheManager) SetupGitCache() error {
 
 // SetupVMGitCache returns shell commands to set up git cache in the VM.
 // The commands verify that the cache mount exists and is accessible.
-// Mount is handled by cal-mount-shares.sh via LaunchDaemon.
+// Mount is handled by calf-mount-shares.sh via LaunchDaemon.
 // Returns nil if host cache is not available.
 func (c *CacheManager) SetupVMGitCache() []string {
 	if c.homeDir == "" {
@@ -460,11 +460,11 @@ func (c *CacheManager) SetupVMGitCache() []string {
 		return nil
 	}
 
-	vmCacheDir := "~/.cal-cache/git"
+	vmCacheDir := "~/.calf-cache/git"
 
 	commands := []string{
-		// Verify mount exists (cal-mount-shares.sh should have created it)
-		"mount | grep -q \" on $HOME/.cal-cache \" 2>/dev/null || echo 'Warning: ~/.cal-cache not mounted'",
+		// Verify mount exists (calf-mount-shares.sh should have created it)
+		"mount | grep -q \" on $HOME/.calf-cache \" 2>/dev/null || echo 'Warning: ~/.calf-cache not mounted'",
 		// Verify cache subdirectory is accessible
 		fmt.Sprintf("test -d %s || echo 'Warning: Git cache directory not found'", vmCacheDir),
 	}
@@ -740,7 +740,7 @@ func removeAllWithPermFix(path string) error {
 // cacheType must be one of: "homebrew", "npm", "go", "git"
 // dryRun if true, simulates clearing without actually deleting files
 // Returns true if cache was cleared (or would be cleared in dry run), false if cache didn't exist
-// Always starts at ~/.cal-cache/{type} and follows symlinks to clear actual data.
+// Always starts at ~/.calf-cache/{type} and follows symlinks to clear actual data.
 // If the cache path is a symlink (e.g., in a VM), preserves the symlink and only clears contents.
 func (c *CacheManager) Clear(cacheType string, dryRun bool) (bool, error) {
 	if c.homeDir == "" {

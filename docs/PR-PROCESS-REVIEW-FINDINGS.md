@@ -3,7 +3,7 @@
 > Analysis of PR #3 to identify process inefficiencies and propose improvements
 
 **Date:** 2026-01-31
-**PR Analyzed:** [#3 - Add project scaffolding for CAL CLI](https://github.com/will-head/coding-agent-launcher/pull/3)
+**PR Analyzed:** [#3 - Add project scaffolding for CALF CLI](https://github.com/will-head/coding-agent-launcher/pull/3)
 **Scope:** 4 new files (go.mod, .gitignore, Makefile, cmd/cal/main.go) + directory structure
 
 ---
@@ -131,7 +131,7 @@ Steps: Read Queue → Fetch PR → Read Requirements → Review Code → Fix Iss
 
 ### Recommendation 6: Collapse Happy-Path Workflows
 
-**Change:** For `CAL_VM=true` environments (where approvals are auto-granted), allow combining sequential workflows in a single session. For example:
+**Change:** For `CALF_VM=true` environments (where approvals are auto-granted), allow combining sequential workflows in a single session. For example:
 
 - **Create + Review:** Create PR, then immediately self-review before submitting
 - **Test + Merge:** If manual tests pass, immediately proceed to merge

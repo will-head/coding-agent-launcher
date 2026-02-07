@@ -6,7 +6,7 @@
 
 **Goal:** Seamless agent launching with safety UI.
 
-**Deliverable:** `cal isolation run <workspace>` launches agent with full UX.
+**Deliverable:** `calf isolation run <workspace>` launches agent with full UX.
 
 ---
 

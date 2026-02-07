@@ -256,7 +256,7 @@ echo $TERM
 2. **Test from multiple terminals** (Ghostty, iTerm2, Terminal.app)
 3. **Test opencode in each session**
 4. **Verify terminal capabilities**
-5. **Test cal-bootstrap commands** (run, ssh, login)
+5. **Test calf-bootstrap commands** (run, ssh, login)
 
 ## Open Questions
 
@@ -285,7 +285,7 @@ echo $TERM
    exec /opt/homebrew/bin/tmux "$@"
    ```
 
-2. **Updated cal-bootstrap**:
+2. **Updated calf-bootstrap**:
    - Modified `setup_scripts_folder()` to copy `tmux-wrapper.sh` to VM's `~/scripts/`
    - Updated all SSH tmux calls in `do_run()` and `do_restart()` to use `~/scripts/tmux-wrapper.sh`
    - Added `setup_scripts_folder()` calls before SSH connections to ensure wrapper exists
@@ -299,15 +299,15 @@ echo $TERM
 
 | Test | Terminal | Result | Notes |
 |------|----------|--------|-------|
-| cal-bootstrap --run | Ghostty | ✅ PASS | Connects successfully, no "missing terminal" error |
-| cal-bootstrap --run | Terminal.app | ✅ PASS | Connects successfully |
+| calf-bootstrap --run | Ghostty | ✅ PASS | Connects successfully, no "missing terminal" error |
+| calf-bootstrap --run | Terminal.app | ✅ PASS | Connects successfully |
 | opencode run | Inside tmux | ✅ PASS | Completes in ~11s, no hanging |
 | Wrapper script | VM deployment | ✅ PASS | Script exists and is executable |
 
 ### Verification
 
-- ✅ Ghostty terminal: `cal-bootstrap --run` works without errors
-- ✅ Terminal.app: `cal-bootstrap --run` works correctly
+- ✅ Ghostty terminal: `calf-bootstrap --run` works without errors
+- ✅ Terminal.app: `calf-bootstrap --run` works correctly
 - ✅ Opencode: `opencode run "test message"` completes successfully (~11s), no hang
 - ✅ Wrapper script: Deployed to `~/scripts/tmux-wrapper.sh` in VM, executable
 
@@ -322,7 +322,7 @@ echo $TERM
 ### Files Changed
 
 - `scripts/tmux-wrapper.sh` (new file)
-- `scripts/cal-bootstrap` (updated `setup_scripts_folder()`, `do_run()`, `do_restart()`)
+- `scripts/calf-bootstrap` (updated `setup_scripts_folder()`, `do_run()`, `do_restart()`)
 
 ---
 

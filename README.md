@@ -1,4 +1,4 @@
-# CAL - Coding Agent Loader
+# CALF - Coding Agent Loader
 
 > **Status:** Phase 0 (Bootstrap) Complete | Phase 1 (CLI Foundation) In Progress
 
@@ -20,17 +20,17 @@ VM-based sandbox for running AI coding agents (Claude Code, Cursor, opencode) sa
 ## Quick Start
 
 ```bash
-# 1. Install Tart (optional - cal-bootstrap will auto-install if not present)
+# 1. Install Tart (optional - calf-bootstrap will auto-install if not present)
 brew install cirruslabs/cli/tart
 
 # 2. Run bootstrap script (creates VMs, installs tools, sets up SSH keys)
-./scripts/cal-bootstrap --init
+./scripts/calf-bootstrap --init
 
 # 3. After manual login setup, start developing
-./scripts/cal-bootstrap --run
+./scripts/calf-bootstrap --run
 ```
 
-**Note:** cal-bootstrap will automatically install Tart via Homebrew if it's not already installed.
+**Note:** calf-bootstrap will automatically install Tart via Homebrew if it's not already installed.
 
 See [Bootstrap Guide](docs/bootstrap.md) for setup instructions.
 

@@ -1,8 +1,8 @@
 .PHONY: build test lint install clean
 
-# Build the cal binary
+# Build the calf binary
 build:
-	go build -o cal ./cmd/cal
+	go build -o calf ./cmd/calf
 
 # Run all tests
 test:
@@ -16,14 +16,14 @@ lint:
 # Install binary to GOPATH/bin or /usr/local/bin
 install:
 	@if [ -n "$$GOPATH" ]; then \
-		go install ./cmd/cal; \
+		go install ./cmd/calf; \
 	else \
-		go build -o /usr/local/bin/cal ./cmd/cal || { echo "Error: Failed to install to /usr/local/bin. Try with sudo or set GOPATH."; exit 1; }; \
+		go build -o /usr/local/bin/calf ./cmd/calf || { echo "Error: Failed to install to /usr/local/bin. Try with sudo or set GOPATH."; exit 1; }; \
 	fi
 
 # Clean build artifacts
 clean:
-	rm -f cal
+	rm -f calf
 	rm -f *.out
 	rm -f *.test
 	rm -rf test-output/

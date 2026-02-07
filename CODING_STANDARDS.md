@@ -1,6 +1,6 @@
 # Coding Standards
 
-This document establishes mandatory coding standards for CAL development. These standards are derived from common errors found in code reviews and must be followed to maintain code quality and prevent repeated mistakes.
+This document establishes mandatory coding standards for CALF development. These standards are derived from common errors found in code reviews and must be followed to maintain code quality and prevent repeated mistakes.
 
 ---
 
@@ -73,10 +73,10 @@ if _, err := exec.LookPath("tart"); err != nil {
 **Example:**
 ```bash
 # This is acceptable in documentation:
-open vnc://$(tart ip cal-dev)   # password: admin
+open vnc://$(tart ip calf-dev)   # password: admin
 
 # Better (with production guidance):
-open vnc://$(tart ip cal-dev)   # password: admin (default, change for production)
+open vnc://$(tart ip calf-dev)   # password: admin (default, change for production)
 ```
 
 ---

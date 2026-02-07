@@ -59,14 +59,14 @@ echo "7. Sessions after restore:"
 tmux list-sessions 2>/dev/null || echo "   No sessions"
 echo ""
 
-# Try to attach to cal-dev
-echo "8. Attempting to attach to cal-dev..."
-if tmux has-session -t cal-dev 2>/dev/null; then
-    echo "   ✓ cal-dev session exists!"
+# Try to attach to calf-dev
+echo "8. Attempting to attach to calf-dev..."
+if tmux has-session -t calf-dev 2>/dev/null; then
+    echo "   ✓ calf-dev session exists!"
     echo "   Attaching..."
-    TERM=xterm-256color tmux attach -t cal-dev
+    TERM=xterm-256color tmux attach -t calf-dev
 else
-    echo "   ✗ cal-dev session not found"
+    echo "   ✗ calf-dev session not found"
     echo "   Creating new session..."
-    TERM=xterm-256color tmux new-session -s cal-dev
+    TERM=xterm-256color tmux new-session -s calf-dev
 fi

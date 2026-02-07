@@ -11,7 +11,7 @@
 
 ## Context
 
-CAL's bootstrap process (`cal-bootstrap --init`) creates a fresh VM from a base image and installs all required tools: Homebrew packages, npm CLI tools, Go modules, and git repositories (e.g., TPM for tmux plugins). Each `--init` downloads hundreds of megabytes from the internet, taking 5-10 minutes even on a fast connection.
+CAL's bootstrap process (`calf-bootstrap --init`) creates a fresh VM from a base image and installs all required tools: Homebrew packages, npm CLI tools, Go modules, and git repositories (e.g., TPM for tmux plugins). Each `--init` downloads hundreds of megabytes from the internet, taking 5-10 minutes even on a fast connection.
 
 During development, `--init` runs frequently (testing changes, recovering from broken VMs, creating snapshots). Repeated downloads waste time, bandwidth, and introduce failure points from network timeouts.
 
@@ -21,17 +21,17 @@ The three-tier VM architecture (cal-clean -> cal-dev -> cal-init) means that eve
 
 ## Decision
 
-We implement a host-persistent cache at `~/.cal-cache/` shared with VMs via Tart's virtio-fs directory mount. Each package manager gets its own subdirectory, and VMs access the cache through symlinks to the Tart mount point.
+We implement a host-persistent cache at `~/.calf-cache/` shared with VMs via Tart's virtio-fs directory mount. Each package manager gets its own subdirectory, and VMs access the cache through symlinks to the Tart mount point.
 
 ### Architecture
 
 ```
 Host Machine                              VM (cal-dev)
-~/.cal-cache/                             /Volumes/My Shared Files/cal-cache/
+~/.calf-cache/                             /Volumes/My Shared Files/cal-cache/
 ├── homebrew/                             (Tart virtio-fs mount, read-write)
 │   ├── downloads/                                    |
 │   └── Cask/                                         v
-├── npm/                                  ~/.cal-cache/
+├── npm/                                  ~/.calf-cache/
 ├── go/                                   ├── homebrew -> /Volumes/My Shared Files/cal-cache/homebrew
 │   └── pkg/                              ├── npm -> /Volumes/My Shared Files/cal-cache/npm
 │       ├── mod/                          ├── go -> /Volumes/My Shared Files/cal-cache/go
@@ -43,11 +43,11 @@ Host Machine                              VM (cal-dev)
 ### Tart Mount Specification
 
 ```
---dir cal-cache:${HOME}/.cal-cache:rw,tag=com.apple.virtio-fs.automount
+--dir calf-cache:${HOME}/.calf-cache:rw,tag=com.apple.virtio-fs.automount
 ```
 
 - **Label:** `cal-cache`
-- **Host path:** `~/.cal-cache`
+- **Host path:** `~/.calf-cache`
 - **Mode:** Read-write (both host and VM can populate cache)
 - **Filesystem:** virtio-fs with automount tag
 
@@ -55,10 +55,10 @@ Host Machine                              VM (cal-dev)
 
 | Cache | Host Path | VM Environment | Packages |
 |-------|-----------|----------------|----------|
-| Homebrew | `~/.cal-cache/homebrew/` | `HOMEBREW_CACHE` | sshuttle, python, git, etc. |
-| npm | `~/.cal-cache/npm/` | `npm config set cache` | claude, ccs, codex CLI tools |
-| Go modules | `~/.cal-cache/go/` | `GOMODCACHE` | staticcheck, goimports, delve |
-| Git clones | `~/.cal-cache/git/` | Direct path reference | TPM (tmux plugin manager) |
+| Homebrew | `~/.calf-cache/homebrew/` | `HOMEBREW_CACHE` | sshuttle, python, git, etc. |
+| npm | `~/.calf-cache/npm/` | `npm config set cache` | claude, ccs, codex CLI tools |
+| Go modules | `~/.calf-cache/go/` | `GOMODCACHE` | staticcheck, goimports, delve |
+| Git clones | `~/.calf-cache/git/` | Direct path reference | TPM (tmux plugin manager) |
 
 ---
 
@@ -70,27 +70,27 @@ Host Machine                              VM (cal-dev)
 
 The `CacheManager` struct provides methods for each cache type:
 
-- **Host setup** (`Setup*Cache()`): Creates cache directories on the host. Called during `cal-bootstrap --init`.
+- **Host setup** (`Setup*Cache()`): Creates cache directories on the host. Called during `calf-bootstrap --init`.
 - **VM setup** (`SetupVM*Cache()`): Returns shell commands to create symlinks and configure environment variables in the VM. Executed via SSH during vm-setup.sh.
-- **Cache info** (`Get*CacheInfo()`): Returns path, size, availability, and last access time. Used by `cal cache status`.
+- **Cache info** (`Get*CacheInfo()`): Returns path, size, availability, and last access time. Used by `calf cache status`.
 - **Git operations** (`CacheGitRepo()`, `UpdateGitRepos()`): Clone repositories to cache and update with `git fetch --all`.
 
 ### Shell Integration
 
-**cal-bootstrap (host side):**
+**calf-bootstrap (host side):**
 - Sets cache environment variables temporarily during script execution (lines 43-49)
-- Creates `~/.cal-cache/{homebrew,npm,go,git}` directories during `--init`
-- Passes `--dir cal-cache:...` to all `tart run` invocations
+- Creates `~/.calf-cache/{homebrew,npm,go,git}` directories during `--init`
+- Passes `--dir calf-cache:...` to all `tart run` invocations
 
 **vm-setup.sh (VM side):**
 - Detects shared cache at `/Volumes/My Shared Files/cal-cache/`
 - Sets temporary environment variables for script execution
-- Creates `~/.cal-cache/` symlinks to mount point
+- Creates `~/.calf-cache/` symlinks to mount point
 - Adds permanent exports to `~/.zshrc` (idempotent, checks before appending)
 - Configures npm cache via `npm config set cache`
 
 **vm-tmux-resurrect.sh:**
-- Uses cached TPM from `~/.cal-cache/git/tpm/` when available
+- Uses cached TPM from `~/.calf-cache/git/tpm/` when available
 - Falls back to GitHub clone if cache unavailable
 
 ### CLI Command
@@ -101,23 +101,23 @@ $ cal cache status
 Cache Status:
 
 Homebrew:
-  Location: /Users/admin/.cal-cache/homebrew
+  Location: /Users/admin/.calf-cache/homebrew
   Status: Ready
   Size: 1.5 GB
   Last access: 2026-02-03T12:34:56Z
 
 npm:
-  Location: /Users/admin/.cal-cache/npm
+  Location: /Users/admin/.calf-cache/npm
   Status: Ready
   Size: 256 MB
 
 Go:
-  Location: /Users/admin/.cal-cache/go
+  Location: /Users/admin/.calf-cache/go
   Status: Ready
   Size: 512 MB
 
 Git:
-  Location: /Users/admin/.cal-cache/git
+  Location: /Users/admin/.calf-cache/git
   Status: Ready
   Size: 38 MB
   Cached repos: 1
@@ -130,7 +130,7 @@ Git:
 
 A deliberate design decision separates host and VM cache configuration:
 
-| Aspect | Host (cal-bootstrap) | VM (vm-setup.sh) |
+| Aspect | Host (calf-bootstrap) | VM (vm-setup.sh) |
 |--------|---------------------|-------------------|
 | **Scope** | Temporary (script execution only) | Permanent (`~/.zshrc`) |
 | **Rationale** | Avoid unexpected changes to user's system | VM is isolated, controlled environment |
@@ -161,7 +161,7 @@ Each package manager handles its own cache validation:
 - **Go**: Uses `go.sum` checksums; re-fetches on integrity failure
 - **Git**: Repositories updated with `git fetch --all` before use
 
-No custom invalidation logic is needed. The cache clear command (`cal cache clear`) provides manual cache management for troubleshooting or disk space recovery.
+No custom invalidation logic is needed. The cache clear command (`calf cache clear`) provides manual cache management for troubleshooting or disk space recovery.
 
 ---
 
@@ -234,11 +234,11 @@ Cursor CLI installed as `cursor-agent` but docs and verification referenced `age
 
 Repositories cloned during vm-auth (Step 9) were lost when cal-init snapshot was created. Silent data loss — no error messages.
 
-**Root Cause:** cal-bootstrap stopped the VM immediately after vm-auth exited without flushing filesystem buffers. Clone data in write buffers was lost before snapshot creation.
+**Root Cause:** calf-bootstrap stopped the VM immediately after vm-auth exited without flushing filesystem buffers. Clone data in write buffers was lost before snapshot creation.
 
 **Fix:** Added explicit `sync && sleep 2` SSH call after vm-auth completes, before VM stop. Mirrors existing sync pattern used for flag files. Adds 2-3 seconds to --init for data integrity.
 
-**Files:** `scripts/cal-bootstrap` (line ~1338)
+**Files:** `scripts/calf-bootstrap` (line ~1338)
 
 ### BUG-005 Edge Cases: tmux-resurrect Session Persistence
 
@@ -251,18 +251,18 @@ Two edge cases discovered in the tmux-resurrect session persistence feature (ori
 Save hooks ran unconditionally during --init, capturing authentication screens into session data. On first user login, stale auth prompts appeared instead of a clean shell.
 
 - **Root Cause:** Save triggers (detach hook, logout hook) not gated by first-run flag
-- **Fix:** Gate all save triggers on `~/.cal-first-run` flag. Architectural change: vm-auth.sh handles auth only, vm-first-run.sh enables persistence after first login
+- **Fix:** Gate all save triggers on `~/.calf-first-run` flag. Architectural change: vm-auth.sh handles auth only, vm-first-run.sh enables persistence after first login
 - **Commit:** `823059a`
 
 **Edge Case 2: Stale state after --restart**
 
 Detach with 3 windows, immediate --restart, only 2 windows restored. Most recent save was lost.
 
-- **Root Cause:** Explicit save in cal-bootstrap used `tmux run-shell -b` (background) with 0.5s wait. VM stop killed the background save mid-write, corrupting the save file. Restore fell back to the previous (stale) save
+- **Root Cause:** Explicit save in calf-bootstrap used `tmux run-shell -b` (background) with 0.5s wait. VM stop killed the background save mid-write, corrupting the save file. Restore fell back to the previous (stale) save
 - **Fix:** Removed explicit saves from --stop/--restart/--gui (detach hook already saves). Added 10-second delay before VM stop to let detach hook save complete
 - **Commit:** `fc2a4a4`
 
-**Files:** `scripts/cal-bootstrap`, `scripts/vm-tmux-resurrect.sh`, `scripts/vm-auth.sh`, `scripts/vm-first-run.sh`
+**Files:** `scripts/calf-bootstrap`, `scripts/vm-tmux-resurrect.sh`, `scripts/vm-auth.sh`, `scripts/vm-first-run.sh`
 
 ### Additional Minor Fixes
 
@@ -271,7 +271,7 @@ Detach with 3 windows, immediate --restart, only 2 windows restored. Most recent
 | `7453dd0` | tmux-resurrect clearing: use `rm -rf` to delete subdirectories |
 | `bf17a90` | Keep first-run flag until auth completes + fix Ctrl+C handling |
 | `e7e2bef` | Clear tmux session data at end of vm-auth.sh |
-| `2574804` | Move tmux session clearing to cal-bootstrap Step 10 |
+| `2574804` | Move tmux session clearing to calf-bootstrap Step 10 |
 
 ### Summary
 
@@ -285,7 +285,7 @@ Detach with 3 windows, immediate --restart, only 2 windows restored. Most recent
 
 ## Cache Clear Command
 
-The `cal cache clear` command (implemented in PR #10) provides manual cache management:
+The `calf cache clear` command (implemented in PR #10) provides manual cache management:
 
 ```bash
 # Interactive mode - prompts for each cache

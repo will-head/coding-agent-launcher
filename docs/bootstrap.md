@@ -5,73 +5,73 @@
 ## Quick Start
 
 ```bash
-# 1. Install Tart (optional - cal-bootstrap will auto-install if not present)
+# 1. Install Tart (optional - calf-bootstrap will auto-install if not present)
 brew install cirruslabs/cli/tart
 
 # 2. Run bootstrap script (creates VMs, installs tools, sets up SSH keys)
-./scripts/cal-bootstrap --init
+./scripts/calf-bootstrap --init
 
 # 3. After manual login setup, start developing
-./scripts/cal-bootstrap --run
+./scripts/calf-bootstrap --run
 
 # OR: Restart VM and reconnect (quick refresh)
-./scripts/cal-bootstrap --restart
+./scripts/calf-bootstrap --restart
 
 # OR: Launch with GUI console (VNC with bidirectional clipboard)
-./scripts/cal-bootstrap --gui
+./scripts/calf-bootstrap --gui
 ```
 
-**Note:** cal-bootstrap will automatically install Tart via Homebrew if it's not already installed.
+**Note:** calf-bootstrap will automatically install Tart via Homebrew if it's not already installed.
 
-**Migration Note:** If you have an existing `cal-initialised` VM from before this change, it will not be automatically renamed. You can:
+**Migration Note:** If you have an existing `calf-initialised` VM from before this change, it will not be automatically renamed. You can:
 1. Keep it as a backup
-2. Delete it manually: `tart delete cal-initialised`
-3. Or re-run `--init` to create fresh `cal-init`
+2. Delete it manually: `tart delete calf-initialised`
+3. Or re-run `--init` to create fresh `calf-init`
 
-## cal-bootstrap Script
+## calf-bootstrap Script
 
-The `cal-bootstrap` script automates VM setup and management.
+The `calf-bootstrap` script automates VM setup and management.
 
 ### Commands
 
 ```bash
-# First-time setup (creates cal-clean, cal-dev, cal-init)
-./scripts/cal-bootstrap --init
-./scripts/cal-bootstrap -i
+# First-time setup (creates calf-clean, calf-dev, calf-init)
+./scripts/calf-bootstrap --init
+./scripts/calf-bootstrap -i
 
-# Start cal-dev and SSH in (default if VMs exist)
-./scripts/cal-bootstrap --run
-./scripts/cal-bootstrap          # Auto-detects mode
+# Start calf-dev and SSH in (default if VMs exist)
+./scripts/calf-bootstrap --run
+./scripts/calf-bootstrap          # Auto-detects mode
 
-# Restart cal-dev and SSH in (quick refresh)
-./scripts/cal-bootstrap --restart
-./scripts/cal-bootstrap -r
+# Restart calf-dev and SSH in (quick refresh)
+./scripts/calf-bootstrap --restart
+./scripts/calf-bootstrap -r
 
 # Launch with GUI console (VNC with clipboard support)
-./scripts/cal-bootstrap --gui
-./scripts/cal-bootstrap -g
+./scripts/calf-bootstrap --gui
+./scripts/calf-bootstrap -g
 
-# Stop cal-dev
-./scripts/cal-bootstrap --stop
+# Stop calf-dev
+./scripts/calf-bootstrap --stop
 
 # Show VM status and connection info
-./scripts/cal-bootstrap --status
-./scripts/cal-bootstrap -s
+./scripts/calf-bootstrap --status
+./scripts/calf-bootstrap -s
 
 # Snapshot management
-./scripts/cal-bootstrap --snapshot list
-./scripts/cal-bootstrap -S list
-./scripts/cal-bootstrap -S create before-refactor
-./scripts/cal-bootstrap -S restore before-refactor
-./scripts/cal-bootstrap -S restore cal-init  # Restore from base
-./scripts/cal-bootstrap -S delete before-refactor
+./scripts/calf-bootstrap --snapshot list
+./scripts/calf-bootstrap -S list
+./scripts/calf-bootstrap -S create before-refactor
+./scripts/calf-bootstrap -S restore before-refactor
+./scripts/calf-bootstrap -S restore calf-init  # Restore from base
+./scripts/calf-bootstrap -S delete before-refactor
 
 # Skip confirmation prompts
-./scripts/cal-bootstrap -y -S restore cal-init
+./scripts/calf-bootstrap -y -S restore calf-init
 
 # Force script deployment (skip optimization, for troubleshooting)
-./scripts/cal-bootstrap --run --clean
-./scripts/cal-bootstrap --restart --clean
+./scripts/calf-bootstrap --run --clean
+./scripts/calf-bootstrap --restart --clean
 ```
 
 ### Git Safety Features
@@ -79,9 +79,9 @@ The `cal-bootstrap` script automates VM setup and management.
 CAL automatically checks for uncommitted changes and unpushed commits before destructive operations to prevent data loss.
 
 **Protected operations:**
-- `--init` - Checks cal-dev before deleting and recreating
-- `--snapshot restore` - Checks cal-dev before replacing (if cal-dev exists); creates from snapshot if cal-dev doesn't exist
-- `--snapshot delete` - Checks VM being deleted (except cal-clean base image)
+- `--init` - Checks calf-dev before deleting and recreating
+- `--snapshot restore` - Checks calf-dev before replacing (if calf-dev exists); creates from snapshot if calf-dev doesn't exist
+- `--snapshot delete` - Checks VM being deleted (except calf-clean base image)
 
 **What is checked:**
 - **Uncommitted changes** - Modified files not yet committed
@@ -127,13 +127,13 @@ For corporate environments with restrictive network proxies, CAL supports transp
 **Usage:**
 ```bash
 # Auto mode (default) - detects if proxy is needed
-./scripts/cal-bootstrap --init
+./scripts/calf-bootstrap --init
 
 # Force proxy on (always enable)
-./scripts/cal-bootstrap --init --proxy on
+./scripts/calf-bootstrap --init --proxy on
 
 # Force proxy off (disable)
-./scripts/cal-bootstrap --init --proxy off
+./scripts/calf-bootstrap --init --proxy off
 ```
 
 **Proxy Modes:**
@@ -156,7 +156,7 @@ proxy-log         # View proxy logs
 
 ### Nested VM Support (Tart Cache Sharing)
 
-CAL automatically shares the host's Tart cache directory with cal-dev, enabling nested virtualization without re-downloading base images.
+CAL automatically shares the host's Tart cache directory with calf-dev, enabling nested virtualization without re-downloading base images.
 
 **What is shared:**
 - Host's `~/.tart/cache/` directory (contains OCI images like macos-sequoia-base:latest)
@@ -166,17 +166,17 @@ CAL automatically shares the host's Tart cache directory with cal-dev, enabling 
 
 **Benefits:**
 - Saves 30-47GB download when using nested VMs
-- Enables running `tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest` inside cal-dev instantly
+- Enables running `tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest` inside calf-dev instantly
 - Supports nested VM development and testing workflows
 
-**Tools installed in cal-dev:**
+**Tools installed in calf-dev:**
 - Tart (for creating nested VMs)
 - Ghostty (modern terminal emulator)
 - jq (JSON processing)
 
 **Verify cache sharing:**
 ```bash
-# Inside cal-dev VM
+# Inside calf-dev VM
 ls -la ~/.tart/cache/              # Should show symlink
 tart list --format json | jq -r '.[] | select(.Source == "OCI") | .Name'
 ```
@@ -189,8 +189,8 @@ tart list --format json | jq -r '.[] | select(.Source == "OCI") | .Name'
 
 The `--init` command performs these steps:
 
-1. Creates `cal-clean` from base macOS image (~25GB download)
-2. Creates `cal-dev` from `cal-clean`
+1. Creates `calf-clean` from base macOS image (~25GB download)
+2. Creates `calf-dev` from `calf-clean`
 3. Starts VM and waits for SSH
 4. Sets up SSH keys (host→VM, generates if needed)
 5. Sets up network access (VM→Host SSH, bootstrap proxy if needed)
@@ -199,15 +199,15 @@ The `--init` command performs these steps:
 8. Switches from bootstrap proxy to sshuttle (if proxy enabled)
 9. Reboots VM to apply .zshrc configuration
 10. Opens login shell - vm-auth.sh runs automatically (first-run detection)
-11. Creates `cal-init` snapshot
+11. Creates `calf-init` snapshot
 
 ### VMs Created
 
 | VM | Purpose |
 |----|---------|
-| `cal-clean` | Base macOS image (pristine) |
-| `cal-dev` | Development VM (use this) |
-| `cal-init` | Snapshot with tools and auth configured |
+| `calf-clean` | Base macOS image (pristine) |
+| `calf-dev` | Development VM (use this) |
+| `calf-init` | Snapshot with tools and auth configured |
 
 ### Helper Scripts in VM
 
@@ -230,7 +230,7 @@ The init process installs helper scripts in `~/scripts/` (added to PATH):
 The init process configures automatic keychain unlock on every SSH login to support agent OAuth authentication (especially Cursor Agent which requires keychain access for browser-based login).
 
 **How it works:**
-- VM password saved to `~/.cal-vm-config` (mode 600, owner-only access)
+- VM password saved to `~/.calf-vm-config` (mode 600, owner-only access)
 - `.zshrc` unlocks keychain on every login using saved password
 - Enables Cursor Agent OAuth flows to access browser credentials over SSH
 
@@ -240,7 +240,7 @@ The init process configures automatic keychain unlock on every SSH login to supp
 - Alternative would require manual keychain unlock on every SSH session
 
 **First-run automation:**
-- Init creates `~/.cal-first-run` flag file
+- Init creates `~/.calf-first-run` flag file
 - On first login after init, .zshrc detects flag and runs vm-auth.sh automatically
 - Flag is deleted after first run to prevent repeated execution
 
@@ -250,16 +250,16 @@ If you prefer manual setup:
 
 ```bash
 # Create VM
-tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest cal-clean
-tart set cal-clean --cpu 4 --memory 8192 --disk-size 80
-tart clone cal-clean cal-dev
+tart clone ghcr.io/cirruslabs/macos-sequoia-base:latest calf-clean
+tart set calf-clean --cpu 4 --memory 8192 --disk-size 80
+tart clone calf-clean calf-dev
 
 # Start and connect
-tart run cal-dev --no-graphics &
-sleep 30 && ssh admin@$(tart ip cal-dev)  # password: admin
+tart run calf-dev --no-graphics &
+sleep 30 && ssh admin@$(tart ip calf-dev)  # password: admin
 
 # In VM: run setup script
-# (copy from host first: scp scripts/vm-setup.sh admin@$(tart ip cal-dev):~/)
+# (copy from host first: scp scripts/vm-setup.sh admin@$(tart ip calf-dev):~/)
 chmod +x ~/vm-setup.sh && ./vm-setup.sh
 ```
 
@@ -267,15 +267,15 @@ chmod +x ~/vm-setup.sh && ./vm-setup.sh
 
 **GUI Console with Clipboard (Recommended for clipboard operations):**
 ```bash
-./scripts/cal-bootstrap --gui
+./scripts/calf-bootstrap --gui
 ```
 
-This launches cal-dev with VNC experimental mode, providing:
+This launches calf-dev with VNC experimental mode, providing:
 - **Full macOS desktop** - Native GUI access with mouse and keyboard
 - **Bidirectional clipboard** - Copy/paste works both ways reliably
 - **No disconnect issues** - Paste operations don't cause crashes
 - **Terminal remains free** - VM runs in background, VNC window opens automatically
-- **Simple reconnect** - Just run `./scripts/cal-bootstrap --gui` again
+- **Simple reconnect** - Just run `./scripts/calf-bootstrap --gui` again
 
 **Why experimental mode?**
 - Standard VNC (`--vnc`) has clipboard issues: Host→VM paste causes disconnect
@@ -292,9 +292,9 @@ This launches cal-dev with VNC experimental mode, providing:
 
 **SSH with tmux (Recommended for development):**
 ```bash
-./scripts/cal-bootstrap --run   # Starts VM and connects with tmux
+./scripts/calf-bootstrap --run   # Starts VM and connects with tmux
 # Or manually:
-ssh -t admin@$(tart ip cal-dev) "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s cal"
+ssh -t admin@$(tart ip calf-dev) "TERM=xterm-256color /opt/homebrew/bin/tmux new-session -A -s calf"
 ```
 
 tmux is the default for SSH connections, providing:
@@ -312,7 +312,7 @@ tmux is the default for SSH connections, providing:
 
 **Screen Sharing (Legacy VNC - use --gui instead):**
 ```bash
-open vnc://$(tart ip cal-dev)   # password: admin
+open vnc://$(tart ip calf-dev)   # password: admin
 ```
 
 ### About tmux
@@ -354,9 +354,9 @@ Ctrl+b r        # Reload tmux config
 **Reattaching to Sessions:**
 If you disconnect from SSH, your tmux session keeps running:
 ```bash
-./scripts/cal-bootstrap --run   # Reattaches to 'cal' session automatically
+./scripts/calf-bootstrap --run   # Reattaches to 'cal' session automatically
 # Or manually:
-ssh -t admin@$(tart ip cal-dev) "tmux attach -t cal"
+ssh -t admin@$(tart ip calf-dev) "tmux attach -t calf"
 ```
 
 **Mouse Support:**
@@ -384,11 +384,11 @@ Agents can detect they're running in a CAL VM using:
 
 ```bash
 # Check environment variable
-echo $CAL_VM              # Outputs: true
+echo $CALF_VM              # Outputs: true
 
 # Use helper functions
-is-cal-vm && echo "VM"    # Outputs: VM
-cal-vm-info               # Display VM metadata
+is-calf-vm && echo "VM"    # Outputs: VM
+calf-vm-info               # Display VM metadata
 ```
 
 See [VM Detection Guide](vm-detection.md) for complete documentation and integration examples.
@@ -397,32 +397,32 @@ See [VM Detection Guide](vm-detection.md) for complete documentation and integra
 
 ```bash
 # Create snapshot before risky changes
-./scripts/cal-bootstrap -S create before-experiment
+./scripts/calf-bootstrap -S create before-experiment
 
 # Restore if something goes wrong
-./scripts/cal-bootstrap -S restore before-experiment
+./scripts/calf-bootstrap -S restore before-experiment
 
 # Restore to freshly-configured state
-./scripts/cal-bootstrap -S restore cal-init
+./scripts/calf-bootstrap -S restore calf-init
 
-# Restore even if cal-dev was deleted
-./scripts/cal-bootstrap -S restore cal-init  # Creates cal-dev from snapshot
+# Restore even if calf-dev was deleted
+./scripts/calf-bootstrap -S restore calf-init  # Creates calf-dev from snapshot
 
 # List all VMs and snapshots
-./scripts/cal-bootstrap -S list
+./scripts/calf-bootstrap -S list
 ```
 
-**Note:** `--snapshot restore` can create `cal-dev` from a snapshot even if `cal-dev` doesn't exist. If `cal-dev` exists, it checks for uncommitted/unpushed git changes before replacing it.
+**Note:** `--snapshot restore` can create `calf-dev` from a snapshot even if `calf-dev` doesn't exist. If `calf-dev` exists, it checks for uncommitted/unpushed git changes before replacing it.
 
 ## Aliases (~/.zshrc)
 
 ```bash
-alias cal='./scripts/cal-bootstrap'
-alias cal-start='./scripts/cal-bootstrap --run'
-alias cal-restart='./scripts/cal-bootstrap --restart'
-alias cal-gui='./scripts/cal-bootstrap --gui'
-alias cal-stop='./scripts/cal-bootstrap --stop'
-alias cal-snap='./scripts/cal-bootstrap --snapshot'
+alias cal='./scripts/calf-bootstrap'
+alias cal-start='./scripts/calf-bootstrap --run'
+alias cal-restart='./scripts/calf-bootstrap --restart'
+alias cal-gui='./scripts/calf-bootstrap --gui'
+alias cal-stop='./scripts/calf-bootstrap --stop'
+alias cal-snap='./scripts/calf-bootstrap --snapshot'
 ```
 
 ## Tart Reference
@@ -438,7 +438,7 @@ tart clone <src> <dst>       # Clone/snapshot
 
 ## Screen Sharing (Legacy)
 
-> **Recommendation:** Use `./scripts/cal-bootstrap --gui` instead for reliable clipboard support.
+> **Recommendation:** Use `./scripts/calf-bootstrap --gui` instead for reliable clipboard support.
 >
 > This section documents Screen Sharing for reference, but the --gui option provides a better experience with bidirectional clipboard and no disconnect issues.
 
@@ -447,8 +447,8 @@ macOS Screen Sharing provides GUI access to Tart VMs. **Always use Standard mode
 ### Quick Access
 
 ```bash
-# Connect to cal-dev via Screen Sharing
-open vnc://$(tart ip cal-dev)   # password: admin
+# Connect to calf-dev via Screen Sharing
+open vnc://$(tart ip calf-dev)   # password: admin
 ```
 
 ### Performance Modes
@@ -469,7 +469,7 @@ macOS Sonoma offers two Screen Sharing modes when connecting. **Only Standard mo
 
 The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-guest-agent), which enables one-way clipboard sharing from VM to Host:
 
-1. Connect via `open vnc://$(tart ip cal-dev)`
+1. Connect via `open vnc://$(tart ip calf-dev)`
 2. In Screen Sharing window: **Edit → Use Shared Clipboard** (enable checkmark)
 3. Clipboard sharing works one-way only:
    - ✅ Copy from VM → Paste in Host (works correctly)
@@ -481,7 +481,7 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 
 **Workaround for transferring text to VM:**
 - Type text directly in VM
-- Use SSH to echo text into files: `ssh admin@$(tart ip cal-dev) 'echo "text" > file.txt'`
+- Use SSH to echo text into files: `ssh admin@$(tart ip calf-dev) 'echo "text" > file.txt'`
 - Mount shared folders (if configured)
 - Use git to sync files
 
@@ -537,13 +537,13 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 
 **Recommended access methods (in order of preference):**
 
-1. **SSH with tmux** (`./scripts/cal-bootstrap --run`) - Primary development method
+1. **SSH with tmux** (`./scripts/calf-bootstrap --run`) - Primary development method
    - Terminal-based work
    - Running agents, git, development tools
    - Best performance for command-line tasks
    - Session persistence
 
-2. **GUI Console** (`./scripts/cal-bootstrap --gui`) - Clipboard and GUI tasks
+2. **GUI Console** (`./scripts/calf-bootstrap --gui`) - Clipboard and GUI tasks
    - Copying/pasting between host and VM
    - Agent authentication (browser-based OAuth)
    - Manual keychain unlock
@@ -562,23 +562,23 @@ The VM setup now includes [tart-guest-agent](https://github.com/cirruslabs/tart-
 - **SSH refused**: VM still booting - wait or check System Preferences → Sharing → Remote Login
 - **Agent not found**: Restart shell with `exec zsh` or check PATH
 - **Disk full**: `rm -rf ~/Library/Caches/* ~/.npm/_cacache`
-- **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (Standard mode): `open vnc://$(tart ip cal-dev)` → manually unlock keychain → authenticate agent
+- **Cursor Agent login fails**: Keychain must be unlocked for OAuth. If automatic unlock fails, use Screen Sharing (Standard mode): `open vnc://$(tart ip calf-dev)` → manually unlock keychain → authenticate agent
 - **Screen Sharing shows lock screen**: Auto-login requires VM reboot to activate. Stop and restart the VM.
 - **Screen Sharing shows black screen/locked VM**: You selected High Performance mode - disconnect and reconnect using **Standard mode** instead. This mode is incompatible with Tart VMs.
-- **Copy/paste not working**: Use `./scripts/cal-bootstrap --gui` for reliable bidirectional clipboard support. The --gui option uses VNC experimental mode which solves clipboard issues. Screen Sharing (standard VNC) only supports VM→Host copying and Host→VM pasting causes disconnects.
-- **Screen Sharing disconnects when pasting from Host**: This is a known limitation of standard VNC. Use `./scripts/cal-bootstrap --gui` instead for bidirectional clipboard support without disconnects.
-- **Claude Code OAuth URL won't paste correctly**: Do not mouse-select the URL - line breaks will be included. Instead, press `c` when prompted to copy the auth URL to your clipboard. Alternatively, use `./scripts/cal-bootstrap --gui` to access the VM with full clipboard support, allowing you to copy/paste the URL reliably.
+- **Copy/paste not working**: Use `./scripts/calf-bootstrap --gui` for reliable bidirectional clipboard support. The --gui option uses VNC experimental mode which solves clipboard issues. Screen Sharing (standard VNC) only supports VM→Host copying and Host→VM pasting causes disconnects.
+- **Screen Sharing disconnects when pasting from Host**: This is a known limitation of standard VNC. Use `./scripts/calf-bootstrap --gui` instead for bidirectional clipboard support without disconnects.
+- **Claude Code OAuth URL won't paste correctly**: Do not mouse-select the URL - line breaks will be included. Instead, press `c` when prompted to copy the auth URL to your clipboard. Alternatively, use `./scripts/calf-bootstrap --gui` to access the VM with full clipboard support, allowing you to copy/paste the URL reliably.
 - **opencode not found**: Run `exec zsh` or check PATH includes `~/.opencode/bin` or `~/go/bin`
 - **opencode run hangs**: This occurs when TERM is explicitly set in the command environment. Use `opencode run` normally (TERM inherited from environment) - it works correctly. See [Opencode VM Summary](opencode-vm-summary.md) for details.
-- **First-run automation didn't trigger**: Check if `~/.cal-first-run` flag exists. If missing, run `vm-auth.sh` manually.
+- **First-run automation didn't trigger**: Check if `~/.calf-first-run` flag exists. If missing, run `vm-auth.sh` manually.
 - **Proxy issues**: See [Proxy Documentation](proxy.md) - requires SSH server enabled on host
 
 ## Terminal Keybinding Testing
 
 ```bash
 # Copy and run test script
-scp scripts/test-keybindings.sh admin@$(tart ip cal-dev):~/
-ssh admin@$(tart ip cal-dev) "chmod +x ~/test-keybindings.sh && ~/test-keybindings.sh"
+scp scripts/test-keybindings.sh admin@$(tart ip calf-dev):~/
+ssh admin@$(tart ip calf-dev) "chmod +x ~/test-keybindings.sh && ~/test-keybindings.sh"
 ```
 
 See [Terminal Keybindings Test Plan](terminal-keybindings-test.md) for details.

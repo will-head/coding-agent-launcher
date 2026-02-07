@@ -30,7 +30,7 @@ fi
 
 # Create TPM (Tmux Plugin Manager) directory
 TPM_DIR="$HOME/.tmux/plugins/tpm"
-TPM_CACHE="/Volumes/My Shared Files/cal-cache/git/tpm"
+TPM_CACHE="/Volumes/My Shared Files/calf-cache/git/tpm"
 
 if [[ ! -d "$TPM_DIR" ]]; then
     echo "Installing Tmux Plugin Manager (TPM)..."
@@ -65,7 +65,7 @@ if [[ ! -d "$TPM_DIR" ]]; then
             echo "✓ TPM installed from GitHub"
 
             # Populate cache for future use (if shared volume exists)
-            if [[ -d "/Volumes/My Shared Files/cal-cache/git" ]]; then
+            if [[ -d "/Volumes/My Shared Files/calf-cache/git" ]]; then
                 echo "  Populating git cache for future bootstraps..."
                 # Clone to cache directory (this will appear on host)
                 if git clone "$TPM_DIR" "$TPM_CACHE" 2>/dev/null; then
@@ -97,7 +97,7 @@ if [[ ! -d "$TPM_DIR" ]]; then
         echo "  ~/scripts/vm-tmux-resurrect.sh"
         echo ""
         echo "Or re-run full bootstrap:"
-        echo "  cal-bootstrap --init"
+        echo "  calf-bootstrap --init"
         echo ""
         exit 1
     fi
@@ -118,7 +118,7 @@ fi
 
 # Write tmux configuration
 cat > "$TMUX_CONF" <<'EOF'
-# CAL Tmux Configuration
+# CALF Tmux Configuration
 # Session persistence with tmux-resurrect and tmux-continuum
 
 # Set PATH to include Homebrew so tmux-resurrect scripts can find tmux command
@@ -183,7 +183,7 @@ bind -r L resize-pane -R 5
 # Status bar styling
 set -g status-style bg=colour235,fg=colour255
 set -g status-left-length 30
-set -g status-left '#[fg=colour76,bold]CAL-BOOTSTRAP '
+set -g status-left '#[fg=colour76,bold]CALF-BOOTSTRAP '
 set -g status-right '#[fg=colour245]%H:%M '
 set -g window-status-current-style bg=colour240,fg=colour255,bold
 set -g window-status-style fg=colour245
@@ -209,12 +209,12 @@ set -g @continuum-save-interval '15'
 
 # Save session state on detach (Ctrl+b d)
 # Only save if first-run flag doesn't exist (prevents capturing auth screens during --init)
-set-hook -g client-detached 'run-shell "if [ ! -f ~/.cal-first-run ]; then ~/.tmux/plugins/tmux-resurrect/scripts/save.sh; fi"'
+set-hook -g client-detached 'run-shell "if [ ! -f ~/.calf-first-run ]; then ~/.tmux/plugins/tmux-resurrect/scripts/save.sh; fi"'
 
 # Initialize TPM only after first-run completes
 # This prevents tmux-resurrect from capturing the authentication screen during initial setup
-# The ~/.cal-first-run flag is removed by vm-first-run.sh after first login
-run-shell 'if [ ! -f ~/.cal-first-run ]; then ~/.tmux/plugins/tpm/tpm; fi'
+# The ~/.calf-first-run flag is removed by vm-first-run.sh after first login
+run-shell 'if [ ! -f ~/.calf-first-run ]; then ~/.tmux/plugins/tpm/tpm; fi'
 EOF
 
 echo "✓ tmux.conf configured"
@@ -265,12 +265,12 @@ if [[ ! -f "$ZLOGOUT" ]]; then
 fi
 
 # Add tmux session save block if not already present
-if ! grep -q "# CAL: Save tmux sessions on logout" "$ZLOGOUT" 2>/dev/null; then
+if ! grep -q "# CALF: Save tmux sessions on logout" "$ZLOGOUT" 2>/dev/null; then
     cat >> "$ZLOGOUT" <<'EOF'
 
-# CAL: Save tmux sessions on logout
+# CALF: Save tmux sessions on logout
 # Only save if first-run flag doesn't exist (prevents capturing auth screens during --init)
-if [ ! -f ~/.cal-first-run ] && command -v tmux &> /dev/null && tmux list-sessions &> /dev/null; then
+if [ ! -f ~/.calf-first-run ] && command -v tmux &> /dev/null && tmux list-sessions &> /dev/null; then
     # Save all tmux sessions before logout
     tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh &> /dev/null || true
 fi
@@ -299,5 +299,5 @@ echo "  • Reload config: Ctrl+b R"
 echo "  • Resize pane to 67%: Ctrl+b r"
 echo ""
 echo "Session data: ~/.local/share/tmux/resurrect/"
-    echo "TPM cache: /Volumes/My Shared Files/cal-cache/git/tpm/ (persists across snapshots, shared from host)"
+    echo "TPM cache: /Volumes/My Shared Files/calf-cache/git/tpm/ (persists across snapshots, shared from host)"
 echo ""

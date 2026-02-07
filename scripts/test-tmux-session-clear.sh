@@ -2,7 +2,7 @@
 # test-tmux-session-clear.sh - Test tmux session clearing during first login
 #
 # This script tests that tmux session data is properly cleared after vm-auth.sh
-# completes to prevent cal-init from capturing authentication screen output.
+# completes to prevent calf-init from capturing authentication screen output.
 
 set -e
 
@@ -115,6 +115,6 @@ echo "  ✓ 'last' symlink is removed"
 echo "  ✓ Session data files are removed"
 echo "  ✓ Directory is empty after clearing"
 echo ""
-echo "This ensures cal-init won't capture authentication"
+echo "This ensures calf-init won't capture authentication"
 echo "screen output when tmux-resurrect sessions are cleared."
 echo ""

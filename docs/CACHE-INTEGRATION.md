@@ -1,7 +1,7 @@
 # Package Download Cache Integration
 
 **Date:** 2026-02-03
-**Purpose:** Integrate package download caching into cal-bootstrap and vm-setup.sh
+**Purpose:** Integrate package download caching into calf-bootstrap and vm-setup.sh
 
 ---
 
@@ -19,17 +19,17 @@ The cache infrastructure (PRs #6-9) existed but wasn't being used:
 
 Integrated cache into bootstrap scripts so downloads are cached and reused.
 
-### Host Behavior (cal-bootstrap)
+### Host Behavior (calf-bootstrap)
 
 **Scope:** Temporary (only during script execution)
 
 **Implementation:**
 ```bash
-# In cal-bootstrap (lines 37-44)
-if [ -d "$HOME/.cal-cache" ]; then
-    export HOMEBREW_CACHE="$HOME/.cal-cache/homebrew"
-    export npm_config_cache="$HOME/.cal-cache/npm"
-    export GOMODCACHE="$HOME/.cal-cache/go"
+# In calf-bootstrap (lines 37-44)
+if [ -d "$HOME/.calf-cache" ]; then
+    export HOMEBREW_CACHE="$HOME/.calf-cache/homebrew"
+    export npm_config_cache="$HOME/.calf-cache/npm"
+    export GOMODCACHE="$HOME/.calf-cache/go"
 fi
 ```
 
@@ -51,20 +51,20 @@ export npm_config_cache="/Volumes/My Shared Files/cal-cache/npm"
 export GOMODCACHE="/Volumes/My Shared Files/cal-cache/go"
 
 # Create symlinks
-ln -sf "/Volumes/My Shared Files/cal-cache/homebrew" ~/.cal-cache/homebrew
-ln -sf "/Volumes/My Shared Files/cal-cache/npm" ~/.cal-cache/npm
-ln -sf "/Volumes/My Shared Files/cal-cache/go" ~/.cal-cache/go
-ln -sf "/Volumes/My Shared Files/cal-cache/git" ~/.cal-cache/git
+ln -sf "/Volumes/My Shared Files/cal-cache/homebrew" ~/.calf-cache/homebrew
+ln -sf "/Volumes/My Shared Files/cal-cache/npm" ~/.calf-cache/npm
+ln -sf "/Volumes/My Shared Files/cal-cache/go" ~/.calf-cache/go
+ln -sf "/Volumes/My Shared Files/cal-cache/git" ~/.calf-cache/git
 
 # Make persistent (only if not already present)
-echo 'export HOMEBREW_CACHE="$HOME/.cal-cache/homebrew"' >> ~/.zshrc
-echo 'export npm_config_cache="$HOME/.cal-cache/npm"' >> ~/.zshrc
-echo 'export GOMODCACHE="$HOME/.cal-cache/go"' >> ~/.zshrc
+echo 'export HOMEBREW_CACHE="$HOME/.calf-cache/homebrew"' >> ~/.zshrc
+echo 'export npm_config_cache="$HOME/.calf-cache/npm"' >> ~/.zshrc
+echo 'export GOMODCACHE="$HOME/.calf-cache/go"' >> ~/.zshrc
 ```
 
 **Effect:**
 - ✅ All VM package downloads use shared cache
-- ✅ Downloads appear on host at `~/.cal-cache/*`
+- ✅ Downloads appear on host at `~/.calf-cache/*`
 - ✅ Cache persists across VM restarts
 - ✅ Future `--init` runs reuse cached downloads
 
@@ -76,7 +76,7 @@ echo 'export GOMODCACHE="$HOME/.cal-cache/go"' >> ~/.zshrc
 
 ```
 Host:
-  brew install sshuttle → ~/.cal-cache/homebrew/ ✓ cached
+  brew install sshuttle → ~/.calf-cache/homebrew/ ✓ cached
                            ↓ (shared to VM)
 VM:
   /Volumes/My Shared Files/cal-cache/homebrew/
@@ -84,14 +84,14 @@ VM:
                     → stores in shared cache ✓
                     ↓ (appears on host)
 Host:
-  ~/.cal-cache/homebrew/ now has tart downloads ✓
+  ~/.calf-cache/homebrew/ now has tart downloads ✓
 ```
 
 ### Second --init
 
 ```
 Host:
-  brew install sshuttle → ~/.cal-cache/homebrew/ ✓ reuses cache
+  brew install sshuttle → ~/.calf-cache/homebrew/ ✓ reuses cache
                            ↓ (already shared)
 VM:
   /Volumes/My Shared Files/cal-cache/homebrew/
@@ -111,7 +111,7 @@ VM:
 **Changes:**
 - Check if shared cache is available
 - Set cache environment variables (HOMEBREW_CACHE, npm_config_cache, GOMODCACHE)
-- Create symlinks from ~/.cal-cache to shared volume
+- Create symlinks from ~/.calf-cache to shared volume
 - Add cache exports to ~/.zshrc (persistent)
 - Graceful degradation if cache unavailable
 
@@ -124,12 +124,12 @@ VM:
     Go: /Volumes/My Shared Files/cal-cache/go
 ```
 
-### 2. scripts/cal-bootstrap
+### 2. scripts/calf-bootstrap
 
 **Location:** After proxy settings, before log file (lines 43-48)
 
 **Changes:**
-- Check if ~/.cal-cache exists on host
+- Check if ~/.calf-cache exists on host
 - Set cache environment variables temporarily (script scope only)
 - No modifications to user's ~/.zshrc or permanent config
 - Silent (no user feedback needed - transparent behavior)
@@ -153,7 +153,7 @@ brew install tart  # Downloads 73MB again (no cache)
 ```bash
 # First --init
 brew install tart  # Downloads 73MB → cache populated
-ls ~/.cal-cache/homebrew/  # Shows cached downloads ✓
+ls ~/.calf-cache/homebrew/  # Shows cached downloads ✓
 
 # Second --init
 brew install tart  # Uses cache, skips download ✓
@@ -165,9 +165,9 @@ brew install tart  # Uses cache, skips download ✓
 **Host:**
 ```bash
 # Check cache is populated
-ls -lh ~/.cal-cache/homebrew/
-ls -lh ~/.cal-cache/npm/
-ls -lh ~/.cal-cache/go/
+ls -lh ~/.calf-cache/homebrew/
+ls -lh ~/.calf-cache/npm/
+ls -lh ~/.calf-cache/go/
 ```
 
 **VM:**
@@ -176,7 +176,7 @@ ls -lh ~/.cal-cache/go/
 ls -la "/Volumes/My Shared Files/cal-cache/"
 
 # Check symlinks exist
-ls -la ~/.cal-cache/
+ls -la ~/.calf-cache/
 
 # Verify environment variables are set
 echo $HOMEBREW_CACHE
@@ -190,12 +190,12 @@ echo $GOMODCACHE
 
 ### Why temporary on host?
 
-**Decision:** Set cache variables only during cal-bootstrap execution, don't modify ~/.zshrc
+**Decision:** Set cache variables only during calf-bootstrap execution, don't modify ~/.zshrc
 
 **Rationale:**
 - Avoids unexpected changes to user's system
 - User's normal `brew install` outside CAL uses default cache
-- Cache is opt-in for CAL operations only
+- Cache is opt-in for CALF operations only
 - No conflicts with other tools or workflows
 
 ### Why permanent in VM?
@@ -210,11 +210,11 @@ echo $GOMODCACHE
 
 ### Why symlinks in VM?
 
-**Decision:** Create symlinks from ~/.cal-cache to /Volumes/My Shared Files/cal-cache
+**Decision:** Create symlinks from ~/.calf-cache to /Volumes/My Shared Files/cal-cache
 
 **Rationale:**
-- Shorter paths in environment variables ($HOME/.cal-cache vs /Volumes/...)
-- Consistent with host paths (both use ~/.cal-cache)
+- Shorter paths in environment variables ($HOME/.calf-cache vs /Volumes/...)
+- Consistent with host paths (both use ~/.calf-cache)
 - Easier to remember and debug
 - Works if shared volume mount point changes
 
@@ -256,8 +256,8 @@ echo $GOMODCACHE
 - Package managers use default cache locations
 - No failures, just no cache benefits
 
-**cal-bootstrap:**
-- Silently skips cache setup if ~/.cal-cache doesn't exist
+**calf-bootstrap:**
+- Silently skips cache setup if ~/.calf-cache doesn't exist
 - Script behavior unchanged
 - Graceful degradation
 
@@ -266,9 +266,9 @@ echo $GOMODCACHE
 ## Future Enhancements
 
 1. **Cache size limits:** Implement automatic cache cleanup when size exceeds threshold
-2. **Cache stats:** Add `cal cache stats` to show hit rate, size, savings
+2. **Cache stats:** Add `calf cache stats` to show hit rate, size, savings
 3. **Selective caching:** Allow users to disable specific caches (e.g., only Homebrew)
-4. **Host opt-in:** Add `cal cache enable-host` to make cache permanent on host too
+4. **Host opt-in:** Add `calf cache enable-host` to make cache permanent on host too
 5. **Cache compression:** Compress old cache entries to save disk space
 
 ---

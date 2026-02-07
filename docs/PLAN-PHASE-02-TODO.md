@@ -6,7 +6,7 @@
 
 **Goal:** Seamless agent launching with safety UI.
 
-**Deliverable:** `cal isolation run <workspace>` launches agent with full UX.
+**Deliverable:** `calf isolation run <workspace>` launches agent with full UX.
 
 **Reference:** [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) for agent installation, authentication, and TERM handling details.
 
@@ -109,7 +109,7 @@
 - Sessions survive SSH disconnects (agents keep running)
 
 **Key learnings from Phase 0.11 (Tmux Session Persistence):**
-- Session name must be `cal` (not `cal-dev`) — matches `cal isolation` command naming
+- Session name must be `calf` (not `calf-dev`) — matches `calf isolation` command naming
 - Sessions auto-restore on tmux start via tmux-continuum (pane layouts + scrollback preserved)
 - Auto-save every 15 minutes plus manual save on logout via `.zlogout` hook
 - Resurrect data in `~/.local/share/tmux/resurrect/` survives VM restarts and snapshot/restore

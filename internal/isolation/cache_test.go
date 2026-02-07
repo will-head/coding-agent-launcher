@@ -1,4 +1,4 @@
-// Package isolation provides VM isolation and management for CAL.
+// Package isolation provides VM isolation and management for CALF.
 package isolation
 
 import (
@@ -11,7 +11,7 @@ import (
 
 func TestCacheManager_HomebrewSetup(t *testing.T) {
 	// Create a temporary directory for testing
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestCacheManager_HomebrewSetup(t *testing.T) {
 }
 
 func TestCacheManager_GetHomebrewCacheInfo(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestCacheManager_GetHomebrewCacheInfo(t *testing.T) {
 }
 
 func TestCacheManager_Status(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -190,7 +190,7 @@ func TestCacheManager_gracefulDegradation(t *testing.T) {
 	})
 
 	t.Run("SetupHomebrewCache handles permission errors gracefully", func(t *testing.T) {
-		tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+		tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 		if err != nil {
 			t.Fatalf("failed to create temp dir: %v", err)
 		}
@@ -217,7 +217,7 @@ func TestCacheManager_gracefulDegradation(t *testing.T) {
 }
 
 func TestCacheManager_VMCacheSetup(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -246,7 +246,7 @@ func TestCacheManager_VMCacheSetup(t *testing.T) {
 
 		// Verify commands contain expected operations (mount verification, not symlinks)
 		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.cal-cache \"") {
+		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.calf-cache \"") {
 			t.Fatalf("expected mount verification in VM setup")
 		}
 		if !strings.Contains(commandsStr, "test -d") {
@@ -290,14 +290,14 @@ func TestCacheManager_SharedCacheMount(t *testing.T) {
 		cm := NewCacheManager()
 		mount := cm.GetSharedCacheMount()
 
-		expected := "cal-cache:~/.cal-cache"
+		expected := "calf-cache:~/.calf-cache"
 		if mount != expected {
 			t.Fatalf("expected mount spec %s, got %s", expected, mount)
 		}
 	})
 
 	t.Run("GetHomebrewCacheHostPath returns correct host path", func(t *testing.T) {
-		tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+		tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 		if err != nil {
 			t.Fatalf("failed to create temp dir: %v", err)
 		}
@@ -313,8 +313,8 @@ func TestCacheManager_SharedCacheMount(t *testing.T) {
 			t.Fatalf("expected non-empty host path")
 		}
 
-		if !strings.Contains(hostPath, "cal-cache:") {
-			t.Fatalf("expected 'cal-cache:' prefix in host path")
+		if !strings.Contains(hostPath, "calf-cache:") {
+			t.Fatalf("expected 'calf-cache:' prefix in host path")
 		}
 
 		if !strings.Contains(hostPath, "homebrew") {
@@ -351,7 +351,7 @@ func TestFormatBytes(t *testing.T) {
 }
 
 func TestCacheManager_NpmSetup(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -404,7 +404,7 @@ func TestCacheManager_NpmSetup(t *testing.T) {
 }
 
 func TestCacheManager_GetNpmCacheInfo(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -462,7 +462,7 @@ func TestCacheManager_GetNpmCacheInfo(t *testing.T) {
 }
 
 func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -489,7 +489,7 @@ func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
 		}
 
 		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.cal-cache \"") {
+		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.calf-cache \"") {
 			t.Fatalf("expected mount verification in VM setup")
 		}
 		if !strings.Contains(commandsStr, "test -d") {
@@ -526,7 +526,7 @@ func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
 }
 
 func TestCacheManager_GoSetup(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -589,7 +589,7 @@ func TestCacheManager_GoSetup(t *testing.T) {
 }
 
 func TestCacheManager_GetGoCacheInfo(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -647,7 +647,7 @@ func TestCacheManager_GetGoCacheInfo(t *testing.T) {
 }
 
 func TestCacheManager_VMGoCacheSetup(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -674,7 +674,7 @@ func TestCacheManager_VMGoCacheSetup(t *testing.T) {
 		}
 
 		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.cal-cache \"") {
+		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.calf-cache \"") {
 			t.Fatalf("expected mount verification in VM setup")
 		}
 		if !strings.Contains(commandsStr, "test -d") {
@@ -714,7 +714,7 @@ func TestCacheManager_VMGoCacheSetup(t *testing.T) {
 }
 
 func TestCacheManager_GitSetup(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -767,7 +767,7 @@ func TestCacheManager_GitSetup(t *testing.T) {
 }
 
 func TestCacheManager_GetGitCacheInfo(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -828,7 +828,7 @@ func TestCacheManager_GetGitCacheInfo(t *testing.T) {
 }
 
 func TestCacheManager_VMGitCacheSetup(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -855,7 +855,7 @@ func TestCacheManager_VMGitCacheSetup(t *testing.T) {
 		}
 
 		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.cal-cache \"") {
+		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.calf-cache \"") {
 			t.Fatalf("expected mount verification in VM setup")
 		}
 		if !strings.Contains(commandsStr, "test -d") {
@@ -889,7 +889,7 @@ func TestCacheManager_VMGitCacheSetup(t *testing.T) {
 }
 
 func TestCacheManager_GetCachedGitRepos(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -953,7 +953,7 @@ func TestCacheManager_GetCachedGitRepos(t *testing.T) {
 }
 
 func TestCacheManager_CacheGitRepo(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -999,7 +999,7 @@ func TestCacheManager_CacheGitRepo(t *testing.T) {
 }
 
 func TestCacheManager_UpdateGitRepos(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -1044,7 +1044,7 @@ func TestCacheManager_UpdateGitRepos(t *testing.T) {
 }
 
 func TestCacheManager_Clear(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "cal-cache-test-*")
+	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -1116,7 +1116,7 @@ func TestCacheManager_Clear(t *testing.T) {
 	})
 
 	t.Run("Clear returns cleared=false when cache doesn't exist", func(t *testing.T) {
-		freshTmpDir, err := os.MkdirTemp("", "cal-cache-clear-test-*")
+		freshTmpDir, err := os.MkdirTemp("", "calf-cache-clear-test-*")
 		if err != nil {
 			t.Fatalf("failed to create temp dir: %v", err)
 		}
@@ -1262,8 +1262,8 @@ func TestCacheManager_Clear(t *testing.T) {
 	})
 
 	t.Run("Clear preserves symlinks and clears target contents", func(t *testing.T) {
-		// This simulates the VM scenario where ~/.cal-cache/{type} is a symlink
-		// to /Volumes/My Shared Files/cal-cache/{type}
+		// This simulates the VM scenario where ~/.calf-cache/{type} is a symlink
+		// to /Volumes/My Shared Files/calf-cache/{type}
 
 		// Create a directory structure simulating the shared volume
 		sharedVolume := filepath.Join(tmpDir, "shared-volume")
@@ -1287,8 +1287,8 @@ func TestCacheManager_Clear(t *testing.T) {
 			t.Fatalf("failed to create test file 2: %v", err)
 		}
 
-		// Create CacheManager with default .cal-cache directory (required for symlink resolution)
-		vmTmpDir, err := os.MkdirTemp("", "cal-vm-test-*")
+		// Create CacheManager with default .calf-cache directory (required for symlink resolution)
+		vmTmpDir, err := os.MkdirTemp("", "calf-vm-test-*")
 		if err != nil {
 			t.Fatalf("failed to create VM temp dir: %v", err)
 		}
@@ -1296,15 +1296,15 @@ func TestCacheManager_Clear(t *testing.T) {
 
 		vmCm := &CacheManager{
 			homeDir:      vmTmpDir,
-			cacheBaseDir: filepath.Join(vmTmpDir, ".cal-cache"),
+			cacheBaseDir: filepath.Join(vmTmpDir, ".calf-cache"),
 		}
 
-		// Create the .cal-cache base directory
+		// Create the .calf-cache base directory
 		if err := os.MkdirAll(vmCm.cacheBaseDir, 0755); err != nil {
-			t.Fatalf("failed to create .cal-cache dir: %v", err)
+			t.Fatalf("failed to create .calf-cache dir: %v", err)
 		}
 
-		// Create symlink from .cal-cache/npm to the shared volume
+		// Create symlink from .calf-cache/npm to the shared volume
 		symlinkPath := filepath.Join(vmCm.cacheBaseDir, "npm")
 		if err := os.Symlink(sharedCacheDir, symlinkPath); err != nil {
 			t.Fatalf("failed to create symlink: %v", err)

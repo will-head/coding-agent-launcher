@@ -33,7 +33,7 @@
 ## 3.2 Repository Cloning
 
 **Tasks:**
-1. `cal isolation clone <workspace> --repo owner/repo`
+1. `calf isolation clone <workspace> --repo owner/repo`
 2. Support `--branch` for existing branch
 3. Support `--new-branch` with prefix (default: `agent/`)
 4. Clone into `~/code/github.com/[owner]/[repo]` in VM (matches Phase 0 convention)
@@ -54,7 +54,7 @@
 ## 3.3 Commit and Push
 
 **Tasks:**
-1. `cal isolation commit <workspace> --message "msg"`
+1. `calf isolation commit <workspace> --message "msg"`
 2. Optional `--push` flag
 3. Show git diff before commit
 4. Handle uncommitted changes on exit
@@ -69,7 +69,7 @@
 ## 3.4 Pull Request Creation
 
 **Tasks:**
-1. `cal isolation pr <workspace> --title "title"`
+1. `calf isolation pr <workspace> --title "title"`
 2. Support `--body` and `--base` flags
 3. Use `gh pr create` in VM
 4. Return PR URL
@@ -79,7 +79,7 @@
 ## 3.5 Status Display
 
 **Tasks:**
-1. Enhanced `cal isolation status <workspace>`
+1. Enhanced `calf isolation status <workspace>`
 2. Show git status of cloned repos
 3. Show uncommitted changes
 4. Show current branch

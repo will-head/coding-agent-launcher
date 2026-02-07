@@ -51,7 +51,7 @@ In the context of VM disk images, CoW sharing breaks down because:
    - System logs and cache updates
    - Application data changes
 
-2. **Setup Scripts** - The `cal-bootstrap --init` process runs extensive setup:
+2. **Setup Scripts** - The `calf-bootstrap --init` process runs extensive setup:
    - `vm-setup.sh` - Installs Homebrew, coding agents, tools
    - `vm-auth.sh` - Configures authentication
    - Creates `~/scripts/` directory
@@ -117,7 +117,7 @@ Standard tools like `du`, `ls`, and `stat` don't expose APFS clone metadata or s
 ### Space Management Options
 1. **Delete Unused Snapshots** - Remove snapshot VMs you don't need:
    ```bash
-   ./scripts/cal-bootstrap --snapshot delete <name>
+   ./scripts/calf-bootstrap --snapshot delete <name>
    ```
 
 2. **Use Fewer Concurrent VMs** - Keep only:
@@ -141,7 +141,7 @@ The observed disk usage is **correct and expected behavior**:
 - 28-31GB per VM is appropriate for a full macOS development environment
 - Total 170GB for 6 VMs is reasonable given their intended use
 
-The "snapshot" terminology in `cal-bootstrap --snapshot list` refers to functional checkpoints for rollback, not storage-efficient snapshots. They are full VM clones that start with CoW but diverge over time.
+The "snapshot" terminology in `calf-bootstrap --snapshot list` refers to functional checkpoints for rollback, not storage-efficient snapshots. They are full VM clones that start with CoW but diverge over time.
 
 ## References
 

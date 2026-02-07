@@ -6,7 +6,7 @@
 
 **Goal:** Full terminal UI experience.
 
-**Deliverable:** Complete TUI for CAL.
+**Deliverable:** Complete TUI for CALF.
 
 **Reference:** [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) for VM state information and operational details.
 
@@ -42,10 +42,10 @@
 ## 5.3 Log Streaming
 
 **Tasks:**
-1. `cal isolation logs <workspace> --follow`
+1. `calf isolation logs <workspace> --follow`
 2. Build log capture
 3. Agent output capture
-4. Proxy log streaming (`~/.cal-proxy.log`)
+4. Proxy log streaming (`~/.calf-proxy.log`)
 
 ---
 

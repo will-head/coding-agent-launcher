@@ -1,4 +1,4 @@
-// Package isolation provides VM isolation and management for CAL.
+// Package isolation provides VM isolation and management for CALF.
 package isolation
 
 import (
@@ -272,8 +272,8 @@ func TestTartClient_Delete_Success(t *testing.T) {
 func TestTartClient_List_ParsesJSON(t *testing.T) {
 	mock := newMockCommandRunner()
 	jsonOutput := `[
-		{"name":"cal-dev","state":"running","size":10.5},
-		{"name":"cal-clean","state":"stopped","size":8.2}
+		{"name":"calf-dev","state":"running","size":10.5},
+		{"name":"calf-clean","state":"stopped","size":8.2}
 	]`
 	mock.addOutput("list --format json", jsonOutput)
 
@@ -288,12 +288,12 @@ func TestTartClient_List_ParsesJSON(t *testing.T) {
 		t.Errorf("List() returned %d VMs, want 2", len(vms))
 	}
 
-	if vms[0].Name != "cal-dev" || vms[0].State != StateRunning {
-		t.Errorf("List() first VM = %+v, want cal-dev running", vms[0])
+	if vms[0].Name != "calf-dev" || vms[0].State != StateRunning {
+		t.Errorf("List() first VM = %+v, want calf-dev running", vms[0])
 	}
 
-	if vms[1].Name != "cal-clean" || vms[1].State != StateStopped {
-		t.Errorf("List() second VM = %+v, want cal-clean stopped", vms[1])
+	if vms[1].Name != "calf-clean" || vms[1].State != StateStopped {
+		t.Errorf("List() second VM = %+v, want calf-clean stopped", vms[1])
 	}
 }
 
@@ -350,7 +350,7 @@ func TestTartClient_IP_Timeout(t *testing.T) {
 func TestTartClient_Get_Found(t *testing.T) {
 	mock := newMockCommandRunner()
 	jsonOutput := `[
-		{"name":"cal-dev","state":"running","size":10.5},
+		{"name":"calf-dev","state":"running","size":10.5},
 		{"name":"test-vm","state":"stopped","size":8.2}
 	]`
 	mock.addOutput("list --format json", jsonOutput)
@@ -369,7 +369,7 @@ func TestTartClient_Get_Found(t *testing.T) {
 
 func TestTartClient_Get_NotFound(t *testing.T) {
 	mock := newMockCommandRunner()
-	jsonOutput := `[{"name":"cal-dev","state":"running"}]`
+	jsonOutput := `[{"name":"calf-dev","state":"running"}]`
 	mock.addOutput("list --format json", jsonOutput)
 
 	client := createTestClient(mock)
@@ -591,7 +591,7 @@ func TestTartClient_RunWithCacheDirs_AcceptsCacheDirs(t *testing.T) {
 	client.errorWriter = &buf
 
 	// Mock ensureInstalled
-	testCacheDirs := []string{"cal-cache:/path/to/cache"}
+	testCacheDirs := []string{"calf-cache:/path/to/cache"}
 	var testDirs []string
 	err := client.RunWithCacheDirs("test-vm", true, false, testDirs, testCacheDirs)
 

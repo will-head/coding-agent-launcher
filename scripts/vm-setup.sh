@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-echo "🚀 CAL VM Setup Script"
+echo "🚀 CALF VM Setup Script"
 echo "======================"
 echo ""
 
@@ -18,63 +18,63 @@ elif [ -x /usr/local/bin/brew ]; then
 fi
 
 # Configure package download caching (use direct virtio-fs mounts)
-echo "📦 Setting up CAL cache mount infrastructure..."
+echo "📦 Setting up CALF cache mount infrastructure..."
 
 # Deploy mount script
-if [ -f ~/scripts/cal-mount-shares.sh ]; then
-    sudo cp ~/scripts/cal-mount-shares.sh /usr/local/bin/
-    sudo chmod 755 /usr/local/bin/cal-mount-shares.sh
+if [ -f ~/scripts/calf-mount-shares.sh ]; then
+    sudo cp ~/scripts/calf-mount-shares.sh /usr/local/bin/
+    sudo chmod 755 /usr/local/bin/calf-mount-shares.sh
     echo "  ✓ Deployed mount script to /usr/local/bin/"
 else
     echo "  ⚠ Mount script not found in ~/scripts/"
 fi
 
 # Deploy LaunchDaemon plist
-if [ -f ~/scripts/com.cal.mount-shares.plist ]; then
-    sudo cp ~/scripts/com.cal.mount-shares.plist /Library/LaunchDaemons/
-    sudo chmod 644 /Library/LaunchDaemons/com.cal.mount-shares.plist
-    sudo chown root:wheel /Library/LaunchDaemons/com.cal.mount-shares.plist
+if [ -f ~/scripts/com.calf.mount-shares.plist ]; then
+    sudo cp ~/scripts/com.calf.mount-shares.plist /Library/LaunchDaemons/
+    sudo chmod 644 /Library/LaunchDaemons/com.calf.mount-shares.plist
+    sudo chown root:wheel /Library/LaunchDaemons/com.calf.mount-shares.plist
 
     # Load LaunchDaemon
-    sudo launchctl load /Library/LaunchDaemons/com.cal.mount-shares.plist 2>/dev/null || true
+    sudo launchctl load /Library/LaunchDaemons/com.calf.mount-shares.plist 2>/dev/null || true
     echo "  ✓ Deployed and loaded LaunchDaemon"
 else
     echo "  ⚠ LaunchDaemon plist not found in ~/scripts/"
 fi
 
 # Run mount script now to mount immediately (don't wait for reboot)
-if [ -x /usr/local/bin/cal-mount-shares.sh ]; then
-    /usr/local/bin/cal-mount-shares.sh
-    echo "  ✓ Cache mounted to ~/.cal-cache"
+if [ -x /usr/local/bin/calf-mount-shares.sh ]; then
+    /usr/local/bin/calf-mount-shares.sh
+    echo "  ✓ Cache mounted to ~/.calf-cache"
 fi
 
 # Configure cache environment variables if mount succeeded
-if mount | grep -q " on $HOME/.cal-cache " 2>/dev/null; then
+if mount | grep -q " on $HOME/.calf-cache " 2>/dev/null; then
     # Set cache environment variables for this script
-    export HOMEBREW_CACHE="$HOME/.cal-cache/homebrew"
-    export npm_config_cache="$HOME/.cal-cache/npm"
-    export GOMODCACHE="$HOME/.cal-cache/go"
+    export HOMEBREW_CACHE="$HOME/.calf-cache/homebrew"
+    export npm_config_cache="$HOME/.calf-cache/npm"
+    export GOMODCACHE="$HOME/.calf-cache/go"
 
     # Make cache configuration persistent in ~/.zshrc (only if not already present)
-    if ! grep -q "HOMEBREW_CACHE.*cal-cache" ~/.zshrc 2>/dev/null; then
+    if ! grep -q "HOMEBREW_CACHE.*calf-cache" ~/.zshrc 2>/dev/null; then
         echo '' >> ~/.zshrc
-        echo '# CAL: Package download cache (direct virtio-fs mount)' >> ~/.zshrc
-        echo 'export HOMEBREW_CACHE="$HOME/.cal-cache/homebrew"' >> ~/.zshrc
-        echo 'export npm_config_cache="$HOME/.cal-cache/npm"' >> ~/.zshrc
-        echo 'export GOMODCACHE="$HOME/.cal-cache/go"' >> ~/.zshrc
+        echo '# CALF: Package download cache (direct virtio-fs mount)' >> ~/.zshrc
+        echo 'export HOMEBREW_CACHE="$HOME/.calf-cache/homebrew"' >> ~/.zshrc
+        echo 'export npm_config_cache="$HOME/.calf-cache/npm"' >> ~/.zshrc
+        echo 'export GOMODCACHE="$HOME/.calf-cache/go"' >> ~/.zshrc
     fi
 
     # Add self-healing fallback to .zshrc (belt-and-suspenders)
-    if ! grep -q "cal-cache.*self-healing" ~/.zshrc 2>/dev/null; then
+    if ! grep -q "calf-cache.*self-healing" ~/.zshrc 2>/dev/null; then
         cat >> ~/.zshrc <<'EOF'
 
-# CAL Cache Mount Check (self-healing fallback)
+# CALF Cache Mount Check (self-healing fallback)
 # Runs on every shell start to ensure cache is available
 # Primary mount is handled by LaunchDaemon; this is backup
-if ! mount | grep -q " on $HOME/.cal-cache " 2>/dev/null; then
+if ! mount | grep -q " on $HOME/.calf-cache " 2>/dev/null; then
     # Not mounted - try to mount (works if virtio-fs tag exists)
-    if mount_virtiofs cal-cache ~/.cal-cache 2>/dev/null; then
-        echo "📦 CAL cache mounted (recovered)"
+    if mount_virtiofs calf-cache ~/.calf-cache 2>/dev/null; then
+        echo "📦 CALF cache mounted (recovered)"
     fi
 fi
 EOF
@@ -124,7 +124,7 @@ else
         echo "  → Check if SSH tunnel is still running"
     elif pgrep -f sshuttle >/dev/null 2>&1; then
         echo "  → Transparent proxy (sshuttle) is running but connectivity failed"
-        echo "  → Check ~/.cal-proxy.log for errors"
+        echo "  → Check ~/.calf-proxy.log for errors"
     else
         echo "  → No proxy active"
         echo "  → This may cause installations to fail"
@@ -521,24 +521,24 @@ fi
 # Save VM credentials and settings for login scripts
 echo ""
 echo "🔑 Saving VM configuration..."
-cat > ~/.cal-vm-config <<EOF
-# CAL VM Configuration (restricted permissions)
+cat > ~/.calf-vm-config <<EOF
+# CALF VM Configuration (restricted permissions)
 VM_PASSWORD="${VM_PASSWORD:-admin}"
 EOF
-chmod 600 ~/.cal-vm-config
-echo "  ✓ Saved to ~/.cal-vm-config (mode 600)"
+chmod 600 ~/.calf-vm-config
+echo "  ✓ Saved to ~/.calf-vm-config (mode 600)"
 
 # Add keychain auto-unlock to .zshrc (runs on every login)
-if ! grep -q '# CAL Keychain Auto-Unlock' ~/.zshrc; then
+if ! grep -q '# CALF Keychain Auto-Unlock' ~/.zshrc; then
     cat >> ~/.zshrc <<'KEYCHAIN_EOF'
 
-# CAL Keychain Auto-Unlock
+# CALF Keychain Auto-Unlock
 # Only run on login shells, and only if not already done in this session chain
-if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
-    export CAL_SESSION_INITIALIZED=1
+if [[ -o login ]] && [ -z "$CALF_SESSION_INITIALIZED" ]; then
+    export CALF_SESSION_INITIALIZED=1
 
-    if [ -f ~/.cal-vm-config ]; then
-        source ~/.cal-vm-config
+    if [ -f ~/.calf-vm-config ]; then
+        source ~/.calf-vm-config
         if security unlock-keychain -p "${VM_PASSWORD:-admin}" login.keychain 2>/dev/null; then
             echo "🔐 Login keychain: ✓"
         else
@@ -546,34 +546,34 @@ if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
         fi
     fi
 
-    # CAL Auth Needed (during --init)
-    # Runs vm-auth.sh for initial authentication during cal-bootstrap --init
-    if [ -f ~/.cal-auth-needed ]; then
-        rm -f ~/.cal-auth-needed
+    # CALF Auth Needed (during --init)
+    # Runs vm-auth.sh for initial authentication during calf-bootstrap --init
+    if [ -f ~/.calf-auth-needed ]; then
+        rm -f ~/.calf-auth-needed
         if [ -f ~/scripts/vm-auth.sh ]; then
             echo ""
             echo "🚀 Running initial authentication..."
             echo ""
             CAL_AUTH_NEEDED=1 zsh ~/scripts/vm-auth.sh
 
-            # Exit to allow cal-bootstrap to continue with cal-init creation
+            # Exit to allow cal-bootstrap to continue with calf-init creation
             # Note: cal-bootstrap will clear tmux session data before creating snapshot
-            # User will be automatically reconnected after cal-init is ready
+            # User will be automatically reconnected after calf-init is ready
             exit 0
         fi
     fi
 
-    # CAL First Run (after restoring cal-init)
+    # CALF First Run (after restoring calf-init)
     # Runs vm-first-run.sh to check for remote repository updates and enable session persistence
     # The script will enable tmux history and remove the first-run flag when complete
     # NOTE: Only runs if auth-needed flag is NOT present (skips during --init, runs after restore)
-    if [ -f ~/.cal-first-run ] && [ ! -f ~/.cal-auth-needed ]; then
+    if [ -f ~/.calf-first-run ] && [ ! -f ~/.calf-auth-needed ]; then
         if [ -f ~/scripts/vm-first-run.sh ]; then
             echo ""
             echo "🔄 First login detected - checking for repository updates..."
             echo ""
             zsh ~/scripts/vm-first-run.sh
-            # Stay in cal-dev shell (don't exit like vm-auth does)
+            # Stay in calf-dev shell (don't exit like vm-auth does)
         fi
     fi
 fi
@@ -584,13 +584,13 @@ else
 fi
 
 # Add tmux status prompt (shows on every new shell inside tmux)
-if ! grep -q '# CAL Tmux Status Prompt' ~/.zshrc; then
+if ! grep -q '# CALF Tmux Status Prompt' ~/.zshrc; then
     cat >> ~/.zshrc <<'TMUX_PROMPT_EOF'
 
-# CAL Tmux Status Prompt
+# CALF Tmux Status Prompt
 # Show helpful message when starting new shells inside tmux
 # Skip during first-run (TPM not loaded yet due to first-run flag)
-if [ -n "$TMUX" ] && [ ! -f ~/.cal-first-run ]; then
+if [ -n "$TMUX" ] && [ ! -f ~/.calf-first-run ]; then
     # Get current tmux prefix key
     TMUX_PREFIX=$(tmux show-options -gv prefix 2>/dev/null || echo "C-b")
     # Convert tmux prefix notation to human-readable format
@@ -668,9 +668,9 @@ fi
 echo ""
 echo "⚙️  Configuring logout git status check..."
 
-if [ ! -f ~/.zlogout ] || ! grep -q '# CAL Logout Git Status Check' ~/.zlogout; then
+if [ ! -f ~/.zlogout ] || ! grep -q '# CALF Logout Git Status Check' ~/.zlogout; then
     cat >> ~/.zlogout <<'EOF'
-# CAL Logout Git Status Check
+# CALF Logout Git Status Check
 # Scans for uncommitted or unpushed changes before logout
 # Note: This scan may take a few seconds if ~/code has many repositories
 
@@ -740,7 +740,7 @@ if [[ -o interactive ]]; then
                 echo ""
                 # Prevent logout by starting a new login shell
                 # This replaces the current shell process, effectively cancelling the logout
-                # The CAL_SESSION_INITIALIZED flag prevents re-running keychain unlock
+                # The CALF_SESSION_INITIALIZED flag prevents re-running keychain unlock
                 # But .zlogout will still run on next exit to check git again
                 exec zsh -l
             else
@@ -761,45 +761,45 @@ echo ""
 echo "🔍 Configuring VM detection..."
 
 # Create VM info file
-# NOTE: CAL_VERSION should be updated when making significant changes to CAL.
+# NOTE: CALF_VERSION should be updated when making significant changes to CAL.
 # Version format: MAJOR.MINOR.PATCH (semver)
 # - MAJOR: Breaking changes to VM detection API or structure
 # - MINOR: New features or enhancements (backward compatible)
 # - PATCH: Bug fixes and minor improvements
-cat > ~/.cal-vm-info <<EOF
-# CAL VM Information
-# This file indicates this system is running inside a CAL VM
+cat > ~/.calf-vm-info <<EOF
+# CALF VM Information
+# This file indicates this system is running inside a CALF VM
 # Coding agents can check for this file to detect VM environment
 
-CAL_VM=true
-CAL_VM_NAME=${CAL_VM_NAME:-cal-dev}
-CAL_VM_CREATED=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-CAL_VERSION=0.1.0
+CALF_VM=true
+CALF_VM_NAME=${CALF_VM_NAME:-calf-dev}
+CALF_VM_CREATED=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+CALF_VERSION=0.1.0
 EOF
-echo "  ✓ Created VM info file at ~/.cal-vm-info"
+echo "  ✓ Created VM info file at ~/.calf-vm-info"
 
-# Add CAL_VM environment variable to .zshrc
-if ! grep -q 'export CAL_VM=' ~/.zshrc; then
+# Add CALF_VM environment variable to .zshrc
+if ! grep -q 'export CALF_VM=' ~/.zshrc; then
     cat >> ~/.zshrc <<'EOF'
 
-# CAL VM Detection
-# Indicates this system is running inside a CAL VM
-export CAL_VM=true
-export CAL_VM_INFO="$HOME/.cal-vm-info"
+# CALF VM Detection
+# Indicates this system is running inside a CALF VM
+export CALF_VM=true
+export CALF_VM_INFO="$HOME/.calf-vm-info"
 
 # Helper function to display VM info
-cal-vm-info() {
-    if [ -f ~/.cal-vm-info ]; then
-        cat ~/.cal-vm-info
+calf-vm-info() {
+    if [ -f ~/.calf-vm-info ]; then
+        cat ~/.calf-vm-info
     else
-        echo "Not running in a CAL VM"
+        echo "Not running in a CALF VM"
         return 1
     fi
 }
 
-# Helper function to check if running in CAL VM
-is-cal-vm() {
-    [ -f ~/.cal-vm-info ] && [ "$CAL_VM" = "true" ]
+# Helper function to check if running in CALF VM
+is-calf-vm() {
+    [ -f ~/.calf-vm-info ] && [ "$CALF_VM" = "true" ]
 }
 EOF
     echo "  ✓ Added VM detection to ~/.zshrc"
@@ -807,9 +807,9 @@ else
     echo "  ✓ VM detection already configured in ~/.zshrc"
 fi
 
-# Reload configuration to make CAL_VM available
-export CAL_VM=true
-export CAL_VM_INFO="$HOME/.cal-vm-info"
+# Reload configuration to make CALF_VM available
+export CALF_VM=true
+export CALF_VM_INFO="$HOME/.calf-vm-info"
 
 # Configure tmux with session persistence
 echo ""
@@ -824,14 +824,14 @@ if [ -f ~/scripts/vm-tmux-resurrect.sh ]; then
         echo "  ~/scripts/vm-setup.sh --init"
         echo ""
         echo "Or re-run the full bootstrap from the host:"
-        echo "  cal-bootstrap --init"
+        echo "  calf-bootstrap --init"
         echo ""
         exit 1
     fi
 else
     echo "  ✗ FATAL: vm-tmux-resurrect.sh not found in ~/scripts/"
     echo "  → Bootstrap cannot continue without required scripts"
-    echo "  → Re-run cal-bootstrap --init from the host"
+    echo "  → Re-run calf-bootstrap --init from the host"
     exit 1
 fi
 
@@ -951,25 +951,25 @@ if [ -n "$HOST_USER" ]; then
     echo ""
     echo "🌐 Configuring transparent proxy (sshuttle)..."
     # Save proxy configuration
-    cat > ~/.cal-proxy-config <<EOF
-# CAL Transparent Proxy Configuration
+    cat > ~/.calf-proxy-config <<EOF
+# CALF Transparent Proxy Configuration
 export HOST_GATEWAY="${HOST_GATEWAY}"
 export HOST_USER="${HOST_USER}"
 export PROXY_MODE="${PROXY_MODE}"
 EOF
-    echo "  ✓ Proxy configuration saved to ~/.cal-proxy-config"
+    echo "  ✓ Proxy configuration saved to ~/.calf-proxy-config"
 
     # Add transparent proxy functions to .zshrc if not present
-    if ! grep -q '# CAL Transparent Proxy Functions' ~/.zshrc; then
+    if ! grep -q '# CALF Transparent Proxy Functions' ~/.zshrc; then
         cat >> ~/.zshrc <<'EOF'
 
-# CAL Transparent Proxy Functions
+# CALF Transparent Proxy Functions
 # Auto-loaded from vm-setup.sh
 # Uses sshuttle for truly transparent network routing - no app config needed
 
 # Load proxy configuration
-if [ -f ~/.cal-proxy-config ]; then
-    source ~/.cal-proxy-config
+if [ -f ~/.calf-proxy-config ]; then
+    source ~/.calf-proxy-config
 fi
 
 # Start transparent proxy (sshuttle)
@@ -991,9 +991,9 @@ proxy-start() {
 
     # Start sshuttle in background
     # Routes all traffic through host, handles DNS, excludes local network
-    nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.cal-proxy.log 2>&1 &
+    nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.calf-proxy.log 2>&1 &
     local sshuttle_pid=$!
-    echo "$sshuttle_pid" > ~/.cal-proxy.pid
+    echo "$sshuttle_pid" > ~/.calf-proxy.pid
     disown 2>/dev/null || true
 
     # Wait for sshuttle to start
@@ -1007,21 +1007,21 @@ proxy-start() {
         fi
     done
 
-    echo "⚠ Transparent proxy may not have started (check ~/.cal-proxy.log)"
+    echo "⚠ Transparent proxy may not have started (check ~/.calf-proxy.log)"
     return 1
 }
 
 # Stop transparent proxy
 proxy-stop() {
     # Try PID file first
-    if [ -f ~/.cal-proxy.pid ]; then
-        local pid=$(cat ~/.cal-proxy.pid)
+    if [ -f ~/.calf-proxy.pid ]; then
+        local pid=$(cat ~/.calf-proxy.pid)
         if kill "$pid" 2>/dev/null; then
-            rm ~/.cal-proxy.pid
+            rm ~/.calf-proxy.pid
             echo "✓ Transparent proxy stopped"
             return 0
         fi
-        rm ~/.cal-proxy.pid 2>/dev/null
+        rm ~/.calf-proxy.pid 2>/dev/null
     fi
 
     # Fallback: kill by process name
@@ -1071,8 +1071,8 @@ proxy-status() {
 
 # View proxy logs
 proxy-log() {
-    if [ -f ~/.cal-proxy.log ]; then
-        tail -50 ~/.cal-proxy.log
+    if [ -f ~/.calf-proxy.log ]; then
+        tail -50 ~/.calf-proxy.log
     else
         echo "No proxy log file found"
     fi
@@ -1119,7 +1119,7 @@ if [ "$USING_BOOTSTRAP_PROXY" = "true" ]; then
 fi
 
 # Create auth-needed flag for automatic vm-auth during --init
-touch ~/.cal-auth-needed
+touch ~/.calf-auth-needed
 sync  # Ensure filesystem writes are flushed before VM reboot
 echo "  ✓ Auth-needed flag set (vm-auth will run on next login)"
 

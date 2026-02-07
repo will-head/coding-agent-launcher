@@ -5,14 +5,14 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/go/bin:/opt/homebrew/bin:$PATH"
 
 # Load proxy configuration if available
-if [ -f ~/.cal-proxy-config ]; then
-    source ~/.cal-proxy-config
+if [ -f ~/.calf-proxy-config ]; then
+    source ~/.calf-proxy-config
 fi
 
 clear
 echo ""
 echo "============================================"
-echo "  CAL VM First Run - Check Repository Updates"
+echo "  CALF VM First Run - Check Repository Updates"
 echo "============================================"
 echo ""
 
@@ -49,7 +49,7 @@ start_proxy_standalone() {
     fi
 
     echo "  Starting transparent proxy (sshuttle)..."
-    nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.cal-proxy.log 2>&1 &
+    nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.calf-proxy.log 2>&1 &
 
     # Wait for it to start (usually takes 1-2 seconds)
     local count=0
@@ -62,7 +62,7 @@ start_proxy_standalone() {
         fi
     done
 
-    echo "  ⚠ Proxy failed to start (check ~/.cal-proxy.log)"
+    echo "  ⚠ Proxy failed to start (check ~/.calf-proxy.log)"
     return 1
 }
 
@@ -76,7 +76,7 @@ else
 
     if pgrep -f sshuttle >/dev/null 2>&1; then
         echo "  → Proxy is running but connectivity failed"
-        echo "  → Check ~/.cal-proxy.log for errors"
+        echo "  → Check ~/.calf-proxy.log for errors"
         echo ""
         echo "  ⚠ Repository checks may fail without network"
         echo ""
@@ -92,7 +92,7 @@ else
                 echo ""
             else
                 echo "  ⚠ Proxy started but network still not working"
-                echo "  → Check ~/.cal-proxy.log for errors"
+                echo "  → Check ~/.calf-proxy.log for errors"
                 echo ""
                 echo "  ⚠ Repository checks may fail without network"
                 echo ""
@@ -239,8 +239,8 @@ else
 fi
 
 # Remove first-run flag (only after tmux history is enabled)
-if [ -f ~/.cal-first-run ]; then
-    rm -f ~/.cal-first-run && sync
+if [ -f ~/.calf-first-run ]; then
+    rm -f ~/.calf-first-run && sync
     echo "  ✓ First-run flag removed"
     echo ""
     echo "✓ Tmux session persistence enabled"

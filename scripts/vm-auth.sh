@@ -10,17 +10,17 @@ if ! command -v agent >/dev/null 2>&1; then
 fi
 
 # Load proxy configuration if available
-if [ -f ~/.cal-proxy-config ]; then
-    source ~/.cal-proxy-config
+if [ -f ~/.calf-proxy-config ]; then
+    source ~/.calf-proxy-config
 fi
 
 clear
 echo ""
 echo "============================================"
-echo "  CAL VM Setup - Initial Authentication"
+echo "  CALF VM Setup - Initial Authentication"
 echo "============================================"
 echo ""
-echo "💡 This script runs during cal-bootstrap --init"
+echo "💡 This script runs during calf-bootstrap --init"
 echo "💡 For repository sync after restore, use vm-first-run.sh"
 echo ""
 
@@ -50,7 +50,7 @@ start_proxy_standalone() {
     fi
 
     echo "  Starting transparent proxy (sshuttle)..."
-    nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.cal-proxy.log 2>&1 &
+    nohup sshuttle --dns -r ${HOST_USER}@${HOST_GATEWAY} 0.0.0.0/0 -x ${HOST_GATEWAY}/32 -x 192.168.64.0/24 >> ~/.calf-proxy.log 2>&1 &
     
     # Wait for it to start (usually takes 1-2 seconds)
     local count=0
@@ -63,7 +63,7 @@ start_proxy_standalone() {
         fi
     done
 
-    echo "  ⚠ Proxy failed to start (check ~/.cal-proxy.log)"
+    echo "  ⚠ Proxy failed to start (check ~/.calf-proxy.log)"
     return 1
 }
 
@@ -77,7 +77,7 @@ else
 
     if pgrep -f sshuttle >/dev/null 2>&1; then
         echo "  → Proxy is running but connectivity failed"
-        echo "  → Check ~/.cal-proxy.log for errors"
+        echo "  → Check ~/.calf-proxy.log for errors"
         echo ""
         echo "  ⚠ Authentication may fail without network"
         echo ""
@@ -93,7 +93,7 @@ else
                 echo ""
             else
                 echo "  ⚠ Proxy started but network still not working"
-                echo "  → Check ~/.cal-proxy.log for errors"
+                echo "  → Check ~/.calf-proxy.log for errors"
                 echo ""
                 echo "  ⚠ Authentication may fail without network"
                 echo ""
@@ -475,9 +475,9 @@ echo ""
 echo "💡 To re-authenticate agents, run:"
 echo "   ~/scripts/vm-auth.sh"
 echo ""
-echo "💡 To sync repositories after restoring cal-init, run:"
+echo "💡 To sync repositories after restoring calf-init, run:"
 echo "   ~/scripts/vm-first-run.sh"
 echo ""
 
 # Note: We no longer exit here - user stays in shell during --init
-# cal-bootstrap will handle the rest (create cal-init, then reconnect)
+# cal-bootstrap will handle the rest (create calf-init, then reconnect)

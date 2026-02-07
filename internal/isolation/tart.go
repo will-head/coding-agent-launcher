@@ -1,4 +1,4 @@
-// Package isolation provides VM isolation and management for CAL.
+// Package isolation provides VM isolation and management for CALF.
 package isolation
 
 import (

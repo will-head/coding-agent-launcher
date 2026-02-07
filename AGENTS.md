@@ -2,32 +2,32 @@
 
 ## Project
 
-**CAL** (Coding Agent Loader) - VM-based sandbox for AI coding agents in Tart macOS VMs.
+**CALF** (Coding Agent Loader) - VM-based sandbox for AI coding agents in Tart macOS VMs.
 
 **Stack:** Go + Charm (bubbletea/lipgloss/bubbles) + Cobra + Viper
 
 **Structure:**
 ```
-cmd/cal/main.go           # Entry point
+cmd/calf/main.go          # Entry point
 internal/                  # tui/, isolation/, agent/, env/, github/, config/
-scripts/                   # Shell scripts (cal-bootstrap, vm-setup, vm-auth)
+scripts/                   # Shell scripts (calf-bootstrap, vm-setup, vm-auth)
 ```
 
-**Commands:** `go build -o cal ./cmd/cal` | `go test ./...` | `staticcheck ./...`
+**Commands:** `go build -o calf ./cmd/calf` | `go test ./...` | `staticcheck ./...`
 
 ---
 
 ## Core Rules
 
-### CAL_VM Auto-Approve
+### CALF_VM Auto-Approve
 
-The agent **MUST** verify VM status at session start by running `echo $CAL_VM` before any approval-gated step:
-- `CAL_VM=true` → Display "Running in cal-dev VM (isolated environment)" → auto-approve enabled
+The agent **MUST** verify VM status at session start by running `echo $CALF_VM` before any approval-gated step:
+- `CALF_VM=true` → Display "Running in calf-dev VM (isolated environment)" → auto-approve enabled
 - Any other value (empty, unset, `false`, etc.) → Display "Running on HOST machine (not isolated)" → require all approvals
 - **Fail-safe:** If the check cannot be performed or returns unexpected output, default to HOST (require approval)
 - **Never assume VM status** — always verify explicitly
 
-When `CAL_VM=true` (confirmed via explicit check):
+When `CALF_VM=true` (confirmed via explicit check):
 - All operations proceed without user confirmation
 - EXCEPTION: Destructive remote git operations always require approval:
   - `push --force` (overwrites remote history)
@@ -35,7 +35,7 @@ When `CAL_VM=true` (confirmed via explicit check):
 - Local-only operations (reset, checkout, clean, etc.) are allowed — GitHub is the restore point
 - This applies to ALL workflows (Interactive, Bug Cleanup, Documentation, etc.)
 
-When `CAL_VM` is not true (running on HOST):
+When `CALF_VM` is not true (running on HOST):
 - Standard workflow approvals apply as documented
 - **When in doubt, require approval**
 
@@ -92,10 +92,10 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 ## Prohibitions
 
 **Never:**
-- Run commands without user approval (Interactive workflow — unless `CAL_VM=true`, see [CAL_VM Auto-Approve](#cal_vm-auto-approve))
-- Commit without user approval (Interactive workflow — unless `CAL_VM=true`)
+- Run commands without user approval (Interactive workflow — unless `CALF_VM=true`, see [CALF_VM Auto-Approve](#cal_vm-auto-approve))
+- Commit without user approval (Interactive workflow — unless `CALF_VM=true`)
 - Commit to main branch (Create PR workflow)
-- Perform destructive remote git operations without approval (`push --force`, `push --delete` — even when `CAL_VM=true`)
+- Perform destructive remote git operations without approval (`push --force`, `push --delete` — even when `CALF_VM=true`)
 - Commit with failing tests or build
 - Skip code review for code/script changes (Interactive workflow)
 - Modify ADR or PRD files
@@ -123,11 +123,11 @@ Skip the menu and launch that workflow directly (same as selecting it from the `
 
 1. **Determine workflow** - If user entered a number (1-9), use that workflow directly. Otherwise, if unclear, ask user (see [Workflow Modes](#workflow-modes) routing rules)
 2. **Read and reiterate workflow** - Follow [Session Start Procedure](docs/WORKFLOWS.md#session-start-procedure) from Shared Conventions
-3. **Check environment** - Run `echo $CAL_VM` (must happen before any approval-gated step):
-   - `CAL_VM=true`: Display "Running in cal-dev VM (isolated environment)" — approvals auto-granted
+3. **Check environment** - Run `echo $CALF_VM` (must happen before any approval-gated step):
+   - `CALF_VM=true`: Display "Running in calf-dev VM (isolated environment)" — approvals auto-granted
    - Any other value (empty, unset, etc.): Display "Running on HOST machine (not isolated)" — approvals required
    - If check fails: default to HOST (require approval)
-4. Run `git status` to see current branch, then **switch to main if not already there** with `git checkout main && git pull` (ask approval on HOST; auto-approved when `CAL_VM=true`)
+4. Run `git status` to see current branch, then **switch to main if not already there** with `git checkout main && git pull` (ask approval on HOST; auto-approved when `CALF_VM=true`)
 5. Run `git fetch` to get latest remote state
 6. Read `PLAN.md` for overview and current phase status (always read from main branch)
 7. Read active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`) for current tasks

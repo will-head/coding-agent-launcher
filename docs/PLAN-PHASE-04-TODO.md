@@ -35,7 +35,7 @@
    artifacts: ArtifactConfig
    ```
 2. Parse and validate manifests
-3. Store in `~/.cal/environments/plugins/`
+3. Store in `~/.calf/environments/plugins/`
 
 **Key learnings from Phase 0 (ADR-002):**
 - Tools install via multiple methods: brew, brew cask, npm, go install, curl scripts
@@ -78,11 +78,11 @@ Create manifests for:
 ## 4.4 Environment CLI Commands
 
 **Tasks:**
-1. `cal isolation env list <workspace>`
-2. `cal isolation env install <workspace> <env>`
-3. `cal isolation env remove <workspace> <env>`
-4. `cal isolation env verify <workspace>`
-5. `cal isolation env info <env>`
+1. `calf isolation env list <workspace>`
+2. `calf isolation env install <workspace> <env>`
+3. `calf isolation env remove <workspace> <env>`
+4. `calf isolation env verify <workspace>`
+5. `calf isolation env info <env>`
 
 ---
 
@@ -91,5 +91,5 @@ Create manifests for:
 **Tasks:**
 1. Define template schema
 2. Create templates: minimal, ios, android, mobile, backend
-3. `cal isolation init --template <name>`
+3. `calf isolation init --template <name>`
 4. Auto-install environments on first start

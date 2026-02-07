@@ -60,7 +60,7 @@ All references to `cal` must be updated to `calf`. This includes:
 
 #### File/Directory Renames
 - `cmd/cal/` → `cmd/calf/`
-- `scripts/cal-bootstrap` → `scripts/calf-bootstrap`
+- `scripts/calf-bootstrap` → `scripts/calf-bootstrap`
 - `cal` (binary) → `calf`
 
 #### VM Names
@@ -74,23 +74,23 @@ All references to `cal` must be updated to `calf`. This includes:
 - `CAL_SESSION_INITIALIZED` → `CALF_SESSION_INITIALIZED`
 
 #### Config/Cache Paths
-- `~/.cal-cache/` → `~/.calf-cache/`
-- `~/.cal-proxy-config` → `~/.calf-proxy-config`
-- `~/.cal-proxy.log` → `~/.calf-proxy.log`
-- `~/.cal-proxy.pid` → `~/.calf-proxy.pid`
-- `~/.cal-vm-config` → `~/.calf-vm-config`
-- `~/.cal-vm-info` → `~/.calf-vm-info`
-- `~/.cal-auth-needed` → `~/.calf-auth-needed`
-- `~/.cal-first-run` → `~/.calf-first-run`
+- `~/.calf-cache/` → `~/.calf-cache/`
+- `~/.calf-proxy-config` → `~/.calf-proxy-config`
+- `~/.calf-proxy.log` → `~/.calf-proxy.log`
+- `~/.calf-proxy.pid` → `~/.calf-proxy.pid`
+- `~/.calf-vm-config` → `~/.calf-vm-config`
+- `~/.calf-vm-info` → `~/.calf-vm-info`
+- `~/.calf-auth-needed` → `~/.calf-auth-needed`
+- `~/.calf-first-run` → `~/.calf-first-run`
 - `/Volumes/My Shared Files/cal-cache/` → `/Volumes/My Shared Files/calf-cache/`
 
 #### Mount Tags
 - `cal-cache` → `calf-cache`
 
 #### Commands
-- `cal isolation` → `calf isolation`
-- `cal cache` → `calf cache`
-- `cal config` → `calf config`
+- `calf isolation` → `calf isolation`
+- `calf cache` → `calf cache`
+- `calf config` → `calf config`
 
 #### Tmux Session
 - `cal` session → `calf` session
@@ -104,7 +104,7 @@ All references to `cal` must be updated to `calf`. This includes:
 1. Implement changes in a single PR to avoid partial rename states
 2. Update all scripts, code, and documentation atomically
 3. Users with existing VMs will need to recreate them (breaking change)
-4. Host cache directory can be migrated: `mv ~/.cal-cache ~/.calf-cache`
+4. Host cache directory can be migrated: `mv ~/.calf-cache ~/.calf-cache`
 
 ### What Stays the Same
 

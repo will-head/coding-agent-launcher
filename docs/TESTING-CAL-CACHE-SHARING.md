@@ -6,13 +6,13 @@
 
 ## What Was Fixed
 
-Added Tart directory sharing for `~/.cal-cache` to make package caches (Homebrew, npm, Go, Git) accessible inside VMs.
+Added Tart directory sharing for `~/.calf-cache` to make package caches (Homebrew, npm, Go, Git) accessible inside VMs.
 
 **Changes:**
-- `scripts/cal-bootstrap` - Added `--dir cal-cache:${HOME}/.cal-cache:rw` to both `start_vm_background()` and `do_gui()` functions
+- `scripts/calf-bootstrap` - Added `--dir calf-cache:${HOME}/.calf-cache:rw` to both `start_vm_background()` and `do_gui()` functions
 
 **Why Needed:**
-- Package cache implementations create symlinks like `~/.cal-cache/git -> /Volumes/My Shared Files/cal-cache/git`
+- Package cache implementations create symlinks like `~/.calf-cache/git -> /Volumes/My Shared Files/cal-cache/git`
 - Before: `/Volumes/My Shared Files/cal-cache` didn't exist (not shared) → broken symlinks
 - After: `/Volumes/My Shared Files/cal-cache` exists → symlinks work
 
@@ -24,7 +24,7 @@ Tests updating an existing cal-dev VM without destroying it.
 
 ### Prerequisites
 - Existing cal-dev VM
-- Updated cal-bootstrap script (from this commit)
+- Updated calf-bootstrap script (from this commit)
 
 ### Setup Test Script
 
@@ -44,7 +44,7 @@ if [ -d "/Volumes/My Shared Files/cal-cache" ]; then
     echo "  ✓ /Volumes/My Shared Files/cal-cache exists"
 else
     echo "  ✗ /Volumes/My Shared Files/cal-cache NOT found"
-    echo "  → VM needs restart with updated cal-bootstrap"
+    echo "  → VM needs restart with updated calf-bootstrap"
     exit 1
 fi
 echo ""
@@ -62,11 +62,11 @@ echo ""
 
 # Test 3: Test symlink creation
 echo "Test 3: Test symlink creation to shared cache"
-mkdir -p ~/.cal-cache
-ln -sf "/Volumes/My Shared Files/cal-cache/git" ~/.cal-cache/git 2>/dev/null || true
-if [ -L ~/.cal-cache/git ]; then
-    echo "  ✓ Symlink created: ~/.cal-cache/git"
-    if [ -d ~/.cal-cache/git ]; then
+mkdir -p ~/.calf-cache
+ln -sf "/Volumes/My Shared Files/cal-cache/git" ~/.calf-cache/git 2>/dev/null || true
+if [ -L ~/.calf-cache/git ]; then
+    echo "  ✓ Symlink created: ~/.calf-cache/git"
+    if [ -d ~/.calf-cache/git ]; then
         echo "  ✓ Symlink target exists (not broken)"
     else
         echo "  ⚠ Symlink target doesn't exist (host git cache empty)"
@@ -114,18 +114,18 @@ chmod +x ~/test-cal-cache-sharing.sh
 
 1. **Ensure host has cache directory** (on host machine):
    ```bash
-   mkdir -p ~/.cal-cache/{homebrew,npm,go,git}
-   ls -la ~/.cal-cache
+   mkdir -p ~/.calf-cache/{homebrew,npm,go,git}
+   ls -la ~/.calf-cache
    ```
 
 2. **Stop the current VM** (from host):
    ```bash
-   ./cal-bootstrap --stop
+   ./calf-bootstrap --stop
    ```
 
-3. **Start VM with updated cal-bootstrap** (applies new --dir flag):
+3. **Start VM with updated calf-bootstrap** (applies new --dir flag):
    ```bash
-   ./cal-bootstrap --run
+   ./calf-bootstrap --run
    ```
 
 4. **Inside VM, run the test script**:
@@ -142,10 +142,10 @@ chmod +x ~/test-cal-cache-sharing.sh
 
 ### Troubleshooting
 If test fails:
-- Check that `~/.cal-cache` exists on host
-- Verify cal-bootstrap changes were saved
+- Check that `~/.calf-cache` exists on host
+- Verify calf-bootstrap changes were saved
 - Check tart process has the new `--dir` flag: `ps aux | grep tart`
-- Review VM logs: `cat ~/.cal-bootstrap.log`
+- Review VM logs: `cat ~/.calf-bootstrap.log`
 
 ---
 
@@ -155,24 +155,24 @@ Tests that a brand new `--init` creates the VM with cal-cache sharing from the s
 
 ### Prerequisites
 - No existing cal-dev, cal-init, cal-clean VMs (or use different names)
-- Updated cal-bootstrap script
+- Updated calf-bootstrap script
 
 ### Testing Steps
 
 1. **Create host cache directory** (if not exists):
    ```bash
-   mkdir -p ~/.cal-cache/{homebrew,npm,go,git}
+   mkdir -p ~/.calf-cache/{homebrew,npm,go,git}
    ```
 
 2. **OPTIONAL: Clean slate** (CAUTION: Destroys existing VMs):
    ```bash
    # Only run if you want to test from scratch
-   ./cal-bootstrap --destroy --yes  # Use with caution
+   ./calf-bootstrap --destroy --yes  # Use with caution
    ```
 
 3. **Initialize fresh VM**:
    ```bash
-   ./cal-bootstrap --init
+   ./calf-bootstrap --init
    ```
 
 4. **During init, verify tart command** (from another terminal on host):
@@ -182,7 +182,7 @@ Tests that a brand new `--init` creates the VM with cal-cache sharing from the s
 
    Should see:
    ```
-   --dir cal-cache:/Users/admin/.cal-cache:rw
+   --dir calf-cache:/Users/admin/.calf-cache:rw
    ```
 
 5. **After init completes, inside VM, run test script**:
@@ -215,7 +215,7 @@ Tests that a brand new `--init` creates the VM with cal-cache sharing from the s
 
    From host:
    ```bash
-   ./cal-bootstrap --restart
+   ./calf-bootstrap --restart
    ```
 
    Inside VM again:
@@ -272,10 +272,10 @@ After confirming cal-cache sharing works:
 
 If issues are found:
 
-1. **Revert cal-bootstrap changes**:
+1. **Revert calf-bootstrap changes**:
    ```bash
    git revert HEAD  # Revert this commit
-   ./cal-bootstrap --restart
+   ./calf-bootstrap --restart
    ```
 
 2. **Alternative approach**:

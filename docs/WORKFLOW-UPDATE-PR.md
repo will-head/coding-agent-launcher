@@ -149,7 +149,7 @@ go test ./...
 Run build (no permission needed):
 
 ```bash
-go build -o cal ./cmd/cal
+go build -o calf ./cmd/calf
 ```
 
 **Must succeed before proceeding.** Fix any build errors before continuing.
@@ -193,7 +193,7 @@ Before pushing updates:
 - [ ] All requested changes implemented
 - [ ] Changes address root cause, not just symptoms
 - [ ] Tests pass (`go test ./...`)
-- [ ] Build succeeds (`go build -o cal ./cmd/cal`)
+- [ ] Build succeeds (`go build -o calf ./cmd/calf`)
 - [ ] Changes pushed to PR branch
 - [ ] Switched back to main branch
 - [ ] STATUS.md updated (moved to "Needs Review")

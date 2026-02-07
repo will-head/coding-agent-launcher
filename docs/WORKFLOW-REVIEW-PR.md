@@ -226,7 +226,7 @@ go test ./...
 
 **Run build:**
 ```bash
-go build -o cal ./cmd/cal
+go build -o calf ./cmd/calf
 ```
 
 **Both must pass before proceeding.** If fixes introduced regressions, fix them before continuing.
@@ -368,7 +368,7 @@ Before completing review:
 - [ ] Findings documented with file:line references, severity, and classification
 - [ ] All fixable issues resolved directly on PR branch
 - [ ] Tests pass after fixes (`go test ./...`)
-- [ ] Build succeeds after fixes (`go build -o cal ./cmd/cal`)
+- [ ] Build succeeds after fixes (`go build -o calf ./cmd/calf`)
 - [ ] Fixes committed and pushed to PR branch
 - [ ] Recurring patterns added to CODING_STANDARDS.md if applicable
 - [ ] CLAUDE.md updated if new standard categories added

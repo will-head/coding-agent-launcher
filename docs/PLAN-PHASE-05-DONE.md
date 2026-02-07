@@ -6,7 +6,7 @@
 
 **Goal:** Full terminal UI experience.
 
-**Deliverable:** Complete TUI for CAL.
+**Deliverable:** Complete TUI for CALF.
 
 ---
 

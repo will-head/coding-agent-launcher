@@ -64,10 +64,10 @@ check_prerequisites() {
     test_result "opencode version" "PASS" "$OPENCODE_VERSION"
     
     # Check if we're in VM
-    if [ "$CAL_VM" = "true" ]; then
-        test_result "VM environment" "PASS" "Running in CAL VM"
+    if [ "$CALF_VM" = "true" ]; then
+        test_result "VM environment" "PASS" "Running in CALF VM"
     else
-        test_result "VM environment" "WARN" "Not in CAL VM (CAL_VM not set)"
+        test_result "VM environment" "WARN" "Not in CALF VM (CALF_VM not set)"
     fi
     
     # Check tmux

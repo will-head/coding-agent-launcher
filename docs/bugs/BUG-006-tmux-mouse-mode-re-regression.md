@@ -11,7 +11,7 @@
 
 ## Summary
 
-The `vm-tmux-resurrect.sh` script fails during `cal-bootstrap --init` when network connectivity is slow or timing out, leaving the VM without tmux configuration. The script exits silently on error (due to `set -e`) and `vm-setup.sh` doesn't detect the failure, resulting in an incomplete installation.
+The `vm-tmux-resurrect.sh` script fails during `calf-bootstrap --init` when network connectivity is slow or timing out, leaving the VM without tmux configuration. The script exits silently on error (due to `set -e`) and `vm-setup.sh` doesn't detect the failure, resulting in an incomplete installation.
 
 ## Symptoms
 
@@ -54,7 +54,7 @@ fatal: unable to access 'https://github.com/tmux-plugins/tpm/': Recv failure: Op
 
 ## Timeline
 
-- **2026-02-02 ~21:00** - User runs `cal-bootstrap --init`
+- **2026-02-02 ~21:00** - User runs `calf-bootstrap --init`
 - **During init** - Network timeout while cloning TPM from GitHub
 - **After init** - User discovers tmux config missing, keybindings don't work
 - **21:25** - User manually runs `vm-tmux-resurrect.sh`, encounters same TPM error
@@ -115,7 +115,7 @@ fatal: unable to access 'https://github.com/tmux-plugins/tpm/': Recv failure: Op
 
 1. **vm-tmux-resurrect.sh - Network resilience:**
    - Added retry logic for TPM git clone (3 attempts, 5s delay)
-   - Implemented TPM caching in `~/.cal-cache/tpm/` to avoid repeated downloads
+   - Implemented TPM caching in `~/.calf-cache/tpm/` to avoid repeated downloads
    - Set `PATH=/opt/homebrew/bin:$PATH` in tmux.conf so TPM commands work
    - Set `TMUX_PLUGIN_MANAGER_PATH` environment variable for plugin installation
    - Improved error visibility (capture and show errors instead of hiding with `/dev/null`)
@@ -125,7 +125,7 @@ fatal: unable to access 'https://github.com/tmux-plugins/tpm/': Recv failure: Op
    - Fatal error on tmux setup failure (stops bootstrap)
    - Clear error messages when setup fails
 
-3. **cal-bootstrap - Cleanup on failure:**
+3. **calf-bootstrap - Cleanup on failure:**
    - Explicit cleanup call in do_init when vm-setup.sh fails
    - Ensures cal-dev is deleted on failed --init
 

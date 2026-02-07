@@ -1,4 +1,4 @@
-# CAL Workflows
+# CALF Workflows
 
 > Index of all workflows with quick reference
 
@@ -54,7 +54,7 @@ Default workflow for direct code changes to main branch with user approvals at e
 
 **When to use:** Making code changes directly to main branch
 **Key features:**
-- User approval required on HOST before ALL commands (auto-approved when `CAL_VM=true`)
+- User approval required on HOST before ALL commands (auto-approved when `CALF_VM=true`)
 - Blocking checkpoints at each step
 - Mandatory code review for code/script changes
 - Documentation-only exception available
@@ -72,7 +72,7 @@ Simplified Interactive workflow for documentation-only changes on main branch.
 **When to use:** Making changes exclusively to `.md` files or code comments
 **Key features:**
 - Always on main branch
-- User approval required on HOST (auto-approved when `CAL_VM=true`)
+- User approval required on HOST (auto-approved when `CALF_VM=true`)
 - Skip tests, build, and code review
 - Simplified 3-step process
 
@@ -90,7 +90,7 @@ Interactive workflow variant for resolving tracked bugs from BUGS.md.
 **Key features:**
 - Work items sourced from `docs/BUGS.md`
 - **Analyze and propose solution before implementing** — no quick fixes or hacks
-- User approvals on HOST (auto-approved when `CAL_VM=true`)
+- User approvals on HOST (auto-approved when `CALF_VM=true`)
 - **Prove fix is sound before asking user to test** — tests pass, evidence, reasoning
 - Bug lifecycle: resolved bugs move from BUGS.md to bugs/README.md
 - TDD with bug reproduction tests
@@ -107,7 +107,7 @@ Refine TODOs and bugs with comprehensive requirements gathering and user approva
 
 **When to use:** Clarifying and detailing TODOs or bugs before implementation begins
 **Key features:**
-- User approval required on HOST before commit (auto-approved when `CAL_VM=true`)
+- User approval required on HOST before commit (auto-approved when `CALF_VM=true`)
 - Gather complete requirements through Q&A
 - Offers both phase TODOs and active bugs from `docs/BUGS.md`
 - Prefix TODOs with "REFINED" in PLAN.md
@@ -202,7 +202,7 @@ Merge tested PRs into main with user approvals.
 
 **When to use:** Merging PRs from "Needs Merging" section into main branch
 **Key features:**
-- User approval required on HOST for all commands (auto-approved when `CAL_VM=true`)
+- User approval required on HOST for all commands (auto-approved when `CALF_VM=true`)
 - Use merge commit strategy (preserves history)
 - Delete branches after merge
 - Track in STATUS.md "Merged" section
@@ -304,7 +304,7 @@ Every workflow follows this procedure at session start:
 2. **Reiterate to user** - Summarize the workflow steps and key principles in your own words
 3. **Confirm understanding** - Acknowledge understanding before proceeding
 4. **Proceed with standard session start:**
-   - Run `echo $CAL_VM` to check environment (must happen before any approval-gated step)
+   - Run `echo $CALF_VM` to check environment (must happen before any approval-gated step)
    - Run `git status` to see current branch
    - **CRITICAL:** If not on main branch, switch to main with `git checkout main && git pull` before reading STATUS.md or PLAN.md
    - Run `git fetch` to get latest remote state
@@ -316,21 +316,21 @@ Every workflow follows this procedure at session start:
 
 This ensures both agent and user have shared understanding of the workflow being followed.
 
-### CAL_VM Auto-Approve
+### CALF_VM Auto-Approve
 
 #### VM Verification
 
-The agent **MUST** verify VM status at session start by running `echo $CAL_VM`:
-- `CAL_VM=true` → Display "Running in cal-dev VM (isolated environment)" → auto-approve enabled
+The agent **MUST** verify VM status at session start by running `echo $CALF_VM`:
+- `CALF_VM=true` → Display "Running in calf-dev VM (isolated environment)" → auto-approve enabled
 - Any other value (empty, unset, `false`, etc.) → Display "Running on HOST machine (not isolated)" → require all approvals
 - **Fail-safe:** If the check cannot be performed or returns unexpected output, default to HOST (require approval)
 - **Never assume VM status** — always verify explicitly
 
 #### Approval Behavior
 
-When `CAL_VM=true` (confirmed via explicit check), individual workflow approval steps are skipped — operations proceed automatically without user confirmation.
+When `CALF_VM=true` (confirmed via explicit check), individual workflow approval steps are skipped — operations proceed automatically without user confirmation.
 
-**Exception:** Destructive remote git operations always require approval, even when `CAL_VM=true`:
+**Exception:** Destructive remote git operations always require approval, even when `CALF_VM=true`:
 - `push --force` (overwrites remote history)
 - `push --delete` / deleting remote branches
 
@@ -338,7 +338,7 @@ Local-only operations (reset, checkout, clean, etc.) are allowed without approva
 
 **When in doubt, require approval.**
 
-This applies to ALL workflows. See [CLAUDE.md § CAL_VM Auto-Approve](../CLAUDE.md#cal_vm-auto-approve) for the authoritative definition.
+This applies to ALL workflows. See [CLAUDE.md § CALF_VM Auto-Approve](../CLAUDE.md#cal_vm-auto-approve) for the authoritative definition.
 
 ### Numbered Choice Presentation
 

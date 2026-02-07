@@ -15,7 +15,7 @@ tmux-resurrect and tmux-continuum do not successfully persist tmux sessions acro
 
 1. User creates tmux session with multiple windows/panes
 2. User detaches from tmux
-3. User runs `./cal-bootstrap --restart`
+3. User runs `./calf-bootstrap --restart`
 4. VM stops, restarts, and SSH reconnects
 5. tmux-continuum auto-restore recreates the previous session layout
 
@@ -23,7 +23,7 @@ tmux-resurrect and tmux-continuum do not successfully persist tmux sessions acro
 
 1. User creates tmux session with multiple windows/panes
 2. User detaches from tmux
-3. User runs `./cal-bootstrap --restart`
+3. User runs `./calf-bootstrap --restart`
 4. VM stops, restarts, and SSH reconnects
 5. Fresh tmux session is created (previous session lost)
 
@@ -49,20 +49,20 @@ This affects:
 - **Auto-save** (tmux-continuum every 15 min): Produces corrupted data
 - **Manual save** (Ctrl+b Ctrl+s): Produces corrupted data
 - **Logout save** (.zlogout hook): Produces corrupted data
-- **Programmatic save** (cal-bootstrap --stop/--restart): Produces corrupted data
+- **Programmatic save** (calf-bootstrap --stop/--restart): Produces corrupted data
 
 ### Investigation Timeline
 
 #### Initial Hypothesis: Sessions Not Being Saved Before VM Stop
 - **Finding:** `tart stop` sends shutdown signal but SSH sessions disconnect abruptly
 - **.zlogout hook never executes** because SSH connection is killed
-- **Solution attempt:** Added `save_tmux_sessions()` function to cal-bootstrap
+- **Solution attempt:** Added `save_tmux_sessions()` function to calf-bootstrap
   - Calls save script before `tart stop`
   - Function runs and reports success
   - But save file still contains corrupted data
 
 #### Second Hypothesis: Sessions Not Being Restored After VM Start
-- **Finding:** cal-bootstrap used `tmux new-session -A -s cal-dev`
+- **Finding:** calf-bootstrap used `tmux new-session -A -s cal-dev`
 - **Problem:** Creating new session immediately prevents continuum auto-restore
 - **Solution attempt:** Changed to `tmux start-server; restore; attach or create`
   - Explicitly triggers restore script
@@ -121,7 +121,7 @@ set -g @continuum-save-interval '15'
 
 ## Reproduction Steps
 
-1. Start VM: `./cal-bootstrap --run`
+1. Start VM: `./calf-bootstrap --run`
 2. Inside tmux, create test content:
    - Create new window: `Ctrl+b c`
    - Create another window: `Ctrl+b c`
@@ -131,14 +131,14 @@ set -g @continuum-save-interval '15'
    - **Expected:** Session data with windows, panes, directories
    - **Actual:** Only "state state state"
 5. Detach: `Ctrl+b d`
-6. Restart: `./cal-bootstrap --restart`
+6. Restart: `./calf-bootstrap --restart`
    - **Expected:** Previous session restored with multiple windows
    - **Actual:** New empty session created
 
 ## Code Changes Made (Attempted Fixes)
 
 ### 1. Added save_tmux_sessions() Function
-**File:** `scripts/cal-bootstrap`
+**File:** `scripts/calf-bootstrap`
 **Location:** After `stop_vm()` function (~line 166)
 
 ```bash
@@ -174,7 +174,7 @@ save_tmux_sessions() {
 ```
 
 ### 2. Modified do_stop() to Save Before Stopping
-**File:** `scripts/cal-bootstrap`
+**File:** `scripts/calf-bootstrap`
 **Location:** `do_stop()` function (~line 1460)
 
 ```bash
@@ -187,7 +187,7 @@ echo "Stopping $VM_DEV..."
 ```
 
 ### 3. Modified do_restart() to Save Before Stopping
-**File:** `scripts/cal-bootstrap`
+**File:** `scripts/calf-bootstrap`
 **Location:** `do_restart()` function (~line 1500)
 
 ```bash
@@ -205,7 +205,7 @@ fi
 ```
 
 ### 4. Modified Tmux Startup to Trigger Restore
-**File:** `scripts/cal-bootstrap`
+**File:** `scripts/calf-bootstrap`
 **Locations:** Multiple SSH tmux startup calls
 
 Changed from:
@@ -287,7 +287,7 @@ Before stopping VM:
 
 ## Files Modified
 
-- `scripts/cal-bootstrap` - Added save/restore logic
+- `scripts/calf-bootstrap` - Added save/restore logic
 - `scripts/test-tmux-restore.sh` - Created debug test script
 
 ## Files Affected But Not Modified
@@ -304,7 +304,7 @@ The corrupted save data ("state state state") suggests:
 - Possible tmux version incompatibility
 - Possible missing dependencies for save script
 
-This needs deeper investigation into the tmux-resurrect plugin itself, not just the cal-bootstrap integration.
+This needs deeper investigation into the tmux-resurrect plugin itself, not just the calf-bootstrap integration.
 
 ---
 
@@ -357,7 +357,7 @@ When `@resurrect-capture-pane-contents 'on'` is enabled, extra shell prompts may
 
 ### Problem
 
-After the initial PATH fix, tmux-resurrect was capturing authentication screens during `cal-bootstrap --init`, which would then restore on first user login, showing stale auth prompts instead of a clean shell.
+After the initial PATH fix, tmux-resurrect was capturing authentication screens during `calf-bootstrap --init`, which would then restore on first user login, showing stale auth prompts instead of a clean shell.
 
 ### Root Cause
 
@@ -369,12 +369,12 @@ Gated all save triggers on the first-run flag:
 
 1. **tmux.conf detach hook** - Added flag check:
    ```bash
-   set-hook -g client-detached 'run-shell "if [ ! -f ~/.cal-first-run ]; then ~/.tmux/plugins/tmux-resurrect/scripts/save.sh; fi"'
+   set-hook -g client-detached 'run-shell "if [ ! -f ~/.calf-first-run ]; then ~/.tmux/plugins/tmux-resurrect/scripts/save.sh; fi"'
    ```
 
 2. **.zlogout save** - Added flag check:
    ```bash
-   if [ ! -f ~/.cal-first-run ] && command -v tmux &> /dev/null && tmux list-sessions &> /dev/null; then
+   if [ ! -f ~/.calf-first-run ] && command -v tmux &> /dev/null && tmux list-sessions &> /dev/null; then
    ```
 
 3. **@resurrect-dir setting** - Explicitly configured directory:
@@ -419,7 +419,7 @@ User detaches with 3 windows, immediately runs `--restart`, but only 2 windows r
 
 ### Root Cause
 
-The `save_tmux_sessions()` function in cal-bootstrap used `tmux run-shell -b` (background) with only 0.5s wait. When user ran --restart immediately after detaching:
+The `save_tmux_sessions()` function in calf-bootstrap used `tmux run-shell -b` (background) with only 0.5s wait. When user ran --restart immediately after detaching:
 
 1. Detach hook saved 3 windows to file A, `last -> A`
 2. --restart's explicit save started in background, created file B, updated `last -> B`
@@ -446,7 +446,7 @@ The `save_tmux_sessions()` function in cal-bootstrap used `tmux run-shell -b` (b
 
 ### Files Modified
 
-- `scripts/cal-bootstrap` - Removed explicit saves, added delays before VM stop
+- `scripts/calf-bootstrap` - Removed explicit saves, added delays before VM stop
 
 ---
 

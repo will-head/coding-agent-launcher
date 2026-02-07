@@ -12,8 +12,8 @@ The keychain unlock solution should enable Cursor agent authentication in the VM
 
 Before starting:
 - [ ] Tart is installed: `brew install cirruslabs/cli/tart`
-- [ ] `cal-dev` VM exists
-- [ ] VM has agents installed (run `./scripts/cal-bootstrap --init` if not)
+- [ ] `calf-dev` VM exists
+- [ ] VM has agents installed (run `./scripts/calf-bootstrap --init` if not)
 - [ ] You can access Screen Sharing (for OAuth login)
 
 ---
@@ -24,7 +24,7 @@ Before starting:
 
 ```bash
 # Start the VM
-./scripts/cal-bootstrap --run
+./scripts/calf-bootstrap --run
 ```
 
 **Look for:** `✓ Keychain unlocked` message
@@ -42,7 +42,7 @@ security show-keychain-info login.keychain
 
 ```bash
 # Open Screen Sharing
-open vnc://$(tart ip cal-dev)
+open vnc://$(tart ip calf-dev)
 # Password: admin
 ```
 
@@ -65,7 +65,7 @@ open vnc://$(tart ip cal-dev)
 exit
 
 # Reconnect
-./scripts/cal-bootstrap --run
+./scripts/calf-bootstrap --run
 
 # Check if still authenticated
 agent whoami
@@ -80,10 +80,10 @@ agent whoami
 ```bash
 # Stop VM
 exit
-./scripts/cal-bootstrap --stop
+./scripts/calf-bootstrap --stop
 
 # Wait 5 seconds, then restart
-./scripts/cal-bootstrap --run
+./scripts/calf-bootstrap --run
 
 # Check authentication
 agent whoami

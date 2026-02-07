@@ -37,7 +37,7 @@ cal isolation init my-app --template mobile
 
 ## Plugin Manifest
 
-`~/.cal/environments/plugins/{name}/manifest.yaml`:
+`~/.calf/environments/plugins/{name}/manifest.yaml`:
 
 ```yaml
 name: android
@@ -70,7 +70,7 @@ uninstall:
 
 ## Template Definition
 
-`~/.cal/isolation/templates/{name}.yaml`:
+`~/.calf/isolation/templates/{name}.yaml`:
 
 ```yaml
 name: mobile
@@ -85,6 +85,6 @@ resources:
 
 ## Custom Plugins
 
-1. Create `~/.cal/environments/plugins/community/<name>/manifest.yaml`
+1. Create `~/.calf/environments/plugins/community/<name>/manifest.yaml`
 2. Define install/verify/artifacts sections
-3. Test: `cal isolation env install <workspace> <name>`
+3. Test: `calf isolation env install <workspace> <name>`

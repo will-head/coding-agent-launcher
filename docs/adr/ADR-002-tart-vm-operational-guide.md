@@ -12,7 +12,7 @@
 
 ## Context
 
-CAL (Coding Agent Loader) uses Tart to run macOS VMs that provide isolated environments for AI coding agents. Through the development of `cal-bootstrap`, `vm-setup.sh`, `vm-auth.sh`, and supporting scripts, we discovered numerous operational details, edge cases, and best practices essential for maintaining and extending the system.
+CAL (Coding Agent Loader) uses Tart to run macOS VMs that provide isolated environments for AI coding agents. Through the development of `calf-bootstrap`, `vm-setup.sh`, `vm-auth.sh`, and supporting scripts, we discovered numerous operational details, edge cases, and best practices essential for maintaining and extending the system.
 
 This ADR serves as the definitive operational reference for Phase 1 (CLI Foundation) and beyond.
 
@@ -85,7 +85,7 @@ ghcr.io/cirruslabs/macos-sequoia-base:latest
 ### Prerequisites (Host Machine)
 
 ```bash
-# Required (auto-installed by cal-bootstrap if missing)
+# Required (auto-installed by calf-bootstrap if missing)
 brew install cirruslabs/cli/tart
 brew install jq  # For snapshot list with sizes
 
@@ -93,7 +93,7 @@ brew install jq  # For snapshot list with sizes
 brew install esolitos/ipa/sshpass  # Or: hudochenkov/sshpass/sshpass
 ```
 
-**Note:** `cal-bootstrap --init` automatically installs Tart via Homebrew if not found in PATH. It checks for `brew` availability and provides clear error messages if Homebrew itself is missing.
+**Note:** `calf-bootstrap --init` automatically installs Tart via Homebrew if not found in PATH. It checks for `brew` availability and provides clear error messages if Homebrew itself is missing.
 
 ### The Init Workflow
 
@@ -142,7 +142,7 @@ Step 8: Run vm-setup.sh
           +- Install TPM (Tmux Plugin Manager) with retry logic (3 attempts)
           +- Install tmux-resurrect and tmux-continuum plugins
           +- Configure tmux.conf with session persistence settings
-        +- Set ~/.cal-auth-needed flag
+        +- Set ~/.calf-auth-needed flag
 
 Step 9: Setup Tart cache sharing
         +- Create symlink: ~/.tart/cache -> /Volumes/My Shared Files/tart-cache
@@ -154,12 +154,12 @@ Step 10: Switch to sshuttle (if proxy needed)
 Step 11: Reboot VM to apply .zshrc configuration
 
 Step 12: SSH into VM
-         +- .zshrc detects ~/.cal-auth-needed flag
+         +- .zshrc detects ~/.calf-auth-needed flag
          +- Runs vm-auth.sh for interactive authentication
          +- User completes OAuth flows and repository cloning
 
 Step 13: Finalize cal-dev configuration
-         +- Remove ~/.cal-first-run flag from cal-dev (with verification)
+         +- Remove ~/.calf-first-run flag from cal-dev (with verification)
          +- This ensures cal-dev uses auto-restore for tmux sessions
          +- cal-init retains the flag (triggers first-run behavior after restore)
 
@@ -175,7 +175,7 @@ Step 14: Create cal-init snapshot
 ### SSH with tmux (Primary Development Method)
 
 ```bash
-./scripts/cal-bootstrap --run   # Starts VM and connects with tmux
+./scripts/calf-bootstrap --run   # Starts VM and connects with tmux
 ```
 
 Uses tmux-wrapper.sh to handle TERM compatibility:
@@ -194,7 +194,7 @@ ssh -t admin@<vm_ip> "~/scripts/tmux-wrapper.sh new-session -A -s cal"
 ### GUI Console with VNC Experimental (Clipboard Operations)
 
 ```bash
-./scripts/cal-bootstrap --gui    # or -g
+./scripts/calf-bootstrap --gui    # or -g
 ```
 
 Uses `tart run --vnc-experimental` which provides:
@@ -371,7 +371,7 @@ proxy-start     # Start proxy manually
 proxy-stop      # Stop proxy
 proxy-restart   # Restart proxy
 proxy-status    # Check status and test connectivity
-proxy-log       # View proxy logs (tail ~/.cal-proxy.log)
+proxy-log       # View proxy logs (tail ~/.calf-proxy.log)
 ```
 
 ---
@@ -528,7 +528,7 @@ sudo defaults write /Library/Preferences/com.apple.loginwindow autoLoginUser adm
 The VM automatically unlocks the login keychain on every SSH login to support agent OAuth authentication.
 
 **Implementation:**
-1. VM password saved to `~/.cal-vm-config` (mode 600, owner-only access)
+1. VM password saved to `~/.calf-vm-config` (mode 600, owner-only access)
 2. `.zshrc` keychain unlock block runs on every login shell
 3. `CAL_SESSION_INITIALIZED` environment variable prevents re-execution when logout is cancelled (exec zsh -l preserves the flag)
 
@@ -536,7 +536,7 @@ The VM automatically unlocks the login keychain on every SSH login to support ag
 # In .zshrc - runs once per session chain
 if [[ -o login ]] && [ -z "$CAL_SESSION_INITIALIZED" ]; then
     export CAL_SESSION_INITIALIZED=1
-    source ~/.cal-vm-config
+    source ~/.calf-vm-config
     security unlock-keychain -p "${VM_PASSWORD:-admin}" login.keychain
 fi
 ```
@@ -618,7 +618,7 @@ Without this, save files contain only "state state state" instead of actual sess
 
 **First-Run Conditional Loading:**
 
-TPM (Tmux Plugin Manager) is conditionally loaded based on the `~/.cal-first-run` flag:
+TPM (Tmux Plugin Manager) is conditionally loaded based on the `~/.calf-first-run` flag:
 - **Flag exists (first-run):** TPM doesn't load, no session capture occurs
 - **Flag absent (normal operation):** TPM loads, full session persistence active
 
@@ -626,7 +626,7 @@ This prevents tmux-resurrect from capturing the vm-auth authentication screen du
 
 ```bash
 # In ~/.tmux.conf - conditional TPM loading
-if-shell '[ ! -f ~/.cal-first-run ]' 'run ~/.tmux/plugins/tpm/tpm'
+if-shell '[ ! -f ~/.calf-first-run ]' 'run ~/.tmux/plugins/tpm/tpm'
 ```
 
 **TPM Installation Reliability:**
@@ -752,12 +752,12 @@ Set automatically in VM's `~/.zshrc`:
 
 ```bash
 export CAL_VM=true
-export CAL_VM_INFO="$HOME/.cal-vm-info"
+export CAL_VM_INFO="$HOME/.calf-vm-info"
 ```
 
 ### Info File
 
-Created at `~/.cal-vm-info`:
+Created at `~/.calf-vm-info`:
 
 ```bash
 CAL_VM=true
@@ -771,12 +771,12 @@ CAL_VERSION=0.1.0
 ```bash
 # Check if running in VM
 is-cal-vm() {
-    [ -f ~/.cal-vm-info ] && [ "$CAL_VM" = "true" ]
+    [ -f ~/.calf-vm-info ] && [ "$CAL_VM" = "true" ]
 }
 
 # Display VM info
 cal-vm-info() {
-    cat ~/.cal-vm-info
+    cat ~/.calf-vm-info
 }
 ```
 
@@ -810,11 +810,11 @@ VM detection persists across shell sessions, SSH reconnections, VM reboots, and 
 
 ### Auth-Needed Flag (During --init)
 
-During `--init`, `vm-setup.sh` creates `~/.cal-auth-needed`. On next login, `.zshrc` detects this flag, removes it, and runs `vm-auth.sh` for initial authentication. After auth completes, the shell exits to allow `cal-bootstrap` to continue with `cal-init` creation.
+During `--init`, `vm-setup.sh` creates `~/.calf-auth-needed`. On next login, `.zshrc` detects this flag, removes it, and runs `vm-auth.sh` for initial authentication. After auth completes, the shell exits to allow `calf-bootstrap` to continue with `cal-init` creation.
 
 ### First-Run Flag (After Restore)
 
-When restoring from `cal-init`, the `~/.cal-first-run` flag triggers `vm-first-run.sh` on first login. This script:
+When restoring from `cal-init`, the `~/.calf-first-run` flag triggers `vm-first-run.sh` on first login. This script:
 1. Checks network connectivity (auto-starts proxy if needed)
 2. Displays keychain unlock status
 3. Scans `~/code` for git repositories
@@ -826,11 +826,11 @@ When restoring from `cal-init`, the `~/.cal-first-run` flag triggers `vm-first-r
 
 **First-Run Flag and tmux Session Restore:**
 
-The `~/.cal-first-run` flag also controls tmux session restore behavior:
+The `~/.calf-first-run` flag also controls tmux session restore behavior:
 - **Flag exists:** `tmux new-session -s cal` (creates fresh session, no auto-restore)
 - **Flag absent:** `tmux new-session -A -s cal` (attaches to existing or creates with auto-restore)
 
-This prevents the vm-auth authentication screen from appearing inside a restored tmux session on first boot. The flag is checked by `cal-bootstrap` before starting tmux.
+This prevents the vm-auth authentication screen from appearing inside a restored tmux session on first boot. The flag is checked by `calf-bootstrap` before starting tmux.
 
 Additionally, the first-run flag prevents TPM plugins from loading (see [tmux Session Persistence](#tmux-session-persistence)), ensuring no session data is captured during the authentication phase.
 
@@ -887,7 +887,7 @@ Before destructive operations (init, restore, delete):
 
 ### Reusable Implementation
 
-`check_vm_git_changes()` is a reusable function in `cal-bootstrap` used by all destructive operations. It:
+`check_vm_git_changes()` is a reusable function in `calf-bootstrap` used by all destructive operations. It:
 1. Starts the VM if not running (to access filesystem via SSH)
 2. Scans search locations for git repos
 3. Shows uncommitted and unpushed changes
@@ -949,7 +949,7 @@ tart list --format json | jq -r '.[] | "\(.Name)|\(.Size)|\(.State)"'
 
 ### Problem
 
-Running cal-bootstrap inside cal-dev VM would re-download macos-sequoia-base:latest (~30-47GB), wasting bandwidth and time.
+Running calf-bootstrap inside cal-dev VM would re-download macos-sequoia-base:latest (~30-47GB), wasting bandwidth and time.
 
 ### Solution
 
@@ -1023,13 +1023,13 @@ tart list --format json | jq -r '.[] | select(.Source == "OCI") | .Name'
 
 | File | Purpose | Permissions |
 |------|---------|-------------|
-| `~/.cal-vm-info` | VM metadata (name, version, created date) | Default |
-| `~/.cal-vm-config` | VM password for keychain unlock | 600 |
-| `~/.cal-proxy-config` | Proxy settings (HOST_GATEWAY, HOST_USER, PROXY_MODE) | Default |
-| `~/.cal-auth-needed` | Flag: run vm-auth.sh on next login (during --init) | Default |
-| `~/.cal-first-run` | Flag: run vm-first-run.sh on next login; controls tmux auto-restore | Default |
-| `~/.cal-proxy.log` | sshuttle proxy logs | Default |
-| `~/.cal-proxy.pid` | sshuttle process ID | Default |
+| `~/.calf-vm-info` | VM metadata (name, version, created date) | Default |
+| `~/.calf-vm-config` | VM password for keychain unlock | 600 |
+| `~/.calf-proxy-config` | Proxy settings (HOST_GATEWAY, HOST_USER, PROXY_MODE) | Default |
+| `~/.calf-auth-needed` | Flag: run vm-auth.sh on next login (during --init) | Default |
+| `~/.calf-first-run` | Flag: run vm-first-run.sh on next login; controls tmux auto-restore | Default |
+| `~/.calf-proxy.log` | sshuttle proxy logs | Default |
+| `~/.calf-proxy.pid` | sshuttle process ID | Default |
 | `~/.tmux.conf` | tmux configuration with session persistence | Default |
 | `~/.zlogout` | Logout: tmux session save, then git status check | Default |
 | `~/.local/share/tmux/resurrect/` | tmux session data (windows, panes, scrollback) | Default |
@@ -1088,7 +1088,7 @@ tart list | awk -v name="cal-dev" '$1 == name {found=1} END {exit !found}'
 
 ### Filesystem Sync Timing
 
-**Issue:** Flag files (`.cal-auth-needed`, `.cal-first-run`) sometimes didn't survive VM reboot.
+**Issue:** Flag files (`.calf-auth-needed`, `.calf-first-run`) sometimes didn't survive VM reboot.
 
 **Solution:** Call `sync` after creating flag files to ensure filesystem writes are flushed.
 
@@ -1139,8 +1139,8 @@ nc -z 192.168.64.1 22
 python3 --version
 
 # View logs
-tail -50 ~/.cal-bootstrap.log  # Host
-proxy-log                       # VM (tail ~/.cal-proxy.log)
+tail -50 ~/.calf-bootstrap.log  # Host
+proxy-log                       # VM (tail ~/.calf-proxy.log)
 ```
 
 ### Disk Space in VM
@@ -1169,7 +1169,7 @@ opencode run "test"
 
 ```bash
 # Use --gui for reliable clipboard
-./scripts/cal-bootstrap --gui
+./scripts/calf-bootstrap --gui
 
 # If Screen Sharing: only copy FROM VM, never paste TO VM
 # Enable: Edit -> Use Shared Clipboard
@@ -1179,7 +1179,7 @@ opencode run "test"
 
 ```bash
 # Check if flag exists
-ls -la ~/.cal-first-run
+ls -la ~/.calf-first-run
 
 # If missing, run manually
 ~/scripts/vm-first-run.sh
@@ -1204,7 +1204,7 @@ tmux source-file ~/.tmux.conf
 ~/.tmux/plugins/tmux-resurrect/scripts/save.sh
 
 # Check if first-run flag is blocking plugins
-ls ~/.cal-first-run  # If exists, TPM won't load
+ls ~/.calf-first-run  # If exists, TPM won't load
 ```
 
 ### Auth Screen Appears in Restored Session
@@ -1214,14 +1214,14 @@ ls ~/.cal-first-run  # If exists, TPM won't load
 # Clear session data and start fresh
 rm -rf ~/.local/share/tmux/resurrect/*
 tmux kill-server
-# Then reconnect via cal-bootstrap --run
+# Then reconnect via calf-bootstrap --run
 ```
 
 ---
 
 ## Script Architecture
 
-### cal-bootstrap (Host)
+### calf-bootstrap (Host)
 
 Main orchestration script. Modes:
 - `--init` / `-i`: Full VM creation and setup
@@ -1250,7 +1250,7 @@ Runs inside VM during `--init`:
 - Agent installation (claude, agent, opencode, ccs, codex)
 - Go development tool installation
 - Shell configuration (.zshrc, .zlogout)
-- VM detection setup (.cal-vm-info)
+- VM detection setup (.calf-vm-info)
 - Keychain auto-unlock configuration
 - Proxy function installation
 - tart-guest-agent launchd configuration
@@ -1305,7 +1305,7 @@ Claude Code session metrics display:
 ### Script Locations
 
 ```
-Host: scripts/cal-bootstrap
+Host: scripts/calf-bootstrap
       scripts/vm-setup.sh
       scripts/vm-auth.sh
       scripts/vm-first-run.sh
@@ -1378,19 +1378,19 @@ Issues discovered and fixed during Phase 0:
 
 ### What Phase 1 (CLI Foundation) Will Replace
 
-Phase 1 replaces manual Tart commands with a `cal isolation` CLI. The following `cal-bootstrap` operations need Go equivalents:
+Phase 1 replaces manual Tart commands with a `calf isolation` CLI. The following `calf-bootstrap` operations need Go equivalents:
 
 | Current (Shell) | Phase 1 (Go CLI) |
 |-----------------|-------------------|
-| `cal-bootstrap --init` | `cal isolation init` |
-| `cal-bootstrap --run` | `cal isolation start` / `cal isolation ssh` |
-| `cal-bootstrap --stop` | `cal isolation stop` |
-| `cal-bootstrap --restart` | `cal isolation restart` |
-| `cal-bootstrap --gui` | `cal isolation gui` |
-| `cal-bootstrap -S list` | `cal isolation snapshot list` |
-| `cal-bootstrap -S create` | `cal isolation snapshot create` |
-| `cal-bootstrap -S restore` | `cal isolation snapshot restore` |
-| `cal-bootstrap -S delete` | `cal isolation snapshot delete` |
+| `calf-bootstrap --init` | `calf isolation init` |
+| `calf-bootstrap --run` | `calf isolation start` / `calf isolation ssh` |
+| `calf-bootstrap --stop` | `calf isolation stop` |
+| `calf-bootstrap --restart` | `calf isolation restart` |
+| `calf-bootstrap --gui` | `calf isolation gui` |
+| `calf-bootstrap -S list` | `calf isolation snapshot list` |
+| `calf-bootstrap -S create` | `calf isolation snapshot create` |
+| `calf-bootstrap -S restore` | `calf isolation snapshot restore` |
+| `calf-bootstrap -S delete` | `calf isolation snapshot delete` |
 
 ### Operational Knowledge Required
 
@@ -1411,10 +1411,10 @@ Phase 1 must preserve all behaviors documented in this ADR:
 ### VM Configuration Files to Manage
 
 The CLI must be aware of and manage:
-- `~/.cal-vm-info` (read by agents for VM detection)
-- `~/.cal-vm-config` (password for keychain unlock)
-- `~/.cal-proxy-config` (proxy settings)
-- `~/.cal-auth-needed` / `~/.cal-first-run` (lifecycle flags, affects tmux auto-restore)
+- `~/.calf-vm-info` (read by agents for VM detection)
+- `~/.calf-vm-config` (password for keychain unlock)
+- `~/.calf-proxy-config` (proxy settings)
+- `~/.calf-auth-needed` / `~/.calf-first-run` (lifecycle flags, affects tmux auto-restore)
 - `~/.tmux.conf` (tmux configuration with session persistence)
 - `~/.tmux/plugins/` (TPM and plugins: tmux-resurrect, tmux-continuum)
 - `~/.local/share/tmux/resurrect/` (session data)
@@ -1425,7 +1425,7 @@ The CLI must be aware of and manage:
 
 ## References
 
-- [cal-bootstrap](../../scripts/cal-bootstrap) - Main orchestration script
+- [calf-bootstrap](../../scripts/calf-bootstrap) - Main orchestration script
 - [vm-setup.sh](../../scripts/vm-setup.sh) - VM tool installation
 - [vm-auth.sh](../../scripts/vm-auth.sh) - Agent authentication
 - [vm-first-run.sh](../../scripts/vm-first-run.sh) - Post-restore update checker

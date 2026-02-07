@@ -1,6 +1,6 @@
-// Package config provides configuration management for CAL.
-// It supports loading from global (~/.cal/config.yaml) and per-VM
-// (~/.cal/isolation/vms/{name}/vm.yaml) configuration files with
+// Package config provides configuration management for CALF.
+// It supports loading from global (~/.calf/config.yaml) and per-VM
+// (~/.calf/isolation/vms/{name}/vm.yaml) configuration files with
 // proper precedence: hard-coded defaults → global config → per-VM config.
 package config
 
@@ -29,7 +29,7 @@ const (
 	currentVersion = 1
 )
 
-// Config represents the top-level CAL configuration structure.
+// Config represents the top-level CALF configuration structure.
 type Config struct {
 	Version   int             `yaml:"version"`
 	Isolation IsolationConfig `yaml:"isolation"`
@@ -124,7 +124,7 @@ func getHardcodedDefaults() DefaultsConfig {
 			DefaultBranchPrefix: "agent/",
 		},
 		Output: OutputConfig{
-			SyncDir: "~/cal-output",
+			SyncDir: "~/calf-output",
 		},
 		Proxy: ProxyConfig{
 			Mode: "auto",
@@ -282,21 +282,21 @@ func (c *Config) validationError(field string, value interface{}, expected strin
 	return fmt.Errorf("Invalid %s '%v': must be %s", field, value, expected)
 }
 
-// GetDefaultConfigPath returns the path to the global config file (~/.cal/config.yaml).
+// GetDefaultConfigPath returns the path to the global config file (~/.calf/config.yaml).
 func GetDefaultConfigPath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
-	return filepath.Join(homeDir, ".cal", "config.yaml"), nil
+	return filepath.Join(homeDir, ".calf", "config.yaml"), nil
 }
 
 // GetVMConfigPath returns the path to a specific VM's config file
-// (~/.cal/isolation/vms/{vmName}/vm.yaml).
+// (~/.calf/isolation/vms/{vmName}/vm.yaml).
 func GetVMConfigPath(vmName string) (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
-	return filepath.Join(homeDir, ".cal", "isolation", "vms", vmName, "vm.yaml"), nil
+	return filepath.Join(homeDir, ".calf", "isolation", "vms", vmName, "vm.yaml"), nil
 }

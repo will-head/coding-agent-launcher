@@ -11,7 +11,7 @@
 - **Prove before testing** - before asking the user to test, demonstrate the fix is sound: tests must pass, provide evidence and reasoning. Never run anything that could modify the host system — ask if unsure
 - **Value user time** - don't ask the user to test prematurely. Get it right first
 - **Bug-driven** - work items come from `docs/BUGS.md`, not phase TODO files
-- **User approval required on HOST** - ask permission before ALL commands (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
+- **User approval required on HOST** - ask permission before ALL commands (auto-approved when `CALF_VM=true`; see [CALF_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
 - **Blocking checkpoints** - each step must complete before proceeding
 - **Code review mandatory** - all code/script changes reviewed before commit
 - **Bug lifecycle** - resolved bugs move from `BUGS.md` to `bugs/README.md`
@@ -20,10 +20,10 @@
 
 ## Overview
 
-The Bug Cleanup workflow is a variant of the Interactive workflow where work items are sourced from `docs/BUGS.md` instead of phase TODO files. It adds a dedicated analysis and proposal step before any implementation begins, ensuring solutions are well-considered and user-approved. User approvals are required at each checkpoint on HOST (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve)).
+The Bug Cleanup workflow is a variant of the Interactive workflow where work items are sourced from `docs/BUGS.md` instead of phase TODO files. It adds a dedicated analysis and proposal step before any implementation begins, ensuring solutions are well-considered and user-approved. User approvals are required at each checkpoint on HOST (auto-approved when `CALF_VM=true`; see [CALF_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve)).
 
 **Target:** main branch (direct commits)
-**Approvals:** Required on HOST for all commands (auto-approved when `CAL_VM=true`)
+**Approvals:** Required on HOST for all commands (auto-approved when `CALF_VM=true`)
 **Steps:** 11 (Interactive + analysis/proposal step)
 
 ---
@@ -52,7 +52,7 @@ Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shar
 For bug fixes that only affect `.md` files or code comments:
 
 1. Make changes
-2. Ask user approval to commit (auto-approved when `CAL_VM=true`)
+2. Ask user approval to commit (auto-approved when `CALF_VM=true`)
 3. Commit and push
 
 **Skip:** tests, build, and code review for docs-only changes.
@@ -94,7 +94,7 @@ For bug fixes that only affect `.md` files or code comments:
 
 ### Step 3: Test
 
-- **Ask user approval** before running (auto-approved when `CAL_VM=true`)
+- **Ask user approval** before running (auto-approved when `CALF_VM=true`)
 - Execute: `go test ./...`
 - **Stop if tests fail** - fix issues before proceeding
 
@@ -102,8 +102,8 @@ All tests must pass to continue.
 
 ### Step 4: Build
 
-- **Ask user approval** before running (auto-approved when `CAL_VM=true`)
-- Execute: `go build -o cal ./cmd/cal`
+- **Ask user approval** before running (auto-approved when `CALF_VM=true`)
+- Execute: `go build -o calf ./cmd/calf`
 - **Stop if build fails** - fix issues before proceeding
 
 Build must succeed to continue.
@@ -127,7 +127,7 @@ Document findings with:
 ### Step 6: Present Review
 
 - Always present review findings to user
-- **STOP and wait for explicit user approval** (auto-approved when `CAL_VM=true`)
+- **STOP and wait for explicit user approval** (auto-approved when `CALF_VM=true`)
 - User responses like "approved", "looks good", "proceed" = approved
 - Do not proceed without approval on HOST
 
@@ -161,7 +161,7 @@ After user testing is complete, present a final code review summarizing:
 - Confirmation that all tests still pass after any fixes
 - Final assessment of code quality and readiness for commit
 
-**STOP and wait for explicit user approval** before proceeding (auto-approved when `CAL_VM=true`).
+**STOP and wait for explicit user approval** before proceeding (auto-approved when `CALF_VM=true`).
 
 ### Step 9: Update Documentation
 
@@ -184,7 +184,7 @@ Update affected documentation files as needed, plus bug-specific updates:
 
 ### Step 10: Commit and Push
 
-- **Ask user approval** before committing (auto-approved when `CAL_VM=true`)
+- **Ask user approval** before committing (auto-approved when `CALF_VM=true`)
 - Follow [Commit Message Format](WORKFLOWS.md#commit-message-format) from Shared Conventions
 - Reference the bug ID in the commit message (e.g., "Fix BUG-001: ...")
 - Execute only after all previous steps complete successfully
@@ -203,7 +203,7 @@ Report completion status:
 Before every commit:
 - [ ] Solution proposed and user approved approach (Step 1)
 - [ ] Tests pass (`go test ./...`)
-- [ ] Build succeeds (`go build -o cal ./cmd/cal`)
+- [ ] Build succeeds (`go build -o calf ./cmd/calf`)
 - [ ] Code review presented and user approved (for code changes)
 - [ ] Fix proven sound with evidence and reasoning before user testing
 - [ ] User testing instructions presented one by one and resolved
@@ -238,7 +238,7 @@ Resolved (removed from BUGS.md, updated in bugs/README.md)
 
 ### Command Execution Policy
 
-**Ask user approval before running ANY command** (auto-approved when `CAL_VM=true`), including:
+**Ask user approval before running ANY command** (auto-approved when `CALF_VM=true`), including:
 - Git operations (commit, push, branch, merge)
 - Build commands
 - Test commands

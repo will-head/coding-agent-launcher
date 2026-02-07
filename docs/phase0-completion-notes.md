@@ -8,7 +8,7 @@
 
 ## Summary
 
-This document captures the state of Phase 0 (Bootstrap) at a point in time. All objectives were achieved, providing a fully functional manual VM setup process with the cal-bootstrap script for VM management.
+This document captures the state of Phase 0 (Bootstrap) at a point in time. All objectives were achieved, providing a fully functional manual VM setup process with the calf-bootstrap script for VM management.
 
 ## Completed Deliverables
 
@@ -19,7 +19,7 @@ This document captures the state of Phase 0 (Bootstrap) at a point in time. All 
 - ✅ Sets up proper terminal environment (TERM, keybindings, PATH)
 
 ### 2. VM Management
-- ✅ cal-bootstrap script (`scripts/cal-bootstrap`)
+- ✅ calf-bootstrap script (`scripts/calf-bootstrap`)
   - Unified VM management CLI
   - `--init`: Create and configure VMs
   - `--run`: Start VM and SSH in
@@ -40,9 +40,9 @@ This document captures the state of Phase 0 (Bootstrap) at a point in time. All 
 
 ## Key Features
 
-### cal-bootstrap Capabilities
+### calf-bootstrap Capabilities
 
-The cal-bootstrap script provides unified VM management:
+The calf-bootstrap script provides unified VM management:
 
 - `--init`: Initialize VMs with tools and SSH keys
 - `--run`: Start VM and automatically SSH in
@@ -73,7 +73,7 @@ This requires interactive OAuth, which cannot be automated without storing token
 
 ## Historical Context
 
-This snapshot documents the completion of Phase 0 at a point in time. The project has since evolved with the cal-bootstrap script providing comprehensive VM management capabilities.
+This snapshot documents the completion of Phase 0 at a point in time. The project has since evolved with the calf-bootstrap script providing comprehensive VM management capabilities.
 
 For current project status, see:
 - [PLAN.md](../PLAN.md) - Current status and TODOs

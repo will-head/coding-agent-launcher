@@ -27,13 +27,13 @@ security unlock-keychain -p "admin" login.keychain
 UNLOCK_SCRIPT
 
 # Create LaunchAgent plist
-cat <<'PLIST' | ssh "${VM_USER}@${VM_IP}" 'cat > /tmp/com.cal.unlock-keychain.plist'
+cat <<'PLIST' | ssh "${VM_USER}@${VM_IP}" 'cat > /tmp/com.calf.unlock-keychain.plist'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.cal.unlock-keychain</string>
+    <string>com.calf.unlock-keychain</string>
     <key>ProgramArguments</key>
     <array>
         <string>/Users/admin/unlock-keychain.sh</string>
@@ -53,8 +53,8 @@ echo "Installing LaunchAgent..."
 ssh "${VM_USER}@${VM_IP}" <<'INSTALL'
 mkdir -p ~/Library/LaunchAgents
 mv /tmp/unlock-keychain.sh ~/unlock-keychain.sh
-mv /tmp/com.cal.unlock-keychain.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.cal.unlock-keychain.plist
+mv /tmp/com.calf.unlock-keychain.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.calf.unlock-keychain.plist
 echo "✓ LaunchAgent installed and loaded"
 INSTALL
 

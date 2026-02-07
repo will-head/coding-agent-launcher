@@ -1,7 +1,7 @@
 # PR #9 Init Review: Cal-Bootstrap Changes for Git Cache
 
 **Review Date:** 2026-02-03
-**Purpose:** Ensure `cal-bootstrap --init` creates a VM that works perfectly with git cache setup
+**Purpose:** Ensure `calf-bootstrap --init` creates a VM that works perfectly with git cache setup
 
 ---
 
@@ -11,24 +11,24 @@ During manual testing of PR #9, we performed these steps:
 
 ### 1. Host Cache Directory Creation (Manual)
 ```bash
-mkdir -p ~/.cal-cache/{homebrew,npm,go,git}
+mkdir -p ~/.calf-cache/{homebrew,npm,go,git}
 ```
 
-**Issue:** This was done manually before testing, but `cal-bootstrap --init` doesn't create these directories automatically.
+**Issue:** This was done manually before testing, but `calf-bootstrap --init` doesn't create these directories automatically.
 
-**Impact:** Users running `--init` wouldn't have cache directories, so cache sharing would be disabled (the --dir flag checks if ~/.cal-cache exists before adding it).
+**Impact:** Users running `--init` wouldn't have cache directories, so cache sharing would be disabled (the --dir flag checks if ~/.calf-cache exists before adding it).
 
 ### 2. Cal-Cache Sharing Configuration (Already Fixed)
 ```bash
---dir cal-cache:${HOME}/.cal-cache:rw,tag=com.apple.virtio-fs.automount
+--dir calf-cache:${HOME}/.calf-cache:rw,tag=com.apple.virtio-fs.automount
 ```
 
-**Status:** ✅ Already implemented in cal-bootstrap (lines 231-233, 1709-1711)
+**Status:** ✅ Already implemented in calf-bootstrap (lines 231-233, 1709-1711)
 
 **Conditional Logic:**
 ```bash
-if [ -d ~/.cal-cache ]; then
-    tart_cmd+=("--dir" "cal-cache:${HOME}/.cal-cache:rw,tag=com.apple.virtio-fs.automount")
+if [ -d ~/.calf-cache ]; then
+    tart_cmd+=("--dir" "calf-cache:${HOME}/.calf-cache:rw,tag=com.apple.virtio-fs.automount")
 fi
 ```
 
@@ -36,7 +36,7 @@ This means cache sharing only happens if the directory exists on the host.
 
 ### 3. TPM Caching (Manual)
 ```bash
-git clone https://github.com/tmux-plugins/tpm ~/.cal-cache/git/tpm
+git clone https://github.com/tmux-plugins/tpm ~/.calf-cache/git/tpm
 ```
 
 **Status:** ✓ Not needed in --init
@@ -48,7 +48,7 @@ git clone https://github.com/tmux-plugins/tpm ~/.cal-cache/git/tpm
 
 ### 4. VM Restart with Cache Sharing
 ```bash
-./scripts/cal-bootstrap --restart
+./scripts/calf-bootstrap --restart
 ```
 
 **Status:** ✅ Works correctly once cache directory exists
@@ -59,25 +59,25 @@ git clone https://github.com/tmux-plugins/tpm ~/.cal-cache/git/tpm
 
 ### Change 1: Add Cache Directory Creation to --init
 
-**Location:** `scripts/cal-bootstrap` lines 999-1009 (inserted after header)
+**Location:** `scripts/calf-bootstrap` lines 999-1009 (inserted after header)
 
 **Code Added:**
 ```bash
 # Setup cache directories on host (for package download caching)
 echo "Setting up cache directories..."
-if [ ! -d ~/.cal-cache ]; then
-    mkdir -p ~/.cal-cache/{homebrew,npm,go,git}
+if [ ! -d ~/.calf-cache ]; then
+    mkdir -p ~/.calf-cache/{homebrew,npm,go,git}
     echo "  ✓ Created cache directories: homebrew, npm, go, git"
 else
     echo "  ✓ Cache directory already exists"
     # Ensure all subdirectories exist
-    mkdir -p ~/.cal-cache/{homebrew,npm,go,git}
+    mkdir -p ~/.calf-cache/{homebrew,npm,go,git}
 fi
 echo ""
 ```
 
 **Purpose:**
-- Creates `~/.cal-cache` structure during --init
+- Creates `~/.calf-cache` structure during --init
 - Enables cal-cache sharing from first boot
 - Makes cache immediately available for git, npm, homebrew, go packages
 - Idempotent (safe to run multiple times)
@@ -124,11 +124,11 @@ The current code works correctly by using regular `git clone` which copies files
 
 ## Verification: What --init Will Now Do
 
-With the changes, `cal-bootstrap --init` will:
+With the changes, `calf-bootstrap --init` will:
 
 1. **Create cache directories:**
    ```
-   ~/.cal-cache/
+   ~/.calf-cache/
    ├── homebrew/
    ├── npm/
    ├── go/
@@ -136,7 +136,7 @@ With the changes, `cal-bootstrap --init` will:
    ```
 
 2. **Enable cache sharing automatically:**
-   - Tart will mount `~/.cal-cache` to `/Volumes/My Shared Files/cal-cache` in VM
+   - Tart will mount `~/.calf-cache` to `/Volumes/My Shared Files/cal-cache` in VM
    - VM will see cache from first boot
 
 3. **TPM caching workflow (automatic):**
@@ -156,18 +156,18 @@ To verify the changes work correctly:
 
 1. **Clean slate:**
    ```bash
-   rm -rf ~/.cal-cache
-   ./scripts/cal-bootstrap --destroy --yes
+   rm -rf ~/.calf-cache
+   ./scripts/calf-bootstrap --destroy --yes
    ```
 
 2. **Run --init:**
    ```bash
-   ./scripts/cal-bootstrap --init
+   ./scripts/calf-bootstrap --init
    ```
 
 3. **Verify cache created:**
    ```bash
-   ls -la ~/.cal-cache/
+   ls -la ~/.calf-cache/
    # Should show: homebrew, npm, go, git subdirectories
    ```
 
@@ -188,7 +188,7 @@ To verify the changes work correctly:
 6. **Test second bootstrap (cache usage):**
    ```bash
    # On host
-   ./scripts/cal-bootstrap --restart
+   ./scripts/calf-bootstrap --restart
 
    # Inside VM
    ls -la "/Volumes/My Shared Files/cal-cache/git/"
@@ -202,7 +202,7 @@ To verify the changes work correctly:
 ## Summary
 
 ### Issues Found
-1. ❌ `cal-bootstrap --init` didn't create cache directories
+1. ❌ `calf-bootstrap --init` didn't create cache directories
 2. ⚠️ Misleading comment about hard links in vm-tmux-resurrect.sh
 
 ### Fixes Applied
@@ -217,6 +217,6 @@ To verify the changes work correctly:
 
 ### Code Quality
 - ✅ Changes are idempotent (safe to run multiple times)
-- ✅ Follows existing patterns in cal-bootstrap
+- ✅ Follows existing patterns in calf-bootstrap
 - ✅ Clear user feedback during init
 - ✅ No breaking changes to existing workflows

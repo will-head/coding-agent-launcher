@@ -142,7 +142,7 @@ go test ./...
 Run build (no permission needed):
 
 ```bash
-go build -o cal ./cmd/cal
+go build -o calf ./cmd/calf
 ```
 
 **Must succeed before proceeding.** Fix any build errors before continuing.
@@ -167,7 +167,7 @@ Before creating the PR, review the implementation against the original requireme
 **For each issue found:**
 - Fix the issue directly
 - Re-run tests (`go test ./...`) to verify no regressions
-- Re-run build (`go build -o cal ./cmd/cal`) if needed
+- Re-run build (`go build -o calf ./cmd/calf`) if needed
 
 **Self-review is complete when:**
 - All 10 areas assessed against the original requirements
@@ -195,16 +195,16 @@ gh pr create --title "Add snapshot validation" --body "$(cat <<'EOF'
 - Shows clear error messages for invalid names
 
 ## Manual Testing Instructions
-1. Run `./scripts/cal-bootstrap --snapshot create test@invalid`
+1. Run `./scripts/calf-bootstrap --snapshot create test@invalid`
    - Expected: Error message "Invalid snapshot name"
-2. Run `./scripts/cal-bootstrap --snapshot create test-valid`
+2. Run `./scripts/calf-bootstrap --snapshot create test-valid`
    - Expected: Snapshot created successfully
-3. Run `./scripts/cal-bootstrap --snapshot list`
+3. Run `./scripts/calf-bootstrap --snapshot list`
    - Expected: Shows test-valid in list
 
 ## Automated Tests
 - [x] All tests pass (`go test ./...`)
-- [x] Build succeeds (`go build -o cal ./cmd/cal`)
+- [x] Build succeeds (`go build -o calf ./cmd/calf`)
 - [x] Self-review completed (10 areas checked)
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -261,7 +261,7 @@ EOF
 
 ## Automated Tests
 - [x] All tests pass (`go test ./...`)
-- [x] Build succeeds (`go build -o cal ./cmd/cal`)
+- [x] Build succeeds (`go build -o calf ./cmd/calf`)
 - [x] Self-review completed (10 areas checked)
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -277,7 +277,7 @@ Before creating PR:
 - [ ] Coding standards reviewed (`CODING_STANDARDS.md`)
 - [ ] Tests written (TDD approach)
 - [ ] Tests pass (`go test ./...`)
-- [ ] Build succeeds (`go build -o cal ./cmd/cal`)
+- [ ] Build succeeds (`go build -o calf ./cmd/calf`)
 - [ ] Self-review completed against original requirements (10 areas)
 - [ ] All self-review issues fixed and re-tested
 - [ ] Manual testing instructions included in PR body

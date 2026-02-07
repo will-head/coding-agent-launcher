@@ -6,7 +6,7 @@
 
 **Key Principles:**
 - **Autonomous until test presentation** - no permission to fetch PR details
-- **User approval required** - must wait for manual test results confirmation (always required, even when `CAL_VM=true` — the agent cannot perform manual tests)
+- **User approval required** - must wait for manual test results confirmation (always required, even when `CALF_VM=true` — the agent cannot perform manual tests)
 - **PR comments for feedback** - add comment with failure details if tests fail
 - **Update STATUS.md status** - move to "Needs Merging" on success or "Needs Changes" on failure
 - **PLAN.md updates must be done on main branch**
@@ -18,7 +18,7 @@
 The Test PR workflow provides a manual testing gate before merge. The agent fetches PR details, presents manual testing instructions to the user, waits for confirmation, and updates documentation based on test results.
 
 **Target:** Manual test + STATUS.md update
-**Approvals:** Required for test confirmation only (always required, even when `CAL_VM=true`)
+**Approvals:** Required for test confirmation only (always required, even when `CALF_VM=true`)
 **Steps:** 7 (includes conditional paths)
 
 ---
@@ -86,7 +86,7 @@ Present testing instructions to the user **one by one** following the [Sequentia
 Manual Testing Required for PR #42: Add input validation
 
 Test 1 of 3:
-Run `./scripts/cal-bootstrap --snapshot create test@invalid`
+Run `./scripts/calf-bootstrap --snapshot create test@invalid`
 Expected: Error message "Invalid snapshot name"
 
 Please run this test and confirm: pass or fail?
@@ -95,7 +95,7 @@ Please run this test and confirm: pass or fail?
 After user confirms, present the next test:
 ```
 Test 2 of 3:
-Run `./scripts/cal-bootstrap --snapshot create test-valid`
+Run `./scripts/calf-bootstrap --snapshot create test-valid`
 Expected: Snapshot created successfully
 
 Please run this test and confirm: pass or fail?

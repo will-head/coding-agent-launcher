@@ -11,11 +11,11 @@
 
 ## Summary
 
-Tmux sessions no longer restore after VM restart. This is a critical regression introduced while fixing BUG-006. The `~/.cal-first-run` flag is persisting in cal-dev after bootstrap completion, preventing TPM/tmux-resurrect from loading.
+Tmux sessions no longer restore after VM restart. This is a critical regression introduced while fixing BUG-006. The `~/.calf-first-run` flag is persisting in cal-dev after bootstrap completion, preventing TPM/tmux-resurrect from loading.
 
 ## Symptoms
 
-1. **No session restoration with `cal-bootstrap --restart`** - After `--restart`, tmux creates fresh session instead of restoring previous state (HUGELY FRUSTRATING - sessions are saved but never restored)
+1. **No session restoration with `calf-bootstrap --restart`** - After `--restart`, tmux creates fresh session instead of restoring previous state (HUGELY FRUSTRATING - sessions are saved but never restored)
 2. **TPM not loading** - tmux-resurrect and tmux-continuum plugins not active
 3. **Affects cal-dev** - The primary development VM is broken
 4. **User data loss** - All pane contents, window layouts, and working state lost on restart
@@ -32,23 +32,23 @@ Tmux sessions no longer restore after VM restart. This is a critical regression 
 
 ### Root Cause #1: First-run flag left in cal-dev after bootstrap completes
 
-In BUG-006 fix, we changed Step 10.5 of `cal-bootstrap` from "remove flag" to "verify flag exists":
+In BUG-006 fix, we changed Step 10.5 of `calf-bootstrap` from "remove flag" to "verify flag exists":
 
 ```bash
 # OLD (correct for cal-dev):
 echo "  Removing first-run flag from $VM_DEV..."
-ssh ... "rm -f ~/.cal-first-run && sync"
+ssh ... "rm -f ~/.calf-first-run && sync"
 
 # NEW (broken - leaves flag in cal-dev):
 echo "  Verifying first-run flag in $VM_DEV..."
-if ssh ... "[ -f ~/.cal-first-run ] && echo 'exists'"
+if ssh ... "[ -f ~/.calf-first-run ] && echo 'exists'"
 ```
 
 **Why this breaks session restore:**
 
 1. Flag persists in cal-dev after bootstrap completes
-2. User runs `cal-bootstrap --restart` or starts tmux in cal-dev
-3. tmux.conf has: `run-shell 'if [ ! -f ~/.cal-first-run ]; then ~/.tmux/plugins/tpm/tpm; fi'`
+2. User runs `calf-bootstrap --restart` or starts tmux in cal-dev
+3. tmux.conf has: `run-shell 'if [ ! -f ~/.calf-first-run ]; then ~/.tmux/plugins/tpm/tpm; fi'`
 4. Flag exists → TPM doesn't load
 5. No TPM → no tmux-resurrect → no session restore
 6. **Even though `--restart` explicitly saves sessions before stopping, they never restore!**
@@ -62,7 +62,7 @@ if ssh ... "[ -f ~/.cal-first-run ] && echo 'exists'"
 
 **The `do_restart()` function has a race condition:**
 
-From `scripts/cal-bootstrap:1603`:
+From `scripts/calf-bootstrap:1603`:
 ```bash
 start-server; run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; sleep 1; attach...
 ```
@@ -91,7 +91,7 @@ start-server; run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; sleep
 
 **Critical severity** - Complete loss of core functionality:
 - Session persistence completely broken in cal-dev
-- **`cal-bootstrap --restart` is broken** - saves sessions but never restores them (hugely frustrating!)
+- **`calf-bootstrap --restart` is broken** - saves sessions but never restores them (hugely frustrating!)
 - User loses all working state on restart
 - Manual work required to recreate window/pane layouts
 - Scrollback history lost
@@ -105,9 +105,9 @@ start-server; run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; sleep
 1. **scripts/vm-tmux-resurrect.sh**
    - Added retry logic + caching for TPM download
    - Removed manual plugin installation (auto-install on first tmux start)
-   - Added TPM cache in `~/.cal-cache/tpm/`
+   - Added TPM cache in `~/.calf-cache/tpm/`
 
-2. **scripts/cal-bootstrap**
+2. **scripts/calf-bootstrap**
    - **Step 6.5 (NEW)**: Set first-run flag BEFORE vm-setup
    - **Step 9.5**: Changed from "set" to "verify" flag
    - **Step 10.5**: Changed from "remove" to "verify" flag ⚠️ **THIS BROKE IT**
@@ -129,7 +129,7 @@ start-server; run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; sleep
 1. **Step 10.5**: Remove flag from cal-dev (restore original behavior)
    ```bash
    echo "  Removing first-run flag from $VM_DEV..."
-   ssh ... "rm -f ~/.cal-first-run && sync"
+   ssh ... "rm -f ~/.calf-first-run && sync"
    echo "  ✓ $VM_DEV ready (TPM will load normally)"
    ```
 
@@ -176,7 +176,7 @@ sleep 1
 ```
 
 **IMPLEMENTATION: Option B (simplest, most reliable)**
-- Implemented in `scripts/cal-bootstrap` for all modes (--init, --run, --restart)
+- Implemented in `scripts/calf-bootstrap` for all modes (--init, --run, --restart)
 - Option C documented as inline comment in do_restart() for future reference if auto-restore proves unreliable
 
 **The Correct Flow:**
@@ -198,10 +198,10 @@ sleep 1
 
 ## Testing Required
 
-1. **Test `cal-bootstrap --restart` session restore (CRITICAL):**
+1. **Test `calf-bootstrap --restart` session restore (CRITICAL):**
    - Create windows/panes in cal-dev
    - Add scrollback content
-   - Run `cal-bootstrap --restart`
+   - Run `calf-bootstrap --restart`
    - **Verify all state restored** (windows, panes, scrollback)
    - Verify no manual intervention needed
 
@@ -235,12 +235,12 @@ sleep 1
 
 **Changes implemented:**
 
-1. **cal-bootstrap Step 10.5 - Flag removal with verification:**
+1. **calf-bootstrap Step 10.5 - Flag removal with verification:**
    - Restored flag removal from cal-dev (was incorrectly changed to "verify" during BUG-006 fix)
    - Added verification that flag was actually removed
    - Provides warning if removal fails
 
-2. **cal-bootstrap - Conditional auto-restore based on first-run flag:**
+2. **calf-bootstrap - Conditional auto-restore based on first-run flag:**
    - Before starting tmux in do_init(), do_run(), and do_restart(), check if first-run flag exists
    - **If flag exists:** Use `tmux new-session -s cal-dev` (NO auto-restore)
      - Allows vm-first-run.sh to run cleanly before any session restoration
@@ -288,6 +288,6 @@ sleep 1
 
 - **BUG-006** - The bug we were fixing (tmux config deployment failure)
 - **Phase 0.11** - Session persistence feature (now working correctly)
-- **scripts/cal-bootstrap** - Step 10.5 fixed, conditional auto-restore added
+- **scripts/calf-bootstrap** - Step 10.5 fixed, conditional auto-restore added
 - **scripts/vm-setup.sh** - Flag removal logic (correct)
 - **scripts/vm-tmux-resurrect.sh** - TPM conditional loading (correct)

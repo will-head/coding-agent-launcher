@@ -10,7 +10,7 @@
 
 ## Summary
 
-Repositories cloned during `cal-bootstrap --init` authentication (Step 9) are not saved to the cal-init snapshot. After first boot, `~/code` is empty even though vm-auth.sh reported successful clones. Running vm-auth again after first boot works - repositories appear in ~/code.
+Repositories cloned during `calf-bootstrap --init` authentication (Step 9) are not saved to the cal-init snapshot. After first boot, `~/code` is empty even though vm-auth.sh reported successful clones. Running vm-auth again after first boot works - repositories appear in ~/code.
 
 ## Symptoms
 
@@ -55,7 +55,7 @@ admin@VM ~ % ls ~/code/github.com/owner/
 
 **Filesystem sync timing issue:**
 
-In `scripts/cal-bootstrap`:
+In `scripts/calf-bootstrap`:
 
 ```bash
 # Step 9: Agent authentication (line 1317-1333)
@@ -110,7 +110,7 @@ After first boot:
 
 ### Workaround #1: Re-run vm-auth after first boot
 ```bash
-# After cal-bootstrap --init completes and you log in for the first time
+# After calf-bootstrap --init completes and you log in for the first time
 vm-auth
 # Clone repositories again
 ```
@@ -125,7 +125,7 @@ vm-auth
 ### Fix #1: Explicit sync after vm-auth (RECOMMENDED)
 
 ```bash
-# In cal-bootstrap, after Step 9 (line 1336)
+# In calf-bootstrap, after Step 9 (line 1336)
 echo ""
 echo "Continuing with setup..."
 
@@ -163,12 +163,12 @@ sleep 2
 **Why this might not be enough:**
 - SSH session exit may still race with sync completion
 - Bootstrap script continues immediately after SSH exits
-- Still need delay in cal-bootstrap
+- Still need delay in calf-bootstrap
 
 ### Fix #3: Delay before tart stop
 
 ```bash
-# In cal-bootstrap Step 10 (line 1358)
+# In calf-bootstrap Step 10 (line 1358)
 echo "  Stopping $VM_DEV..."
 sleep 5  # Give filesystem time to sync
 "$TART" stop "$VM_DEV" 2>/dev/null || true
@@ -182,7 +182,7 @@ sleep 5  # Give filesystem time to sync
 ### Fix #4: Combine all three (BELT AND SUSPENDERS)
 
 1. Call sync in vm-auth.sh before exit
-2. Call sync from cal-bootstrap after SSH exit
+2. Call sync from calf-bootstrap after SSH exit
 3. Add sleep before tart stop
 
 **Why overkill:**
@@ -204,7 +204,7 @@ This is the most reliable and explicit solution:
 ## Testing Plan
 
 1. **Fresh --init with repository cloning:**
-   - Run `cal-bootstrap --init`
+   - Run `calf-bootstrap --init`
    - Clone a test repository during vm-auth
    - Complete bootstrap
    - SSH into cal-dev after first boot
@@ -239,10 +239,10 @@ This is the most reliable and explicit solution:
 **Resolved:** 2026-02-04
 
 **Fix Applied:**
-Implemented Fix #1 - Explicit filesystem sync after vm-auth completes in cal-bootstrap script.
+Implemented Fix #1 - Explicit filesystem sync after vm-auth completes in calf-bootstrap script.
 
 **Changes:**
-- Modified `scripts/cal-bootstrap` line ~1338 to add filesystem sync after vm-auth
+- Modified `scripts/calf-bootstrap` line ~1338 to add filesystem sync after vm-auth
 - Calls `sync && sleep 2` via SSH after authentication completes
 - Ensures all filesystem buffers are flushed before cal-init snapshot creation
 - Adds 2-3 seconds to --init process for data integrity

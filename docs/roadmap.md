@@ -10,12 +10,12 @@ Automated Tart setup for immediate safe agent use.
 **All tasks complete** — see [PLAN-PHASE-00-DONE.md](PLAN-PHASE-00-DONE.md) for full details.
 
 **Highlights:**
-- [x] Three-tier VM architecture (cal-clean → cal-dev → cal-init)
+- [x] Three-tier VM architecture (calf-clean → calf-dev → calf-init)
 - [x] Automated vm-setup and vm-auth scripts
 - [x] SSH/tmux session management with session persistence (tmux-resurrect)
 - [x] Transparent proxy via sshuttle for corporate networks
 - [x] Git safety checks before destructive operations
-- [x] VM detection for agents (CAL_VM environment variable)
+- [x] VM detection for agents (CALF_VM environment variable)
 - [x] Keychain auto-unlock for Cursor OAuth authentication
 - [x] First-run automation (vm-auth.sh runs automatically after init)
 - [x] GUI console with VNC experimental mode (bidirectional clipboard)
@@ -27,8 +27,8 @@ Automated Tart setup for immediate safe agent use.
 ## Phase 1: CLI Foundation
 Basic CLI wrapper around Tart.
 - [ ] Project structure (Go monorepo)
-- [ ] `cal isolation init/start/stop/ssh`
-- [ ] Config management (`~/.cal/`)
+- [ ] `calf isolation init/start/stop/ssh`
+- [ ] Config management (`~/.calf/`)
 - [ ] Snapshot management
 
 ## Phase 2: Agent Integration

@@ -20,8 +20,8 @@
 - [x] Create clean snapshot for rollback (documented)
 - [x] Investigate and test terminal keybindings (all working correctly)
 
-### cal-bootstrap Script (Complete)
-- [x] **Create cal-bootstrap script** - unified VM management
+### calf-bootstrap Script (Complete)
+- [x] **Create calf-bootstrap script** - unified VM management
   - [x] `--init`: Create cal-clean, cal-dev, cal-init VMs
   - [x] `--run`: Start VM and SSH in automatically
   - [x] `--stop`: Stop cal-dev
@@ -38,7 +38,7 @@
 ### Keychain Access for Cursor Agent (Phase 0.8 - Complete)
 - [x] Research keychain issue from Tart FAQ
 - [x] Implement keychain unlock in vm-setup.sh
-- [x] Implement keychain unlock in cal-bootstrap
+- [x] Implement keychain unlock in calf-bootstrap
 - [x] Create test script and documentation
 - [x] Test agent login via Screen Sharing
 - [x] Verify credential persistence (works after SSH reconnect)
@@ -47,9 +47,9 @@
 - [x] **FIXED: Cursor agent authentication now works** - Automatic keychain unlock on every SSH login (via .zshrc) enables Cursor OAuth flows to access browser credentials. The keychain must be unlocked for OAuth browser authentication to succeed in VM environments.
 
 ### Keychain Auto-Unlock and First-Run Automation (Phase 0.8.5 - Complete)
-- [x] Save VM password to ~/.cal-vm-config (mode 600) for automated keychain unlock
+- [x] Save VM password to ~/.calf-vm-config (mode 600) for automated keychain unlock
 - [x] Add keychain auto-unlock to .zshrc (runs on every SSH login)
-- [x] Implement first-run flag (~/.cal-first-run) to trigger vm-auth.sh automatically
+- [x] Implement first-run flag (~/.calf-first-run) to trigger vm-auth.sh automatically
 - [x] Add VM reboot step in --init to apply .zshrc configuration
 - [x] Fix filesystem sync timing (sync + sleep to ensure flag survives VM reboot)
 - [x] Fix tmux to start login shell ('zsh -l') so .zshrc first-run code executes
@@ -67,7 +67,7 @@
 ### VM Management Improvements (Phase 0.8 - 16/16 Complete)
 - [x] Network check timeout optimization - already implemented at 2s (faster than requested 3s) (completed 2026-01-30)
 - [x] Check for specific opencode auth token file if documented (vm-auth.sh) - already using opencode auth list command-based approach (completed 2026-01-30)
-- [x] Add explicit error handling for scp failures in setup_scripts_folder (cal-bootstrap) - added error checking for all scp operations with clear user feedback (completed 2026-01-30)
+- [x] Add explicit error handling for scp failures in setup_scripts_folder (calf-bootstrap) - added error checking for all scp operations with clear user feedback (completed 2026-01-30)
 - [x] Add Ctrl+C trap handlers during authentication flows (vm-auth.sh) - added trap handlers for gh, opencode, agent, and claude authentication with clean interruption handling (completed 2026-01-30)
 - [x] Ensure gh username parsing works in non-English locales (vm-auth.sh) - replaced locale-dependent parsing with API-only approach using gh api user -q .login (completed 2026-01-30)
 - [x] **PR #2:** Implement clipboard sharing via tart-guest-agent (merged 2026-01-25)
@@ -85,7 +85,7 @@
   - **Documentation:** docs/bootstrap.md (Screen Sharing section), scripts/vm-setup.sh
 - [x] Fix opencode installation in `--init` script (added Go install fallback, improved PATH setup)
 - [x] Simplify `--init` auth flow (removed verification prompt since opencode now works reliably)
-- [x] Add `--restart` option to cal-bootstrap for quick VM restart
+- [x] Add `--restart` option to calf-bootstrap for quick VM restart
 - [x] Check VM keyboard layout matches host keyboard layout
 - [x] Auto-configure VM keyboard layout to match host keyboard layout during setup
 - [x] Make sure keyboard layout is set on login in case it has changed since last run (not needed - VM auto-syncs from host)
@@ -94,7 +94,7 @@
 - [x] Investigate if uncommitted or unpushed git changes can be automatically checked if they exist in VM before restore (implemented)
 - [x] Remove distinction between clones and snapshots in `--snapshot list` (they're functionally same for our purposes)
 - [x] Create method for coding agent to detect if running in VM (env var + info file + helper functions, see docs/vm-detection.md)
-- [x] **Fix cal-bootstrap TERM environment variable handling** (completed 2026-01-25)
+- [x] **Fix calf-bootstrap TERM environment variable handling** (completed 2026-01-25)
   - **Issue:** Conflicting requirements for TERM handling:
     1. Tmux requires known TERM (Ghostty sends `xterm-ghostty` which fails: "missing or unsuitable terminal")
     2. Opencode hangs when TERM is explicitly set in command environment (e.g., `TERM=xterm-256color command`)
@@ -113,7 +113,7 @@
 ### Transparent Proxy for Network Reliability (Phase 0.9 - Complete)
 - [x] Implement transparent proxy via sshuttle (VM→Host)
 - [x] Add bootstrap SOCKS proxy (SSH -D) for --init phase before sshuttle installed
-- [x] Add `--proxy on/off/auto` flag to cal-bootstrap
+- [x] Add `--proxy on/off/auto` flag to calf-bootstrap
 - [x] Implement auto mode (tests github.com connectivity, enables proxy if needed)
 - [x] Setup VM→Host SSH keys with host key verification
 - [x] Add VM commands: proxy-start, proxy-stop, proxy-restart, proxy-status, proxy-log
@@ -132,7 +132,7 @@
 - [x] Try to install Tart automatically during init if not present (completed 2026-01-30)
   - Auto-installs via Homebrew if not found in PATH
   - Checks for brew availability and provides clear error messages
-  - Implementation in cal-bootstrap script
+  - Implementation in calf-bootstrap script
 - [x] Install all packages required for full Go development in cal-dev during --init (completed 2026-01-30)
   - Installed tools: golangci-lint, staticcheck, goimports, delve (dlv), mockgen, air
   - Added GOPATH and Go bin directory to PATH in .zshrc
@@ -188,7 +188,7 @@
 - [x] Add GitHub repo sync after authentication: prompt user to enter repos by name for cloning
 - [x] Use `gh api user -q .login` for more robust username extraction
 
-### cal-bootstrap Script Enhancements (Completed)
+### calf-bootstrap Script Enhancements (Completed)
 - [x] Show VM/snapshot sizes in `--snapshot list` output (uses JSON API, displays actual size with GB units, includes total)
 - [x] Remove cal-dev prefix from snapshot names (snapshots now use exact names specified by user)
 - [x] When cal-init exists and user runs `--init` ask: Do you want to replace cal-init with current cal-dev y/N
@@ -201,7 +201,7 @@
 - [x] **Fixed first-run flag setting reliability**
   - Problem: Booting cal-init briefly to set flag didn't get IP consistently (network timing issue)
   - Solution: Set flag in cal-dev (while running with known IP) → Clone to cal-init (flag copies) → Remove flag from cal-dev after restart
-  - Implementation: Modified cal-bootstrap --init flow and replace-init flow
+  - Implementation: Modified calf-bootstrap --init flow and replace-init flow
   - Result: 100% reliable flag setting without ever booting cal-init separately
 - [x] **Fixed logout cancel keychain unlock spam**
   - Problem: Cancelling logout with exec zsh -l re-ran keychain unlock and first-run checks
@@ -225,10 +225,10 @@
 
 ### Tart Cache Sharing for Nested VMs (Phase 0.10 - Complete)
 - [x] **Implemented Tart cache sharing** (completed 2026-01-31)
-  - **Problem:** Running cal-bootstrap inside cal-dev VM would re-download macos-sequoia-base:latest (~30-47GB), wasting bandwidth and time
+  - **Problem:** Running calf-bootstrap inside cal-dev VM would re-download macos-sequoia-base:latest (~30-47GB), wasting bandwidth and time
   - **Solution:** Share host's Tart cache directory with VM using Tart's directory sharing feature
   - **Implementation:**
-    - Modified `start_vm_background()` in cal-bootstrap to share `~/.tart/cache` as read-only via `--dir` flag
+    - Modified `start_vm_background()` in calf-bootstrap to share `~/.tart/cache` as read-only via `--dir` flag
     - Created `setup_tart_cache_sharing()` function to create symlink inside VM: `~/.tart/cache -> /Volumes/My Shared Files/tart-cache`
     - Added cache sharing to all VM start operations (--init, --run, --restart, --gui)
     - Added Tart installation to vm-setup.sh for nested VM support
@@ -242,7 +242,7 @@
     - Idempotent setup (safe to run multiple times)
     - Gracefully degrades if sharing not available
   - **Files modified:**
-    - scripts/cal-bootstrap (cache sharing implementation)
+    - scripts/calf-bootstrap (cache sharing implementation)
     - scripts/vm-setup.sh (Tart, Ghostty, jq installation)
     - docs/PLAN-PHASE-00-TODO.md (moved to DONE)
     - docs/PLAN-PHASE-00-DONE.md (this entry)
@@ -257,15 +257,15 @@
   - Enables running commands in VM from host without SSH
 - [x] **Solve clipboard issues with VNC experimental mode** (completed 2026-01-31)
   - **Problem:** Screen Sharing had critical clipboard limitation (Host→VM paste caused disconnect)
-  - **Solution:** Implemented `--gui` option in cal-bootstrap using `tart run --vnc-experimental`
+  - **Solution:** Implemented `--gui` option in calf-bootstrap using `tart run --vnc-experimental`
   - **Testing:** Verified bidirectional clipboard (Host↔VM) works reliably
   - **Features:**
-    - Added `./cal-bootstrap --gui` (and `-g` shorthand)
+    - Added `./calf-bootstrap --gui` (and `-g` shorthand)
     - VM runs in background, terminal stays free
     - Displays actual VM IP and simple reconnect instructions
     - Auto-restarts VM with VNC if already running without it
   - **Implementation:**
-    - New `do_gui()` function in cal-bootstrap
+    - New `do_gui()` function in calf-bootstrap
     - Waits for VM IP, displays helpful usage info
     - Uses VNC experimental mode (Virtualization.Framework VNC server)
     - Avoids standard VNC mode which has the same clipboard disconnect issue
@@ -393,7 +393,7 @@
 - [x] Delete only warned for cal-dev - added warnings for cal-clean and cal-init
 - [x] Argument parsing `shift || true` showed error in zsh - fixed with `[[ $# -gt 0 ]] && shift`
 - [x] Unpushed commits detection requires proper git upstream tracking to be set - working as designed (has prerequisites)
-- [x] cal-bootstrap snapshot delete unnecessarily stops cal-dev if already running before checking git changes (should skip stop if VM already running) - **FIXED**: Removed premature stop, git check now intelligently handles VM state
+- [x] calf-bootstrap snapshot delete unnecessarily stops cal-dev if already running before checking git changes (should skip stop if VM already running) - **FIXED**: Removed premature stop, git check now intelligently handles VM state
 
 ### Tmux Session Persistence (Phase 0.11 - Complete)
 - [x] **Implemented tmux session persistence** (completed 2026-02-01)
@@ -403,7 +403,7 @@
     - Created `scripts/test-tmux-persistence.sh` - validation test script
     - Installed tmux-resurrect and tmux-continuum plugins
     - Configured comprehensive tmux.conf with session persistence
-    - Updated session name from `cal` to `cal-dev` in cal-bootstrap (4 locations: lines 1311, 1357, 1410, 1503)
+    - Updated session name from `cal` to `cal-dev` in calf-bootstrap (4 locations: lines 1311, 1357, 1410, 1503)
     - Implemented reattach-or-recreate logic using `tmux new-session -A -s cal-dev`
     - Added .zlogout hook to save sessions on logout
     - Integrated vm-tmux-resurrect.sh into vm-setup.sh
@@ -424,7 +424,7 @@
   - **Files:**
     - scripts/vm-tmux-resurrect.sh (new)
     - scripts/test-tmux-persistence.sh (new)
-    - scripts/cal-bootstrap (modified - session name updates)
+    - scripts/calf-bootstrap (modified - session name updates)
     - scripts/vm-setup.sh (modified - calls vm-tmux-resurrect.sh)
   - **Note:** ADR-002 intentionally NOT modified (ADRs are immutable)
   - **Future testing:** VM restart and snapshot/restore scenarios not yet tested (will work via resurrect data in `~/.local/share/tmux/resurrect/`)
@@ -451,7 +451,7 @@
   - Validates resurrect directory and session saves
 
 ### Status Command Enhancement (Phase 0 Future Improvement - Complete)
-- [x] **Add `--status` option to cal-bootstrap** (completed 2026-02-01)
+- [x] **Add `--status` option to calf-bootstrap** (completed 2026-02-01)
   - Shows cal-dev VM state (running/stopped/not found)
   - Displays IP address when VM is running
   - Shows VM size in GB
@@ -461,7 +461,7 @@
   - Shows snapshot count with link to list command
   - Graceful fallback when jq not installed
   - Shortcut: `-s` for `--status`
-  - Implementation in scripts/cal-bootstrap (do_status function)
+  - Implementation in scripts/calf-bootstrap (do_status function)
 
 ### Claude Statusline Integration (Phase 0 Future Improvement - Complete)
 - [x] **Deploy Claude statusline integration** (completed 2026-02-01)
@@ -487,8 +487,8 @@
   - **Bug Resolved:** BUG-005
 
 ### Script Deployment Optimization (Phase 0 Future Improvement - Complete)
-- [x] **Optimize cal-bootstrap --run and --restart startup time** (completed 2026-02-02)
-  - **Problem:** cal-bootstrap copied all 5 scripts (~60KB) on every --run and --restart, even when unchanged
+- [x] **Optimize calf-bootstrap --run and --restart startup time** (completed 2026-02-02)
+  - **Problem:** calf-bootstrap copied all 5 scripts (~60KB) on every --run and --restart, even when unchanged
   - **Solution:** Implemented MD5 checksum comparison to detect changes before copying
   - **Implementation:**
     - Added `CLEAN_MODE` variable and `--clean` flag for safety escape hatch
@@ -505,7 +505,7 @@
     - ✅ Verified only changed scripts are copied (1 of 5 copied)
     - ✅ Verified --clean flag forces all scripts to copy
   - **Bug Fixed:** `((scripts_skipped++))` incompatible with `set -e` - changed to `scripts_skipped=$((scripts_skipped + 1))`
-  - **Files Modified:** scripts/cal-bootstrap
+  - **Files Modified:** scripts/calf-bootstrap
 
 ### Tmux Session Clearing on First Login (Phase 0 Future Improvement - Complete)
 - [x] **Prevent tmux from saving state until after first login completes** (completed 2026-02-02)
@@ -549,9 +549,9 @@
 ### Tmux-Resurrect First-Run Fix (Phase 0 Future Improvement - Complete)
 - [x] **Prevent tmux-resurrect from capturing authentication screen** (completed 2026-02-02)
   - **Problem:** tmux-resurrect auto-save captured vm-auth authentication screen on first boot, showing stale auth prompts when session restored
-  - **Solution:** Conditionally load TPM plugins only after ~/.cal-first-run flag is removed
+  - **Solution:** Conditionally load TPM plugins only after ~/.calf-first-run flag is removed
   - **Implementation:**
-    - Modified tmux.conf generation to check for ~/.cal-first-run before loading TPM
+    - Modified tmux.conf generation to check for ~/.calf-first-run before loading TPM
     - Added client-detached hook to save sessions on Ctrl+b d
     - Updated script header to document first-run behavior
   - **Behavior:**
@@ -595,21 +595,21 @@ Bug fixes discovered after cache integration PRs (#6-#9) merged on 2026-02-03. S
   - **Problem:** Repos cloned during vm-auth lost when cal-init snapshot created (silent data loss)
   - **Root Cause:** VM stopped before filesystem buffers flushed
   - **Fix:** Added `sync && sleep 2` after vm-auth completes before VM stop
-  - **Files Modified:** scripts/cal-bootstrap
+  - **Files Modified:** scripts/calf-bootstrap
 
 - [x] **BUG-005 Edge Case: Auth screens captured during --init** (completed 2026-02-04)
   - **Problem:** Save hooks ran unconditionally during --init, capturing auth screens into session data
   - **Root Cause:** Save triggers not gated by first-run flag
-  - **Fix:** Gate all save triggers on `~/.cal-first-run` flag; architectural change separating vm-auth.sh (auth only) from vm-first-run.sh (persistence enablement)
+  - **Fix:** Gate all save triggers on `~/.calf-first-run` flag; architectural change separating vm-auth.sh (auth only) from vm-first-run.sh (persistence enablement)
   - **Commit:** 823059a
-  - **Files Modified:** scripts/cal-bootstrap, scripts/vm-tmux-resurrect.sh, scripts/vm-auth.sh, scripts/vm-first-run.sh
+  - **Files Modified:** scripts/calf-bootstrap, scripts/vm-tmux-resurrect.sh, scripts/vm-auth.sh, scripts/vm-first-run.sh
 
 - [x] **BUG-005 Edge Case: Stale state after --restart** (completed 2026-02-04)
   - **Problem:** Detach + immediate --restart restored old session (background save corrupted by VM stop)
   - **Root Cause:** Explicit save used `tmux run-shell -b` with 0.5s wait; VM stop killed save mid-write
   - **Fix:** Removed explicit saves (detach hook already saves); added 10s delay before VM stop
   - **Commit:** fc2a4a4
-  - **Files Modified:** scripts/cal-bootstrap
+  - **Files Modified:** scripts/calf-bootstrap
 
 - [x] **Minor fixes:** tmux-resurrect clearing with rm -rf (7453dd0), first-run flag timing (bf17a90), session data clearing (e7e2bef, 2574804)
 

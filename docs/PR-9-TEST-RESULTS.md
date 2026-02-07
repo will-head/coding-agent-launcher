@@ -27,7 +27,7 @@ Git clone caching is working correctly. TPM (tmux plugin manager) successfully c
 
 **Results:**
 - All cache types (Homebrew, npm, Go, Git) show ✓ Ready
-- Git cache location: `/Users/willhead/.cal-cache/git`
+- Git cache location: `/Users/willhead/.calf-cache/git`
 - Cache directories created successfully
 - Size: 38 B (empty structure, ready for repos)
 
@@ -39,8 +39,8 @@ Git clone caching is working correctly. TPM (tmux plugin manager) successfully c
 
 **Setup:**
 1. Merged main branch changes (cal-cache sharing fix) into PR #9
-2. Cached TPM on host: `git clone https://github.com/tmux-plugins/tpm ~/.cal-cache/git/tpm`
-3. Restarted VM with updated cal-bootstrap
+2. Cached TPM on host: `git clone https://github.com/tmux-plugins/tpm ~/.calf-cache/git/tpm`
+3. Restarted VM with updated calf-bootstrap
 
 **Verification:**
 ```bash
@@ -68,7 +68,7 @@ git clone "/Volumes/My Shared Files/cal-cache/git/tpm" ~/.tmux/plugins/tpm
 
 **Test Procedure:**
 1. Disconnected Wi-Fi on host
-2. Restarted VM: `./scripts/cal-bootstrap --restart`
+2. Restarted VM: `./scripts/calf-bootstrap --restart`
 3. Verified TPM still installed and working
 4. Removed TPM and reinstalled from cache while offline
 
@@ -115,13 +115,13 @@ Changed comment to: "Clone from local cache (faster than GitHub, no network need
 
 ### Cal-Cache Directory Sharing
 
-The test required cal-cache directory sharing to be configured in `scripts/cal-bootstrap`. This was added in a previous commit to main and merged into PR #9.
+The test required cal-cache directory sharing to be configured in `scripts/calf-bootstrap`. This was added in a previous commit to main and merged into PR #9.
 
 **Verification:**
 ```bash
 # On host - check Tart process
 ps aux | grep tart | grep cal-cache
-# Result: --dir cal-cache:/Users/willhead/.cal-cache:rw,tag=com.apple.virtio-fs.automount
+# Result: --dir calf-cache:/Users/willhead/.calf-cache:rw,tag=com.apple.virtio-fs.automount
 ```
 
 **Status:** ✓ Cal-cache sharing is active and working
@@ -146,7 +146,7 @@ From PR #9 description:
 - [x] Git cache directory created on host
 - [x] TPM cached and used during bootstrap
 - [x] Cache updated with `git fetch` before use (vm-tmux-resurrect.sh:49)
-- [x] `cal cache status` shows cached git repos
+- [x] `calf cache status` shows cached git repos
 - [x] Bootstrap works offline with cached repos
 - [x] Graceful degradation works if cache unavailable (fallback to GitHub on line 64)
 - [x] Tests pass (unit tests pass, manual tests pass)

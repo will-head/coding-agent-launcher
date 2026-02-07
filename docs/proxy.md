@@ -1,4 +1,4 @@
-# Transparent Proxy for CAL VMs
+# Transparent Proxy for CALF VMs
 
 **Purpose:** Enable reliable network connectivity in restrictive corporate environments by tunneling VM traffic through the host.
 
@@ -71,16 +71,16 @@ python3 --version
 
 ```bash
 # Auto mode (default) - detects if proxy is needed
-./scripts/cal-bootstrap --init
+./scripts/calf-bootstrap --init
 
 # Force proxy on
-./scripts/cal-bootstrap --init --proxy on
+./scripts/calf-bootstrap --init --proxy on
 
 # Force proxy off
-./scripts/cal-bootstrap --init --proxy off
+./scripts/calf-bootstrap --init --proxy off
 
 # Check current status in VM
-ssh admin@$(tart ip cal-dev) proxy-status
+ssh admin@$(tart ip calf-dev) proxy-status
 ```
 
 ### Proxy Modes
@@ -94,15 +94,15 @@ ssh admin@$(tart ip cal-dev) proxy-status
 **Examples:**
 ```bash
 # Auto mode - recommended
-./scripts/cal-bootstrap --run
+./scripts/calf-bootstrap --run
 # or explicitly:
-./scripts/cal-bootstrap --run --proxy auto
+./scripts/calf-bootstrap --run --proxy auto
 
 # Always enable proxy
-./scripts/cal-bootstrap --run --proxy on
+./scripts/calf-bootstrap --run --proxy on
 
 # Disable proxy
-./scripts/cal-bootstrap --run --proxy off
+./scripts/calf-bootstrap --run --proxy off
 ```
 
 ---
@@ -113,7 +113,7 @@ ssh admin@$(tart ip cal-dev) proxy-status
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              VM (cal-dev)                                   │
+│                              VM (calf-dev)                                   │
 │                                                                             │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                      │
 │  │ curl        │    │ npm/node    │    │ opencode    │  ... any app         │
@@ -269,12 +269,12 @@ nc -z 192.168.64.1 22 && echo "✓ Can reach host SSH" || echo "✗ Cannot reach
 **Check logs:**
 ```bash
 # On host:
-tail -50 ~/.cal-bootstrap.log
+tail -50 ~/.calf-bootstrap.log
 
 # Inside VM:
 proxy-log
 # or:
-tail -50 ~/.cal-proxy.log
+tail -50 ~/.calf-proxy.log
 ```
 
 ### Proxy starts but connectivity fails
@@ -306,7 +306,7 @@ Check if auto-start is configured:
 cat ~/.zshrc | grep "CAL Transparent Proxy"
 # Should show function definitions
 
-cat ~/.cal-proxy-config
+cat ~/.calf-proxy-config
 # Should show proxy settings
 ```
 
@@ -345,10 +345,10 @@ All proxy operations are logged:
 
 ```bash
 # Host logs:
-~/.cal-bootstrap.log
+~/.calf-bootstrap.log
 
 # VM logs:
-~/.cal-proxy.log
+~/.calf-proxy.log
 ```
 
 ---
@@ -374,7 +374,7 @@ If your VM network uses a different gateway:
 
 ```bash
 export HOST_GATEWAY=192.168.65.1
-./scripts/cal-bootstrap --run --proxy on
+./scripts/calf-bootstrap --run --proxy on
 ```
 
 ### Persistent Configuration

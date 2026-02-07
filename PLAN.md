@@ -1,4 +1,4 @@
-# CAL Implementation Plan
+# CALF Implementation Plan
 
 > 🎯 **THIS IS THE SINGLE SOURCE OF TRUTH FOR PROJECT STATUS AND TODOS**
 >
@@ -12,7 +12,7 @@
 
 **Phase 0 (Bootstrap): Complete** - Core functionality documented in [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md). Tmux session persistence (section 0.11) implemented and tested. Post-integration bug fixes (BUG-005 edge cases, BUG-008, BUG-009) all resolved — see [ADR-003 § Bug Fixes Post-Integration](docs/adr/ADR-003-package-download-caching.md#bug-fixes-post-integration). All Phase 0 tasks complete. No active bugs remaining.
 
-Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via cal-bootstrap, transparent proxy for network reliability, comprehensive git safety checks, VM detection capabilities, first-run/logout git automation, Tart cache sharing for nested VMs, Ghostty terminal emulator, and tmux session persistence are all operational.
+Three-tier VM architecture (calf-clean, calf-dev, calf-init), automated setup via calf-bootstrap, transparent proxy for network reliability, comprehensive git safety checks, VM detection capabilities, first-run/logout git automation, Tart cache sharing for nested VMs, Ghostty terminal emulator, and tmux session persistence are all operational.
 
 **Active Work:** Phase 1 (CLI Foundation) in progress. Project scaffolding (PR #3), Configuration Management (PR #4), Tart Wrapper (PR #5), Homebrew Cache (PR #6), npm Cache (PR #7), Go Modules Cache (PR #8), Git Cache with complete cache integration (PR #9), and Cache Clear command (PR #10) all merged. **Package download caching (1.1) complete** — Homebrew, npm, Go, and Git caches all implemented with full bootstrap integration and cache clear command. **Cache Mount Architecture (Critical Issue #3) complete** — Replaced fragile symlinks with robust direct virtio-fs mounts (LaunchDaemon + self-healing), macOS-compatible mount verification, cannot be deleted with `rm -rf`. Cache architecture evolution: [ADR-003](docs/adr/ADR-003-package-download-caching.md) (symlinks) → [ADR-004](docs/adr/ADR-004-cache-mount-architecture.md) (direct mounts). Next: Begin Snapshot Management (1.4) or SSH Management (1.5).
 
@@ -34,11 +34,11 @@ Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via c
 **Phase 0 (Bootstrap):** Manual VM setup and bootstrap automation
 **Deliverable:** Three-tier VM architecture with automated setup and safety features
 
-**Phase 1 (CLI Foundation):** Replace manual Tart commands with `cal isolation` CLI
-**Deliverable:** Working `cal isolation` CLI that wraps Tart operations
+**Phase 1 (CLI Foundation):** Replace manual Tart commands with `calf isolation` CLI
+**Deliverable:** Working `calf isolation` CLI that wraps Tart operations
 
 **Phase 2 (Agent Integration & UX):** Seamless agent launching with safety UI
-**Deliverable:** `cal isolation run <workspace>` launches agent with full UX
+**Deliverable:** `calf isolation run <workspace>` launches agent with full UX
 
 **Phase 3 (GitHub Workflow):** Complete git workflow from VM
 **Deliverable:** Clone → Edit → Commit → PR workflow working
@@ -47,7 +47,7 @@ Three-tier VM architecture (cal-clean, cal-dev, cal-init), automated setup via c
 **Deliverable:** Multi-platform development with pluggable environments
 
 **Phase 5 (TUI & Polish):** Full terminal UI experience
-**Deliverable:** Complete TUI for CAL
+**Deliverable:** Complete TUI for CALF
 
 ---
 

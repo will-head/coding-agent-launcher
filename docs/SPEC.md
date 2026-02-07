@@ -1,4 +1,4 @@
-# CAL Technical Specification
+# CALF Technical Specification
 
 > Quick reference derived from [ADR-001](adr/ADR-001-cal-isolation.md) (design) and [ADR-002](adr/ADR-002-tart-vm-operational-guide.md) (operations).
 
@@ -83,10 +83,10 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 
 ## Directory Structure
 
-### Host (`~/.cal/`)
+### Host (`~/.calf/`)
 
 ```
-~/.cal/
+~/.calf/
 ├── config.yaml                    # Global configuration
 ├── agents/                        # Agent-specific configs
 ├── environments/
@@ -103,10 +103,10 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
     └── logs/
 ```
 
-### Host (`~/cal-output/`)
+### Host (`~/calf-output/`)
 
 ```
-~/cal-output/{workspace}/
+~/calf-output/{workspace}/
 ├── builds/                        # .app, .ipa, .apk, etc.
 ├── test-results/                  # .xcresult, etc.
 └── logs/
@@ -118,9 +118,9 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 ~/code/github.com/{owner}/{repo}/  # Cloned repositories
 ~/scripts/                         # Helper scripts (vm-auth.sh, vm-setup.sh, etc.)
 ~/.config/gh/                      # GitHub CLI auth
-~/.cal-vm-info                     # VM detection metadata
-~/.cal-vm-config                   # VM password (mode 600)
-~/.cal-proxy-config                # Proxy settings
+~/.calf-vm-info                     # VM detection metadata
+~/.calf-vm-config                   # VM password (mode 600)
+~/.calf-proxy-config                # Proxy settings
 ~/.cal-env/                        # Environment markers
 ~/output/                          # Artifact staging (synced to host)
 ```

@@ -5,7 +5,7 @@
 **Use When:** Making code changes directly to the main branch with interactive approvals
 
 **Key Principles:**
-- **User approval required on HOST** - ask permission before ALL commands (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
+- **User approval required on HOST** - ask permission before ALL commands (auto-approved when `CALF_VM=true`; see [CALF_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
 - **Blocking checkpoints** - each step must complete before proceeding
 - **Code review mandatory** - all code/script changes reviewed before commit
 - **Documentation-only exception** - skip tests/build/review for `.md` files only
@@ -14,10 +14,10 @@
 
 ## Overview
 
-The Interactive workflow is the default workflow for making code changes directly to the main branch. On HOST, it requires explicit user approval before running any commands (git, build, tests, installs), ensuring the user maintains full control over all operations. When `CAL_VM=true`, approvals are auto-granted (see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve)).
+The Interactive workflow is the default workflow for making code changes directly to the main branch. On HOST, it requires explicit user approval before running any commands (git, build, tests, installs), ensuring the user maintains full control over all operations. When `CALF_VM=true`, approvals are auto-granted (see [CALF_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve)).
 
 **Target:** main branch (direct commits)
-**Approvals:** Required on HOST for all commands (auto-approved when `CAL_VM=true`)
+**Approvals:** Required on HOST for all commands (auto-approved when `CALF_VM=true`)
 **Steps:** 10 (full workflow) or simplified for docs-only
 
 ---
@@ -26,7 +26,7 @@ The Interactive workflow is the default workflow for making code changes directl
 
 Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
 - This is the Interactive workflow (10-step with approvals)
-- Key principles: user approval required on HOST (auto-approved when `CAL_VM=true`), blocking checkpoints, code review mandatory
+- Key principles: user approval required on HOST (auto-approved when `CALF_VM=true`), blocking checkpoints, code review mandatory
 - 10 steps for code or simplified 3-step for docs-only
 - Present available TODOs using [Numbered Choice Presentation](WORKFLOWS.md#numbered-choice-presentation)
 
@@ -37,7 +37,7 @@ Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shar
 For changes **only** to `.md` files or code comments:
 
 1. Make changes
-2. Ask user approval to commit (auto-approved when `CAL_VM=true`)
+2. Ask user approval to commit (auto-approved when `CALF_VM=true`)
 3. Commit and push
 
 **Skip:** tests, build, and code review for docs-only changes.
@@ -59,7 +59,7 @@ For changes **only** to `.md` files or code comments:
 
 ### Step 2: Test
 
-- **Ask user approval** before running (auto-approved when `CAL_VM=true`)
+- **Ask user approval** before running (auto-approved when `CALF_VM=true`)
 - Execute: `go test ./...`
 - **Stop if tests fail** - fix issues before proceeding
 
@@ -67,8 +67,8 @@ All tests must pass to continue.
 
 ### Step 3: Build
 
-- **Ask user approval** before running (auto-approved when `CAL_VM=true`)
-- Execute: `go build -o cal ./cmd/cal`
+- **Ask user approval** before running (auto-approved when `CALF_VM=true`)
+- Execute: `go build -o calf ./cmd/calf`
 - **Stop if build fails** - fix issues before proceeding
 
 Build must succeed to continue.
@@ -92,7 +92,7 @@ Document findings with:
 ### Step 5: Present Review
 
 - Always present review findings to user
-- **STOP and wait for explicit user approval** (auto-approved when `CAL_VM=true`)
+- **STOP and wait for explicit user approval** (auto-approved when `CALF_VM=true`)
 - User responses like "approved", "looks good", "proceed" = approved
 - Do not proceed without approval on HOST
 
@@ -116,7 +116,7 @@ After user testing is complete, present a final code review summarizing:
 - Confirmation that all tests still pass after any fixes
 - Final assessment of code quality and readiness for commit
 
-**STOP and wait for explicit user approval** before proceeding (auto-approved when `CAL_VM=true`).
+**STOP and wait for explicit user approval** before proceeding (auto-approved when `CALF_VM=true`).
 
 ### Step 8: Update Documentation
 
@@ -137,7 +137,7 @@ Update affected documentation files:
 
 ### Step 9: Commit and Push
 
-- **Ask user approval** before committing (auto-approved when `CAL_VM=true`)
+- **Ask user approval** before committing (auto-approved when `CALF_VM=true`)
 - Follow [Commit Message Format](WORKFLOWS.md#commit-message-format) from Shared Conventions
 - Execute only after all previous steps complete successfully
 
@@ -151,7 +151,7 @@ Report completion status and suggest next steps from PLAN.md.
 
 Before every commit:
 - [ ] Tests pass (`go test ./...`)
-- [ ] Build succeeds (`go build -o cal ./cmd/cal`)
+- [ ] Build succeeds (`go build -o calf ./cmd/calf`)
 - [ ] Code review presented and user approved (for code changes)
 - [ ] User testing instructions presented one by one and resolved
 - [ ] Final code review presented and user approved
@@ -167,7 +167,7 @@ Before every commit:
 
 ### Command Execution Policy
 
-**Ask user approval before running ANY command** (auto-approved when `CAL_VM=true`), including:
+**Ask user approval before running ANY command** (auto-approved when `CALF_VM=true`), including:
 - Git operations (commit, push, branch, merge)
 - Build commands
 - Test commands

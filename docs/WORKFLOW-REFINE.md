@@ -7,7 +7,7 @@
 **Key Principles:**
 - **Defaults to active phase** - refine TODOs in current active phase unless user specifies different phase
 - **Also offers active bugs** - presents bugs from `docs/BUGS.md` alongside phase TODOs
-- **Approval required on HOST** - user must approve changes before committing to main (auto-approved when `CAL_VM=true`; see [CAL_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
+- **Approval required on HOST** - user must approve changes before committing to main (auto-approved when `CALF_VM=true`; see [CALF_VM Auto-Approve](WORKFLOWS.md#cal_vm-auto-approve))
 - **Target main branch** - updates phase TODO file, bug reports, and STATUS.md directly on main
 - **Comprehensive requirements** - gather all details needed for implementation
 - **Track refinement** - both prefix TODO in phase file and add to STATUS.md
@@ -21,7 +21,7 @@ The Refine workflow ensures TODOs and bugs are implementation-ready by gathering
 **Default Behavior:** Offers TODOs from the **current active phase** and active bugs from `docs/BUGS.md` unless user specifies a different phase or specific item.
 
 **Target:** main branch (direct updates)
-**Approvals:** Required on HOST (auto-approved when `CAL_VM=true`)
+**Approvals:** Required on HOST (auto-approved when `CALF_VM=true`)
 **Steps:** 6 (thorough refinement with tracking)
 
 ---
@@ -30,7 +30,7 @@ The Refine workflow ensures TODOs and bugs are implementation-ready by gathering
 
 Follow [Session Start Procedure](WORKFLOWS.md#session-start-procedure) from Shared Conventions, highlighting:
 - This is the Refine workflow (6-step for refining phase TODOs and bugs)
-- Key principles: defaults to active phase, also offers active bugs, approval required on HOST (auto-approved when `CAL_VM=true`), main branch, comprehensive requirements, track refinement
+- Key principles: defaults to active phase, also offers active bugs, approval required on HOST (auto-approved when `CALF_VM=true`), main branch, comprehensive requirements, track refinement
 - 6 steps: Read PLAN.md & Phase TODO & BUGS.md → Ask Questions → Update Phase TODO/Bug Report → Update STATUS.md → Ask Approval → Commit
 - Explain the REFINED prefix and STATUS.md tracking
 - Defaults to active phase TODOs and active bugs unless user specifies different phase or item
@@ -177,13 +177,13 @@ Present changes to user for review:
 3. **Summarize refining** - explain what was clarified
 4. **List affected files** - phase TODO file and STATUS.md
 
-**Wait for explicit user approval** before committing (auto-approved when `CAL_VM=true`).
+**Wait for explicit user approval** before committing (auto-approved when `CALF_VM=true`).
 
 If user requests changes, return to Step 2 or Step 3 as needed.
 
 ### Step 6: Commit and Push
 
-After approval (user approval on HOST; auto-approved when `CAL_VM=true`), stage `docs/PLAN-PHASE-XX-TODO.md` and `STATUS.md`, then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format). Include "Refine TODO:" prefix and list key requirements in the body. Push after commit.
+After approval (user approval on HOST; auto-approved when `CALF_VM=true`), stage `docs/PLAN-PHASE-XX-TODO.md` and `STATUS.md`, then commit using [Commit Message Format](WORKFLOWS.md#commit-message-format). Include "Refine TODO:" prefix and list key requirements in the body. Push after commit.
 
 **Done!** TODO is now implementation-ready.
 
@@ -267,7 +267,7 @@ The "Refined" section in STATUS.md:
 
 **After Refining (in `docs/PLAN-PHASE-01-TODO.md`):**
 ```markdown
-- [ ] **REFINED:** Improve error messages in cal-bootstrap script
+- [ ] **REFINED:** Improve error messages in calf-bootstrap script
   - Add context to all error messages (what failed, why, what to do)
   - Use consistent format: "ERROR: [what failed]. [why]. [action]"
   - Replace generic "Command failed" with specific operation names
@@ -278,7 +278,7 @@ The "Refined" section in STATUS.md:
 
 **STATUS.md entry:**
 ```markdown
-| Improve error messages | PLAN-PHASE-01-TODO.md § 1.2 | Standardize error format with context and suggestions | 2026-01-23 | Applies to cal-bootstrap script |
+| Improve error messages | PLAN-PHASE-01-TODO.md § 1.2 | Standardize error format with context and suggestions | 2026-01-23 | Applies to calf-bootstrap script |
 ```
 
 ### Example 2: Implementation Choice
@@ -290,7 +290,7 @@ The "Refined" section in STATUS.md:
 
 **After Refining (in `docs/PLAN-PHASE-01-TODO.md`):**
 ```markdown
-- [ ] **REFINED:** Add configuration file support for cal-bootstrap
+- [ ] **REFINED:** Add configuration file support for calf-bootstrap
   - File location: ~/.config/cal/config.yaml (XDG standard)
   - Format: YAML with sections for vm_defaults, proxy, snapshots
   - Supported options: default_cpu, default_memory, default_disk, proxy_mode, auto_snapshot
@@ -314,7 +314,7 @@ The "Refined" section in STATUS.md:
 
 **After Refining (in `docs/PLAN-PHASE-00-TODO.md`):**
 ```markdown
-- [ ] **REFINED:** Auto-sync repos on VM start in cal-bootstrap
+- [ ] **REFINED:** Auto-sync repos on VM start in calf-bootstrap
   - Prerequisites: Requires "Add git repo sync on init" TODO to be completed first
   - Behavior: On `--run`, check ~/code for git repos, fetch updates, show status if behind
   - User prompt: If repos are behind, ask "Pull updates? [Y/n]"

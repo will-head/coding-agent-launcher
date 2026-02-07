@@ -11,7 +11,7 @@
 
 ## Summary
 
-Fresh `cal-bootstrap --init` installations had tmux mouse mode disabled (`set -g mouse off`), causing right-click to show the terminal app menu instead of the tmux context menu. This was a regression introduced by commit 02a0081 which incorrectly "fixed" BUG-003.
+Fresh `calf-bootstrap --init` installations had tmux mouse mode disabled (`set -g mouse off`), causing right-click to show the terminal app menu instead of the tmux context menu. This was a regression introduced by commit 02a0081 which incorrectly "fixed" BUG-003.
 
 ## Root Cause
 

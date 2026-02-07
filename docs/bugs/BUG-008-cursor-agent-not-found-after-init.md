@@ -10,7 +10,7 @@
 
 ## Summary
 
-The `agent` command (Cursor CLI) is not available after `cal-bootstrap --init` completes, despite the Cursor CLI installation succeeding. The verification step shows "✗ agent: not found (may need to restart shell)" even though `cursor-agent` was successfully installed via Homebrew Cask.
+The `agent` command (Cursor CLI) is not available after `calf-bootstrap --init` completes, despite the Cursor CLI installation succeeding. The verification step shows "✗ agent: not found (may need to restart shell)" even though `cursor-agent` was successfully installed via Homebrew Cask.
 
 ## Symptoms
 
@@ -21,7 +21,7 @@ The `agent` command (Cursor CLI) is not available after `cal-bootstrap --init` c
 
 ## Expected Behavior
 
-- After `cal-bootstrap --init`, the `agent` command should be available
+- After `calf-bootstrap --init`, the `agent` command should be available
 - Verification should show: `✓ agent: <version>` (similar to other agents)
 - User should be able to run `agent` for Cursor authentication
 
@@ -190,7 +190,7 @@ Added `alias agent='cursor-agent'` to enable the agent command after Cursor CLI 
 
 **Verification:**
 After this fix, the flow is:
-1. `cal-bootstrap --init`: Sets first-run flag, runs vm-auth (auth only), creates cal-init
+1. `calf-bootstrap --init`: Sets first-run flag, runs vm-auth (auth only), creates cal-init
 2. Restore from cal-init: First login triggers vm-first-run.sh
 3. vm-first-run.sh: Checks git, enables tmux history, removes flag
 4. Session persistence active for all subsequent logins

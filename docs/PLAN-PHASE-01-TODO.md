@@ -14,7 +14,15 @@
 
 ## Critical Issues - HIGHEST PRIORITY
 
-### 1. CLI Command Name Collision — SOLUTION ACCEPTED
+### 1. CLI Command Name Collision — ✅ COMPLETED (2026-02-07)
+
+**Status:** Main implementation complete. See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) for details.
+
+**Follow-up Tasks:**
+- Fix remaining cal references in VM-side scripts (messages, mount checks, LaunchDaemon)
+- Run smoke tests after VM script fixes complete
+
+**Original Task:** CLI Command Name Collision — SOLUTION ACCEPTED
 
 **Problem:** The `cal` command clashes with the system calendar command (also called `cal`), requiring users to use `./cal` instead.
 
@@ -42,7 +50,7 @@
 - [ ] **1.1.1 Rename cmd/cal/ to cmd/calf/** — Move directory and update imports
 - [ ] **1.1.2 Update cmd/calf/main.go** — Change `Use: "cal"` to `Use: "calf"`, update descriptions
 - [ ] **1.1.3 Update cmd/calf/cache.go** — Update command references
-- [ ] **1.1.4 Update cmd/calf/config.go** — Update "CAL Configuration" to "CALF Configuration"
+- [ ] **1.1.4 Update cmd/calf/config.go** — Update "CALF Configuration" to "CALF Configuration"
 - [ ] **1.1.5 Update internal/config/config.go** — Update package docs and comments
 - [ ] **1.1.6 Update internal/isolation/cache.go** — Change `cal-cache` paths to `calf-cache`
 - [ ] **1.1.7 Update internal/isolation/cache_test.go** — Update test paths and assertions
@@ -51,11 +59,11 @@
 
 #### 1.2 Shell Script Updates
 
-- [ ] **1.2.1 Rename scripts/cal-bootstrap to scripts/calf-bootstrap**
+- [ ] **1.2.1 Rename scripts/calf-bootstrap to scripts/calf-bootstrap**
 - [ ] **1.2.2 Update calf-bootstrap** — All internal references:
   - VM names: `cal-dev` → `calf-dev`, `cal-init` → `calf-init`, `cal-clean` → `calf-clean`
   - Environment: `CAL_LOG` → `CALF_LOG`
-  - Paths: `~/.cal-cache` → `~/.calf-cache`, `cal-cache` mount tag → `calf-cache`
+  - Paths: `~/.calf-cache` → `~/.calf-cache`, `cal-cache` mount tag → `calf-cache`
   - Config files: `~/.cal-*` → `~/.calf-*`
   - Tmux session: `cal` → `calf`
 - [ ] **1.2.3 Update scripts/vm-setup.sh** — Cache paths and VM detection
@@ -67,16 +75,16 @@
 #### 1.3 Config/Flag File Renames
 
 - [ ] **1.3.1 Host paths:**
-  - `~/.cal-cache/` → `~/.calf-cache/`
+  - `~/.calf-cache/` → `~/.calf-cache/`
 - [ ] **1.3.2 VM paths (in scripts):**
-  - `~/.cal-cache/` → `~/.calf-cache/`
-  - `~/.cal-proxy-config` → `~/.calf-proxy-config`
-  - `~/.cal-proxy.log` → `~/.calf-proxy.log`
-  - `~/.cal-proxy.pid` → `~/.calf-proxy.pid`
-  - `~/.cal-vm-config` → `~/.calf-vm-config`
-  - `~/.cal-vm-info` → `~/.calf-vm-info`
-  - `~/.cal-auth-needed` → `~/.calf-auth-needed`
-  - `~/.cal-first-run` → `~/.calf-first-run`
+  - `~/.calf-cache/` → `~/.calf-cache/`
+  - `~/.calf-proxy-config` → `~/.calf-proxy-config`
+  - `~/.calf-proxy.log` → `~/.calf-proxy.log`
+  - `~/.calf-proxy.pid` → `~/.calf-proxy.pid`
+  - `~/.calf-vm-config` → `~/.calf-vm-config`
+  - `~/.calf-vm-info` → `~/.calf-vm-info`
+  - `~/.calf-auth-needed` → `~/.calf-auth-needed`
+  - `~/.calf-first-run` → `~/.calf-first-run`
 - [ ] **1.3.3 Shared volume paths:**
   - `/Volumes/My Shared Files/cal-cache/` → `/Volumes/My Shared Files/calf-cache/`
 
@@ -216,7 +224,7 @@ This issue has been fully implemented and tested. See [PLAN-PHASE-01-DONE.md](PL
 
 ### 6. Go Code Parity with Updated Cache Mount Architecture
 
-**Goal:** Update Go implementation (`internal/isolation/cache.go` and `internal/isolation/tart.go`) to match the new direct virtio-fs mount architecture implemented in cal-bootstrap and scripts.
+**Goal:** Update Go implementation (`internal/isolation/cache.go` and `internal/isolation/tart.go`) to match the new direct virtio-fs mount architecture implemented in calf-bootstrap and scripts.
 
 **Background:** Critical Issue #3 updated shell scripts to use direct mounts instead of symlinks, with macOS-compatible mount verification. The Go code has legacy/dead code and outdated patterns that need cleanup for consistency.
 
@@ -230,11 +238,11 @@ This issue has been fully implemented and tested. See [PLAN-PHASE-01-DONE.md](PL
 
 #### 6.2 Verify Mount Specification Format
 - [ ] Check if tart.go needs cal-cache mount support (currently only has tart-cache mount)
-- [ ] If adding cal-cache mount to tart.go, use new format: `${HOME}/.cal-cache:tag=cal-cache`
-- [ ] Ensure consistency with cal-bootstrap lines 241 & 1747
+- [ ] If adding cal-cache mount to tart.go, use new format: `${HOME}/.calf-cache:tag=cal-cache`
+- [ ] Ensure consistency with calf-bootstrap lines 241 & 1747
 
 #### 6.3 Update Comments and Documentation
-- [ ] Update comment "Mount is handled by cal-mount-shares.sh via LaunchDaemon" (appears 4x) - verify accuracy
+- [ ] Update comment "Mount is handled by calf-mount-shares.sh via LaunchDaemon" (appears 4x) - verify accuracy
 - [ ] Review symlink-related comments - some may reference old architecture
 - [ ] Update package-level documentation if it references symlink-based caching
 
@@ -251,7 +259,7 @@ This issue has been fully implemented and tested. See [PLAN-PHASE-01-DONE.md](PL
 
 **Reference:**
 - ADR-004 for mount architecture
-- cal-bootstrap lines 241, 1747 for mount specification format
+- calf-bootstrap lines 241, 1747 for mount specification format
 - Code review findings from Critical Issue #3 implementation
 
 ---

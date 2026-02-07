@@ -314,7 +314,7 @@ Before starting the agent, CAL shows a confirmation:
 
 ### Interaction Flow
 
-1. User runs `cal isolation run my-workspace`
+1. User runs `calf isolation run my-workspace`
 2. CAL verifies VM is running and isolation is active
 3. Confirmation screen shown (can be skipped with `--yes`)
 4. Auto-snapshot taken if enabled
@@ -573,7 +573,7 @@ tart delete my-dev-vm
 ### Directory Structure (Host)
 
 ```
-~/.cal/                              # CAL main configuration
+~/.calf/                              # CAL main configuration
 ├── config.yaml                      # Global CAL configuration
 ├── agents/                          # Agent-specific configs
 │   ├── claude-code.yaml
@@ -680,7 +680,7 @@ tart list | grep my-workspace
 ### Snapshot Management
 
 ```yaml
-# ~/.cal/config.yaml
+# ~/.calf/config.yaml
 isolation:
   snapshots:
     auto_snapshot_on_session_start: true
@@ -767,7 +767,7 @@ Each development environment is defined as a plugin with a standard interface. E
 Each environment plugin defines a `manifest.yaml`:
 
 ```yaml
-# ~/.cal/environments/plugins/core/android/manifest.yaml
+# ~/.calf/environments/plugins/core/android/manifest.yaml
 name: android
 display_name: "Android Development"
 version: "1.0.0"
@@ -855,7 +855,7 @@ artifacts:
 The iOS environment installs Xcode via `xcodes` CLI, allowing version management:
 
 ```yaml
-# ~/.cal/environments/plugins/core/ios/manifest.yaml
+# ~/.calf/environments/plugins/core/ios/manifest.yaml
 name: ios
 display_name: "iOS/macOS Development"
 version: "1.0.0"
@@ -935,7 +935,7 @@ artifacts:
 ### Android Environment Plugin
 
 ```yaml
-# ~/.cal/environments/plugins/core/android/manifest.yaml
+# ~/.calf/environments/plugins/core/android/manifest.yaml
 name: android
 display_name: "Android Development"
 version: "1.0.0"
@@ -1032,7 +1032,7 @@ verify:
 
 ### Environment CLI Commands
 
-#### `cal isolation env list`
+#### `calf isolation env list`
 ```bash
 cal isolation env list [workspace]
 # ENVIRONMENT     STATUS      SIZE      DESCRIPTION
@@ -1042,7 +1042,7 @@ cal isolation env list [workspace]
 # node            installed   489 MB    Node.js Development
 ```
 
-#### `cal isolation env install`
+#### `calf isolation env install`
 ```bash
 # Install environment into workspace
 cal isolation env install my-workspace android
@@ -1054,12 +1054,12 @@ cal isolation env install my-workspace flutter
 cal isolation env install my-workspace python --variant ml
 ```
 
-#### `cal isolation env remove`
+#### `calf isolation env remove`
 ```bash
 cal isolation env remove my-workspace android
 ```
 
-#### `cal isolation env verify`
+#### `calf isolation env verify`
 ```bash
 cal isolation env verify my-workspace
 # ✓ ios: Xcode 16.0, Swift 5.10
@@ -1096,7 +1096,7 @@ cal isolation env install my-app android  # Takes ~5-10 min
 **Template Definition Example:**
 
 ```yaml
-# ~/.cal/isolation/templates/mobile.yaml
+# ~/.calf/isolation/templates/mobile.yaml
 name: mobile
 description: "iOS + Android native development"
 base_image: "ghcr.io/cirruslabs/macos-sequoia-base:latest"
@@ -1121,7 +1121,7 @@ post_init:
 
 ## Configuration Schema
 
-### Global Configuration (`~/.cal/config.yaml`)
+### Global Configuration (`~/.calf/config.yaml`)
 
 ```yaml
 # CAL Global Configuration
@@ -1173,7 +1173,7 @@ ui:
   show_logs: true
 ```
 
-### VM Configuration (`~/.cal/isolation/vms/{name}/vm.yaml`)
+### VM Configuration (`~/.calf/isolation/vms/{name}/vm.yaml`)
 
 ```yaml
 name: "my-ios-workspace"
@@ -1243,7 +1243,7 @@ cal iso <command> [options]
 
 ### cal-isolation Commands
 
-#### `cal isolation init`
+#### `calf isolation init`
 Initialize a new isolated VM workspace.
 
 ```bash
@@ -1270,28 +1270,28 @@ cal isolation init my-workspace \
   --disk 150
 ```
 
-#### `cal isolation start`
+#### `calf isolation start`
 Start a VM and prepare for agent session.
 
 ```bash
 cal isolation start my-workspace [--headless] [--vnc]
 ```
 
-#### `cal isolation stop`
+#### `calf isolation stop`
 Stop a running VM.
 
 ```bash
 cal isolation stop my-workspace [--force]
 ```
 
-#### `cal isolation ssh`
+#### `calf isolation ssh`
 SSH into a running VM.
 
 ```bash
 cal isolation ssh my-workspace [command]
 ```
 
-#### `cal isolation clone`
+#### `calf isolation clone`
 Clone a GitHub repository into the VM workspace.
 
 ```bash
@@ -1305,7 +1305,7 @@ cal isolation clone my-workspace --repo owner/repo-name --branch feature/new-fea
 cal isolation clone my-workspace --repo owner/repo-name --new-branch agent/refactor-auth
 ```
 
-#### `cal isolation run`
+#### `calf isolation run`
 Run the configured agent inside the VM.
 
 ```bash
@@ -1322,7 +1322,7 @@ cal isolation run my-workspace --agent opencode --prompt "Refactor the networkin
 cal isolation run my-workspace --autonomous --prompt "Fix all linting errors"
 ```
 
-#### `cal isolation commit`
+#### `calf isolation commit`
 Commit and optionally push changes made by agent.
 
 ```bash
@@ -1336,7 +1336,7 @@ cal isolation commit my-workspace --message "Refactored auth module" --push
 cal isolation commit my-workspace --message "Refactored auth module" --pr --pr-title "Auth refactor"
 ```
 
-#### `cal isolation pr`
+#### `calf isolation pr`
 Create a pull request from changes in the VM.
 
 ```bash
@@ -1346,7 +1346,7 @@ cal isolation pr my-workspace \
   --base main
 ```
 
-#### `cal isolation status`
+#### `calf isolation status`
 Show status of VM and any uncommitted changes.
 
 ```bash
@@ -1361,7 +1361,7 @@ cal isolation status my-workspace
 #     - Last commit: 2h ago
 ```
 
-#### `cal isolation snapshot`
+#### `calf isolation snapshot`
 Manage VM snapshots.
 
 ```bash
@@ -1371,7 +1371,7 @@ cal isolation snapshot list my-workspace
 cal isolation snapshot delete my-workspace --name "before-refactor"
 ```
 
-#### `cal isolation sync`
+#### `calf isolation sync`
 Sync build artifacts from VM to host.
 
 ```bash
@@ -1382,7 +1382,7 @@ cal isolation sync my-workspace
 cal isolation sync my-workspace --watch
 ```
 
-#### `cal isolation auth`
+#### `calf isolation auth`
 Manage GitHub authentication in the VM.
 
 ```bash
@@ -1399,7 +1399,7 @@ cal isolation auth status my-workspace
 cal isolation auth logout my-workspace
 ```
 
-#### `cal isolation agent`
+#### `calf isolation agent`
 Manage agents in the VM.
 
 ```bash
@@ -1416,7 +1416,7 @@ cal isolation agent use my-workspace opencode
 cal isolation agent update my-workspace claude-code
 ```
 
-#### `cal isolation env`
+#### `calf isolation env`
 Manage development environments in the VM.
 
 ```bash
@@ -1457,14 +1457,14 @@ cal isolation env info android
 cal isolation env update my-workspace android
 ```
 
-#### `cal isolation cleanup`
+#### `calf isolation cleanup`
 Clean up resources.
 
 ```bash
 cal isolation cleanup [--all] [--cache] [--stopped]
 ```
 
-#### `cal isolation sign`
+#### `calf isolation sign`
 Sign a build artifact on the host (credentials never enter VM).
 
 ```bash
@@ -1475,7 +1475,7 @@ cal isolation sign my-workspace \
   --output ~/cal-output/my-workspace/MyApp.ipa
 ```
 
-#### `cal isolation watch`
+#### `calf isolation watch`
 Watch output directory for changes with real-time streaming.
 
 ```bash
@@ -1486,7 +1486,7 @@ cal isolation watch my-workspace
 cal isolation watch my-workspace --on-archive "./scripts/sign-and-deploy.sh {}"
 ```
 
-#### `cal isolation logs`
+#### `calf isolation logs`
 Stream or view build logs.
 
 ```bash
@@ -1905,13 +1905,13 @@ go clean -cache
 **Goal:** Basic CLI wrapper around manual process
 
 - [ ] CAL project structure setup (monorepo)
-- [ ] CLI scaffold: `cal isolation init`, `start`, `stop`, `ssh`
-- [ ] Configuration file management (`~/.cal/`)
+- [ ] CLI scaffold: `calf isolation init`, `start`, `stop`, `ssh`
+- [ ] Configuration file management (`~/.calf/`)
 - [ ] Tart wrapper for VM operations
-- [ ] Snapshot management: `cal isolation snapshot`, `rollback`
+- [ ] Snapshot management: `calf isolation snapshot`, `rollback`
 - [ ] Auto-snapshot on session start
 
-**Deliverable:** Replace manual Tart commands with `cal isolation` CLI
+**Deliverable:** Replace manual Tart commands with `calf isolation` CLI
 
 ### Phase 2: Agent Integration & UX
 **Goal:** Seamless agent launching with safety UI
@@ -1924,14 +1924,14 @@ go clean -cache
 - [ ] opencode integration
 - [ ] GitHub authentication in VM
 
-**Deliverable:** `cal isolation run` with full safety UX
+**Deliverable:** `calf isolation run` with full safety UX
 
 ### Phase 3: GitHub Workflow
 **Goal:** Complete git workflow from VM
 
-- [ ] `cal isolation clone` with branch creation
-- [ ] `cal isolation commit` and `push`
-- [ ] `cal isolation pr` for PR creation
+- [ ] `calf isolation clone` with branch creation
+- [ ] `calf isolation commit` and `push`
+- [ ] `calf isolation pr` for PR creation
 - [ ] Status display of uncommitted changes
 - [ ] Exit prompts for uncommitted work
 
@@ -1942,7 +1942,7 @@ go clean -cache
 
 - [ ] Environment plugin manifest schema
 - [ ] Core plugins: ios, android, node, python, go, rust, dotnet
-- [ ] `cal isolation env` commands
+- [ ] `calf isolation env` commands
 - [ ] Dependency resolution
 - [ ] VM templates
 

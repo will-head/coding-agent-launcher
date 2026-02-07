@@ -11,7 +11,7 @@
 │  │  CAL: TUI Interface │ Agent Selector │ cal-isolation      │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                              │                                   │
-│  ~/cal-output/  ◀────────────┴──── Build artifacts (VirtioFS)   │
+│  ~/calf-output/  ◀────────────┴──── Build artifacts (VirtioFS)   │
 │                              │                                   │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │  TART VM: GitHub CLI │ AI Agent │ Dev Environments        │  │
@@ -37,7 +37,7 @@ Clone → Edit → Commit → Sync artifacts → Sign on host
 
 ## Directory Structure
 
-**Host:** `~/.cal/{config.yaml, isolation/vms/, environments/plugins/}`, `~/cal-output/`
+**Host:** `~/.calf/{config.yaml, isolation/vms/, environments/plugins/}`, `~/calf-output/`
 
 **VM:** `~/workspace/{repo}/`, `~/.config/gh/`, `~/output/`
 
@@ -96,7 +96,7 @@ For corporate environments with restrictive HTTP proxies, CAL provides transpare
 **Architecture:**
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ VM (cal-dev)                                                 │
+│ VM (calf-dev)                                                 │
 │  All apps (no config) → sshuttle → SSH tunnel → Host → Net  │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -115,18 +115,18 @@ For corporate environments with restrictive HTTP proxies, CAL provides transpare
 
 ## Config Schema
 
-**Global** (`~/.cal/config.yaml`):
+**Global** (`~/.calf/config.yaml`):
 ```yaml
 isolation:
   defaults:
     vm: {cpu: 4, memory: 8192, disk_size: 80}
     github: {default_branch_prefix: "agent/"}
-    output: {sync_dir: "~/cal-output"}
+    output: {sync_dir: "~/calf-output"}
 agents:
   claude-code: {install_command: "npm install -g @anthropic-ai/claude-code"}
 ```
 
-**Per-VM** (`~/.cal/isolation/vms/{name}/vm.yaml`):
+**Per-VM** (`~/.calf/isolation/vms/{name}/vm.yaml`):
 ```yaml
 name: "my-workspace"
 resources: {cpu: 6, memory: 12288}

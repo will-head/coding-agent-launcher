@@ -8,7 +8,7 @@
 
 ## Overview
 
-Phase 0 (Bootstrap) is mostly complete. The manual Tart VM setup process is fully documented and automated with the cal-bootstrap script, providing immediate safe agent use with excellent terminal behavior.
+Phase 0 (Bootstrap) is mostly complete. The manual Tart VM setup process is fully documented and automated with the calf-bootstrap script, providing immediate safe agent use with excellent terminal behavior.
 
 ## Completed Tasks
 
@@ -25,7 +25,7 @@ Phase 0 (Bootstrap) is mostly complete. The manual Tart VM setup process is full
   - Verifies all installations
   - Idempotent (can be run multiple times safely)
 
-- ✅ **`scripts/cal-bootstrap`** - Unified VM management
+- ✅ **`scripts/calf-bootstrap`** - Unified VM management
   - `--init`: Create and configure VMs
   - `--run`: Start VM and SSH in
   - `--stop`: Stop VM
@@ -91,7 +91,7 @@ These match standard Emacs/readline conventions and work natively in ZSH.
 
 ### Scripts
 1. `scripts/vm-setup.sh` - Automated VM provisioning
-2. `scripts/cal-bootstrap` - Unified VM management
+2. `scripts/calf-bootstrap` - Unified VM management
 3. `scripts/test-keybindings.sh` - Interactive keybinding tester
 
 ### Documentation
@@ -149,13 +149,13 @@ opencode    # opencode
 ### Snapshot Management
 ```bash
 # List snapshots
-scripts/cal-bootstrap --snapshot list
+scripts/calf-bootstrap --snapshot list
 
 # Create snapshot
-scripts/cal-bootstrap --snapshot create my-snapshot
+scripts/calf-bootstrap --snapshot create my-snapshot
 
 # Restore snapshot
-scripts/cal-bootstrap --snapshot restore my-snapshot
+scripts/calf-bootstrap --snapshot restore my-snapshot
 ```
 
 ## Success Criteria
@@ -163,7 +163,7 @@ scripts/cal-bootstrap --snapshot restore my-snapshot
 - ✅ **Isolation verified** - VM provides complete filesystem isolation
 - ✅ **Agent parity** - All three agents work identically to local
 - ✅ **Terminal UX** - All keybindings work correctly (tested comprehensively)
-- ✅ **Recovery** - Snapshot management via cal-bootstrap
+- ✅ **Recovery** - Snapshot management via calf-bootstrap
 - ✅ **Automation** - Setup and VM management are scripted
 - ✅ **Documentation** - Complete guides for setup, testing, and usage
 
@@ -172,16 +172,16 @@ scripts/cal-bootstrap --snapshot restore my-snapshot
 Once Phase 0 is complete, **Phase 1: CLI Foundation** can begin.
 
 Goals:
-- Replace manual Tart commands with `cal isolation` CLI
+- Replace manual Tart commands with `calf isolation` CLI
 - Go project scaffolding
 - Tart wrapper (`internal/isolation/tart.go`)
-- Configuration management (`~/.cal/config.yaml`)
+- Configuration management (`~/.calf/config.yaml`)
 - CLI commands: `init`, `start`, `stop`, `ssh`, `snapshot`
 
 See `PLAN.md` for Phase 1 implementation details.
 
 ## Historical Context
 
-This snapshot documents Phase 0 at a point in time. The project evolved with cal-bootstrap providing comprehensive VM management.
+This snapshot documents Phase 0 at a point in time. The project evolved with calf-bootstrap providing comprehensive VM management.
 
 **For current status, see [PLAN.md](../PLAN.md)**
