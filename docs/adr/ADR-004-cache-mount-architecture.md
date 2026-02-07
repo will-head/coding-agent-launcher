@@ -3,10 +3,20 @@
 ## Direct virtio-fs Mounting to Eliminate Symlink Fragility
 
 **ADR:** 004
-**Status:** Proposed
+**Status:** Accepted
 **Created:** 2026-02-07
+**Tested:** 2026-02-07
 **Supersedes:** Symlink-based approach in ADR-003
 **Purpose:** Replace fragile per-cache symlinks with direct virtio-fs mounts to create a robust, self-healing cache architecture that cannot be accidentally deleted
+
+### Test Results (2026-02-07)
+
+| Test | Result | Notes |
+|------|--------|-------|
+| Custom tag syntax | ✅ Pass | `--dir=${HOME}/test-cal-cache:tag=test-cache` works with Tart 2.30.1 |
+| mount_virtiofs | ✅ Pass | `mount_virtiofs test-cache ~/test-mount` mounts successfully |
+| Bidirectional sync | ✅ Pass | Files created in VM appear on host immediately |
+| Permission inheritance | ✅ Pass | Files owned by `admin` in VM, host user on host |
 
 ---
 
