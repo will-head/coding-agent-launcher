@@ -74,6 +74,34 @@ This issue has been fully implemented and tested. See [PLAN-PHASE-01-DONE.md](PL
 
 ---
 
+### 4. Bootstrap Init Logic - Update vs Full Recreate Behavior
+
+**Problem:** When both calf-dev and calf-init exist, `calf-bootstrap --init` offers to update calf-init from calf-dev. If user declines, script aborts completely (exit 0). User cannot proceed with full fresh init even if desired.
+
+**Current Behavior (lines 1032-1103):**
+```
+Do you want to replace calf-init with current calf-dev? (y/N)
+  → If yes: Updates calf-init, exits
+  → If no: "Aborted. Existing VMs not modified." exits with code 0
+```
+
+**Expected Behavior:**
+After declining the update offer, user should be able to:
+- Proceed with full deletion and fresh init (with proper git safety checks)
+- Or explicitly abort
+
+**Investigation Needed:**
+- Is the current "abort on decline" behavior intentional?
+- Should declining the update prompt then offer full init?
+- Or should there be a separate flag like `--force-clean` to skip update offer?
+- How should this interact with `--yes` flag?
+
+**Impact:** High - affects user ability to reinitialize environment
+
+**Related:** May interact with `--no-mount` implementation (New Feature #5)
+
+---
+
 ## New Features - Normal Priority
 
 ### 4. CLI Proxy Utility for VM↔Host Command Transport
@@ -107,24 +135,34 @@ This issue has been fully implemented and tested. See [PLAN-PHASE-01-DONE.md](PL
 
 ### 5. No-Mount Mode for Secure Isolated VMs
 
+**Status:** ✅ **Implemented in calf-bootstrap** (2026-02-07)
+
 **Goal:** Enable creation of fully isolated VMs with no host filesystem mounts for maximum security.
 
 **Use Case:** Secure locked-down VM with zero risk of host filesystem disruption. Useful for untrusted code execution or high-security development environments.
 
-**Implementation:**
-1. Add `--no-mount` flag to `calf isolation init` command
-2. When set, VM:
+**Implementation (Completed in calf-bootstrap):**
+1. ✅ Add `--no-mount` flag to `calf-bootstrap --init` command
+2. ✅ When set, VM:
    - Does NOT mount `calf-cache` from host
    - Does NOT mount `tart-cache` from host
    - Creates local `~/.calf-cache` folder inside VM for package caching
    - Uses VM-local Tart cache
-3. Setting is permanent and enforced for VM lifetime:
+3. ✅ Setting is permanent and enforced for VM lifetime:
    - Can only be set at VM creation time (`init`)
-   - Stored in `~/.calf-vm-config` with `NO_MOUNT=true`
-   - All subsequent operations (start, restart, etc.) respect this setting
+   - Stored in `~/.calf-vm-config` with `NO_MOUNT=true` inside VM
+   - Host marker file `~/.calf-vm-no-mount` tracks mode for subsequent operations
+   - All subsequent operations (start, restart, gui) respect this setting
    - Cannot be changed after creation (VM must be destroyed and recreated)
-4. Update `calf-bootstrap` to support `--no-mount` flag
-5. Validation: Ensure mount setup scripts check for this flag and skip mounting
+4. ✅ Updated `calf-bootstrap` script with full support
+5. ✅ Updated `calf-mount-shares.sh` to check flag and create local dirs when `NO_MOUNT=true`
+6. ✅ Added permanent setting warning with Y/n confirmation
+7. ✅ Added mount mode to `--status` output
+8. ✅ Updated documentation (bootstrap.md)
+
+**Remaining Work:**
+- [ ] Add `--no-mount` support to Go implementation (`calf isolation init`)
+- [ ] Testing and validation in VM environment
 
 **Impact:** Medium - enhances security options for sensitive workloads
 

@@ -39,6 +39,9 @@ The `calf-bootstrap` script automates VM setup and management.
 ./scripts/calf-bootstrap --init
 ./scripts/calf-bootstrap -i
 
+# Create fully isolated VM with no host filesystem mounts (PERMANENT setting)
+./scripts/calf-bootstrap --init --no-mount
+
 # Start calf-dev and SSH in (default if VMs exist)
 ./scripts/calf-bootstrap --run
 ./scripts/calf-bootstrap          # Auto-detects mode
@@ -72,6 +75,40 @@ The `calf-bootstrap` script automates VM setup and management.
 # Force script deployment (skip optimization, for troubleshooting)
 ./scripts/calf-bootstrap --run --clean
 ./scripts/calf-bootstrap --restart --clean
+```
+
+### No-Mount Mode (Isolated VMs)
+
+The `--no-mount` flag creates fully isolated VMs with zero host filesystem access for maximum security.
+
+**Use cases:**
+- Running untrusted code in complete isolation
+- High-security development environments
+- Testing scenarios requiring no host interaction
+
+**Behavior:**
+- No tart-cache mount (nested VMs download images independently)
+- No calf-cache mount (packages downloaded fresh in VM)
+- VM creates local `~/.calf-cache` directories inside the VM
+- Bootstrap proxy still works (network-only, no filesystem access)
+
+**Important:**
+- **PERMANENT setting** - Cannot be changed after VM creation
+- Must destroy and recreate VMs to change modes
+- Confirmation prompt shown during `--init` (can skip with `--yes`)
+- Status command shows current mode: `./scripts/calf-bootstrap --status`
+
+**Example:**
+```bash
+# Create isolated VM (with confirmation)
+./scripts/calf-bootstrap --init --no-mount
+
+# Create isolated VM (skip confirmation)
+./scripts/calf-bootstrap --init --no-mount --yes
+
+# Check current mode
+./scripts/calf-bootstrap --status
+# Output shows: "Mount mode: Isolated (no host mounts)"
 ```
 
 ### Git Safety Features

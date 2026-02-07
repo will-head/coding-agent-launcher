@@ -41,8 +41,23 @@ mount_share() {
     return 1
 }
 
-# Mount CALF cache
-mount_share "calf-cache" "$HOME/.calf-cache" || true
+# Check if VM is in no-mount mode
+NO_MOUNT=false
+if [ -f "$HOME/.calf-vm-config" ]; then
+    # Source the config file to read NO_MOUNT setting
+    source "$HOME/.calf-vm-config"
+fi
+
+if [ "$NO_MOUNT" = true ]; then
+    # No-mount mode: Create local cache directories instead of mounting
+    echo "No-mount mode enabled: Creating local cache directories"
+    mkdir -p "$HOME/.calf-cache"/{homebrew,npm,go,git}
+    echo "Created local cache directories: $HOME/.calf-cache/{homebrew,npm,go,git}"
+else
+    # Shared cache mode: Mount from host
+    echo "Shared cache mode: Mounting host cache"
+    mount_share "calf-cache" "$HOME/.calf-cache" || true
+fi
 
 # Future: iOS code signing
 # mount_share "cal-signing" "$HOME/Library/MobileDevice" || true

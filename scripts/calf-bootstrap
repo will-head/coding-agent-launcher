@@ -219,25 +219,52 @@ save_tmux_sessions() {
     fi
 }
 
+# Check if VM should skip mounts (no-mount mode)
+# During init: uses NO_MOUNT_MODE variable
+# After init: reads from host marker file ~/.calf-vm-no-mount
+should_skip_mounts() {
+    local vm="$1"
+
+    # During init, use the command-line flag
+    if [ "$NO_MOUNT_MODE" = true ]; then
+        return 0  # true - skip mounts
+    fi
+
+    # After init, check host marker file
+    if [ -f ~/.calf-vm-no-mount ]; then
+        return 0  # true - skip mounts
+    fi
+
+    return 1  # false - use mounts
+}
+
 # Start VM in background and wait for IP/SSH
 start_vm_background() {
     local vm="$1"
-    local share_tart_cache="${2:-true}"  # Default to sharing cache
+    local share_tart_cache="${2:-true}"  # Default to sharing cache (deprecated parameter)
 
     echo "  Starting $vm in background..."
 
     # Build tart run command with optional cache sharing
     local tart_cmd=("$TART" "run" "--no-graphics")
 
+    # Check if VM should skip mounts (no-mount mode)
+    local skip_mounts=false
+    if should_skip_mounts "$vm"; then
+        skip_mounts=true
+    fi
+
     # Share host's Tart cache with VM (read-only) to avoid duplicate downloads
     # when running nested VMs. Mounted to /Volumes/My Shared Files/tart-cache
-    if [ "$share_tart_cache" = "true" ] && [ -d ~/.tart/cache ]; then
+    # Skip if in no-mount mode
+    if [ "$skip_mounts" = false ] && [ "$share_tart_cache" = "true" ] && [ -d ~/.tart/cache ]; then
         tart_cmd+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
     fi
 
     # Share host's package cache with VM (read-write) for Homebrew, npm, Go, Git caches
     # Mounted to ~/.calf-cache via custom mount tag (handled by calf-mount-shares.sh)
-    if [ -d ~/.calf-cache ]; then
+    # Skip if in no-mount mode
+    if [ "$skip_mounts" = false ] && [ -d ~/.calf-cache ]; then
         tart_cmd+=("--dir" "${HOME}/.calf-cache:tag=calf-cache")
     fi
 
@@ -1016,6 +1043,28 @@ do_init() {
     fi
     echo ""
 
+    # Warn about no-mount mode if enabled (unless --yes is used)
+    if [ "$NO_MOUNT_MODE" = true ]; then
+        if [ "$SKIP_CONFIRM" = false ]; then
+            echo "⚠️  No-Mount Mode Warning"
+            echo "This will create VMs in isolated mode with no host filesystem mounts."
+            echo "This setting is PERMANENT and cannot be changed later."
+            echo "To change modes, you must destroy and recreate the VMs."
+            echo ""
+            echo "Continue with no-mount mode? (Y/n)"
+            read -r -k 1 reply
+            echo ""
+            if [[ $reply =~ ^[Nn]$ ]]; then
+                echo "Aborted initialization"
+                exit 1
+            fi
+            echo ""
+        else
+            echo "ℹ️  No-mount mode enabled (isolated VMs with no host filesystem mounts)"
+            echo ""
+        fi
+    fi
+
     # Check upfront if we'll be deleting existing VMs
     local dev_exists=false
     local init_exists=false
@@ -1265,6 +1314,39 @@ do_init() {
     else
         echo "  ⚠ Failed to set first-run flag"
         echo "  → vm-auth screen may be captured by tmux-resurrect"
+    fi
+
+    # Step 6.6: Create VM config file with mount mode setting
+    # vm-setup.sh (Step 7) will preserve this setting when it updates the config
+    echo ""
+    echo "Step 6.6: Configure VM mount mode"
+    if [ "$NO_MOUNT_MODE" = true ]; then
+        echo "  Creating ~/.calf-vm-config with NO_MOUNT=true..."
+        if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+               "${VM_USER}@${VM_IP}" "echo 'NO_MOUNT=true' > ~/.calf-vm-config && chmod 600 ~/.calf-vm-config && sync && [ -f ~/.calf-vm-config ] && echo 'success'" 2>> "$CALF_LOG" | grep -q 'success'; then
+            echo "  ✓ VM configured for no-mount mode (isolated)"
+        else
+            echo "  ⚠ Failed to create VM config file"
+            echo "  → Mount mode may not be preserved correctly"
+        fi
+    else
+        echo "  Creating ~/.calf-vm-config with NO_MOUNT=false..."
+        if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+               "${VM_USER}@${VM_IP}" "echo 'NO_MOUNT=false' > ~/.calf-vm-config && chmod 600 ~/.calf-vm-config && sync && [ -f ~/.calf-vm-config ] && echo 'success'" 2>> "$CALF_LOG" | grep -q 'success'; then
+            echo "  ✓ VM configured for shared cache mode"
+        else
+            echo "  ⚠ Failed to create VM config file"
+            echo "  → Mount mode may not be preserved correctly"
+        fi
+    fi
+
+    # Create host-side marker file for no-mount mode (for future VM starts)
+    if [ "$NO_MOUNT_MODE" = true ]; then
+        touch ~/.calf-vm-no-mount
+        echo "  ✓ Host marker file created (~/.calf-vm-no-mount)"
+    else
+        # Remove marker file if it exists (ensure clean state for shared mode)
+        rm -f ~/.calf-vm-no-mount
     fi
 
     # Step 7: Run vm-setup from ~/scripts
@@ -1736,14 +1818,22 @@ do_gui() {
     # Build tart run command with cache sharing
     local tart_cmd=("$TART" "run" "$VM_DEV" "--vnc-experimental")
 
+    # Check if VM should skip mounts (no-mount mode)
+    local skip_mounts=false
+    if should_skip_mounts "$VM_DEV"; then
+        skip_mounts=true
+    fi
+
     # Share host's Tart cache with VM (read-only) to avoid duplicate downloads
-    if [ -d ~/.tart/cache ]; then
+    # Skip if in no-mount mode
+    if [ "$skip_mounts" = false ] && [ -d ~/.tart/cache ]; then
         tart_cmd+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
     fi
 
     # Share host's package cache with VM (read-write) for Homebrew, npm, Go, Git caches
     # Mounted to ~/.calf-cache via custom mount tag (handled by calf-mount-shares.sh)
-    if [ -d ~/.calf-cache ]; then
+    # Skip if in no-mount mode
+    if [ "$skip_mounts" = false ] && [ -d ~/.calf-cache ]; then
         tart_cmd+=("--dir" "${HOME}/.calf-cache:tag=calf-cache")
     fi
 
@@ -1818,6 +1908,12 @@ do_status() {
             else
                 echo "$VM_DEV: Stopped"
             fi
+            # Display mount mode
+            if [ -f ~/.calf-vm-no-mount ]; then
+                echo "  Mount mode: Isolated (no host mounts)"
+            else
+                echo "  Mount mode: Shared cache"
+            fi
         else
             echo "$VM_DEV: Not found"
             echo ""
@@ -1862,6 +1958,13 @@ do_status() {
     echo "VM: $VM_DEV"
     echo "State: $dev_state"
     echo "Size: ${size_display}"
+
+    # Display mount mode
+    if [ -f ~/.calf-vm-no-mount ]; then
+        echo "Mount mode: Isolated (no host mounts)"
+    else
+        echo "Mount mode: Shared cache"
+    fi
 
     if [ "$dev_state" = "running" ]; then
         dev_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
@@ -2351,6 +2454,7 @@ do_snapshot() {
 MODE=""
 SKIP_CONFIRM=false
 CLEAN_MODE=false
+NO_MOUNT_MODE=false
 SNAPSHOT_ACTION=""
 SNAPSHOT_NAME=""
 SNAPSHOT_NAMES=()
@@ -2436,6 +2540,10 @@ while [[ $# -gt 0 ]]; do
             CLEAN_MODE=true
             shift
             ;;
+        --no-mount)
+            NO_MOUNT_MODE=true
+            shift
+            ;;
         --help|-h)
             echo "CAL Bootstrap - VM Environment Setup"
             echo ""
@@ -2461,10 +2569,13 @@ while [[ $# -gt 0 ]]; do
             echo "                                        auto - Test github.com, enable if needed"
             echo "  --yes, -y                           Skip confirmation prompts"
             echo "  --clean                             Force script deployment (skip checksum optimization)"
+            echo "  --no-mount                          Create VM with no host filesystem mounts (isolated mode)"
+            echo "                                        PERMANENT: Cannot be changed after VM creation"
             echo "  --help, -h                          Show this help"
             echo ""
             echo "Examples:"
             echo "  ./calf-bootstrap --init              # First-time setup"
+            echo "  ./calf-bootstrap --init --no-mount   # Create fully isolated VM (no host mounts)"
             echo "  ./calf-bootstrap                     # Start calf-dev (auto-detects mode)"
             echo "  ./calf-bootstrap --status            # Show VM status and IP"
             echo "  ./calf-bootstrap --restart           # Restart calf-dev and connect"
