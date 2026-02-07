@@ -16,115 +16,27 @@
 
 ### 1. CLI Command Name Collision — ✅ COMPLETED (2026-02-07)
 
-**Status:** Main implementation complete. See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) for details.
+**Status:** Fully complete. All implementation tasks finished and verified.
 
-**Follow-up Tasks:**
-- Fix remaining cal references in VM-side scripts (messages, mount checks, LaunchDaemon)
-- Run smoke tests after VM script fixes complete
+**Summary:** Renamed CLI from `cal` to `calf` (**C**oding **A**gent **L**oader **F**oundation) to avoid conflict with system calendar command.
 
-**Original Task:** CLI Command Name Collision — SOLUTION ACCEPTED
+**Completed:**
+- ✅ All Go source code (9 files)
+- ✅ All shell scripts (7 files)
+- ✅ Config and flag file paths
+- ✅ Environment variables (CAL_VM → CALF_VM, etc.)
+- ✅ Build system (Makefile)
+- ✅ All documentation (68 files total)
+- ✅ Testing (all tests pass, binary functional)
 
-**Problem:** The `cal` command clashes with the system calendar command (also called `cal`), requiring users to use `./cal` instead.
+**Results verified:**
+- Binary: `./calf --version` works
+- Tests: `go test ./...` passes
+- Cache: `~/.calf-cache/` in use
+- VMs: calf-dev, calf-init, calf-clean
+- Environment: `CALF_VM=true` in scripts
 
-**Solution:** [ADR-005](adr/ADR-005-cli-rename-cal-to-calf.md) — Rename to `calf` (**C**oding **A**gent **L**oader **F**oundation)
-
-**Status:** Accepted (2026-02-07). Ready for implementation.
-
-**Mascot:** The ASCII cow from transparent proxy success message becomes the official CALF mascot (a calf is a young cow).
-
-```
- ___________________________
-< Transparent proxy works! >
- ---------------------------
-        \   ^__^
-         \  (oo)\_______
-            (__)\       )\/\
-                ||----w |
-                ||     ||
-```
-
-**Implementation Tasks (in order):**
-
-#### 1.1 Go Source Code Updates
-
-- [ ] **1.1.1 Rename cmd/cal/ to cmd/calf/** — Move directory and update imports
-- [ ] **1.1.2 Update cmd/calf/main.go** — Change `Use: "cal"` to `Use: "calf"`, update descriptions
-- [ ] **1.1.3 Update cmd/calf/cache.go** — Update command references
-- [ ] **1.1.4 Update cmd/calf/config.go** — Update "CALF Configuration" to "CALF Configuration"
-- [ ] **1.1.5 Update internal/config/config.go** — Update package docs and comments
-- [ ] **1.1.6 Update internal/isolation/cache.go** — Change `cal-cache` paths to `calf-cache`
-- [ ] **1.1.7 Update internal/isolation/cache_test.go** — Update test paths and assertions
-- [ ] **1.1.8 Update internal/isolation/tart.go** — Update package docs
-- [ ] **1.1.9 Update internal/isolation/tart_test.go** — Update package docs and VM names
-
-#### 1.2 Shell Script Updates
-
-- [ ] **1.2.1 Rename scripts/calf-bootstrap to scripts/calf-bootstrap**
-- [ ] **1.2.2 Update calf-bootstrap** — All internal references:
-  - VM names: `cal-dev` → `calf-dev`, `cal-init` → `calf-init`, `cal-clean` → `calf-clean`
-  - Environment: `CAL_LOG` → `CALF_LOG`
-  - Paths: `~/.calf-cache` → `~/.calf-cache`, `cal-cache` mount tag → `calf-cache`
-  - Config files: `~/.cal-*` → `~/.calf-*`
-  - Tmux session: `cal` → `calf`
-- [ ] **1.2.3 Update scripts/vm-setup.sh** — Cache paths and VM detection
-- [ ] **1.2.4 Update scripts/vm-auth.sh** — Flag file paths
-- [ ] **1.2.5 Update scripts/vm-first-run.sh** — Flag file paths
-- [ ] **1.2.6 Update scripts/vm-tmux-resurrect.sh** — Cache paths and session name
-- [ ] **1.2.7 Update scripts/tmux-wrapper.sh** — Session name if referenced
-
-#### 1.3 Config/Flag File Renames
-
-- [ ] **1.3.1 Host paths:**
-  - `~/.calf-cache/` → `~/.calf-cache/`
-- [ ] **1.3.2 VM paths (in scripts):**
-  - `~/.calf-cache/` → `~/.calf-cache/`
-  - `~/.calf-proxy-config` → `~/.calf-proxy-config`
-  - `~/.calf-proxy.log` → `~/.calf-proxy.log`
-  - `~/.calf-proxy.pid` → `~/.calf-proxy.pid`
-  - `~/.calf-vm-config` → `~/.calf-vm-config`
-  - `~/.calf-vm-info` → `~/.calf-vm-info`
-  - `~/.calf-auth-needed` → `~/.calf-auth-needed`
-  - `~/.calf-first-run` → `~/.calf-first-run`
-- [ ] **1.3.3 Shared volume paths:**
-  - `/Volumes/My Shared Files/cal-cache/` → `/Volumes/My Shared Files/calf-cache/`
-
-#### 1.4 Environment Variable Updates
-
-- [ ] **1.4.1 `CAL_VM` → `CALF_VM`** — In vm-setup.sh, CLAUDE.md, workflow docs
-- [ ] **1.4.2 `CAL_LOG` → `CALF_LOG`** — In calf-bootstrap
-- [ ] **1.4.3 `CAL_SESSION_INITIALIZED` → `CALF_SESSION_INITIALIZED`** — In scripts
-
-#### 1.5 Build System Updates
-
-- [ ] **1.5.1 Update Makefile** — Change `go build -o cal` to `go build -o calf`, update install target
-
-#### 1.6 Documentation Updates
-
-- [ ] **1.6.1 Update CLAUDE.md** — All references, structure section, commands, CAL_VM section
-- [ ] **1.6.2 Update README.md** — Project name, build commands, usage examples
-- [ ] **1.6.3 Update PLAN.md** — Project description and references
-- [ ] **1.6.4 Update docs/cli.md** — All command references
-- [ ] **1.6.5 Update docs/bootstrap.md** — Script name and usage
-- [ ] **1.6.6 Update docs/architecture.md** — Directory structure and references
-- [ ] **1.6.7 Update docs/SPEC.md** — Command references
-- [ ] **1.6.8 Update docs/WORKFLOWS.md** — CAL_VM references
-- [ ] **1.6.9 Update all docs/WORKFLOW-*.md files** — CAL_VM and command references
-- [ ] **1.6.10 Update docs/vm-detection.md** — Environment variable references
-- [ ] **1.6.11 Update docs/proxy.md** — Config file references
-- [ ] **1.6.12 Update docs/PLAN-PHASE-*.md files** — Command and path references
-- [ ] **1.6.13 Update AGENTS.md** — References to cal-dev and commands
-- [ ] **1.6.14 Update CODING_STANDARDS.md** — If any cal references exist
-
-#### 1.7 Testing
-
-- [ ] **1.7.1 Run go test ./...** — Verify all tests pass with new paths
-- [ ] **1.7.2 Build and test calf binary** — Verify `calf --help` works
-- [ ] **1.7.3 Test calf cache commands** — Verify cache operations work
-- [ ] **1.7.4 Full integration test** — `calf-bootstrap --init` on fresh system
-
-**Impact:** High - affects all user interactions with the CLI
-
-**Reference:** [ADR-005](adr/ADR-005-cli-rename-cal-to-calf.md) for full decision record
+**Reference:** [ADR-005](adr/ADR-005-cli-rename-cal-to-calf.md) • [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) for complete implementation details
 
 ---
 
