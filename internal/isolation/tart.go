@@ -24,6 +24,11 @@ const (
 	defaultPollTimeout = 60 * time.Second
 
 	// Cache sharing directory mount path (read-only).
+	// TODO: Use virtio-fs mount system (like calf-cache) instead of symlink approach.
+	// calf-bootstrap uses symlinks for tart-cache (fine for bootstrap), but the Go
+	// implementation should mount /Volumes/My Shared Files/tart-cache via virtio-fs
+	// for consistency with the calf-cache architecture. See calf-mount-shares.sh and
+	// ADR-003 for mount system details.
 	cacheDirMount = "tart-cache:~/.tart/cache:ro"
 )
 
