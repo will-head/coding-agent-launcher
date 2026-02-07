@@ -44,31 +44,61 @@
 
 ---
 
-### 3. Shared Cache Symlink Fragility
+### 3. Shared Cache Symlink Fragility — SOLUTION ACCEPTED
 
 **Problem:** Current architecture uses individual symlinks for each cache type (`~/.cal-cache/homebrew` → `/Volumes/My Shared Files/cal-cache/homebrew`, etc.). These symlinks are:
 - Easily deleted during cache clear operations
 - Confusing for testing and troubleshooting
 - Not automatically repaired if broken
 
-**Explore Solutions:**
-1. **Preferred:** Mount Tart shared folder directly to `~/.cal-cache` instead of `/Volumes/My Shared Files/cal-cache`
-   - Eliminates symlinks entirely
-   - Need to verify if Tart supports custom mount points
-2. **Alternative:** Use single symlink `~/.cal-cache` → `/Volumes/My Shared Files/cal-cache` instead of per-cache-type symlinks
-   - Reduces from 4 symlinks to 1
-   - Simpler to manage and repair
-3. **Alternative:** Use hardlinks instead of symlinks
-   - May not work across mount points
-   - Need to verify feasibility
-4. **Fallback:** If symlinks are only option:
-   - Add symlink check/repair on VM login (via `.zshrc` or helper script)
-   - Warn user if repair not possible with clear fix instructions
-   - Make symlink restoration idempotent and automatic
+**Solution:** [ADR-004](adr/ADR-004-cache-mount-architecture.md) — Direct virtio-fs mounting with custom tags
+
+**Status:** Accepted and tested (2026-02-07). Ready for implementation.
+
+**Implementation Tasks (in order):**
+
+- [ ] **3.1 Update cal-bootstrap Tart flags** — Change `--dir` to use custom mount tag
+  - From: `--dir cal-cache:${HOME}/.cal-cache:rw,tag=com.apple.virtio-fs.automount`
+  - To: `--dir=${HOME}/.cal-cache:tag=cal-cache`
+  - Update all `tart run` invocations in cal-bootstrap
+
+- [ ] **3.2 Create cal-mount-shares.sh script** — Mount script with retry logic
+  - Deploy to `/usr/local/bin/cal-mount-shares.sh`
+  - Include migration logic (remove old symlinks before mount)
+  - Retry logic for boot timing (5 attempts, 2s delay)
+  - Logging to `/tmp/cal-mount.log`
+  - Extensible for future mounts (iOS signing, etc.)
+
+- [ ] **3.3 Create LaunchDaemon plist** — Boot-time mount persistence
+  - Deploy to `/Library/LaunchDaemons/com.cal.mount-shares.plist`
+  - RunAtLoad with KeepAlive on failure
+  - Set HOME/USER environment for admin user
+
+- [ ] **3.4 Update vm-setup.sh deployment** — Install mount infrastructure
+  - Copy cal-mount-shares.sh to /usr/local/bin/
+  - Copy LaunchDaemon plist to /Library/LaunchDaemons/
+  - Load LaunchDaemon with launchctl
+  - Remove old symlink creation code
+
+- [ ] **3.5 Add .zshrc self-healing fallback** — Belt-and-suspenders recovery
+  - Quick mount check on shell start (<10ms)
+  - Remount if unmounted (handles manual unmount edge case)
+
+- [ ] **3.6 Update cache.go VM setup methods** — Remove symlink generation
+  - Update `SetupVMHomebrewCache()`, `SetupVMNpmCache()`, `SetupVMGoCache()`, `SetupVMGitCache()`
+  - Remove symlink creation commands
+  - Add mount verification commands instead
+
+- [ ] **3.7 End-to-end testing** — Verify full implementation
+  - Test fresh `--init` creates working mounts
+  - Test reboot persistence (LaunchDaemon)
+  - Test self-healing after manual unmount
+  - Test migration from existing symlink-based VM
+  - Test snapshot/restore behavior
 
 **Impact:** High - affects cache reliability and user experience
 
-**Investigation needed:** Test Tart mount point options, evaluate hardlink feasibility
+**Reference:** [ADR-004](adr/ADR-004-cache-mount-architecture.md) for full implementation details
 
 ---
 
