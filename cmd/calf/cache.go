@@ -31,18 +31,24 @@ var cacheStatusCmd = &cobra.Command{
 var cacheClearCmd = &cobra.Command{
 	Use:   "clear",
 	Short: "Clear package download caches",
-	Long:  `Clear package download caches to free disk space. Prompts for confirmation before clearing each cache type.`,
-	RunE:  runCacheClear,
+	Long: `Clear package download caches to free disk space.
+
+By default, prompts for confirmation before clearing each cache type.
+With --all, shows a final confirmation before clearing all caches.
+With --all --force, skips all confirmations (for automation).`,
+	RunE: runCacheClear,
 }
 
 var clearAll bool
+var force bool
 var dryRun bool
 
 func init() {
 	cacheCmd.AddCommand(cacheStatusCmd)
 	cacheCmd.AddCommand(cacheClearCmd)
 
-	cacheClearCmd.Flags().BoolVarP(&clearAll, "all", "a", false, "Clear all caches without prompting (dangerous)")
+	cacheClearCmd.Flags().BoolVarP(&clearAll, "all", "a", false, "Clear all caches (requires confirmation unless --force is used)")
+	cacheClearCmd.Flags().BoolVarP(&force, "force", "f", false, "Skip all confirmations (use with --all for automation)")
 	cacheClearCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be cleared without actually clearing")
 
 	rootCmd.AddCommand(cacheCmd)
@@ -65,9 +71,26 @@ func runCacheClear(cmd *cobra.Command, args []string) error {
 	clearedCount := 0
 	totalCount := 0
 
-	if clearAll && !dryRun {
-		fmt.Println("Warning: Clearing all caches without confirmation")
-		fmt.Println("This will slow down your next VM bootstrap!")
+	if clearAll && !dryRun && !force {
+		fmt.Println("Warning: This will clear ALL caches!")
+		fmt.Println("This will slow down your next VM bootstrap.")
+		fmt.Println()
+		fmt.Print("Are you sure you want to continue? [y/N]: ")
+
+		reader := bufio.NewReader(os.Stdin)
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				fmt.Println("\nAborted (EOF)")
+				return nil
+			}
+			return fmt.Errorf("failed to read input: %w", err)
+		}
+
+		if strings.TrimSpace(strings.ToLower(input)) != "y" {
+			fmt.Println("Aborted")
+			return nil
+		}
 		fmt.Println()
 	}
 

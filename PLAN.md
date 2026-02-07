@@ -23,7 +23,7 @@ Three-tier VM architecture (calf-clean, calf-dev, calf-init), automated setup vi
 | Phase | Name | Status | Outstanding TODOs | Detail Files |
 |-------|------|--------|-------------------|--------------|
 | 0 | Bootstrap | Complete | 0 | [TODO](docs/PLAN-PHASE-00-TODO.md) • [DONE](docs/PLAN-PHASE-00-DONE.md) |
-| 1 | CLI Foundation | In Progress | ~46 | [TODO](docs/PLAN-PHASE-01-TODO.md) • [DONE](docs/PLAN-PHASE-01-DONE.md) |
+| 1 | CLI Foundation | In Progress | ~45 | [TODO](docs/PLAN-PHASE-01-TODO.md) • [DONE](docs/PLAN-PHASE-01-DONE.md) |
 | 2 | Agent Integration & UX | Not Started | ~20 | [TODO](docs/PLAN-PHASE-02-TODO.md) • [DONE](docs/PLAN-PHASE-02-DONE.md) |
 | 3 | GitHub Workflow | Not Started | ~16 | [TODO](docs/PLAN-PHASE-03-TODO.md) • [DONE](docs/PLAN-PHASE-03-DONE.md) |
 | 4 | Environment Plugin System | Not Started | ~25 | [TODO](docs/PLAN-PHASE-04-TODO.md) • [DONE](docs/PLAN-PHASE-04-DONE.md) |

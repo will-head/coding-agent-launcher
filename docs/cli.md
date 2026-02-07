@@ -55,6 +55,18 @@ rollback                                   # Restore to session start
 disk-usage
 ```
 
+## Cache
+
+```bash
+cache status                               # Show cache sizes and locations
+cache clear                                # Interactive - prompts for each cache
+cache clear --all                          # Clear all caches (requires y/N confirmation)
+cache clear --all --force                  # Skip all confirmations (for automation)
+cache clear --dry-run                      # Preview what would be cleared
+```
+
+**Cache types:** Homebrew, npm, Go modules, Git repositories
+
 ## Environments
 
 ```bash

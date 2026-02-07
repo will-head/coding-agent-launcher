@@ -39,6 +39,48 @@
 
 ---
 
+## Critical Issue #2: Cache Clear Confirmation UX — ✅ COMPLETED (2026-02-07)
+
+**Problem:** `calf cache clear --all` cleared all caches without any confirmation, creating risk of accidental data loss.
+
+**Solution:** Added final y/N confirmation prompt and new `--force` flag for automation.
+
+**Implementation Completed:**
+- ✅ Added `--force` flag (`-f`) to skip all confirmations
+- ✅ Updated `--all` flag description to reflect new behavior
+- ✅ Added confirmation prompt logic with safe defaults (abort on anything except 'y')
+- ✅ Updated command help text to document all usage modes
+- ✅ Updated cli.md documentation with cache commands section
+
+**Behavior:**
+- `calf cache clear` → prompts for each cache individually (existing behavior)
+- `calf cache clear --all` → shows warning + final y/N confirmation (NEW)
+- `calf cache clear --all --force` → skips all confirmations for automation (NEW)
+- `calf cache clear --dry-run` → previews what would be cleared without prompts
+
+**Code Changes:**
+- `cmd/calf/cache.go` - Added force flag, confirmation logic, updated descriptions
+- `docs/cli.md` - Added Cache section documenting all cache commands
+
+**Testing:**
+- ✅ All unit tests pass (config, isolation packages)
+- ✅ Build succeeds without errors
+- ✅ Manual testing confirmed all three usage modes work correctly
+- ✅ Confirmation accepts 'y' and proceeds
+- ✅ Confirmation rejects 'N' and aborts
+- ✅ Force flag skips all prompts
+- ✅ Dry-run shows preview without confirmation
+
+**Security:**
+- Safe defaults: aborts on EOF, aborts on anything except explicit 'y'
+- Case-insensitive comparison for user convenience
+- Clear warning message explains impact
+- Force flag requires explicit use for automation
+
+**Impact:** Medium - prevents accidental data loss while maintaining automation support
+
+---
+
 ## 1.1 **REFINED:** Project Scaffolding (PR #3, merged 2026-02-01)
 
 **Tasks:**
