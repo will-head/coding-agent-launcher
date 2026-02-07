@@ -193,7 +193,32 @@ This issue has been fully implemented and tested. See [PLAN-PHASE-01-DONE.md](PL
 
 ---
 
-### 5. Screenshot Drag-and-Drop Support for VM-based Coding Agents
+### 5. No-Mount Mode for Secure Isolated VMs
+
+**Goal:** Enable creation of fully isolated VMs with no host filesystem mounts for maximum security.
+
+**Use Case:** Secure locked-down VM with zero risk of host filesystem disruption. Useful for untrusted code execution or high-security development environments.
+
+**Implementation:**
+1. Add `--no-mount` flag to `calf isolation init` command
+2. When set, VM:
+   - Does NOT mount `calf-cache` from host
+   - Does NOT mount `tart-cache` from host
+   - Creates local `~/.calf-cache` folder inside VM for package caching
+   - Uses VM-local Tart cache
+3. Setting is permanent and enforced for VM lifetime:
+   - Can only be set at VM creation time (`init`)
+   - Stored in `~/.calf-vm-config` with `NO_MOUNT=true`
+   - All subsequent operations (start, restart, etc.) respect this setting
+   - Cannot be changed after creation (VM must be destroyed and recreated)
+4. Update `calf-bootstrap` to support `--no-mount` flag
+5. Validation: Ensure mount setup scripts check for this flag and skip mounting
+
+**Impact:** Medium - enhances security options for sensitive workloads
+
+---
+
+### 6. Screenshot Drag-and-Drop Support for VM-based Coding Agents
 
 **Goal:** Enable drag-and-drop of screenshots from host into coding agents running in the VM.
 
@@ -222,7 +247,7 @@ This issue has been fully implemented and tested. See [PLAN-PHASE-01-DONE.md](PL
 
 ---
 
-### 6. Go Code Parity with Updated Cache Mount Architecture
+### 7. Go Code Parity with Updated Cache Mount Architecture
 
 **Goal:** Update Go implementation (`internal/isolation/cache.go` and `internal/isolation/tart.go`) to match the new direct virtio-fs mount architecture implemented in calf-bootstrap and scripts.
 

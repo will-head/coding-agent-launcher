@@ -39,6 +39,33 @@ When `CALF_VM` is not true (running on HOST):
 - Standard workflow approvals apply as documented
 - **When in doubt, require approval**
 
+### Don't Jump Ahead - Always Ask Permission
+
+**The agent must NEVER proactively correct, undo, or fix things without explicit user permission.**
+
+When the agent realizes:
+- A mistake was made
+- Something needs to be corrected or undone
+- An issue should be fixed
+- A different approach should be taken
+
+**STOP and ask the user first:**
+- Explain what you noticed
+- Describe what you think should be done
+- **Wait for explicit permission** before taking action
+
+**Examples of jumping ahead (DON'T do this):**
+- ❌ "I made a mistake, let me undo that change..."
+- ❌ "I should revert that commit, running git reset..."
+- ❌ "That file needs updating, let me fix it..."
+
+**Correct behavior (DO this):**
+- ✅ "I notice I made a mistake in X. Should I revert that change?"
+- ✅ "That file might need updating. Would you like me to update it?"
+- ✅ "I could fix Y. Do you want me to proceed?"
+
+**Exception:** If the user explicitly instructs you to fix issues autonomously (e.g., "fix any problems you find"), then you may proceed without asking each time.
+
 ### Workflow Modes
 
 **Interactive** is the default workflow unless user specifies otherwise or changes are docs-only.

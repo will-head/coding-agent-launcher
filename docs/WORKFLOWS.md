@@ -388,16 +388,33 @@ Also: 3 refined TODOs ready for Create PR
 
 ### Sequential Question and Test Presentation
 
-When gathering information or presenting testing instructions, **present items one by one** rather than as a batch list:
+When gathering information or presenting testing instructions, **present items one by one** rather than as a batch list.
 
-- Ask one question at a time and wait for the user's full response before asking the next
-- Present one test instruction at a time and wait for the user to confirm pass/fail before presenting the next
-- For failed tests, the user can choose to: fix now, add as a TODO, or accept as a known issue
-- Only proceed to the next item once the current one is fully resolved
+**For multi-part questions (e.g., "1. this 2. that 3. other"):**
+1. Present question #1 only
+2. Wait for user's answer
+3. Ask any follow-up questions needed to fully understand
+4. When fully satisfied with #1, present question #2
+5. Repeat until all questions answered
+
+**For manual test instructions:**
+1. Present test step #1 only
+2. Wait for user to confirm pass/fail
+3. If failed: user can choose to fix now, add as TODO, or accept as known issue
+4. When step #1 is resolved (passed or handled), present step #2
+5. Repeat until all tests complete
+
+**Never present a batch list like:**
+- ❌ "Answer these questions: 1) X? 2) Y? 3) Z?"
+- ❌ "Run these tests: 1. Test A, 2. Test B, 3. Test C"
+
+**Always present sequentially:**
+- ✅ "Question 1: X?" → wait → follow-ups → satisfied → "Question 2: Y?" → etc.
+- ✅ "Test 1: Do A" → wait for result → handle → "Test 2: Do B" → etc.
 
 This applies to:
 - Requirements gathering questions (Refine, Interactive workflows)
-- User testing instructions (Interactive workflow Step 6)
+- User testing instructions (Interactive workflow Step 6, Test PR workflow)
 - Any multi-step user interaction requiring sequential confirmation
 
 ### Commit Message Format
