@@ -4,7 +4,7 @@
 > See [ADR-002 § Phase 1 Readiness](adr/ADR-002-tart-vm-operational-guide.md) for command mapping from calf-bootstrap.
 
 ```bash
-cal isolation <command>    # or: cal iso <command>
+calf isolation <command>    # or: calf iso <command>
 ```
 
 ## Workspace
@@ -87,15 +87,15 @@ cleanup [--all] [--cache] [--stopped]
 ## Future: CAL Core
 
 ```bash
-cal                                    # Launch TUI
-cal quick --repo <r> --agent <a> --prompt <p>
-cal list
-cal status
+calf                                    # Launch TUI
+calf quick --repo <r> --agent <a> --prompt <p>
+calf list
+calf status
 ```
 
-## Command Mapping (calf-bootstrap -> cal isolation)
+## Command Mapping (calf-bootstrap -> calf isolation)
 
-| calf-bootstrap | cal isolation |
+| calf-bootstrap | calf isolation |
 |---------------|---------------|
 | `--init` | `init` |
 | `--run` | `start` |

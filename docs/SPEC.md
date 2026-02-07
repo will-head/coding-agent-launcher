@@ -8,7 +8,7 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 
 ## Core Components
 
-### 1. cal-isolation Module
+### 1. calf-isolation Module
 
 **Purpose:** VM-based sandboxing for AI coding agents
 
@@ -121,7 +121,7 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 ~/.calf-vm-info                     # VM detection metadata
 ~/.calf-vm-config                   # VM password (mode 600)
 ~/.calf-proxy-config                # Proxy settings
-~/.cal-env/                        # Environment markers
+~/.calf-env/                        # Environment markers
 ~/output/                          # Artifact staging (synced to host)
 ```
 
@@ -132,8 +132,8 @@ CAL (Coding Agent Loader) is a CLI tool that runs AI coding agents (Claude Code,
 ### Command Structure
 
 ```
-cal isolation <command> [options]
-cal iso <command> [options]        # Shorthand alias
+calf isolation <command> [options]
+calf iso <command> [options]        # Shorthand alias
 ```
 
 ### Core Commands

@@ -8,7 +8,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                         HOST MACHINE                             │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │  CAL: TUI Interface │ Agent Selector │ cal-isolation      │  │
+│  │  CAL: TUI Interface │ Agent Selector │ calf-isolation     │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                              │                                   │
 │  ~/calf-output/  ◀────────────┴──── Build artifacts (VirtioFS)   │

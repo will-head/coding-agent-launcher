@@ -291,7 +291,7 @@ The "Refined" section in STATUS.md:
 **After Refining (in `docs/PLAN-PHASE-01-TODO.md`):**
 ```markdown
 - [ ] **REFINED:** Add configuration file support for calf-bootstrap
-  - File location: ~/.config/cal/config.yaml (XDG standard)
+  - File location: ~/.config/calf/config.yaml (XDG standard)
   - Format: YAML with sections for vm_defaults, proxy, snapshots
   - Supported options: default_cpu, default_memory, default_disk, proxy_mode, auto_snapshot
   - Fallback to built-in defaults if file missing (no error)
@@ -302,7 +302,7 @@ The "Refined" section in STATUS.md:
 
 **STATUS.md entry:**
 ```markdown
-| Add config file support | PLAN-PHASE-01-TODO.md § 1.2 | YAML config at ~/.config/cal/config.yaml with validation | 2026-01-23 | Pure bash parsing, no dependencies |
+| Add config file support | PLAN-PHASE-01-TODO.md § 1.2 | YAML config at ~/.config/calf/config.yaml with validation | 2026-01-23 | Pure bash parsing, no dependencies |
 ```
 
 ### Example 3: Feature with Dependencies

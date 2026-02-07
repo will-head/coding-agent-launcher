@@ -354,7 +354,7 @@ Ctrl+b r        # Reload tmux config
 **Reattaching to Sessions:**
 If you disconnect from SSH, your tmux session keeps running:
 ```bash
-./scripts/calf-bootstrap --run   # Reattaches to 'cal' session automatically
+./scripts/calf-bootstrap --run   # Reattaches to 'calf' session automatically
 # Or manually:
 ssh -t admin@$(tart ip calf-dev) "tmux attach -t calf"
 ```
@@ -417,12 +417,12 @@ See [VM Detection Guide](vm-detection.md) for complete documentation and integra
 ## Aliases (~/.zshrc)
 
 ```bash
-alias cal='./scripts/calf-bootstrap'
-alias cal-start='./scripts/calf-bootstrap --run'
-alias cal-restart='./scripts/calf-bootstrap --restart'
-alias cal-gui='./scripts/calf-bootstrap --gui'
-alias cal-stop='./scripts/calf-bootstrap --stop'
-alias cal-snap='./scripts/calf-bootstrap --snapshot'
+alias calf='./scripts/calf-bootstrap'
+alias calf-start='./scripts/calf-bootstrap --run'
+alias calf-restart='./scripts/calf-bootstrap --restart'
+alias calf-gui='./scripts/calf-bootstrap --gui'
+alias calf-stop='./scripts/calf-bootstrap --stop'
+alias calf-snap='./scripts/calf-bootstrap --snapshot'
 ```
 
 ## Tart Reference
