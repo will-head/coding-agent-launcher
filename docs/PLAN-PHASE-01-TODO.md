@@ -116,6 +116,8 @@ This is a security bypass for isolated VMs.
 - [ ] Update `calf-bootstrap` to use patched Tart/Softnet for `--no-network`
 - [ ] Add security documentation (see `docs/no-network-security.md`)
 - [ ] Add test for SMB mount with host credentials (expected FAIL)
+- [ ] Update `calf-bootstrap` warnings and status text to reflect SMB bypass fix status
+- [ ] Run SMB isolation tests (mount/bypass validation)
 
 **Status:** WIP - patching in progress
 
