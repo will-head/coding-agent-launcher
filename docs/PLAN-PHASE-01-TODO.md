@@ -96,6 +96,31 @@ After declining the update offer, user should be able to:
 
 ---
 
+### 5. No-Network SMB Bypass (Host Credentials) - IN PROGRESS
+
+**Problem:** `--no-network` blocks local network IPs but still allows SMB access to the host gateway if valid host credentials are provided.
+This is a security bypass for isolated VMs.
+
+**Goal:** Block SMB/NetBIOS traffic to the host gateway without affecting NAT/internet access.
+
+**Planned Approach:**
+- Patch Softnet with gateway-only TCP/UDP port blocking
+- Patch Tart to pass new Softnet flags
+- Use PATH override for patched Tart/Softnet (`~/.calf-tools/bin`)
+- Update documentation with security boundary and mitigation
+
+**Tasks:**
+- [ ] Add Softnet flags: `--block-tcp-ports`, `--block-udp-ports`
+- [ ] Enforce gateway-only port blocking in Softnet packet filter
+- [ ] Add Tart flags: `--net-softnet-block-tcp-ports`, `--net-softnet-block-udp-ports`
+- [ ] Update `calf-bootstrap` to use patched Tart/Softnet for `--no-network`
+- [ ] Add security documentation (see `docs/no-network-security.md`)
+- [ ] Add test for SMB mount with host credentials (expected FAIL)
+
+**Status:** WIP - patching in progress
+
+---
+
 ## New Features - Normal Priority
 
 ### 4. CLI Proxy Utility for VM↔Host Command Transport

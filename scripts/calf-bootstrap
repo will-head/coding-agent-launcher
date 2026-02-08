@@ -20,6 +20,7 @@ SCRIPT_DIR="${0:A:h}"
 #
 # Environment variables:
 #   TART_PATH       - Path to tart binary
+#   CALF_TOOLS_BIN  - PATH override for patched tart/softnet (default: ~/.calf-tools/bin)
 #   VM_USER         - VM username (default: admin)
 #   VM_PASSWORD     - VM password (default: admin)
 
@@ -39,6 +40,9 @@ HOST_USER="${HOST_USER:-$(whoami)}"
 # Uses sshuttle for truly transparent network routing - no app configuration needed
 PROXY_MODE="${PROXY_MODE:-auto}"  # on, off, or auto (default)
 HOST_GATEWAY="${HOST_GATEWAY:-192.168.64.1}"
+
+# Calf tools PATH override (patched tart/softnet)
+CALF_TOOLS_BIN="${CALF_TOOLS_BIN:-$HOME/.calf-tools/bin}"
 
 # Package download cache (temporary for this script only, does not affect host system)
 # Downloads during --init will be cached and reused by VM
@@ -238,15 +242,94 @@ should_skip_mounts() {
     return 1  # false - use mounts
 }
 
+# Check if VM should use network isolation (no-network mode)
+# During init: uses NO_NETWORK_MODE variable
+# After init: reads from host marker file ~/.calf-vm-no-network
+should_use_network_isolation() {
+    local vm="$1"
+
+    # During init, use the command-line flag
+    if [ "$NO_NETWORK_MODE" = true ]; then
+        return 0  # true - use network isolation
+    fi
+
+    # After init, check host marker file
+    if [ -f ~/.calf-vm-no-network ]; then
+        return 0  # true - use network isolation
+    fi
+
+    return 1  # false - no network isolation
+}
+
+# Resolve patched tart binary path if available
+resolve_patched_tart() {
+    if [ -x "$CALF_TOOLS_BIN/tart" ]; then
+        echo "$CALF_TOOLS_BIN/tart"
+        return 0
+    fi
+
+    echo ""
+    return 1
+}
+
+# Resolve softnet binary path (prefer patched)
+resolve_softnet_path() {
+    if [ -x "$CALF_TOOLS_BIN/softnet" ]; then
+        echo "$CALF_TOOLS_BIN/softnet"
+        return 0
+    fi
+
+    if command -v softnet &>/dev/null; then
+        command -v softnet
+        return 0
+    fi
+
+    echo ""
+    return 1
+}
+
+# Check if softnet is available and has SUID bit set
+check_softnet() {
+    local softnet_path
+    softnet_path=$(resolve_softnet_path)
+
+    if [ -z "$softnet_path" ]; then
+        return 1  # softnet not found
+    fi
+
+    if [ ! -u "$softnet_path" ]; then
+        return 1  # SUID bit not set
+    fi
+
+    return 0  # softnet available and configured
+}
+
 # Start VM in background and wait for IP/SSH
 start_vm_background() {
     local vm="$1"
     local share_tart_cache="${2:-true}"  # Default to sharing cache (deprecated parameter)
+    local tart_bin="$TART"
+    local use_calf_tools=false
+    local network_isolation=false
 
     echo "  Starting $vm in background..."
 
+    # Select patched tart when network isolation is requested
+    if should_use_network_isolation "$vm"; then
+        network_isolation=true
+        local patched_tart
+        patched_tart=$(resolve_patched_tart)
+        if [ -z "$patched_tart" ]; then
+            echo "  ❌ Network isolation requires patched Tart in $CALF_TOOLS_BIN"
+            echo "  → Build and install patched Tart to $CALF_TOOLS_BIN/tart"
+            return 1
+        fi
+        tart_bin="$patched_tart"
+        use_calf_tools=true
+    fi
+
     # Build tart run command with optional cache sharing
-    local tart_cmd=("$TART" "run" "--no-graphics")
+    local tart_cmd=("$tart_bin" "run" "--no-graphics")
 
     # Check if VM should skip mounts (no-mount mode)
     local skip_mounts=false
@@ -268,9 +351,37 @@ start_vm_background() {
         tart_cmd+=("--dir" "${HOME}/.calf-cache:tag=calf-cache")
     fi
 
+    # Check if VM should use network isolation (no-network mode)
+    if [ "$network_isolation" = true ]; then
+        if check_softnet; then
+            # Enable softnet with multicast blocking (blocks mDNS/Bonjour discovery)
+            # Allows internet via NAT, blocks direct local network access
+            # Block 224.0.0.0/4 (all multicast) to prevent service discovery
+            tart_cmd+=(
+                "--net-softnet"
+                "--net-softnet-block=224.0.0.0/4"
+                "--net-softnet-block-tcp-ports=445,139"
+                "--net-softnet-block-udp-ports=137,138"
+            )
+        else
+            echo "  ⚠️  Warning: Network isolation requested but softnet not available"
+            local softnet_path
+            softnet_path=$(resolve_softnet_path)
+            if [ -z "$softnet_path" ]; then
+                echo "  → Install softnet and ensure it is available in PATH"
+            else
+                echo "  → Then set SUID: sudo chown root:wheel \"$softnet_path\" && sudo chmod u+s \"$softnet_path\""
+            fi
+        fi
+    fi
+
     tart_cmd+=("$vm")
 
-    "${tart_cmd[@]}" >/dev/null 2>&1 &
+    if [ "$use_calf_tools" = true ]; then
+        PATH="$CALF_TOOLS_BIN:$PATH" "${tart_cmd[@]}" >/dev/null 2>&1 &
+    else
+        "${tart_cmd[@]}" >/dev/null 2>&1 &
+    fi
     TART_PID=$!
     disown "$TART_PID" 2>/dev/null || true
     CLEANUP_VM=true
@@ -1043,15 +1154,38 @@ do_init() {
     fi
     echo ""
 
-    # Warn about no-mount mode if enabled (unless --yes is used)
-    if [ "$NO_MOUNT_MODE" = true ]; then
+    # Warn about isolation modes if enabled (unless --yes is used)
+    local isolation_warning=false
+    local isolation_desc=""
+
+    if [ "$NO_MOUNT_MODE" = true ] && [ "$NO_NETWORK_MODE" = true ]; then
+        isolation_warning=true
+        isolation_desc="safe mode (no host filesystem mounts, network isolated)"
+    elif [ "$NO_MOUNT_MODE" = true ]; then
+        isolation_warning=true
+        isolation_desc="no-mount mode (no host filesystem mounts)"
+    elif [ "$NO_NETWORK_MODE" = true ]; then
+        isolation_warning=true
+        isolation_desc="no-network mode (network isolated from local networks)"
+    fi
+
+    if [ "$isolation_warning" = true ]; then
         if [ "$SKIP_CONFIRM" = false ]; then
-            echo "⚠️  No-Mount Mode Warning"
-            echo "This will create VMs in isolated mode with no host filesystem mounts."
-            echo "This setting is PERMANENT and cannot be changed later."
+            echo "⚠️  Isolation Mode Warning"
+            echo "This will create VMs in $isolation_desc."
+            if [ "$NO_MOUNT_MODE" = true ]; then
+                echo "  • No host filesystem mounts (isolated filesystem)"
+            fi
+            if [ "$NO_NETWORK_MODE" = true ]; then
+                echo "  • Network isolated (internet allowed, local network blocked)"
+                echo "    - Prevents SMB file sharing access to host/local network"
+                echo "    - Prevents Bonjour service discovery (partial)"
+            fi
+            echo ""
+            echo "These settings are PERMANENT and cannot be changed later."
             echo "To change modes, you must destroy and recreate the VMs."
             echo ""
-            echo "Continue with no-mount mode? (Y/n)"
+            echo "Continue with $isolation_desc? (Y/n)"
             read -r -k 1 reply
             echo ""
             if [[ $reply =~ ^[Nn]$ ]]; then
@@ -1060,7 +1194,81 @@ do_init() {
             fi
             echo ""
         else
-            echo "ℹ️  No-mount mode enabled (isolated VMs with no host filesystem mounts)"
+            echo "ℹ️  Isolation mode: $isolation_desc"
+            echo ""
+        fi
+    fi
+
+    # Check if softnet is needed and available
+    if [ "$NO_NETWORK_MODE" = true ]; then
+        if ! check_softnet; then
+            echo "⚠️  Softnet Required for Network Isolation"
+            echo ""
+            echo "Network isolation requires softnet with SUID permissions."
+            echo ""
+
+            local softnet_path
+            softnet_path=$(resolve_softnet_path)
+
+            if [ -z "$softnet_path" ]; then
+                echo "Softnet is not installed."
+                echo ""
+                echo "Install with: brew install cirruslabs/cli/softnet"
+                echo ""
+                if [ "$SKIP_CONFIRM" = false ]; then
+                    echo "Install softnet now? (Y/n)"
+                    read -r -k 1 reply
+                    echo ""
+                    if [[ ! $reply =~ ^[Nn]$ ]]; then
+                        echo "Installing softnet..."
+                        brew install cirruslabs/cli/softnet
+                        softnet_path=$(resolve_softnet_path)
+                        if [ -z "$softnet_path" ]; then
+                            echo "❌ Failed to install softnet"
+                            exit 1
+                        fi
+                        echo "✓ Softnet installed"
+                    else
+                        echo "Cannot continue without softnet"
+                        exit 1
+                    fi
+                else
+                    echo "❌ Softnet required but not installed (--yes mode)"
+                    exit 1
+                fi
+            fi
+
+            # Now check SUID bit
+            if [ ! -u "$softnet_path" ]; then
+                echo "Softnet found but SUID bit not set."
+                echo "SUID is required for non-root users to use softnet."
+                echo ""
+                echo "This requires sudo access to run:"
+                echo "  sudo chown root:wheel $softnet_path"
+                echo "  sudo chmod u+s $softnet_path"
+                echo ""
+                if [ "$SKIP_CONFIRM" = false ]; then
+                    echo "Set SUID bit now? (Y/n)"
+                    read -r -k 1 reply
+                    echo ""
+                    if [[ ! $reply =~ ^[Nn]$ ]]; then
+                        echo "Setting SUID bit (requires sudo)..."
+                        if sudo chown root:wheel "$softnet_path" && sudo chmod u+s "$softnet_path"; then
+                            echo "✓ SUID bit set on $softnet_path"
+                        else
+                            echo "❌ Failed to set SUID bit"
+                            exit 1
+                        fi
+                    else
+                        echo "Cannot continue without SUID bit on softnet"
+                        exit 1
+                    fi
+                else
+                    echo "❌ SUID bit required but --yes mode prevents interactive setup"
+                    exit 1
+                fi
+            fi
+
             echo ""
         fi
     fi
@@ -1319,34 +1527,54 @@ do_init() {
     # Step 6.6: Create VM config file with mount mode setting
     # vm-setup.sh (Step 7) will preserve this setting when it updates the config
     echo ""
-    echo "Step 6.6: Configure VM mount mode"
+    echo "Step 6.6: Configure VM isolation modes"
+
+    # Build VM config file content
+    local vm_config=""
     if [ "$NO_MOUNT_MODE" = true ]; then
-        echo "  Creating ~/.calf-vm-config with NO_MOUNT=true..."
-        if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-               "${VM_USER}@${VM_IP}" "echo 'NO_MOUNT=true' > ~/.calf-vm-config && chmod 600 ~/.calf-vm-config && sync && [ -f ~/.calf-vm-config ] && echo 'success'" 2>> "$CALF_LOG" | grep -q 'success'; then
-            echo "  ✓ VM configured for no-mount mode (isolated)"
-        else
-            echo "  ⚠ Failed to create VM config file"
-            echo "  → Mount mode may not be preserved correctly"
-        fi
+        vm_config="NO_MOUNT=true"
     else
-        echo "  Creating ~/.calf-vm-config with NO_MOUNT=false..."
-        if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-               "${VM_USER}@${VM_IP}" "echo 'NO_MOUNT=false' > ~/.calf-vm-config && chmod 600 ~/.calf-vm-config && sync && [ -f ~/.calf-vm-config ] && echo 'success'" 2>> "$CALF_LOG" | grep -q 'success'; then
-            echo "  ✓ VM configured for shared cache mode"
-        else
-            echo "  ⚠ Failed to create VM config file"
-            echo "  → Mount mode may not be preserved correctly"
-        fi
+        vm_config="NO_MOUNT=false"
     fi
 
-    # Create host-side marker file for no-mount mode (for future VM starts)
+    if [ "$NO_NETWORK_MODE" = true ]; then
+        vm_config="${vm_config}\nNO_NETWORK=true"
+    else
+        vm_config="${vm_config}\nNO_NETWORK=false"
+    fi
+
+    echo "  Creating ~/.calf-vm-config..."
+    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+           "${VM_USER}@${VM_IP}" "printf '$vm_config\n' > ~/.calf-vm-config && chmod 600 ~/.calf-vm-config && sync && [ -f ~/.calf-vm-config ] && echo 'success'" 2>> "$CALF_LOG" | grep -q 'success'; then
+        if [ "$NO_MOUNT_MODE" = true ] && [ "$NO_NETWORK_MODE" = true ]; then
+            echo "  ✓ VM configured for safe mode (no mounts, network isolated)"
+        elif [ "$NO_MOUNT_MODE" = true ]; then
+            echo "  ✓ VM configured for no-mount mode (isolated filesystem)"
+        elif [ "$NO_NETWORK_MODE" = true ]; then
+            echo "  ✓ VM configured for no-network mode (isolated network)"
+        else
+            echo "  ✓ VM configured for shared mode (mounts enabled, network unrestricted)"
+        fi
+    else
+        echo "  ⚠ Failed to create VM config file"
+        echo "  → Isolation modes may not be preserved correctly"
+    fi
+
+    # Create host-side marker files for isolation modes (for future VM starts)
     if [ "$NO_MOUNT_MODE" = true ]; then
         touch ~/.calf-vm-no-mount
         echo "  ✓ Host marker file created (~/.calf-vm-no-mount)"
     else
         # Remove marker file if it exists (ensure clean state for shared mode)
         rm -f ~/.calf-vm-no-mount
+    fi
+
+    if [ "$NO_NETWORK_MODE" = true ]; then
+        touch ~/.calf-vm-no-network
+        echo "  ✓ Host marker file created (~/.calf-vm-no-network)"
+    else
+        # Remove marker file if it exists (ensure clean state)
+        rm -f ~/.calf-vm-no-network
     fi
 
     # Step 7: Run vm-setup from ~/scripts
@@ -1804,6 +2032,24 @@ do_gui() {
     echo "   This solves clipboard problems but may have occasional display quirks"
     echo ""
 
+    local tart_bin="$TART"
+    local use_calf_tools=false
+    local network_isolation=false
+
+    # Select patched tart when network isolation is requested
+    if should_use_network_isolation "$VM_DEV"; then
+        network_isolation=true
+        local patched_tart
+        patched_tart=$(resolve_patched_tart)
+        if [ -z "$patched_tart" ]; then
+            echo "  ❌ Network isolation requires patched Tart in $CALF_TOOLS_BIN"
+            echo "  → Build and install patched Tart to $CALF_TOOLS_BIN/tart"
+            return 1
+        fi
+        tart_bin="$patched_tart"
+        use_calf_tools=true
+    fi
+
     # Run with VNC experimental mode (background process)
     # This allows the terminal to remain free while VNC window is open
     #
@@ -1816,7 +2062,7 @@ do_gui() {
     # - Tested and confirmed working for clipboard operations (2026-01-31)
 
     # Build tart run command with cache sharing
-    local tart_cmd=("$TART" "run" "$VM_DEV" "--vnc-experimental")
+    local tart_cmd=("$tart_bin" "run" "$VM_DEV" "--vnc-experimental")
 
     # Check if VM should skip mounts (no-mount mode)
     local skip_mounts=false
@@ -1837,7 +2083,46 @@ do_gui() {
         tart_cmd+=("--dir" "${HOME}/.calf-cache:tag=calf-cache")
     fi
 
-    "${tart_cmd[@]}" >/dev/null 2>&1 &
+    # Check if VM should use network isolation (no-network mode)
+    if [ "$network_isolation" = true ]; then
+        if check_softnet; then
+            # Enable softnet with multicast blocking (blocks mDNS/Bonjour discovery)
+            # Note: --vnc-experimental comes BEFORE network flags in command order
+            # Build new command array with proper ordering
+            local tart_cmd_reordered=("$tart_bin" "run" "$VM_DEV")
+            # Add network flags first (before --vnc-experimental)
+            tart_cmd_reordered+=(
+                "--net-softnet"
+                "--net-softnet-block=224.0.0.0/4"
+                "--net-softnet-block-tcp-ports=445,139"
+                "--net-softnet-block-udp-ports=137,138"
+            )
+            tart_cmd_reordered+=("--vnc-experimental")
+            # Add mount flags
+            if [ "$skip_mounts" = false ] && [ -d ~/.tart/cache ]; then
+                tart_cmd_reordered+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
+            fi
+            if [ "$skip_mounts" = false ] && [ -d ~/.calf-cache ]; then
+                tart_cmd_reordered+=("--dir" "${HOME}/.calf-cache:tag=calf-cache")
+            fi
+            tart_cmd=("${tart_cmd_reordered[@]}")
+        else
+            echo "  ⚠️  Warning: Network isolation requested but softnet not available"
+            local softnet_path
+            softnet_path=$(resolve_softnet_path)
+            if [ -z "$softnet_path" ]; then
+                echo "  → Install softnet and ensure it is available in PATH"
+            else
+                echo "  → Then set SUID: sudo chown root:wheel \"$softnet_path\" && sudo chmod u+s \"$softnet_path\""
+            fi
+        fi
+    fi
+
+    if [ "$use_calf_tools" = true ]; then
+        PATH="$CALF_TOOLS_BIN:$PATH" "${tart_cmd[@]}" >/dev/null 2>&1 &
+    else
+        "${tart_cmd[@]}" >/dev/null 2>&1 &
+    fi
     TART_PID=$!
 
     # Wait for VM to get an IP address
@@ -1908,12 +2193,18 @@ do_status() {
             else
                 echo "$VM_DEV: Stopped"
             fi
-            # Display mount mode
-            if [ -f ~/.calf-vm-no-mount ]; then
-                echo "  Mount mode: Isolated (no host mounts)"
+            # Display isolation modes
+            local isolation_modes=""
+            if [ -f ~/.calf-vm-no-mount ] && [ -f ~/.calf-vm-no-network ]; then
+                isolation_modes="Safe mode (no mounts, network isolated)"
+            elif [ -f ~/.calf-vm-no-mount ]; then
+                isolation_modes="Isolated filesystem (no host mounts)"
+            elif [ -f ~/.calf-vm-no-network ]; then
+                isolation_modes="Isolated network (local network blocked)"
             else
-                echo "  Mount mode: Shared cache"
+                isolation_modes="Shared mode (mounts enabled, network unrestricted)"
             fi
+            echo "  Isolation: $isolation_modes"
         else
             echo "$VM_DEV: Not found"
             echo ""
@@ -1959,12 +2250,18 @@ do_status() {
     echo "State: $dev_state"
     echo "Size: ${size_display}"
 
-    # Display mount mode
-    if [ -f ~/.calf-vm-no-mount ]; then
-        echo "Mount mode: Isolated (no host mounts)"
+    # Display isolation modes
+    local isolation_modes=""
+    if [ -f ~/.calf-vm-no-mount ] && [ -f ~/.calf-vm-no-network ]; then
+        isolation_modes="Safe mode (no mounts, network isolated)"
+    elif [ -f ~/.calf-vm-no-mount ]; then
+        isolation_modes="Isolated filesystem (no host mounts)"
+    elif [ -f ~/.calf-vm-no-network ]; then
+        isolation_modes="Isolated network (local network blocked)"
     else
-        echo "Mount mode: Shared cache"
+        isolation_modes="Shared mode (mounts enabled, network unrestricted)"
     fi
+    echo "Isolation: $isolation_modes"
 
     if [ "$dev_state" = "running" ]; then
         dev_ip=$("$TART" ip "$VM_DEV" 2>/dev/null || echo "")
@@ -2455,6 +2752,7 @@ MODE=""
 SKIP_CONFIRM=false
 CLEAN_MODE=false
 NO_MOUNT_MODE=false
+NO_NETWORK_MODE=false
 SNAPSHOT_ACTION=""
 SNAPSHOT_NAME=""
 SNAPSHOT_NAMES=()
@@ -2544,6 +2842,15 @@ while [[ $# -gt 0 ]]; do
             NO_MOUNT_MODE=true
             shift
             ;;
+        --no-network)
+            NO_NETWORK_MODE=true
+            shift
+            ;;
+        --safe-mode)
+            NO_MOUNT_MODE=true
+            NO_NETWORK_MODE=true
+            shift
+            ;;
         --help|-h)
             echo "CAL Bootstrap - VM Environment Setup"
             echo ""
@@ -2569,13 +2876,21 @@ while [[ $# -gt 0 ]]; do
             echo "                                        auto - Test github.com, enable if needed"
             echo "  --yes, -y                           Skip confirmation prompts"
             echo "  --clean                             Force script deployment (skip checksum optimization)"
-            echo "  --no-mount                          Create VM with no host filesystem mounts (isolated mode)"
+            echo "  --no-mount                          Create VM with no host filesystem mounts"
+            echo "                                        PERMANENT: Cannot be changed after VM creation"
+            echo "  --no-network                        Create VM with network isolation (blocks local network)"
+            echo "                                        Allows internet, blocks SMB/local network access"
+            echo "                                        PERMANENT: Cannot be changed after VM creation"
+            echo "  --safe-mode                         Enable both --no-mount and --no-network"
+            echo "                                        Maximum isolation for untrusted code execution"
             echo "                                        PERMANENT: Cannot be changed after VM creation"
             echo "  --help, -h                          Show this help"
             echo ""
             echo "Examples:"
             echo "  ./calf-bootstrap --init              # First-time setup"
-            echo "  ./calf-bootstrap --init --no-mount   # Create fully isolated VM (no host mounts)"
+            echo "  ./calf-bootstrap --init --no-mount   # Isolated filesystem (no host mounts)"
+            echo "  ./calf-bootstrap --init --no-network # Isolated network (blocks local network)"
+            echo "  ./calf-bootstrap --init --safe-mode  # Maximum isolation (both modes)"
             echo "  ./calf-bootstrap                     # Start calf-dev (auto-detects mode)"
             echo "  ./calf-bootstrap --status            # Show VM status and IP"
             echo "  ./calf-bootstrap --restart           # Restart calf-dev and connect"

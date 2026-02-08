@@ -7,6 +7,7 @@ VM-based sandbox for running AI coding agents (Claude Code, Cursor, opencode) sa
 ## Features
 
 - **Complete isolation** - Agents run in VMs with no host filesystem access
+- **Network isolation** - `--no-network` / `--safe-mode` block local network access
 - **GitHub workflow** - Clone → edit → commit → PR, all changes tracked in git
 - **Multi-agent** - Claude Code, Cursor, opencode (with automatic keychain unlock for OAuth)
 - **Instant rollback** - Snapshots recover from any mishap in seconds
@@ -45,6 +46,7 @@ Context for AI coding agents is in `AGENTS.md` with symlinks:
 **Quick Start:**
 - [Bootstrap Guide](docs/bootstrap.md) - VM setup and daily workflow
 - [ADR-002](docs/adr/ADR-002-tart-vm-operational-guide.md) - Comprehensive operational guide
+- [No-Network Security Notes](docs/no-network-security.md) - SMB bypass investigation and mitigations
 
 **Planning:**
 - [PLAN.md](PLAN.md) - TODOs and status **(source of truth)**

@@ -111,6 +111,45 @@ The `--no-mount` flag creates fully isolated VMs with zero host filesystem acces
 # Output shows: "Mount mode: Isolated (no host mounts)"
 ```
 
+### No-Network Mode (Network Isolation)
+
+The `--no-network` flag isolates the VM from local network IPs while still allowing internet access via NAT.
+It uses Softnet for isolation.
+
+**Behavior:**
+- Blocks direct access to local network IPs (192.168.x.x, 10.x.x.x, etc.)
+- Allows internet access via NAT
+- Blocks SMB/NetBIOS traffic to the host gateway IP (TCP 445/139, UDP 137/138)
+
+**Requirements:**
+- Softnet installed and SUID set
+- Patched Tart and Softnet binaries installed in `~/.calf-tools/bin`
+  - `calf-bootstrap` will use this path automatically for `--no-network`
+  - Override with `CALF_TOOLS_BIN=/path/to/bin`
+
+**SUID setup:**
+```bash
+sudo chown root:wheel ~/.calf-tools/bin/softnet
+sudo chmod u+s ~/.calf-tools/bin/softnet
+```
+
+**Example:**
+```bash
+# Create isolated VM (with confirmation)
+./scripts/calf-bootstrap --init --no-network
+
+# Create isolated VM (skip confirmation)
+./scripts/calf-bootstrap --init --no-network --yes
+```
+
+### Safe Mode (Maximum Isolation)
+
+The `--safe-mode` flag enables both `--no-mount` and `--no-network`.
+
+```bash
+./scripts/calf-bootstrap --init --safe-mode --yes
+```
+
 ### Git Safety Features
 
 CAL automatically checks for uncommitted changes and unpushed commits before destructive operations to prevent data loss.

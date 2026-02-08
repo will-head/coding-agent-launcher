@@ -522,25 +522,22 @@ fi
 echo ""
 echo "🔑 Saving VM configuration..."
 
-# Preserve existing settings if config file already exists
-EXISTING_NO_MOUNT=""
+# Update config file - create if missing, update VM_PASSWORD, preserve everything else
 if [ -f ~/.calf-vm-config ]; then
-    # Source existing config to read current values
-    # shellcheck disable=SC1090
-    source ~/.calf-vm-config 2>/dev/null || true
-    EXISTING_NO_MOUNT="$NO_MOUNT"
-fi
-
-# Write config file with preserved settings
-cat > ~/.calf-vm-config <<EOF
+    # Update VM_PASSWORD if it exists, add if it doesn't
+    if grep -q '^VM_PASSWORD=' ~/.calf-vm-config; then
+        sed -i '' "s|^VM_PASSWORD=.*|VM_PASSWORD=\"${VM_PASSWORD:-admin}\"|" ~/.calf-vm-config
+    else
+        echo "VM_PASSWORD=\"${VM_PASSWORD:-admin}\"" >> ~/.calf-vm-config
+    fi
+    echo "  ✓ Updated ~/.calf-vm-config (existing settings preserved)"
+else
+    # First time - create with defaults
+    cat > ~/.calf-vm-config <<EOF
 # CALF VM Configuration (restricted permissions)
 VM_PASSWORD="${VM_PASSWORD:-admin}"
 EOF
-
-# Append NO_MOUNT setting if it was previously set
-if [ -n "$EXISTING_NO_MOUNT" ]; then
-    echo "NO_MOUNT=$EXISTING_NO_MOUNT" >> ~/.calf-vm-config
-    echo "  ✓ Preserved NO_MOUNT=$EXISTING_NO_MOUNT setting"
+    echo "  ✓ Created ~/.calf-vm-config"
 fi
 
 chmod 600 ~/.calf-vm-config
