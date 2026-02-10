@@ -1162,23 +1162,31 @@ stop_smb_block() {
     fi
 }
 
-# Install sudoers drop-in allowing passwordless pfctl cleanup for the CALF anchor.
-# Required for the --gui background watcher (no terminal when script exits).
-# Scope: only /sbin/pfctl -a com.apple/calf.smb-block -F all — nothing else.
-# One-time setup; idempotent.
+# Install sudoers drop-in allowing passwordless pfctl for the CALF anchor.
+# Required for the --gui background watcher (no terminal when script exits) and for
+# standard user accounts that cannot use sudo directly.
+# Grants both %admin (backwards compat) and the current user (standard user support).
+# Scope: only pfctl operations on com.apple/calf.smb-block — nothing else.
+# One-time setup; idempotent. Offers su fallback when sudo is unavailable.
 setup_smb_block_permissions() {
     local sudoers_file="/etc/sudoers.d/calf-pfctl"
     local pfctl_path
     pfctl_path=$(command -v pfctl 2>/dev/null || echo "/sbin/pfctl")
-    # Three NOPASSWD entries:
+    local current_user
+    current_user="$(id -un)"
+    # Three NOPASSWD entries each for %admin (backwards compat) and current user.
+    # Per-user entries allow standard accounts to run pfctl passwordlessly after one-time setup.
     #   -f -    : load rules (needed by start_smb_block — must be passwordless before VM starts)
     #   -F all  : flush rules (needed by background watcher — no terminal available)
     #   -sr     : show rules (read-only, used for status checks without sudo prompt)
     local sudoers_entry
-    sudoers_entry="$(printf '%s\n%s\n%s' \
+    sudoers_entry="$(printf '%s\n%s\n%s\n%s\n%s\n%s' \
         "%admin ALL=(root) NOPASSWD: $pfctl_path -a $SMB_BLOCK_ANCHOR -f -" \
         "%admin ALL=(root) NOPASSWD: $pfctl_path -a $SMB_BLOCK_ANCHOR -F all" \
-        "%admin ALL=(root) NOPASSWD: $pfctl_path -a $SMB_BLOCK_ANCHOR -sr")"
+        "%admin ALL=(root) NOPASSWD: $pfctl_path -a $SMB_BLOCK_ANCHOR -sr" \
+        "$current_user ALL=(root) NOPASSWD: $pfctl_path -a $SMB_BLOCK_ANCHOR -f -" \
+        "$current_user ALL=(root) NOPASSWD: $pfctl_path -a $SMB_BLOCK_ANCHOR -F all" \
+        "$current_user ALL=(root) NOPASSWD: $pfctl_path -a $SMB_BLOCK_ANCHOR -sr")"
 
     # Already installed — verify by testing NOPASSWD works (sudo -n fails silently if password needed)
     # Avoids sudo grep against root-owned file (would prompt for password with no context)
@@ -1190,10 +1198,10 @@ setup_smb_block_permissions() {
     echo "  Setting up passwordless pfctl for SMB blocking (one-time)..."
     echo "  Scope: load, flush, and show-rules for anchor '$SMB_BLOCK_ANCHOR' only"
 
-    # Write to a temp file and validate before installing
-    local tmp_file
-    tmp_file=$(mktemp)
+    # Write to /tmp (not mktemp default) so admin user can read it when installing via su
+    local tmp_file="/tmp/calf-pfctl.$$"
     printf '%s\n' "$sudoers_entry" > "$tmp_file"
+    chmod 644 "$tmp_file"
 
     # Validate syntax with visudo
     if ! visudo -c -f "$tmp_file" 2>/dev/null; then
@@ -1202,17 +1210,72 @@ setup_smb_block_permissions() {
         return 1
     fi
 
-    # Install atomically with correct permissions
-    if sudo install -m 440 -o root -g wheel "$tmp_file" "$sudoers_file" 2>/dev/null; then
-        rm -f "$tmp_file"
-        echo "  ✓ Installed $sudoers_file"
-        return 0
+    # Determine if current user is a macOS admin (member of 'admin' group)
+    local is_admin=false
+    if id -Gn 2>/dev/null | grep -qw admin; then
+        is_admin=true
+    fi
+
+    # Admin user: try direct sudo install (will prompt for password if needed)
+    if [ "$is_admin" = true ]; then
+        if sudo install -m 440 -o root -g wheel "$tmp_file" "$sudoers_file" 2>/dev/null; then
+            rm -f "$tmp_file"
+            echo "  ✓ Installed $sudoers_file"
+            return 0
+        fi
     else
+        echo "  ℹ  Standard user account — admin credentials needed for one-time setup"
+    fi
+
+    # Standard user (or admin sudo failed): offer su fallback.
+    # Skip interactive prompt in --yes / non-interactive mode.
+    if [ "${SKIP_CONFIRM:-false}" = true ]; then
         rm -f "$tmp_file"
-        echo "  ⚠ Could not install $sudoers_file"
-        echo "    Manual install: echo '$sudoers_entry' | sudo tee $sudoers_file && sudo chmod 440 $sudoers_file"
+        echo "  ⚠ Could not install $sudoers_file (--yes mode, skipping interactive su)"
+        echo "    Run setup interactively or install manually (see below)"
+        _smb_print_manual_install "$sudoers_entry" "$sudoers_file"
         return 1
     fi
+
+    printf "  Enter admin username (or press Enter to skip): " >&2
+    local admin_user
+    IFS= read -r admin_user </dev/tty 2>/dev/null
+    echo ""
+    if [ -z "$admin_user" ]; then
+        rm -f "$tmp_file"
+        echo "  ⚠ Skipped — manual install required"
+        _smb_print_manual_install "$sudoers_entry" "$sudoers_file"
+        return 1
+    fi
+
+    # su -l gives the admin user a full login shell; sudo within that shell installs the file.
+    # Two password prompts: su (admin's password) then sudo (admin's password again).
+    echo "  → Prompts: su asks for ${admin_user}'s password, then sudo asks again"
+    if su -l "$admin_user" -c "sudo install -m 440 -o root -g wheel '$tmp_file' '$sudoers_file'"; then
+        rm -f "$tmp_file"
+        echo "  ✓ Installed $sudoers_file (via su $admin_user)"
+        return 0
+    fi
+
+    rm -f "$tmp_file"
+    echo "  ⚠ Could not install $sudoers_file"
+    _smb_print_manual_install "$sudoers_entry" "$sudoers_file"
+    return 1
+}
+
+# Print manual install instructions for the sudoers drop-in.
+# Shows the file content and install command for both direct sudo and su approaches.
+_smb_print_manual_install() {
+    local sudoers_entry="$1"
+    local sudoers_file="$2"
+    echo "    Manual install — run as an admin user:"
+    echo "      sudo tee $sudoers_file >/dev/null <<'SUDOERS'"
+    printf '%s\n' "$sudoers_entry"
+    echo "SUDOERS"
+    echo "      sudo chmod 440 $sudoers_file"
+    echo ""
+    echo "    Via su (switch to admin first, then run the same commands above):"
+    echo "      su -l <adminuser>"
 }
 
 # === INIT MODE ===
