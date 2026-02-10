@@ -10,6 +10,51 @@
 
 ---
 
+## Critical Issue #5: No-Network SMB Bypass (Host Credentials) — ✅ COMPLETED (2026-02-10)
+
+**Problem:** `--no-network` mode blocks local network IPs via softnet but still allowed SMB access to the host gateway (`192.168.64.1`). A VM running in "isolated" mode could mount the host's filesystem if valid credentials were provided — a full security bypass.
+
+**Investigation:** Previous approach attempted to patch softnet source to add `--block-tcp-ports` / `--block-udp-ports` flags. All compiled softnet versions (patched or not) failed VM initialization. Homebrew softnet v0.18.0 works; compiled-from-source v0.1.0 (git main) does not. Investigation doc: [`docs/softnet-port-blocking-investigation.md`](softnet-port-blocking-investigation.md)
+
+**Solution: Host-side pf anchor** — Standard Homebrew tart/softnet only. Block SMB/NetBIOS on the HOST using macOS `pf` with a temporary named anchor. No patched binaries. No changes to `/etc/pf.conf`.
+
+**Architecture:**
+- Anchor `com.apple/calf.smb-block` fits under existing `anchor "com.apple/*"` wildcard in `/etc/pf.conf`
+- Rules: `block in quick proto tcp from $VM_IP to any port {445, 139}` + UDP 137/138
+- Rules are in-memory only — no disk changes; removed on session end
+- `--gui` mode: background watcher polls `kill -0 $TART_PID` every 5s; removes rules when VM process exits
+- One-time sudoers drop-in `/etc/sudoers.d/calf-pfctl` enables NOPASSWD for load/flush/show on this anchor only
+- SMB block failure = hard stop (VM killed); no-network mode without blocking is meaningless
+
+**Security design fixes applied during implementation:**
+1. **Security window eliminated** — `setup_smb_block_permissions()` runs BEFORE VM starts in all flows. Any sudo password prompt appears before the VM is running.
+2. **NOPASSWD covers load** — `-f -` (rule load) added to sudoers alongside `-F all` (flush) and `-sr` (show). Without it, the most common operation still prompted.
+3. **`pfctl -e` removed** — always a no-op on macOS 10.15+; NOPASSWD commands don't cache the sudo timestamp so the following non-NOPASSWD `pfctl -e` caused a spurious bare `Password:` prompt.
+4. **Idempotency check via `sudo -n`** — replaced `sudo grep` on root-owned file with `sudo -n pfctl -sr` test. No bare prompt on re-runs.
+
+**Key implementation details:**
+- `~/.calf-vm-no-network` (host-side) persists mode across reboots; all subsequent `--run`/`--gui` enforce blocking even without flags
+- `~/.calf-vm-config` (inside VM) stores `NO_NETWORK=true` for VM-side detection
+- `disown $! 2>/dev/null || true` required for background watcher — `set -e` + non-interactive zsh makes `disown` fail
+- Background watcher I/O: `</dev/null >>"$CALF_LOG" 2>&1 &` — writing to terminal from a background process while user is at prompt corrupts shell display
+
+**Files changed:**
+- `scripts/calf-bootstrap` — removed `resolve_patched_tart()`, simplified `resolve_softnet_path()`, added `start_smb_block()`, `stop_smb_block()`, `setup_smb_block_permissions()`, updated all VM start flows, added `--no-smb-block` / `--clear-smb-block` / `--remove-smb-permissions` flags, help text
+
+**Verified (smoke tests 2026-02-10):**
+- ✅ SMB TCP 445 blocked from inside VM (`nc` timeout)
+- ✅ SMB TCP 139 blocked
+- ✅ Internet works (github.com HTTP 200)
+- ✅ No host mounts (`/Volumes/` = Macintosh HD only)
+- ✅ VNC Finder confirms "Connection Failed" on host SMB
+- ✅ `--init --safe-mode` + `--gui` (no flags) both enforce blocking via `~/.calf-vm-no-network` marker
+- ✅ Rules removed when VM stops (watcher log confirms)
+- ✅ No spurious password prompts after one-time NOPASSWD setup
+
+**Reference:** `docs/softnet-port-blocking-investigation.md` (historical) • [PLAN-PHASE-01-TODO.md § 5a](PLAN-PHASE-01-TODO.md) (future Go helper daemon)
+
+---
+
 ## Critical Issue #1: CLI Command Name Collision — ✅ COMPLETED (2026-02-07)
 
 **Problem:** The `cal` command clashed with the system calendar command, requiring users to use `./cal` instead.

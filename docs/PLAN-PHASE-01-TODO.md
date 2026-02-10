@@ -96,30 +96,72 @@ After declining the update offer, user should be able to:
 
 ---
 
-### 5. No-Network SMB Bypass (Host Credentials) - IN PROGRESS
+### 5. No-Network SMB Bypass (Host Credentials) - ✅ COMPLETED (2026-02-10)
 
 **Problem:** `--no-network` blocks local network IPs but still allows SMB access to the host gateway if valid host credentials are provided.
 This is a security bypass for isolated VMs.
 
 **Goal:** Block SMB/NetBIOS traffic to the host gateway without affecting NAT/internet access.
 
-**Planned Approach:**
-- Patch Softnet with gateway-only TCP/UDP port blocking
-- Patch Tart to pass new Softnet flags
-- Use PATH override for patched Tart/Softnet (`~/.calf-tools/bin`)
-- Update documentation with security boundary and mitigation
+**Implemented Approach (host-side pf):**
+- Standard Homebrew `tart` and `softnet` only — patched binaries removed entirely
+- SMB blocked host-side via macOS `pf` using a temporary named anchor (`com.apple/calf.smb-block`)
+- Anchor fits under existing `anchor "com.apple/*"` wildcard in `/etc/pf.conf` — no config file changes
+- Rules are in-memory only; removed automatically when the session ends
+- `--gui` uses a background watcher process (requires NOPASSWD sudoers drop-in at `/etc/sudoers.d/calf-pfctl`)
+- SMB block failure = VM kill (no-network mode requires SMB blocking to be meaningful)
+- NOPASSWD covers load (`-f -`), flush (`-F all`), and show-rules (`-sr`) — all blocking operations passwordless after one-time setup
+- `setup_smb_block_permissions()` runs BEFORE VM starts in all flows (eliminates security window where VM runs without block)
+- `pfctl -e` removed — always a no-op on macOS 10.15+ (and was causing spurious password prompts)
 
-**Tasks:**
-- [ ] Add Softnet flags: `--block-tcp-ports`, `--block-udp-ports`
-- [ ] Enforce gateway-only port blocking in Softnet packet filter
-- [ ] Add Tart flags: `--net-softnet-block-tcp-ports`, `--net-softnet-block-udp-ports`
-- [ ] Update `calf-bootstrap` to use patched Tart/Softnet for `--no-network`
-- [ ] Add security documentation (see `docs/no-network-security.md`)
-- [ ] Add test for SMB mount with host credentials (expected FAIL)
-- [ ] Update `calf-bootstrap` warnings and status text to reflect SMB bypass fix status
-- [ ] Run SMB isolation tests (mount/bypass validation)
+**All Tasks Completed:**
+- [x] Remove patched Tart/Softnet requirement from `calf-bootstrap`
+- [x] Implement `start_smb_block()` / `stop_smb_block()` using `pfctl` anchor
+- [x] Restore `--net-softnet-block=224.0.0.0/4` (multicast blocking)
+- [x] Add `--no-smb-block` and `--clear-smb-block` flags
+- [x] Add `setup_smb_block_permissions()` — installs `/etc/sudoers.d/calf-pfctl` for `--gui` watcher
+- [x] Add background watcher in `--gui` (PID-based `kill -0` loop, NOPASSWD cleanup)
+- [x] Add `--remove-smb-permissions` flag for sudoers cleanup
+- [x] Fix security window: call `setup_smb_block_permissions()` before VM starts in all flows (`do_gui`, `do_run`, `do_restart`, `do_init` already correct)
+- [x] Fix password context: replace `sudo grep` idempotency check with `sudo -n` test (no bare `Password:` prompt)
+- [x] Remove `pfctl -e` call (no-op on macOS; NOPASSWD commands don't cache timestamp so `pfctl -e` caused spurious prompt)
+- [x] Verified SMB blocked from inside VM: `nc -w3 -z 192.168.64.1 445/139` both fail ✓
+- [x] Verified internet still works: `curl github.com` HTTP 200 ✓
+- [x] Full `--init --safe-mode` smoke test passed (8/8 checks)
+- [x] `~/.calf-vm-no-network` marker ensures SMB blocking on all subsequent `--run`/`--gui` even without flags
 
-**Status:** WIP - patching in progress
+**Status:** ✅ Complete. See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) for full implementation details.
+
+---
+
+### 5a. Future: Go Privileged Helper Daemon for pf Management
+
+**Context:** The current `--gui` background watcher uses a shell loop + sudoers NOPASSWD entry
+(`/etc/sudoers.d/calf-pfctl`) to remove pf rules when the VM stops. This works but has a
+5-second poll delay and requires a one-time sudoers setup.
+
+**Goal:** Replace the shell watcher with a small Go `LaunchDaemon` that manages pf rule
+lifetime using `kqueue EVFILT_PROC NOTE_EXIT` — the same pattern used by Docker Desktop
+(`com.docker.vmnetd`) and Mullvad VPN.
+
+**Design:**
+- Small Go binary (`calf-netd`) running as a root `LaunchDaemon`
+- Listens on a Unix socket; accepts two messages: `load-anchor <vm-ip>` and `unload-anchor`
+- Uses `kqueue EVFILT_PROC NOTE_EXIT` to watch the tart PID — no polling
+- Calls `pfctl` to load/flush the anchor atomically
+- Crash-safe: if tart dies unexpectedly, kqueue fires immediately and rules are removed
+- Removes need for `/etc/sudoers.d/calf-pfctl` entirely
+
+**Why deferred:**
+- Requires Go binary + `LaunchDaemon` plist installation (higher setup cost)
+- Current sudoers approach works well enough for Phase 1
+- Natural fit for Phase 1 CLI work when the Go `calf isolation` command is built
+
+**Implementation notes:**
+- See research findings: macOS pf has NO automatic anchor cleanup on process exit (confirmed via `xnu/bsd/net/pf_ioctl.c`)
+- The pf token system (`-E`/`-X` flags, `DIOCSTARTREF`/`DIOCSTOPREF`) controls only whether pf is enabled — does NOT affect anchor lifetime
+- `kqueue EVFILT_PROC` with `NOTE_EXIT` is the correct kernel mechanism for PID death watching
+- Reference implementations: `mullvad/pfctl-rs`, Docker Desktop `vmnetd`
 
 ---
 
@@ -364,6 +406,24 @@ This is a security bypass for isolated VMs.
 | `calf isolation rollback` | N/A | Restore to session start |
 
 4. Global flags: `--yes` / `-y` (skip confirmations), `--proxy auto|on|off`, `--clean` (force full script deployment)
+5. Isolation flags for `init` and `start`/`gui`:
+   - `--no-network` — enable network isolation (softnet + host-side pf SMB block)
+   - `--safe-mode` — enable both `--no-network` and `--no-mount`
+   - `--no-smb-block` — disable SMB blocking (testing only)
+   - `--clear-smb-block` — emergency: flush stuck pf rules
+   - `--remove-smb-permissions` — remove `/etc/sudoers.d/calf-pfctl`
+
+**Key learnings for Go implementation (from calf-bootstrap pf work):**
+- `setup_smb_block_permissions()` must run BEFORE VM starts — eliminates the security window where VM runs with no block; NOPASSWD allows password-free operation after one-time setup
+- NOPASSWD must cover ALL pfctl operations on the anchor: load (`-f -`), flush (`-F all`), show-rules (`-sr`). Covering only flush/show-rules means the load still prompts — the most common operation
+- Use `sudo -n pfctl -a <anchor> -sr` to test NOPASSWD idempotency — avoids `sudo grep` on a root-owned file (which prompts even for reads)
+- `pfctl -e` is always a no-op on macOS 10.15+ (pf always enabled) and must NOT be called — NOPASSWD commands don't cache the sudo timestamp, so the following non-NOPASSWD `pfctl -e` would prompt unexpectedly
+- pf anchor `com.apple/calf.smb-block` fits under the existing `anchor "com.apple/*"` wildcard — no `/etc/pf.conf` modifications needed
+- pf rules are NOT automatically cleaned up when the loading process exits (confirmed via xnu source `bsd/net/pf_ioctl.c`) — cleanup is always manual; for `--gui`, use a background watcher
+- `disown $! 2>/dev/null || true` required in `set -e` zsh scripts — job control is not fully active so `disown $!` may fail with "job not found", triggering exit
+- Background watcher I/O must be redirected away from terminal: `</dev/null >>"$LOG" 2>&1 &` — writing to terminal from a background process while user is at prompt corrupts the shell display
+- `~/.calf-vm-no-network` is a HOST-ONLY marker file (not inside VM). Inside VM, isolation config is in `~/.calf-vm-config` (`NO_NETWORK=true`). Both are needed.
+- Go `calf isolation gui` will need the Go helper daemon (see 5a below) since it can't use shell `disown`/background subshells reliably for cleanup
 
 ---
 
@@ -609,6 +669,16 @@ This is a security bypass for isolated VMs.
 - **First-run flag and session restore:** Must check flag before tmux start; use `-A` flag only when flag absent to prevent auth screen in restored session
 - **Arithmetic in set -e:** `((counter++))` fails with `set -e` - use `counter=$((counter + 1))` instead
 - **Tmux capturing auth screen:** Conditionally load TPM only after first-run completes; clear session data after auth if needed
+
+**Key testing lessons from SMB pf blocking (Critical Issue #5):**
+- **Security window testing:** Verify that any privilege setup (sudoers, pf rules) completes BEFORE the VM is running. Any password prompt AFTER a VM has an IP = security window. Test by checking which message appears first in output.
+- **NOPASSWD scope:** Test ALL operations that need sudo, not just the obvious ones. Load (`-f -`), flush (`-F all`), show (`-sr`) may all be needed; missing any one causes a password prompt. Use `sudo -n <cmd>` to verify each operation is truly passwordless.
+- **pf rule verification from inside VM:** `nc -w3 -z <host-ip> 445` (TCP) and `nc -w3 -z <host-ip> 139` are the correct tools. `smbutil view` can be used but requires credential prompts. `nc` exit code 1 = blocked.
+- **Internet not broken by port blocking:** Always test `curl -s https://api.github.com` after enabling pf rules to confirm HTTPS (port 443) is not affected.
+- **Background watcher terminal isolation:** Any background process that completes while the user is at a prompt must have ALL I/O redirected: `</dev/null >>"$LOG" 2>&1 &`. Even a single `echo` to stdout from a background process corrupts the terminal display.
+- **sudo NOPASSWD + timestamp caching:** NOPASSWD commands do NOT update the sudo timestamp. A sequence of `sudo NOPASSWD-cmd` followed by `sudo non-NOPASSWD-cmd` will always prompt for the second command, even milliseconds later. Never assume a prior NOPASSWD command caches credentials.
+- **pf cleanup is NOT automatic:** pf rules survive process exit. Test by killing the script mid-run and checking `sudo pfctl -a com.apple/calf.smb-block -sr` — rules will still be there. Cleanup must always be explicit.
+- **Smoke test for isolated VMs:** Test matrix — (1) SMB blocked, (2) internet works, (3) no host mounts in `/Volumes/`, (4) `~/.calf-vm-config` shows isolation mode, (5) tools installed. All five must pass.
 
 **Key testing lessons from post-cache-integration bugs (ADR-003 § Bug Fixes):**
 - **Agent alias (BUG-008):** Never source ~/.zshrc in scripts — causes side effects (tmux-resurrect loading early). Create aliases directly instead

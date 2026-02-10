@@ -17,10 +17,11 @@ SCRIPT_DIR="${0:A:h}"
 #   --status, -s    Show VM status and connection info
 #   --snapshot, -S  Manage snapshots (list, create, restore, delete)
 #   --yes, -y       Skip confirmation prompts
+#   --no-smb-block  Disable host-side SMB blocking (allow VM SMB access)
+#   --clear-smb-block Remove stuck SMB block rules (use if script crashed)
 #
 # Environment variables:
 #   TART_PATH       - Path to tart binary
-#   CALF_TOOLS_BIN  - PATH override for patched tart/softnet (default: ~/.calf-tools/bin)
 #   VM_USER         - VM username (default: admin)
 #   VM_PASSWORD     - VM password (default: admin)
 
@@ -41,8 +42,11 @@ HOST_USER="${HOST_USER:-$(whoami)}"
 PROXY_MODE="${PROXY_MODE:-auto}"  # on, off, or auto (default)
 HOST_GATEWAY="${HOST_GATEWAY:-192.168.64.1}"
 
-# Calf tools PATH override (patched tart/softnet)
-CALF_TOOLS_BIN="${CALF_TOOLS_BIN:-$HOME/.calf-tools/bin}"
+# SMB blocking via host pf (temporary anchor, in-memory only, removed on exit)
+# Requires sudo access for pfctl. Uses com.apple/* wildcard anchor in /etc/pf.conf.
+SMB_BLOCK_ENABLED=true          # Set false with --no-smb-block
+SMB_BLOCK_ANCHOR="com.apple/calf.smb-block"
+SMB_BLOCKED=false               # Track whether rules are loaded (for cleanup)
 
 # Package download cache (temporary for this script only, does not affect host system)
 # Downloads during --init will be cached and reused by VM
@@ -70,7 +74,10 @@ cleanup() {
         return
     fi
     CLEANUP_DONE=true
-    
+
+    # Remove SMB block rules on exit
+    stop_smb_block
+
     if [ "$CLEANUP_VM" = true ] && [ -n "$TART_PID" ] && kill -0 "$TART_PID" 2>/dev/null; then
         echo ""
         echo "Cleaning up background VM process (PID: $TART_PID)..."
@@ -261,24 +268,8 @@ should_use_network_isolation() {
     return 1  # false - no network isolation
 }
 
-# Resolve patched tart binary path if available
-resolve_patched_tart() {
-    if [ -x "$CALF_TOOLS_BIN/tart" ]; then
-        echo "$CALF_TOOLS_BIN/tart"
-        return 0
-    fi
-
-    echo ""
-    return 1
-}
-
-# Resolve softnet binary path (prefer patched)
+# Resolve softnet binary path (prefer system/Homebrew softnet)
 resolve_softnet_path() {
-    if [ -x "$CALF_TOOLS_BIN/softnet" ]; then
-        echo "$CALF_TOOLS_BIN/softnet"
-        return 0
-    fi
-
     if command -v softnet &>/dev/null; then
         command -v softnet
         return 0
@@ -308,28 +299,17 @@ check_softnet() {
 start_vm_background() {
     local vm="$1"
     local share_tart_cache="${2:-true}"  # Default to sharing cache (deprecated parameter)
-    local tart_bin="$TART"
-    local use_calf_tools=false
     local network_isolation=false
 
     echo "  Starting $vm in background..."
 
-    # Select patched tart when network isolation is requested
+    # Set network isolation flag when requested
     if should_use_network_isolation "$vm"; then
         network_isolation=true
-        local patched_tart
-        patched_tart=$(resolve_patched_tart)
-        if [ -z "$patched_tart" ]; then
-            echo "  ❌ Network isolation requires patched Tart in $CALF_TOOLS_BIN"
-            echo "  → Build and install patched Tart to $CALF_TOOLS_BIN/tart"
-            return 1
-        fi
-        tart_bin="$patched_tart"
-        use_calf_tools=true
     fi
 
     # Build tart run command with optional cache sharing
-    local tart_cmd=("$tart_bin" "run" "--no-graphics")
+    local tart_cmd=("$TART" "run" "--no-graphics")
 
     # Check if VM should skip mounts (no-mount mode)
     local skip_mounts=false
@@ -357,11 +337,10 @@ start_vm_background() {
             # Enable softnet with multicast blocking (blocks mDNS/Bonjour discovery)
             # Allows internet via NAT, blocks direct local network access
             # Block 224.0.0.0/4 (all multicast) to prevent service discovery
+            # SMB blocking is handled host-side via pf (start_smb_block)
             tart_cmd+=(
                 "--net-softnet"
                 "--net-softnet-block=224.0.0.0/4"
-                "--net-softnet-block-tcp-ports=445,139"
-                "--net-softnet-block-udp-ports=137,138"
             )
         else
             echo "  ⚠️  Warning: Network isolation requested but softnet not available"
@@ -377,11 +356,7 @@ start_vm_background() {
 
     tart_cmd+=("$vm")
 
-    if [ "$use_calf_tools" = true ]; then
-        PATH="$CALF_TOOLS_BIN:$PATH" "${tart_cmd[@]}" >/dev/null 2>&1 &
-    else
-        "${tart_cmd[@]}" >/dev/null 2>&1 &
-    fi
+    "${tart_cmd[@]}" >/dev/null 2>&1 &
     TART_PID=$!
     disown "$TART_PID" 2>/dev/null || true
     CLEANUP_VM=true
@@ -1135,6 +1110,111 @@ should_enable_proxy() {
     esac
 }
 
+# Block SMB from VM IP using a temporary pf anchor (in-memory, removed on exit)
+# Uses com.apple/* wildcard anchor already in /etc/pf.conf - no config file changes.
+# Requires sudo for pfctl (one-time password prompt).
+start_smb_block() {
+    local vm_ip="$1"
+
+    if [ "$SMB_BLOCK_ENABLED" = false ]; then
+        echo "  ℹ  SMB blocking disabled (--no-smb-block)"
+        return 0
+    fi
+
+    if [ -z "$vm_ip" ]; then
+        echo "  ⚠ Cannot start SMB block: no VM IP"
+        return 1
+    fi
+
+    echo "  Blocking SMB/NetBIOS from VM ($vm_ip) using pf..."
+
+    # Block SMB (TCP 445, 139) and NetBIOS (UDP 137, 138) from VM IP
+    # Rules are in-memory only - no changes to /etc/pf.conf or disk files
+    local rules="block in quick proto tcp from $vm_ip to any port {445, 139}
+block in quick proto udp from $vm_ip to any port {137, 138}"
+
+    if printf '%s\n' "$rules" | sudo pfctl -a "$SMB_BLOCK_ANCHOR" -f - 2>/dev/null; then
+        # pf is always enabled on macOS 10.15+ — no need for pfctl -e
+        # (pfctl -e would also need sudo, and NOPASSWD commands don't cache the timestamp)
+        SMB_BLOCKED=true
+        echo "  ✓ SMB blocked from VM ($vm_ip)"
+        echo "  ℹ  Rules are in-memory only and will be removed when this session ends"
+    else
+        echo "  ❌ Could not set SMB block rules (pfctl failed or sudo unavailable)"
+        echo "  → Cannot start VM in no-network mode without SMB blocking"
+        echo "    Ensure sudo access and try again."
+        return 1  # Caller must kill the VM on failure
+    fi
+}
+
+# Remove SMB block rules (called automatically on session exit)
+stop_smb_block() {
+    if [ "$SMB_BLOCKED" = false ]; then
+        return 0
+    fi
+
+    if sudo pfctl -a "$SMB_BLOCK_ANCHOR" -F all 2>/dev/null; then
+        SMB_BLOCKED=false
+        echo "  ✓ SMB block rules removed"
+    else
+        echo "  ⚠ Could not remove SMB block rules"
+        echo "    Manual cleanup: sudo pfctl -a $SMB_BLOCK_ANCHOR -F all"
+    fi
+}
+
+# Install sudoers drop-in allowing passwordless pfctl cleanup for the CALF anchor.
+# Required for the --gui background watcher (no terminal when script exits).
+# Scope: only /sbin/pfctl -a com.apple/calf.smb-block -F all — nothing else.
+# One-time setup; idempotent.
+setup_smb_block_permissions() {
+    local sudoers_file="/etc/sudoers.d/calf-pfctl"
+    local pfctl_path
+    pfctl_path=$(command -v pfctl 2>/dev/null || echo "/sbin/pfctl")
+    # Three NOPASSWD entries:
+    #   -f -    : load rules (needed by start_smb_block — must be passwordless before VM starts)
+    #   -F all  : flush rules (needed by background watcher — no terminal available)
+    #   -sr     : show rules (read-only, used for status checks without sudo prompt)
+    local sudoers_entry
+    sudoers_entry="$(printf '%s\n%s\n%s' \
+        "%admin ALL=(root) NOPASSWD: $pfctl_path -a $SMB_BLOCK_ANCHOR -f -" \
+        "%admin ALL=(root) NOPASSWD: $pfctl_path -a $SMB_BLOCK_ANCHOR -F all" \
+        "%admin ALL=(root) NOPASSWD: $pfctl_path -a $SMB_BLOCK_ANCHOR -sr")"
+
+    # Already installed — verify by testing NOPASSWD works (sudo -n fails silently if password needed)
+    # Avoids sudo grep against root-owned file (would prompt for password with no context)
+    if sudo -n pfctl -a "$SMB_BLOCK_ANCHOR" -sr >/dev/null 2>&1; then
+        return 0  # NOPASSWD is working — no setup needed
+    fi
+
+    # Print context BEFORE prompting for password
+    echo "  Setting up passwordless pfctl for SMB blocking (one-time)..."
+    echo "  Scope: load, flush, and show-rules for anchor '$SMB_BLOCK_ANCHOR' only"
+
+    # Write to a temp file and validate before installing
+    local tmp_file
+    tmp_file=$(mktemp)
+    printf '%s\n' "$sudoers_entry" > "$tmp_file"
+
+    # Validate syntax with visudo
+    if ! visudo -c -f "$tmp_file" 2>/dev/null; then
+        rm -f "$tmp_file"
+        echo "  ⚠ sudoers entry failed validation — skipping"
+        return 1
+    fi
+
+    # Install atomically with correct permissions
+    if sudo install -m 440 -o root -g wheel "$tmp_file" "$sudoers_file" 2>/dev/null; then
+        rm -f "$tmp_file"
+        echo "  ✓ Installed $sudoers_file"
+        return 0
+    else
+        rm -f "$tmp_file"
+        echo "  ⚠ Could not install $sudoers_file"
+        echo "    Manual install: echo '$sudoers_entry' | sudo tee $sudoers_file && sudo chmod 440 $sudoers_file"
+        return 1
+    fi
+}
+
 # === INIT MODE ===
 do_init() {
     echo ""
@@ -1153,6 +1233,11 @@ do_init() {
         mkdir -p ~/.calf-cache/{homebrew,npm,go,git}
     fi
     echo ""
+
+    # Install sudoers permissions for SMB block watcher (needed for --gui background cleanup)
+    if [ "$NO_NETWORK_MODE" = true ] && [ "$SMB_BLOCK_ENABLED" = true ]; then
+        setup_smb_block_permissions || true  # Non-fatal — --gui degrades gracefully
+    fi
 
     # Warn about isolation modes if enabled (unless --yes is used)
     local isolation_warning=false
@@ -1716,6 +1801,16 @@ do_init() {
     echo ""
     echo "$VM_DEV is running (PID: $TART_PID)"
 
+    # Block SMB from VM when network isolation is active
+    # If blocking fails, stop the VM and exit (no-network mode requires SMB blocking)
+    if should_use_network_isolation "$VM_DEV"; then
+        if ! start_smb_block "$VM_IP"; then
+            echo "❌ Stopping VM: cannot run no-network mode without SMB blocking"
+            "$TART" stop "$VM_DEV" 2>/dev/null || true
+            exit 1
+        fi
+    fi
+
     # Setup and start transparent proxy if needed
     if should_enable_proxy "$VM_IP"; then
         # Ensure VM SSH key is set up (idempotent - safe to run multiple times)
@@ -1752,6 +1847,9 @@ do_init() {
     echo "VNC:   open vnc://${VM_IP}"
     echo "Stop:  $TART stop $VM_DEV"
     echo ""
+    if should_use_network_isolation "$VM_DEV"; then
+        echo "ℹ  No-network mode: VM will stop automatically when you disconnect"
+    fi
     echo "Connecting via SSH with tmux..."
     echo "💡 tmux session 'calf-dev' (Ctrl+b d to detach, Ctrl+b ? for help)"
     echo ""
@@ -1770,6 +1868,13 @@ do_init() {
         ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s calf"
     fi
+
+    # In no-network mode: stop VM on disconnect (SMB block stays active = VM lifetime)
+    if should_use_network_isolation "$VM_DEV"; then
+        echo ""
+        echo "No-network mode: stopping VM on disconnect..."
+        "$TART" stop "$VM_DEV" 2>/dev/null || true
+    fi
 }
 
 # === RUN MODE ===
@@ -1780,7 +1885,14 @@ do_run() {
     echo ""
     
     local vm_to_run="$VM_DEV"
-    
+
+    # Setup NOPASSWD sudo for SMB blocking BEFORE starting VM (or connecting to running VM).
+    # Any password prompt must appear before the VM is running to prevent a security window
+    # where the VM has network access but SMB is not yet blocked.
+    if should_use_network_isolation "$vm_to_run" && [ "$SMB_BLOCK_ENABLED" = true ]; then
+        setup_smb_block_permissions || true
+    fi
+
     # Check if VM exists
     if ! vm_exists "$vm_to_run"; then
         echo "$vm_to_run does not exist."
@@ -1788,13 +1900,22 @@ do_run() {
         echo "Run './calf-bootstrap --init' to set up the environment."
         exit 1
     fi
-    
+
     # If already running, just SSH in
     if vm_running "$vm_to_run"; then
         echo "$vm_to_run is already running."
         VM_IP=$("$TART" ip "$vm_to_run" 2>/dev/null || echo "")
         if [ -n "$VM_IP" ]; then
             echo ""
+            # Block SMB from VM when network isolation is active
+            # If blocking fails, stop the VM and exit (no-network mode requires SMB blocking)
+            if should_use_network_isolation "$vm_to_run"; then
+                if ! start_smb_block "$VM_IP"; then
+                    echo "❌ Stopping VM: cannot run no-network mode without SMB blocking"
+                    "$TART" stop "$vm_to_run" 2>/dev/null || true
+                    exit 1
+                fi
+            fi
             # Setup and start transparent proxy if needed
             if should_enable_proxy "$VM_IP"; then
                 # Ensure VM SSH key is set up (idempotent - safe to run multiple times)
@@ -1810,30 +1931,49 @@ do_run() {
             # Setup Tart cache sharing for nested VM support
             setup_tart_cache_sharing "$VM_IP"
             echo ""
+            if should_use_network_isolation "$vm_to_run"; then
+                echo "ℹ  No-network mode: VM will stop automatically when you disconnect"
+            fi
             echo "Connecting via SSH with tmux..."
             echo "💡 tmux session 'calf-dev' (Ctrl+b d to detach, Ctrl+b ? for help)"
             echo ""
             # Use tmux-wrapper.sh to set TERM properly for compatibility with exotic terminals
             ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
                 "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s calf"
+            # In no-network mode: stop VM on disconnect (SMB block stays active = VM lifetime)
+            if should_use_network_isolation "$vm_to_run"; then
+                echo ""
+                echo "No-network mode: stopping VM on disconnect..."
+                "$TART" stop "$vm_to_run" 2>/dev/null || true
+            fi
         else
             echo "Could not get VM IP address."
             exit 1
         fi
         exit 0
     fi
-    
+
     # Start VM
     if ! start_vm_background "$vm_to_run"; then
         echo "Failed to start VM"
         exit 1
     fi
-    
+
     # Don't cleanup on success
     CLEANUP_VM=false
 
     echo ""
     echo "$vm_to_run is running (PID: $TART_PID)"
+
+    # Block SMB from VM when network isolation is active
+    # If blocking fails, stop the VM and exit (no-network mode requires SMB blocking)
+    if should_use_network_isolation "$vm_to_run"; then
+        if ! start_smb_block "$VM_IP"; then
+            echo "❌ Stopping VM: cannot run no-network mode without SMB blocking"
+            "$TART" stop "$vm_to_run" 2>/dev/null || true
+            exit 1
+        fi
+    fi
 
     # Setup and start transparent proxy if needed
     if should_enable_proxy "$VM_IP"; then
@@ -1861,6 +2001,9 @@ do_run() {
     echo "💡 If agent login fails, use Screen Sharing (standard mode, not High Performance):"
     echo "   open vnc://${VM_IP} → Authenticate agent → Return to terminal"
     echo ""
+    if should_use_network_isolation "$vm_to_run"; then
+        echo "ℹ  No-network mode: VM will stop automatically when you disconnect"
+    fi
     echo "Connecting via SSH with tmux..."
     echo "💡 tmux session 'calf-dev' (Ctrl+b d to detach, Ctrl+b ? for help)"
     echo ""
@@ -1878,6 +2021,13 @@ do_run() {
         # Normal run - use auto-restore
         ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s calf"
+    fi
+
+    # In no-network mode: stop VM on disconnect (SMB block stays active = VM lifetime)
+    if should_use_network_isolation "$vm_to_run"; then
+        echo ""
+        echo "No-network mode: stopping VM on disconnect..."
+        "$TART" stop "$vm_to_run" 2>/dev/null || true
     fi
 }
 
@@ -1923,6 +2073,13 @@ do_restart() {
         exit 1
     fi
 
+    # Setup NOPASSWD sudo for SMB blocking BEFORE starting VM.
+    # Any password prompt must appear before the VM is running to prevent a security window
+    # where the VM has network access but SMB is not yet blocked.
+    if should_use_network_isolation "$VM_DEV" && [ "$SMB_BLOCK_ENABLED" = true ]; then
+        setup_smb_block_permissions || true
+    fi
+
     # Stop if running
     if vm_running "$VM_DEV"; then
         # Note: We don't explicitly save tmux sessions here because:
@@ -1947,6 +2104,16 @@ do_restart() {
 
     echo ""
     echo "$VM_DEV is running (PID: $TART_PID)"
+
+    # Block SMB from VM when network isolation is active
+    # If blocking fails, stop the VM and exit (no-network mode requires SMB blocking)
+    if should_use_network_isolation "$VM_DEV"; then
+        if ! start_smb_block "$VM_IP"; then
+            echo "❌ Stopping VM: cannot run no-network mode without SMB blocking"
+            "$TART" stop "$VM_DEV" 2>/dev/null || true
+            exit 1
+        fi
+    fi
 
     # Setup and start transparent proxy if needed
     if should_enable_proxy "$VM_IP"; then
@@ -1974,6 +2141,9 @@ do_restart() {
     echo "💡 If agent login fails, use Screen Sharing (standard mode, not High Performance):"
     echo "   open vnc://${VM_IP} → Authenticate agent → Return to terminal"
     echo ""
+    if should_use_network_isolation "$VM_DEV"; then
+        echo "ℹ  No-network mode: VM will stop automatically when you disconnect"
+    fi
     echo "Connecting via SSH with tmux..."
     echo "💡 tmux session 'calf-dev' (Ctrl+b d to detach, Ctrl+b ? for help)"
     echo ""
@@ -1991,6 +2161,13 @@ do_restart() {
         # Normal run - use auto-restore
         ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             "${VM_USER}@${VM_IP}" "~/scripts/tmux-wrapper.sh new-session -A -s calf"
+    fi
+
+    # In no-network mode: stop VM on disconnect (SMB block stays active = VM lifetime)
+    if should_use_network_isolation "$VM_DEV"; then
+        echo ""
+        echo "No-network mode: stopping VM on disconnect..."
+        "$TART" stop "$VM_DEV" 2>/dev/null || true
     fi
 }
 
@@ -2032,22 +2209,17 @@ do_gui() {
     echo "   This solves clipboard problems but may have occasional display quirks"
     echo ""
 
-    local tart_bin="$TART"
-    local use_calf_tools=false
     local network_isolation=false
 
-    # Select patched tart when network isolation is requested
+    # Set network isolation flag when requested
     if should_use_network_isolation "$VM_DEV"; then
         network_isolation=true
-        local patched_tart
-        patched_tart=$(resolve_patched_tart)
-        if [ -z "$patched_tart" ]; then
-            echo "  ❌ Network isolation requires patched Tart in $CALF_TOOLS_BIN"
-            echo "  → Build and install patched Tart to $CALF_TOOLS_BIN/tart"
-            return 1
+        # Setup NOPASSWD sudo for SMB blocking BEFORE starting VM.
+        # This ensures any password prompt appears before the VM is running,
+        # eliminating the window where the VM is up but SMB is not yet blocked.
+        if [ "$SMB_BLOCK_ENABLED" = true ]; then
+            setup_smb_block_permissions || true
         fi
-        tart_bin="$patched_tart"
-        use_calf_tools=true
     fi
 
     # Run with VNC experimental mode (background process)
@@ -2061,51 +2233,31 @@ do_gui() {
     # - Trade-off: May have experimental bugs (display, input) but clipboard works
     # - Tested and confirmed working for clipboard operations (2026-01-31)
 
-    # Build tart run command with cache sharing
-    local tart_cmd=("$tart_bin" "run" "$VM_DEV" "--vnc-experimental")
-
     # Check if VM should skip mounts (no-mount mode)
     local skip_mounts=false
     if should_skip_mounts "$VM_DEV"; then
         skip_mounts=true
     fi
 
-    # Share host's Tart cache with VM (read-only) to avoid duplicate downloads
-    # Skip if in no-mount mode
-    if [ "$skip_mounts" = false ] && [ -d ~/.tart/cache ]; then
-        tart_cmd+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
-    fi
-
-    # Share host's package cache with VM (read-write) for Homebrew, npm, Go, Git caches
-    # Mounted to ~/.calf-cache via custom mount tag (handled by calf-mount-shares.sh)
-    # Skip if in no-mount mode
-    if [ "$skip_mounts" = false ] && [ -d ~/.calf-cache ]; then
-        tart_cmd+=("--dir" "${HOME}/.calf-cache:tag=calf-cache")
-    fi
-
     # Check if VM should use network isolation (no-network mode)
+    # Note: --vnc-experimental comes AFTER network flags in command order
     if [ "$network_isolation" = true ]; then
         if check_softnet; then
             # Enable softnet with multicast blocking (blocks mDNS/Bonjour discovery)
-            # Note: --vnc-experimental comes BEFORE network flags in command order
-            # Build new command array with proper ordering
-            local tart_cmd_reordered=("$tart_bin" "run" "$VM_DEV")
             # Add network flags first (before --vnc-experimental)
-            tart_cmd_reordered+=(
+            # SMB blocking is handled host-side via pf (start_smb_block)
+            local tart_cmd=("$TART" "run" "$VM_DEV"
                 "--net-softnet"
                 "--net-softnet-block=224.0.0.0/4"
-                "--net-softnet-block-tcp-ports=445,139"
-                "--net-softnet-block-udp-ports=137,138"
+                "--vnc-experimental"
             )
-            tart_cmd_reordered+=("--vnc-experimental")
             # Add mount flags
             if [ "$skip_mounts" = false ] && [ -d ~/.tart/cache ]; then
-                tart_cmd_reordered+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
+                tart_cmd+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
             fi
             if [ "$skip_mounts" = false ] && [ -d ~/.calf-cache ]; then
-                tart_cmd_reordered+=("--dir" "${HOME}/.calf-cache:tag=calf-cache")
+                tart_cmd+=("--dir" "${HOME}/.calf-cache:tag=calf-cache")
             fi
-            tart_cmd=("${tart_cmd_reordered[@]}")
         else
             echo "  ⚠️  Warning: Network isolation requested but softnet not available"
             local softnet_path
@@ -2115,14 +2267,32 @@ do_gui() {
             else
                 echo "  → Then set SUID: sudo chown root:wheel \"$softnet_path\" && sudo chmod u+s \"$softnet_path\""
             fi
+            # Build tart run command without network isolation
+            local tart_cmd=("$TART" "run" "$VM_DEV" "--vnc-experimental")
+            if [ "$skip_mounts" = false ] && [ -d ~/.tart/cache ]; then
+                tart_cmd+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
+            fi
+            if [ "$skip_mounts" = false ] && [ -d ~/.calf-cache ]; then
+                tart_cmd+=("--dir" "${HOME}/.calf-cache:tag=calf-cache")
+            fi
+        fi
+    else
+        # Build tart run command with cache sharing (no network isolation)
+        local tart_cmd=("$TART" "run" "$VM_DEV" "--vnc-experimental")
+        # Share host's Tart cache with VM (read-only) to avoid duplicate downloads
+        # Skip if in no-mount mode
+        if [ "$skip_mounts" = false ] && [ -d ~/.tart/cache ]; then
+            tart_cmd+=("--dir" "tart-cache:${HOME}/.tart/cache:ro,tag=com.apple.virtio-fs.automount")
+        fi
+        # Share host's package cache with VM (read-write) for Homebrew, npm, Go, Git caches
+        # Mounted to ~/.calf-cache via custom mount tag (handled by calf-mount-shares.sh)
+        # Skip if in no-mount mode
+        if [ "$skip_mounts" = false ] && [ -d ~/.calf-cache ]; then
+            tart_cmd+=("--dir" "${HOME}/.calf-cache:tag=calf-cache")
         fi
     fi
 
-    if [ "$use_calf_tools" = true ]; then
-        PATH="$CALF_TOOLS_BIN:$PATH" "${tart_cmd[@]}" >/dev/null 2>&1 &
-    else
-        "${tart_cmd[@]}" >/dev/null 2>&1 &
-    fi
+    "${tart_cmd[@]}" >/dev/null 2>&1 &
     TART_PID=$!
 
     # Wait for VM to get an IP address
@@ -2139,6 +2309,36 @@ do_gui() {
             break
         fi
     done
+
+    # Block SMB from VM when network isolation is active
+    # If blocking fails, stop the VM and exit (no-network mode requires SMB blocking)
+    if [ "$network_isolation" = true ] && [ -n "$VM_IP" ]; then
+        if ! start_smb_block "$VM_IP"; then
+            echo "❌ Stopping VM: cannot run no-network mode without SMB blocking"
+            "$TART" stop "$VM_DEV" 2>/dev/null || true
+            exit 1
+        fi
+
+        # --gui exits immediately (no blocking SSH session), so cleanup() cannot remove
+        # the pf rules when the VM stops. Launch a background watcher instead.
+        # NOPASSWD sudoers entry was installed above (before VM started) — flush is passwordless.
+        if [ "$SMB_BLOCKED" = true ]; then
+            SMB_BLOCKED=false  # Hand off to watcher — prevent cleanup() double-flush
+            local watcher_tart_pid="$TART_PID"
+            (
+                while kill -0 "$watcher_tart_pid" 2>/dev/null; do
+                    sleep 5
+                done
+                if sudo pfctl -a "$SMB_BLOCK_ANCHOR" -F all 2>/dev/null; then
+                    echo "[$(date)] SMB block rules removed (VM stopped)" >> "$CALF_LOG"
+                else
+                    echo "[$(date)] Could not remove SMB block rules. Run: sudo pfctl -a $SMB_BLOCK_ANCHOR -F all" >> "$CALF_LOG"
+                fi
+            ) </dev/null >>"$CALF_LOG" 2>&1 &
+            disown $! 2>/dev/null || true
+            echo "  ℹ  SMB block watcher running in background (rules removed when VM stops)"
+        fi
+    fi
 
     echo ""
     echo "VNC window should open automatically."
@@ -2851,6 +3051,33 @@ while [[ $# -gt 0 ]]; do
             NO_NETWORK_MODE=true
             shift
             ;;
+        --no-smb-block)
+            SMB_BLOCK_ENABLED=false
+            shift
+            ;;
+        --clear-smb-block)
+            # Emergency cleanup: remove any stuck SMB block rules
+            echo "Removing SMB block rules..."
+            SMB_BLOCKED=true
+            stop_smb_block
+            exit 0
+            ;;
+        --remove-smb-permissions)
+            # Remove the sudoers drop-in installed by setup_smb_block_permissions
+            local sudoers_file="/etc/sudoers.d/calf-pfctl"
+            if [ -f "$sudoers_file" ]; then
+                echo "Removing $sudoers_file..."
+                if sudo rm "$sudoers_file"; then
+                    echo "  ✓ Removed $sudoers_file"
+                else
+                    echo "  ⚠ Could not remove $sudoers_file"
+                    exit 1
+                fi
+            else
+                echo "  $sudoers_file not found (already removed)"
+            fi
+            exit 0
+            ;;
         --help|-h)
             echo "CAL Bootstrap - VM Environment Setup"
             echo ""
@@ -2879,11 +3106,15 @@ while [[ $# -gt 0 ]]; do
             echo "  --no-mount                          Create VM with no host filesystem mounts"
             echo "                                        PERMANENT: Cannot be changed after VM creation"
             echo "  --no-network                        Create VM with network isolation (blocks local network)"
-            echo "                                        Allows internet, blocks SMB/local network access"
+            echo "                                        Blocks SMB/local network access via pf (host-side, temporary)"
             echo "                                        PERMANENT: Cannot be changed after VM creation"
             echo "  --safe-mode                         Enable both --no-mount and --no-network"
             echo "                                        Maximum isolation for untrusted code execution"
             echo "                                        PERMANENT: Cannot be changed after VM creation"
+            echo "  --no-smb-block                      Disable host-side SMB blocking (allow VM SMB access)"
+            echo "  --clear-smb-block                   Remove stuck SMB block rules (use if script crashed)"
+            echo "  --remove-smb-permissions            Remove sudoers drop-in installed for --gui watcher"
+            echo "                                        File: /etc/sudoers.d/calf-pfctl"
             echo "  --help, -h                          Show this help"
             echo ""
             echo "Examples:"
