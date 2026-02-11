@@ -14,60 +14,6 @@
 
 ## Critical Issues - HIGHEST PRIORITY
 
-### 1. CLI Command Name Collision — ✅ COMPLETED (2026-02-07)
-
-**Status:** Fully complete. All implementation tasks finished and verified.
-
-**Summary:** Renamed CLI from `cal` to `calf` (**C**oding **A**gent **L**oader **F**oundation) to avoid conflict with system calendar command.
-
-**Completed:**
-- ✅ All Go source code (9 files)
-- ✅ All shell scripts (7 files)
-- ✅ Config and flag file paths
-- ✅ Environment variables (CAL_VM → CALF_VM, etc.)
-- ✅ Build system (Makefile)
-- ✅ All documentation (68 files total)
-- ✅ Testing (all tests pass, binary functional)
-
-**Results verified:**
-- Binary: `./calf --version` works
-- Tests: `go test ./...` passes
-- Cache: `~/.calf-cache/` in use
-- VMs: calf-dev, calf-init, calf-clean
-- Environment: `CALF_VM=true` in scripts
-
-**Reference:** [ADR-005](adr/ADR-005-cli-rename-cal-to-calf.md) • [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) for complete implementation details
-
----
-
-### 2. Cache Clear Confirmation UX — ✅ COMPLETED
-
-**Status:** ✅ **COMPLETED** (2026-02-07)
-
-This issue has been fully implemented and tested. See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) for complete implementation details.
-
-**Summary:** Added final y/N confirmation to `calf cache clear --all` and new `--force` flag to skip all confirmations for automation.
-
----
-
-### 3. Shared Cache Symlink Fragility — ✅ COMPLETED
-
-**Status:** ✅ **COMPLETED** (2026-02-07)
-
-This issue has been fully implemented and tested. See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) for complete implementation details.
-
-**Summary of Changes:**
-- Direct virtio-fs mounts replace fragile symlinks
-- macOS-compatible mount verification (`mount | grep` instead of `mountpoint -q`)
-- LaunchDaemon for boot-time persistence
-- Self-healing fallback in .zshrc
-- Migration logic removed (simplified architecture)
-- All manual tests passed (8/8)
-
-**Reference:** [ADR-004](adr/ADR-004-cache-mount-architecture.md)
-
----
-
 ### 4. Bootstrap Init Logic - Update vs Full Recreate Behavior
 
 **Problem:** When both calf-dev and calf-init exist, `calf-bootstrap --init` offers to update calf-init from calf-dev. If user declines, script aborts completely (exit 0). User cannot proceed with full fresh init even if desired.
@@ -93,44 +39,6 @@ After declining the update offer, user should be able to:
 **Impact:** High - affects user ability to reinitialize environment
 
 **Related:** May interact with `--no-mount` implementation (New Feature #5)
-
----
-
-### 5. No-Network SMB Bypass (Host Credentials) - ✅ COMPLETED (2026-02-10)
-
-**Problem:** `--no-network` blocks local network IPs but still allows SMB access to the host gateway if valid host credentials are provided.
-This is a security bypass for isolated VMs.
-
-**Goal:** Block SMB/NetBIOS traffic to the host gateway without affecting NAT/internet access.
-
-**Implemented Approach (host-side pf):**
-- Standard Homebrew `tart` and `softnet` only — patched binaries removed entirely
-- SMB blocked host-side via macOS `pf` using a temporary named anchor (`com.apple/calf.smb-block`)
-- Anchor fits under existing `anchor "com.apple/*"` wildcard in `/etc/pf.conf` — no config file changes
-- Rules are in-memory only; removed automatically when the session ends
-- `--gui` uses a background watcher process (requires NOPASSWD sudoers drop-in at `/etc/sudoers.d/calf-pfctl`)
-- SMB block failure = VM kill (no-network mode requires SMB blocking to be meaningful)
-- NOPASSWD covers load (`-f -`), flush (`-F all`), and show-rules (`-sr`) — all blocking operations passwordless after one-time setup
-- `setup_smb_block_permissions()` runs BEFORE VM starts in all flows (eliminates security window where VM runs without block)
-- `pfctl -e` removed — always a no-op on macOS 10.15+ (and was causing spurious password prompts)
-
-**All Tasks Completed:**
-- [x] Remove patched Tart/Softnet requirement from `calf-bootstrap`
-- [x] Implement `start_smb_block()` / `stop_smb_block()` using `pfctl` anchor
-- [x] Restore `--net-softnet-block=224.0.0.0/4` (multicast blocking)
-- [x] Add `--no-smb-block` and `--clear-smb-block` flags
-- [x] Add `setup_smb_block_permissions()` — installs `/etc/sudoers.d/calf-pfctl` for `--gui` watcher
-- [x] Add background watcher in `--gui` (PID-based `kill -0` loop, NOPASSWD cleanup)
-- [x] Add `--remove-smb-permissions` flag for sudoers cleanup
-- [x] Fix security window: call `setup_smb_block_permissions()` before VM starts in all flows (`do_gui`, `do_run`, `do_restart`, `do_init` already correct)
-- [x] Fix password context: replace `sudo grep` idempotency check with `sudo -n` test (no bare `Password:` prompt)
-- [x] Remove `pfctl -e` call (no-op on macOS; NOPASSWD commands don't cache timestamp so `pfctl -e` caused spurious prompt)
-- [x] Verified SMB blocked from inside VM: `nc -w3 -z 192.168.64.1 445/139` both fail ✓
-- [x] Verified internet still works: `curl github.com` HTTP 200 ✓
-- [x] Full `--init --safe-mode` smoke test passed (8/8 checks)
-- [x] `~/.calf-vm-no-network` marker ensures SMB blocking on all subsequent `--run`/`--gui` even without flags
-
-**Status:** ✅ Complete. See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) for full implementation details.
 
 ---
 
@@ -299,23 +207,6 @@ lifetime using `kqueue EVFILT_PROC NOTE_EXIT` — the same pattern used by Docke
 - ADR-004 for mount architecture
 - calf-bootstrap lines 241, 1747 for mount specification format
 - Code review findings from Critical Issue #3 implementation
-
----
-
-## 1.1 **REFINED:** Package Download Caching **HIGHEST PRIORITY**
-
-**Goal:** Cache all package downloads in host and pass through to VMs to avoid repeated downloads during development.
-
-**Implementation Strategy:** Incremental rollout - implement one package manager at a time, starting with Homebrew (highest impact).
-
-**Phase 1.1.1 (Homebrew Cache) completed:** See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) § 1.1.1 (PR #6, merged 2026-02-03)
-
-**Phase 1.1.2 (npm Cache) completed:** See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) § 1.1.2 (PR #7, merged 2026-02-03)
-
-**Phase 1.1.3 (Go Modules Cache) completed:** See [PLAN-PHASE-01-DONE.md](PLAN-PHASE-01-DONE.md) § 1.1.3 (PR #8, merged 2026-02-03)
-
----
-
 
 ---
 

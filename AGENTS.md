@@ -149,15 +149,25 @@ Skip the menu and launch that workflow directly (same as selecting it from the `
 ## Session Start
 
 1. **Determine workflow** - If user entered a number (1-9), use that workflow directly. Otherwise, if unclear, ask user (see [Workflow Modes](#workflow-modes) routing rules)
-2. **Read and reiterate workflow** - Follow [Session Start Procedure](docs/WORKFLOWS.md#session-start-procedure) from Shared Conventions
-3. **Check environment** - Run `echo $CALF_VM` (must happen before any approval-gated step):
+2. **Read workflow and confirm** - Read the workflow file, then confirm briefly: `"Read [Workflow Name] workflow ([N]-step). Proceeding with session start."` — do NOT summarize or reiterate the full steps
+3. **Read required docs only** - Load documents based on the workflow:
+
+   | Always read | Workflows 1, 3, 5, 6, 7 only |
+   |-------------|-------------------------------|
+   | `docs/WORKFLOWS.md` | `CODING_STANDARDS.md` |
+   | `PLAN.md` | |
+   | Active phase TODO file | |
+   | `STATUS.md` (for workflows 4-9) | |
+
+   Skip `CODING_STANDARDS.md` for workflows 2 (Documentation), 4 (Refine), 8 (Test PR), 9 (Merge PR) — they don't produce code.
+
+4. **Check environment** - Run `echo $CALF_VM` (must happen before any approval-gated step):
    - `CALF_VM=true`: Display "Running in calf-dev VM (isolated environment)" — approvals auto-granted
    - Any other value (empty, unset, etc.): Display "Running on HOST machine (not isolated)" — approvals required
    - If check fails: default to HOST (require approval)
-4. Run `git status` to see current branch, then **switch to main if not already there** with `git checkout main && git pull` (ask approval on HOST; auto-approved when `CALF_VM=true`)
-5. Run `git fetch` to get latest remote state
-6. Read `PLAN.md` for overview and current phase status (always read from main branch)
-7. Read active phase TODO file (e.g., `docs/PLAN-PHASE-00-TODO.md`) for current tasks
+5. Run `git status` to see current branch, then **switch to main if not already there** with `git checkout main && git pull` (ask approval on HOST; auto-approved when `CALF_VM=true`)
+6. Run `git fetch` to get latest remote state
+7. **Read required docs** from the table in step 3 (always read from main branch)
 8. Report status and suggest next steps using [Numbered Choice Presentation](docs/WORKFLOWS.md#numbered-choice-presentation)
 
 **Why main branch?** STATUS.md and PLAN.md are only updated on main (per [Documentation Updates on Main](docs/WORKFLOWS.md#documentation-updates-on-main)). Reading from feature branches may show stale data.

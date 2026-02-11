@@ -264,21 +264,19 @@ git worktree add ../calf-pr-work create-pr/feature-name
 
 ## Implementation Roadmap
 
-### Phase A: Quick Wins (Low effort, immediate impact)
+### Phase A: Quick Wins — DONE (2026-02-11)
 
-1. **Move completed items from TODO to DONE** (Recommendation 5)
-   - Move 4 completed sections from PLAN-PHASE-01-TODO.md to PLAN-PHASE-01-DONE.md
-   - Immediate ~200 line reduction in session start reads
-   - Can be done in a single Documentation workflow session
+1. **Move completed items from TODO to DONE** (Recommendation 5) — done
+   - Removed 4 completed sections (109 lines) from PLAN-PHASE-01-TODO.md
+   - Items were already documented in PLAN-PHASE-01-DONE.md
 
-2. **Remove session start narration** (Recommendation 2)
-   - Update Session Start Procedure in WORKFLOWS.md
-   - Remove "reiterate to user" and "confirm understanding" steps
-   - Replace with one-line status message
+2. **Replace session start narration with brief confirmation** (Recommendation 2) — done
+   - Updated Session Start Procedure in WORKFLOWS.md and CLAUDE.md
+   - Replaced "reiterate to user" + "confirm understanding" with one-line confirmation
+   - Agent still reads the workflow file; just doesn't narrate it back
 
-3. **Add conditional doc loading table** (Recommendation 1)
-   - Add Required Reading table to CLAUDE.md Session Start
-   - Map each workflow to its required files
+3. **Add conditional doc loading table** (Recommendation 1) — done
+   - Added Required Reading table to CLAUDE.md Session Start (step 3)
    - Workflows 2, 4, 8, 9 skip CODING_STANDARDS.md
 
 ### Phase B: Documentation Restructuring (Medium effort)

@@ -301,9 +301,8 @@ These conventions apply across all workflows. Individual workflow files referenc
 Every workflow follows this procedure at session start:
 
 1. **Read the workflow file** - Read the appropriate `docs/WORKFLOW-*.md`
-2. **Reiterate to user** - Summarize the workflow steps and key principles in your own words
-3. **Confirm understanding** - Acknowledge understanding before proceeding
-4. **Proceed with standard session start:**
+2. **Confirm briefly** - One line: `"Read [Workflow Name] workflow ([N]-step). Proceeding with session start."` — do NOT summarize or reiterate the full workflow steps
+3. **Proceed with standard session start:**
    - Run `echo $CALF_VM` to check environment (must happen before any approval-gated step)
    - Run `git status` to see current branch
    - **CRITICAL:** If not on main branch, switch to main with `git checkout main && git pull` before reading STATUS.md or PLAN.md
@@ -313,8 +312,6 @@ Every workflow follows this procedure at session start:
    - Report status and suggest next steps
 
 **Why main branch first?** STATUS.md and PLAN.md are the source of truth and only updated on main (per [Documentation Updates on Main](#documentation-updates-on-main)). Reading them from a feature branch may show stale data.
-
-This ensures both agent and user have shared understanding of the workflow being followed.
 
 ### CALF_VM Auto-Approve
 
