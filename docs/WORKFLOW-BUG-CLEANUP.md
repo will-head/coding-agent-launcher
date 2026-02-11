@@ -238,15 +238,7 @@ Resolved (removed from BUGS.md, updated in bugs/README.md)
 
 ### Command Execution Policy
 
-**Ask user approval before running ANY command** (auto-approved when `CALF_VM=true`), including:
-- Git operations (commit, push, branch, merge)
-- Build commands
-- Test commands
-- Script execution
-- Package installs
-- Any destructive operations
-
-**Exception:** Read/Grep/Glob tools for code searching do not require approval.
+See [Command Execution Policy](WORKFLOWS.md#command-execution-policy) in Shared Conventions.
 
 ### Upstream Bugs
 
@@ -255,14 +247,3 @@ Some bugs may have resolution paths that require upstream fixes (e.g., reporting
 - Update status to "Blocked" if waiting on upstream
 - Keep in `docs/BUGS.md` until resolved
 - Workarounds can be implemented as separate fixes
-
----
-
-## Related Documentation
-
-- [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - Base Interactive workflow
-- [BUGS.md](BUGS.md) - Active bugs (work item source)
-- [bugs/README.md](bugs/README.md) - Complete bug index
-- [PLAN.md](../PLAN.md) - Project TODOs and status
-- [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards

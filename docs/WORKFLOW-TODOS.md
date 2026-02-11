@@ -117,9 +117,3 @@ This document tracks improvements to the workflow system itself, not feature imp
 2. **`update docs`** - Medium priority (quality of life improvement)
 3. **`refactor docs`** - Lower priority (optimization, do when docs become unwieldy)
 
----
-
-## Related Documentation
-
-- [WORKFLOWS.md](WORKFLOWS.md) - Workflow index and shared conventions
-- [CLAUDE.md](../CLAUDE.md) - Agent instructions and core rules

@@ -330,13 +330,3 @@ The "Refined" section in STATUS.md:
 | Auto-sync repos on VM start | PLAN-PHASE-00-TODO.md § 0.10 | Fetch and optionally pull repo updates on --run | 2026-01-23 | Depends on git repo sync TODO |
 ```
 
----
-
-## Related Documentation
-
-- [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW-INTERACTIVE.md](WORKFLOW-INTERACTIVE.md) - For implementing refined TODOs
-- [WORKFLOW-CREATE-PR.md](WORKFLOW-CREATE-PR.md) - For implementing via PR
-- [PLAN.md](../PLAN.md) - Phase overview and current status
-- [PLAN-PHASE-XX-TODO.md](PLAN-PHASE-00-TODO.md) - Phase-specific TODO files (source of TODOs to refine)
-- [STATUS.md](../STATUS.md) - Tracks refined TODOs

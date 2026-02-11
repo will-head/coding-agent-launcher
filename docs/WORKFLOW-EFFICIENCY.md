@@ -279,22 +279,24 @@ git worktree add ../calf-pr-work create-pr/feature-name
    - Added Required Reading table to CLAUDE.md Session Start (step 3)
    - Workflows 2, 4, 8, 9 skip CODING_STANDARDS.md
 
-### Phase B: Documentation Restructuring (Medium effort)
+### Phase B: Documentation Restructuring — DONE (2026-02-11)
 
-4. **Split WORKFLOWS.md** (Recommendation 4)
-   - Extract reference content to WORKFLOW-REFERENCE.md
-   - Keep Quick Reference + Shared Conventions in WORKFLOWS.md
-   - Update all cross-references
+4. **Split WORKFLOWS.md** (Recommendation 4) — done
+   - Moved Workflow Summaries, PR Workflow Cycle, STATUS.md Sections, and Workflow Selection Guide to new WORKFLOW-REFERENCE.md
+   - WORKFLOWS.md reduced from 503 to ~350 lines (Quick Reference + Shared Conventions)
+   - Updated Quick Reference table links to point directly to workflow files
+   - Added WORKFLOW-REFERENCE.md to Related Documentation
 
-5. **Deduplicate workflow files** (Recommendation 6)
-   - Extract shared checklists and patterns to Shared Conventions
-   - Remove Related Documentation footers from individual files
-   - Consolidate test/build step descriptions
+5. **Deduplicate workflow files** (Recommendation 6) — done
+   - Removed Related Documentation footers from all 9 workflow files + WORKFLOW-TODOS.md (~65 lines total)
+   - Extracted Command Execution Policy from WORKFLOW-INTERACTIVE.md and WORKFLOW-BUG-CLEANUP.md into Shared Conventions (~22 lines deduplicated)
+   - Both files now reference the shared convention instead of duplicating the policy
 
-6. **Set up auto-memory caching** (Recommendation 3)
-   - Define MEMORY.md schema for session context
-   - Add session-end memory update to workflow completion steps
-   - Add stale-cache detection to session start
+6. **Set up auto-memory caching** (Recommendation 3) — done
+   - Created MEMORY.md template in auto-memory directory with session context cache
+   - Added Session Start step 1: check auto-memory, skip TODO file read if cache is current
+   - Added Session End section to CLAUDE.md/AGENTS.md for memory updates
+   - Stale-cache detection: always read PLAN.md to verify phase hasn't changed
 
 ### Phase C: Architectural Changes (High effort, evaluate after A+B)
 

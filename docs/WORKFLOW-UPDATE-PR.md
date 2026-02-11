@@ -261,12 +261,3 @@ See [PR Comments Format](WORKFLOWS.md#pr-comments-format) in Shared Conventions.
 - Clarify ambiguous statements
 - Add usage examples
 
----
-
-## Related Documentation
-
-- [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Previous step: Review & Fix PR (fixes most issues directly)
-- [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
-- [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards
-- [STATUS.md](../STATUS.md) - PR tracking

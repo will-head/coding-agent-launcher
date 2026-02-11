@@ -248,12 +248,3 @@ If tests fail, PR goes back through the workflow:
 4. Test PR → Needs Merging (retry tests)
 5. Merge PR → Merged (final)
 
----
-
-## Related Documentation
-
-- [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW-MERGE-PR.md](WORKFLOW-MERGE-PR.md) - Next step if tests pass
-- [WORKFLOW-UPDATE-PR.md](WORKFLOW-UPDATE-PR.md) - Next step if tests fail
-- [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
-- [STATUS.md](../STATUS.md) - PR tracking

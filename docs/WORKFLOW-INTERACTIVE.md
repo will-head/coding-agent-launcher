@@ -167,24 +167,8 @@ Before every commit:
 
 ### Command Execution Policy
 
-**Ask user approval before running ANY command** (auto-approved when `CALF_VM=true`), including:
-- Git operations (commit, push, branch, merge)
-- Build commands
-- Test commands
-- Script execution
-- Package installs
-- Any destructive operations
-
-**Exception:** Read/Grep/Glob tools for code searching do not require approval.
+See [Command Execution Policy](WORKFLOWS.md#command-execution-policy) in Shared Conventions.
 
 ### TODO Tracking
 
 See [PLAN.md is Source of Truth](WORKFLOWS.md#planmd-is-source-of-truth) and [TODO → DONE Movement](WORKFLOWS.md#todo--done-movement) in Shared Conventions.
-
----
-
-## Related Documentation
-
-- [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [PLAN.md](../PLAN.md) - Project TODOs and status
-- [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards

@@ -148,9 +148,10 @@ Skip the menu and launch that workflow directly (same as selecting it from the `
 
 ## Session Start
 
-1. **Determine workflow** - If user entered a number (1-9), use that workflow directly. Otherwise, if unclear, ask user (see [Workflow Modes](#workflow-modes) routing rules)
-2. **Read workflow and confirm** - Read the workflow file, then confirm briefly: `"Read [Workflow Name] workflow ([N]-step). Proceeding with session start."` — do NOT summarize or reiterate the full steps
-3. **Read required docs only** - Load documents based on the workflow:
+1. **Check auto-memory** - Read `MEMORY.md` from the auto-memory directory. If the cached active phase matches PLAN.md's current phase (verified in step 7), you can skip reading the full phase TODO file and rely on the cache for context. Always read PLAN.md itself to detect phase changes.
+2. **Determine workflow** - If user entered a number (1-9), use that workflow directly. Otherwise, if unclear, ask user (see [Workflow Modes](#workflow-modes) routing rules)
+3. **Read workflow and confirm** - Read the workflow file, then confirm briefly: `"Read [Workflow Name] workflow ([N]-step). Proceeding with session start."` — do NOT summarize or reiterate the full steps
+4. **Read required docs only** - Load documents based on the workflow:
 
    | Always read | Workflows 1, 3, 5, 6, 7 only |
    |-------------|-------------------------------|
@@ -161,18 +162,31 @@ Skip the menu and launch that workflow directly (same as selecting it from the `
 
    Skip `CODING_STANDARDS.md` for workflows 2 (Documentation), 4 (Refine), 8 (Test PR), 9 (Merge PR) — they don't produce code.
 
-4. **Check environment** - Run `echo $CALF_VM` (must happen before any approval-gated step):
+5. **Check environment** - Run `echo $CALF_VM` (must happen before any approval-gated step):
    - `CALF_VM=true`: Display "Running in calf-dev VM (isolated environment)" — approvals auto-granted
    - Any other value (empty, unset, etc.): Display "Running on HOST machine (not isolated)" — approvals required
    - If check fails: default to HOST (require approval)
-5. Run `git status` to see current branch, then **switch to main if not already there** with `git checkout main && git pull` (ask approval on HOST; auto-approved when `CALF_VM=true`)
-6. Run `git fetch` to get latest remote state
-7. **Read required docs** from the table in step 3 (always read from main branch)
-8. Report status and suggest next steps using [Numbered Choice Presentation](docs/WORKFLOWS.md#numbered-choice-presentation)
+6. Run `git status` to see current branch, then **switch to main if not already there** with `git checkout main && git pull` (ask approval on HOST; auto-approved when `CALF_VM=true`)
+7. Run `git fetch` to get latest remote state
+8. **Read required docs** from the table in step 4 (always read from main branch). If auto-memory cache is current (phase matches), skip reading the full phase TODO file.
+9. Report status and suggest next steps using [Numbered Choice Presentation](docs/WORKFLOWS.md#numbered-choice-presentation)
 
 **Why main branch?** STATUS.md and PLAN.md are only updated on main (per [Documentation Updates on Main](docs/WORKFLOWS.md#documentation-updates-on-main)). Reading from feature branches may show stale data.
 
 **Note:** Only read the active phase TODO file. Do not read future phase files until the current phase is complete.
+
+---
+
+## Session End
+
+At the end of each session, update `MEMORY.md` in the auto-memory directory with:
+- Current active phase number and goal
+- Open TODO count and key items worked on
+- PR queue snapshot (from STATUS.md if updated)
+- Last session date and workflow used
+- Any key patterns or conventions discovered
+
+This enables the next session to skip redundant file reads when the phase hasn't changed.
 
 ---
 

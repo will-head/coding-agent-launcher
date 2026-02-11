@@ -306,12 +306,3 @@ See [Commit Message Format](WORKFLOWS.md#commit-message-format) in Shared Conven
 2. Check repository permissions
 3. Ensure gh CLI is authenticated
 
----
-
-## Related Documentation
-
-- [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW-TEST-PR.md](WORKFLOW-TEST-PR.md) - Previous step: PR testing
-- [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
-- [STATUS.md](../STATUS.md) - PR tracking
-- [PLAN.md](../PLAN.md) - Project status

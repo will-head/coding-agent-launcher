@@ -319,12 +319,3 @@ See [PR Comments Format](WORKFLOWS.md#pr-comments-format) in Shared Conventions.
 
 See [Documentation Updates on Main](WORKFLOWS.md#documentation-updates-on-main) in Shared Conventions.
 
----
-
-## Related Documentation
-
-- [WORKFLOWS.md](WORKFLOWS.md) - Index of all workflows
-- [WORKFLOW-REVIEW-PR.md](WORKFLOW-REVIEW-PR.md) - Next step: PR review & fix
-- [PR-WORKFLOW-DIAGRAM.md](PR-WORKFLOW-DIAGRAM.md) - Visual workflow diagram
-- [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code quality standards
-- [STATUS.md](../STATUS.md) - PR tracking
