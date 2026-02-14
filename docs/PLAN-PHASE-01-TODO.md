@@ -73,6 +73,31 @@ lifetime using `kqueue EVFILT_PROC NOTE_EXIT` — the same pattern used by Docke
 
 ---
 
+### 6. Repository Rename - launcher → loader (HIGH PRIORITY)
+
+**Problem:** Repository name `coding-agent-launcher` doesn't match the CALF acronym (Coding Agent **L**oader).
+
+**Scope:**
+1. **GitHub rename:** `coding-agent-launcher` → `coding-agent-loader`
+2. **go.mod:** Update module path to `github.com/will-head/coding-agent-loader`
+3. **Import paths:** Update all `import` statements in Go files (2 files: `cmd/calf/cache.go`, `cmd/calf/config.go`)
+4. **STATUS.md:** Update all PR links (10 URLs) to new repo name
+5. **Local filesystem:** Rename working directory from `coding-agent-launcher` to `coding-agent-loader`
+6. **git remote:** Update origin URL after local rename
+
+**Out of Scope (immutable):**
+- `docs/adr/ADR-005-*.md` — references old name (historical record)
+- `docs/prd/prd-001-*.md` — references old name (historical record)
+
+**Verification:**
+- `go build ./...` succeeds
+- `go test ./...` passes
+- `git push` works
+
+**Impact:** High — blocks other work if delayed (more commits = more PR links to update)
+
+---
+
 ## New Features - Normal Priority
 
 ### 4. CLI Proxy Utility for VM↔Host Command Transport
