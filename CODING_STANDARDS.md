@@ -162,6 +162,14 @@ target_dir="${HOME}/code"
 
 ## Testing Requirements
 
+### coops-tdd Skill — Mandatory Before Writing Any Code
+
+**The `coops-tdd` skill MUST be invoked before writing any code, no exceptions.**
+
+This is not optional and applies to every code change regardless of size — new functions, bug fixes, refactoring that changes behaviour, script changes. The skill enforces test-first development: write a failing test, write minimum code to pass it, then refactor.
+
+Failing to invoke this skill is a pre-commit checklist violation. Code written without it must not be committed.
+
 ### Test all code paths and failure scenarios
 **Common Error:** Only testing the "happy path" without verifying error handling, edge cases, or failure modes.
 
@@ -249,6 +257,7 @@ func LoadConfig(globalPath, vmPath string) (*Config, error) {
 
 Before submitting code for review, **must** verify:
 
+- [ ] `coops-tdd` skill was invoked before writing any code
 - [ ] No duplicate code blocks or copy-paste errors
 - [ ] All external dependencies are checked before use
 - [ ] Documentation accurately describes implementation

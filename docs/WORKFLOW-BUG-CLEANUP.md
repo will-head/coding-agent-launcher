@@ -84,7 +84,8 @@ For bug fixes that only affect `.md` files or code comments:
 ### Step 2: Implement
 
 - Only proceed after approach is approved in Step 1
-- Use TDD: write failing test that reproduces the bug, implement fix, verify test passes
+- **Invoke the `coops-tdd` skill first** — this is mandatory before writing any code, no exceptions
+- The skill structures implementation via TDD: write failing test that reproduces the bug → implement fix → verify test passes
 - Follow Go conventions and shell script best practices
 - Make minimum changes needed to fix the bug
 - Avoid over-engineering or adding unnecessary features
@@ -202,6 +203,7 @@ Report completion status:
 
 Before every commit:
 - [ ] Solution proposed and user approved approach (Step 1)
+- [ ] `coops-tdd` skill invoked before writing any code
 - [ ] Tests pass (`go test ./...`)
 - [ ] Build succeeds (`go build -o calf ./cmd/calf`)
 - [ ] Code review presented and user approved (for code changes)

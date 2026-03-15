@@ -50,7 +50,8 @@ For changes **only** to `.md` files or code comments:
 
 ### Step 1: Implement
 
-- Use TDD: write failing test first, implement code, verify test passes
+- **Invoke the `coops-tdd` skill first** — this is mandatory before writing any code, no exceptions
+- The skill structures implementation via TDD: write failing test → implement minimum code → refactor
 - Follow Go conventions and shell script best practices
 - Make minimum changes needed to accomplish the goal
 - Avoid over-engineering or adding unnecessary features
@@ -150,6 +151,7 @@ Report completion status and suggest next steps using [Next Workflow Guidance](W
 ## Pre-Commit Checklist
 
 Before every commit:
+- [ ] `coops-tdd` skill invoked before writing any code
 - [ ] Tests pass (`go test ./...`)
 - [ ] Build succeeds (`go build -o calf ./cmd/calf`)
 - [ ] Code review presented and user approved (for code changes)

@@ -102,6 +102,23 @@ See [WORKFLOWS.md](docs/WORKFLOWS.md) for complete index, quick reference table,
 **Never modify `docs/adr/*` or `docs/prd/*`** - ADRs and PRDs are immutable historical records.
 Create new ADR/PRD to supersede if needed.
 
+### coops-tdd Skill — Mandatory for All Code Changes
+
+**The `coops-tdd` skill MUST be invoked before writing any code — no exceptions.**
+
+This applies to:
+- New functions, methods, classes, or files
+- Bug fixes
+- Feature implementation
+- Refactoring that changes behaviour
+- Any other change to code or scripts
+
+**Skip only for:** explaining concepts, reading/summarising code, documentation edits, config-only changes, or setup questions.
+
+The skill structures all implementation via test-first development: write a failing test → write minimum code to pass → refactor.
+
+**Violation of this rule is treated the same as skipping code review — the change must not be committed.**
+
 ### Coding Standards
 **All code must meet mandatory quality standards.** Common errors to avoid:
 - **Code duplication** - Never leave copy-paste artifacts
@@ -127,6 +144,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 - Commit to main branch (Implement, Review workflows — all changes go via worktree branches)
 - Perform destructive remote git operations without approval (`push --force`, `push --delete` — even when `CALF_VM=true`)
 - Commit with failing tests or build
+- Write or modify code without first invoking the `coops-tdd` skill
 - Skip code review for code/script changes (Interactive workflow)
 - Modify ADR or PRD files
 - Mark TODOs as `[x]` in TODO files - always move completed items to DONE files

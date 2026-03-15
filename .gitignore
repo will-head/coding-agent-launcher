@@ -63,6 +63,12 @@ Temporary Items
 local.yaml
 local.yml
 
+# Claude Code local settings (machine-specific, not for version control)
+.claude/settings.local.json
+
+# Claude Code worktrees (ephemeral parallel agent workspaces)
+.claude/worktrees/
+
 # Logs
 *.log
 logs/
