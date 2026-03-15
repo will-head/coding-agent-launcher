@@ -57,6 +57,65 @@ Delete calf-dev and calf-init, then re-initialize? (y/N)
 
 ---
 
+### 4b. **REFINED:** Git Safety Check: Worktree Awareness (calf-bootstrap)
+
+**Problem:** `check_vm_git_changes` in `calf-bootstrap` silently misses uncommitted or unpushed work in git worktrees, risking silent data loss when the VM is deleted or reset.
+
+**Root Cause:**
+1. `find -name ".git" -type d` skips worktree `.git` entries — they are files, not directories.
+2. `git status --porcelain` run in the main checkout only reports that checkout's working tree; changes in linked worktrees are invisible.
+
+**Affected operations in calf-bootstrap:**
+- `--init` (delete calf-dev before reinit)
+- `--snapshot restore` (replace calf-dev with snapshot)
+- `--snapshot delete` (delete VM)
+
+**Approach:** For each main `.git` dir found, use `git worktree list --porcelain` to enumerate linked worktrees, then run both checks in each linked worktree.
+
+**Implementation — extend `check_vm_git_changes` (lines 750–811):**
+
+The SSH command that finds repos and checks `git status --porcelain` must be extended to also loop over linked worktrees for each found repo. Apply the same extension to the unpushed-commits SSH command.
+
+Pattern for uncommitted check:
+```bash
+for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d; \
+                find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null | sort -u); do
+  dir=$(dirname "$gitdir")
+  # check main checkout
+  (cd "$dir" && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir")
+  # check each linked worktree
+  git -C "$dir" worktree list --porcelain 2>/dev/null \
+    | awk '/^worktree /{print $2}' \
+    | grep -v "^${dir}$" \
+    | while read -r wt_dir; do
+        (cd "$wt_dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$wt_dir")
+      done
+done
+```
+
+Apply the same worktree loop to the unpushed-commits check (use `git log "@{u}.." --oneline` in each worktree that has an upstream set).
+
+**Acceptance Criteria:**
+- Uncommitted changes in any linked worktree (e.g., `.claude/worktrees/implement/foo`) trigger the same warning as changes in the main checkout
+- Unpushed commits in any linked worktree are also detected
+- Repos with no worktrees: no behaviour change (worktree list returns only the main entry, loop body never executes)
+- `--force` flag continues to skip all git checks as before
+- All three affected operations (`--init`, `--snapshot restore`, `--snapshot delete`) benefit automatically (they all call `check_vm_git_changes`)
+
+**Constraints:**
+- `git worktree list` available in Git 2.5+ (Homebrew default is well above this)
+- Change is purely additive — existing main-checkout check is unchanged; worktree loop is appended
+- Go `CheckGitChanges()` in `safety.go` (1.7) is a separate TODO — see note in 1.7
+
+**Testing:**
+- Repo with no worktrees: existing behaviour unchanged
+- Repo with one linked worktree with uncommitted changes: warning fires
+- Repo with one linked worktree with unpushed commits: warning fires
+- `--force` flag: no git checks run at all
+- Repo where worktree directory no longer exists: graceful skip (no error)
+
+---
+
 ### 5a. Future: Go Privileged Helper Daemon for pf Management
 
 **Context:** The current `--gui` background watcher uses a shell loop + sudoers NOPASSWD entry
@@ -382,6 +441,12 @@ lifetime using `kqueue EVFILT_PROC NOTE_EXIT` — the same pattern used by Docke
 - Use `git log @{u}.. --oneline` for unpushed commits
 - `--force` flag on delete skips git checks entirely (for unresponsive VMs)
 - Single confirmation prompt per operation (avoid double/triple prompts)
+
+**Worktree awareness (required — see Critical Issue 4b for bash reference implementation):**
+- `find -name ".git" -type d` does NOT find linked worktree `.git` entries (they are files)
+- `git status --porcelain` in a main checkout does NOT report changes in linked worktrees
+- For each repo found, call `git worktree list` to enumerate linked worktrees and run both checks (uncommitted + unpushed) in each linked worktree
+- Repos with no worktrees: no behaviour change
 
 ---
 

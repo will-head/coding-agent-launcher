@@ -11,6 +11,7 @@
 | TODO | Location | Description | Refined Date | Notes |
 |------|----------|-------------|--------------|-------|
 | bootstrap-init-recreate | docs/PLAN-PHASE-01-TODO.md § Critical #4 | Fall through to full-reinit flow when user declines update-calf-init offer | 2026-03-15 | calf-bootstrap: remove exit 0 at line 1505; Go: same two-step flow |
+| git-safety-worktree-bash | docs/PLAN-PHASE-01-TODO.md § Critical #4b | Extend check_vm_git_changes to detect uncommitted/unpushed changes in git worktrees | 2026-03-15 | bash only; Go equivalent tracked as note in 1.7 |
 
 ---
 
