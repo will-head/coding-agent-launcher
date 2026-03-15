@@ -14,29 +14,44 @@
 
 ## Critical Issues - HIGHEST PRIORITY
 
-### 4. Bootstrap Init Logic - Update vs Full Recreate Behavior
+### 4. **REFINED:** Bootstrap Init Logic - Update vs Full Recreate Behavior
 
 **Problem:** When both calf-dev and calf-init exist, `calf-bootstrap --init` offers to update calf-init from calf-dev. If user declines, script aborts completely (exit 0). User cannot proceed with full fresh init even if desired.
 
-**Current Behavior (lines 1032-1103):**
+**Current Behavior (lines 1436-1506 in calf-bootstrap):**
 ```
 Do you want to replace calf-init with current calf-dev? (y/N)
   → If yes: Updates calf-init, exits
+  → If no: "Aborted. Existing VMs not modified." exits with code 0  ← dead end
+```
+
+**Required Behavior:**
+```
+Do you want to replace calf-init with current calf-dev? (y/N)
+  → If yes: Updates calf-init from calf-dev (existing behavior, unchanged)
+  → If no: fall through to step 2
+
+Delete calf-dev and calf-init, then re-initialize? (y/N)
+  → If yes: git safety check on calf-dev → delete both VMs → fresh init from scratch
   → If no: "Aborted. Existing VMs not modified." exits with code 0
 ```
 
-**Expected Behavior:**
-After declining the update offer, user should be able to:
-- Proceed with full deletion and fresh init (with proper git safety checks)
-- Or explicitly abort
+**Implementation:**
+- `calf-bootstrap`: Remove `exit 0` at line 1505 (the `else` branch on decline) so it falls through to the existing full-init flow already at line 1510. The full-init flow already handles git safety checks, deletion prompts, and fresh init — no new logic needed.
+- `calf isolation init` (Go): Implement the same two-step flow when both VMs exist.
 
-**Investigation Needed:**
-- Is the current "abort on decline" behavior intentional?
-- Should declining the update prompt then offer full init?
-- Or should there be a separate flag like `--force-clean` to skip update offer?
-- How should this interact with `--yes` flag?
+**Acceptance Criteria:**
+- Declining the update offer presents the full-reinit option instead of aborting
+- Full reinit runs git safety checks before deleting VMs
+- Confirming full reinit deletes both calf-dev and calf-init, then starts fresh init
+- Declining full reinit exits cleanly with "Aborted. Existing VMs not modified."
+- `--yes` flag skips both prompts and proceeds directly with full reinit (delete both, reinit)
+- Go `calf isolation init` mirrors the same two-step flow
 
-**Impact:** High - affects user ability to reinitialize environment
+**Constraints:**
+- The "replace calf-init with calf-dev" shortcut path (Y on first prompt) is unchanged
+- No new flags needed
+- calf-bootstrap fix is a minimal one-line change (remove erroneous exit 0)
 
 **Related:** May interact with `--no-mount` implementation (New Feature #5)
 
