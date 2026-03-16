@@ -23,9 +23,6 @@ The codebase was implemented before the `coops-tdd` skill was adopted. Existing 
 **Full plan:** [`docs/TDD-REMEDIATION-PLAN.md`](TDD-REMEDIATION-PLAN.md)
 
 **Summary of work (execute in order):**
-- Pre-work: Fix invalid `go.mod` version
-- Item 0: Rename all existing tests to `when [condition] should [outcome]` convention + AAA structure pass
-- Item 1: Add direct tests for `GetDefaultConfigPath` / `GetVMConfigPath`
 - Item 2: Fix `Run`/`RunWithCacheDirs` to route through injectable `runCommand`; delete no-op tests and `cacheDirMount` constant test; add behavioral replacements
 - Item 3: Make `ensureInstalled` stdin injectable; test Homebrew install branch
 - Item 4: Add `NewCacheManagerWithDirs` constructor; replace struct literals in tests

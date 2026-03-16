@@ -730,3 +730,32 @@ See PLAN-PHASE-01-TODO.md § 6 for Go code parity cleanup (low priority):
 
 **Reference:** [ADR-004](adr/ADR-004-cache-mount-architecture.md) for complete architecture decision record
 
+---
+
+## TDD Remediation — Pre-work, Item 0, Item 1 (2026-03-16)
+
+### Pre-work: Fix go.mod Version
+
+Corrected `go.mod` from invalid version `go 1.25.6` to match the installed Go toolchain. `go build ./...` and `go test ./...` confirmed unaffected.
+
+### Item 0: Rename Existing Tests to Behavioral Convention
+
+Renamed all existing tests across `internal/config/config_test.go`, `internal/isolation/tart_test.go`, and `internal/isolation/cache_test.go` to the `"when [condition] should [outcome]"` sub-test format and concise PascalCase top-level grouping names. Second pass enforced Arrange / Act / Assert structure with blank-line separation. No test logic changed; all tests remain green.
+
+### Item 1: internal/config — GetDefaultConfigPath and GetVMConfigPath
+
+Added direct tests for the two path-returning functions in `internal/config/config_test.go`:
+
+**`TestGetDefaultConfigPath`**
+- `"when home dir is available should return path ending in .calf/config.yaml"`
+- `"when home dir is available should return an absolute path"`
+
+**`TestGetVMConfigPath`**
+- `"when vm name is provided should return path containing the vm name"`
+- `"when vm name is provided should return path ending in vm.yaml"`
+- `"when vm name is provided should return an absolute path"`
+
+No production code changes. Error-path tests deferred — both functions call `os.UserHomeDir()` directly with no injection point; adding one would be speculative.
+
+All 29 tests in `internal/config` pass.
+

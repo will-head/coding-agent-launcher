@@ -477,6 +477,67 @@ func TestValidateConfig(t *testing.T) {
 	})
 }
 
+func TestGetDefaultConfigPath(t *testing.T) {
+	t.Run("when home dir is available should return path ending in .calf/config.yaml", func(t *testing.T) {
+		path, err := GetDefaultConfigPath()
+		if err != nil {
+			t.Fatalf("GetDefaultConfigPath returned unexpected error: %v", err)
+		}
+
+		if !strings.HasSuffix(path, filepath.Join(".calf", "config.yaml")) {
+			t.Errorf("Expected path ending in .calf/config.yaml, got %s", path)
+		}
+	})
+
+	t.Run("when home dir is available should return an absolute path", func(t *testing.T) {
+		path, err := GetDefaultConfigPath()
+		if err != nil {
+			t.Fatalf("GetDefaultConfigPath returned unexpected error: %v", err)
+		}
+
+		if !filepath.IsAbs(path) {
+			t.Errorf("Expected absolute path, got %s", path)
+		}
+	})
+}
+
+func TestGetVMConfigPath(t *testing.T) {
+	t.Run("when vm name is provided should return path containing the vm name", func(t *testing.T) {
+		vmName := "calf-dev"
+
+		path, err := GetVMConfigPath(vmName)
+		if err != nil {
+			t.Fatalf("GetVMConfigPath returned unexpected error: %v", err)
+		}
+
+		if !strings.Contains(path, vmName) {
+			t.Errorf("Expected path to contain vm name %q, got %s", vmName, path)
+		}
+	})
+
+	t.Run("when vm name is provided should return path ending in vm.yaml", func(t *testing.T) {
+		path, err := GetVMConfigPath("calf-dev")
+		if err != nil {
+			t.Fatalf("GetVMConfigPath returned unexpected error: %v", err)
+		}
+
+		if !strings.HasSuffix(path, "vm.yaml") {
+			t.Errorf("Expected path ending in vm.yaml, got %s", path)
+		}
+	})
+
+	t.Run("when vm name is provided should return an absolute path", func(t *testing.T) {
+		path, err := GetVMConfigPath("calf-dev")
+		if err != nil {
+			t.Fatalf("GetVMConfigPath returned unexpected error: %v", err)
+		}
+
+		if !filepath.IsAbs(path) {
+			t.Errorf("Expected absolute path, got %s", path)
+		}
+	})
+}
+
 func TestConfigPathValidation(t *testing.T) {
 	t.Run("when global config has validation error should include file path in error message", func(t *testing.T) {
 		tmpDir := t.TempDir()
