@@ -61,13 +61,16 @@ type commandRunner func(args ...string) (string, error)
 
 // TartClient wraps the Tart CLI for VM operations.
 type TartClient struct {
-	tartPath      string
-	installPrompt string
-	outputWriter  io.Writer
-	errorWriter   io.Writer
-	pollInterval  time.Duration
-	pollTimeout   time.Duration
-	runCommand    commandRunner
+	tartPath       string
+	installPrompt  string
+	outputWriter   io.Writer
+	errorWriter    io.Writer
+	pollInterval   time.Duration
+	pollTimeout    time.Duration
+	runCommand     commandRunner
+	runBrewCommand commandRunner
+	stdinReader    io.Reader
+	lookPath       func(string) (string, error)
 }
 
 // NewTartClient creates a new TartClient.
@@ -78,9 +81,24 @@ func NewTartClient() *TartClient {
 		errorWriter:   os.Stderr,
 		pollInterval:  defaultPollInterval,
 		pollTimeout:   defaultPollTimeout,
+		stdinReader:   os.Stdin,
+		lookPath:      exec.LookPath,
 	}
-	// Set default command runner (uses real tart commands)
+	// Set default command runners
 	client.runCommand = client.runTartCommand
+	client.runBrewCommand = func(args ...string) (string, error) {
+		brewPath, err := client.lookPath("brew")
+		if err != nil {
+			return "", fmt.Errorf("brew not found: %w", err)
+		}
+		cmd := exec.Command(brewPath, args...)
+		cmd.Stdout = client.outputWriter
+		cmd.Stderr = client.errorWriter
+		if err := cmd.Run(); err != nil {
+			return "", err
+		}
+		return "", nil
+	}
 	return client
 }
 
@@ -90,19 +108,19 @@ func (c *TartClient) ensureInstalled() error {
 		return nil
 	}
 
-	path, err := exec.LookPath("tart")
+	path, err := c.lookPath("tart")
 	if err == nil {
 		c.tartPath = path
 		return nil
 	}
 
-	if _, err := exec.LookPath("brew"); err != nil {
+	if _, err := c.lookPath("brew"); err != nil {
 		return fmt.Errorf("tart is not installed and Homebrew is not available. Please install Tart manually: https://github.com/cirruslabs/tart")
 	}
 
 	fmt.Fprint(c.errorWriter, c.installPrompt)
 
-	reader := bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(c.stdinReader)
 	response, err := reader.ReadString('\n')
 	if err != nil {
 		return fmt.Errorf("failed to read response: %w", err)
@@ -113,16 +131,12 @@ func (c *TartClient) ensureInstalled() error {
 		return fmt.Errorf("tart installation cancelled")
 	}
 
-	installCmd := exec.Command("brew", "install", "cirruslabs/cli/tart")
-	installCmd.Stdout = c.outputWriter
-	installCmd.Stderr = c.errorWriter
-
 	fmt.Fprintln(c.outputWriter, "Installing Tart via Homebrew...")
-	if err := installCmd.Run(); err != nil {
+	if _, err := c.runBrewCommand("install", "cirruslabs/cli/tart"); err != nil {
 		return fmt.Errorf("failed to install Tart: %w", err)
 	}
 
-	path, err = exec.LookPath("tart")
+	path, err = c.lookPath("tart")
 	if err != nil {
 		return fmt.Errorf("tart installation completed but 'tart' command not found in PATH")
 	}

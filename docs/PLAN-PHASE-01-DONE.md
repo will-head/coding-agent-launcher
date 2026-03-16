@@ -788,3 +788,18 @@ Production change: `RunWithCacheDirs` previously called `exec.Command` directly,
 
 All 162 tests pass. `go vet` clean.
 
+### Item 3: internal/isolation/tart.go — ensureInstalled Homebrew Branch (2026-03-16)
+
+Added 3 injectable fields to `TartClient`:
+- `stdinReader io.Reader` — defaults to `os.Stdin`; used in `ensureInstalled` instead of hardcoded `bufio.NewReader(os.Stdin)`
+- `lookPath func(string) (string, error)` — defaults to `exec.LookPath`; replaces direct `exec.LookPath` calls for both `"tart"` and `"brew"` checks
+- `runBrewCommand commandRunner` — defaults to a closure that resolves brew via `c.lookPath` (fixes silent failure on Apple Silicon where brew is at `/opt/homebrew/bin/brew`); replaces direct `exec.Command("brew", ...)` call
+
+Added 4 behavioral sub-tests to `TestEnsureInstalled`:
+- `"when tart is found on path should set tart path without prompting"`
+- `"when tart is not found and user declines install should return error"`
+- `"when tart is not found and user confirms install and brew succeeds should update tart path"`
+- `"when tart is not found and user confirms install and brew fails should return error"`
+
+All 137 tests pass. `go vet` clean.
+

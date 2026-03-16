@@ -673,6 +673,111 @@ func TestEnsureInstalled(t *testing.T) {
 			t.Error("ensureInstalled() second call should use cached path")
 		}
 	})
+
+	t.Run("when tart is found on path should set tart path without prompting", func(t *testing.T) {
+		// Arrange
+		client := NewTartClient()
+		client.lookPath = func(file string) (string, error) {
+			if file == "tart" {
+				return "/usr/local/bin/tart", nil
+			}
+			return "", fmt.Errorf("not found")
+		}
+		client.stdinReader = strings.NewReader("") // no input should be consumed
+
+		// Act
+		err := client.ensureInstalled()
+
+		// Assert
+		if err != nil {
+			t.Errorf("ensureInstalled() unexpected error = %v", err)
+		}
+		if client.tartPath != "/usr/local/bin/tart" {
+			t.Errorf("ensureInstalled() tartPath = %v, want /usr/local/bin/tart", client.tartPath)
+		}
+	})
+
+	t.Run("when tart is not found and user declines install should return error", func(t *testing.T) {
+		// Arrange
+		client := NewTartClient()
+		client.lookPath = func(file string) (string, error) {
+			if file == "brew" {
+				return "/usr/local/bin/brew", nil
+			}
+			return "", fmt.Errorf("not found")
+		}
+		client.stdinReader = strings.NewReader("n\n")
+
+		// Act
+		err := client.ensureInstalled()
+
+		// Assert
+		if err == nil {
+			t.Error("ensureInstalled() expected error when user declines, got nil")
+		}
+		if !strings.Contains(err.Error(), "cancelled") {
+			t.Errorf("ensureInstalled() error should indicate cancellation, got: %v", err)
+		}
+	})
+
+	t.Run("when tart is not found and user confirms install and brew succeeds should update tart path", func(t *testing.T) {
+		// Arrange
+		lookPathCalls := 0
+		client := NewTartClient()
+		client.lookPath = func(file string) (string, error) {
+			if file == "brew" {
+				return "/usr/local/bin/brew", nil
+			}
+			if file == "tart" {
+				lookPathCalls++
+				if lookPathCalls > 1 {
+					return "/usr/local/bin/tart", nil // found after install
+				}
+			}
+			return "", fmt.Errorf("not found")
+		}
+		client.stdinReader = strings.NewReader("y\n")
+		client.runBrewCommand = func(args ...string) (string, error) {
+			return "", nil // brew install succeeds
+		}
+
+		// Act
+		err := client.ensureInstalled()
+
+		// Assert
+		if err != nil {
+			t.Errorf("ensureInstalled() unexpected error = %v", err)
+		}
+		if client.tartPath == "" {
+			t.Error("ensureInstalled() should set tartPath after successful install")
+		}
+	})
+
+	t.Run("when tart is not found and user confirms install and brew fails should return error", func(t *testing.T) {
+		// Arrange
+		client := NewTartClient()
+		client.lookPath = func(file string) (string, error) {
+			if file == "brew" {
+				return "/usr/local/bin/brew", nil
+			}
+			return "", fmt.Errorf("not found")
+		}
+		client.stdinReader = strings.NewReader("y\n")
+		client.runBrewCommand = func(args ...string) (string, error) {
+			return "", fmt.Errorf("brew install failed")
+		}
+
+		// Act
+		err := client.ensureInstalled()
+
+		// Assert
+		if err == nil {
+			t.Error("ensureInstalled() expected error when brew fails, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to install") {
+			t.Errorf("ensureInstalled() error should indicate install failure, got: %v", err)
+		}
+	})
 }
 
 // sliceContains reports whether s is an element of slice.
