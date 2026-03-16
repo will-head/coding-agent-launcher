@@ -818,3 +818,21 @@ Added 4 behavioral sub-tests to `TestEnsureInstalled`:
 
 All 137 tests pass. `go vet` clean.
 
+### Item 5: internal/isolation/cache.go — Fix Sub-Test Isolation in TestClearCache (2026-03-16)
+
+- [x] Fix `TestCacheManager_Clear` sub-test isolation (shared state) (completed 2026-03-16)
+
+Restructured `TestClearCache` so every sub-test creates its own `t.TempDir()` and `NewCacheManagerWithDirs(...)`. Previously, a single `cm` and `tmpDir` were shared across all seven sub-tests, creating implicit ordering dependencies and shared mutable state.
+
+Changes (test-only — no production code):
+- Each sub-test now fully self-contained with its own dirs and `CacheManager`
+- Symlink sub-test no longer borrows `tmpDir` from outer scope
+- `switch cacheType` dispatch replaced with `map[string]func() error` (removes 4 near-identical branches)
+- Added `else t.Fatalf` guard so mismatched `testCases`/`setupFuncs` fails loudly
+- Removed redundant `os.Stat` before `os.ReadDir` in symlink sub-test (TOCTOU pre-check)
+- Removed dead `os.Chmod(readOnlyFile)` from defer (file already deleted by `Clear`)
+- Checked error from `filepath.EvalSymlinks` (was silently discarded)
+- Verified every sub-test passes independently via `-run TestClearCache/<name>`
+
+All 168 tests pass.
+

@@ -23,7 +23,6 @@ The codebase was implemented before the `coops-tdd` skill was adopted. Existing 
 **Full plan:** [`docs/TDD-REMEDIATION-PLAN.md`](TDD-REMEDIATION-PLAN.md)
 
 **Summary of work (execute in order):**
-- Item 5: Fix `TestCacheManager_Clear` sub-test isolation (shared state)
 - Item 6: Extract `getCacheInfo` helper to eliminate 4× duplication
 - Item 7: Fix `UpdateGitRepos` to surface errors to caller instead of always returning `nil`
 - Item 8: Add tests for `cmd/calf/config.go`; convert `os.Exit` to `RunE`
