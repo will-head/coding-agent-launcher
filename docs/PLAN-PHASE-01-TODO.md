@@ -198,6 +198,28 @@ lifetime using `kqueue EVFILT_PROC NOTE_EXIT` — the same pattern used by Docke
 
 ---
 
+## Bugs
+
+### BUG-010: Capitalized Error Strings in config.go (ST1005)
+
+**File:** `internal/config/config.go` lines 280, 282
+
+**Problem:** Error strings are capitalized, violating Go convention (staticcheck ST1005: "error strings should not be capitalized").
+
+**Fix:** Lowercase the first character of the error strings on those lines.
+
+---
+
+### BUG-011: Nil Check on Initialised Slice in RunWithCacheDirs No-Op Test (SA4031)
+
+**File:** `internal/isolation/tart_test.go`
+
+**Problem:** `TestTartClient_RunWithCacheDirs_AcceptsCacheDirs` checks `if testCacheDirs == nil` after initialising `testCacheDirs` with a slice literal — the check is always false (staticcheck SA4031).
+
+**Resolution:** This test is deleted and replaced in TDD Remediation Item 2. The SA4031 warning will be resolved automatically at that point. No separate fix required.
+
+---
+
 ## New Features - Normal Priority
 
 ### 4. CLI Proxy Utility for VM↔Host Command Transport

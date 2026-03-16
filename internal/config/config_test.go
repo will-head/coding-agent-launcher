@@ -9,7 +9,7 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	// Test loading config when file doesn't exist (should use defaults)
-	t.Run("missing config file uses defaults", func(t *testing.T) {
+	t.Run("when config file is missing should use default values", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, "config.yaml")
 
@@ -37,7 +37,7 @@ func TestLoadConfig(t *testing.T) {
 	})
 
 	// Test loading config when both paths are empty (should use defaults)
-	t.Run("empty paths use defaults", func(t *testing.T) {
+	t.Run("when both paths are empty should use default values", func(t *testing.T) {
 		cfg, err := LoadConfig("", "")
 		if err != nil {
 			t.Fatalf("LoadConfig with empty paths returned unexpected error: %v", err)
@@ -53,7 +53,7 @@ func TestLoadConfig(t *testing.T) {
 	})
 
 	// Test loading valid config file
-	t.Run("valid config file loads correctly", func(t *testing.T) {
+	t.Run("when valid config file exists should load all fields correctly", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, "config.yaml")
 
@@ -107,7 +107,7 @@ isolation:
 	})
 
 	// Test partial config file (some fields missing)
-	t.Run("partial config file uses defaults for missing fields", func(t *testing.T) {
+	t.Run("when config file has only some fields should use defaults for missing fields", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, "config.yaml")
 
@@ -145,7 +145,7 @@ isolation:
 	})
 
 	// Test malformed YAML file (should return error)
-	t.Run("malformed YAML returns error", func(t *testing.T) {
+	t.Run("when config file contains malformed YAML should return parse error", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, "config.yaml")
 
@@ -172,7 +172,7 @@ isolation:
 
 func TestLoadVMConfig(t *testing.T) {
 	// Test loading per-VM config
-	t.Run("valid per-VM config overrides global config", func(t *testing.T) {
+	t.Run("when vm config file exists should override global config fields", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		globalConfigPath := filepath.Join(tmpDir, "config.yaml")
 		vmDir := filepath.Join(tmpDir, "vms", "test-vm")
@@ -224,7 +224,7 @@ memory: 16384
 	})
 
 	// Test missing per-VM config (should use global/defaults)
-	t.Run("missing per-VM config uses global config", func(t *testing.T) {
+	t.Run("when vm config file is missing should use global config values", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		globalConfigPath := filepath.Join(tmpDir, "config.yaml")
 
@@ -254,7 +254,7 @@ isolation:
 		}
 	})
 
-	t.Run("zero values from YAML fail validation", func(t *testing.T) {
+	t.Run("when config file has zero values should fail validation", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, "config.yaml")
 
@@ -281,7 +281,7 @@ isolation:
 		}
 	})
 
-	t.Run("empty string from YAML fails validation", func(t *testing.T) {
+	t.Run("when config file has empty string fields should fail validation", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, "config.yaml")
 
@@ -308,7 +308,7 @@ isolation:
 }
 
 func TestValidateConfig(t *testing.T) {
-	t.Run("valid config passes validation", func(t *testing.T) {
+	t.Run("when all fields are valid should pass validation", func(t *testing.T) {
 		cfg := &Config{
 			Version: 1,
 			Isolation: IsolationConfig{
@@ -331,7 +331,7 @@ func TestValidateConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid CPU value fails validation", func(t *testing.T) {
+	t.Run("when cpu is zero should fail validation", func(t *testing.T) {
 		cfg := &Config{
 			Version: 1,
 			Isolation: IsolationConfig{
@@ -353,7 +353,7 @@ func TestValidateConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid memory value fails validation", func(t *testing.T) {
+	t.Run("when memory is below minimum should fail validation", func(t *testing.T) {
 		cfg := &Config{
 			Version: 1,
 			Isolation: IsolationConfig{
@@ -376,7 +376,7 @@ func TestValidateConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("minimum valid memory passes validation", func(t *testing.T) {
+	t.Run("when memory is at minimum threshold should pass validation", func(t *testing.T) {
 		cfg := &Config{
 			Version: 1,
 			Isolation: IsolationConfig{
@@ -399,7 +399,7 @@ func TestValidateConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid disk size fails validation", func(t *testing.T) {
+	t.Run("when disk size is zero should fail validation", func(t *testing.T) {
 		cfg := &Config{
 			Version: 1,
 			Isolation: IsolationConfig{
@@ -423,7 +423,7 @@ func TestValidateConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid proxy mode fails validation", func(t *testing.T) {
+	t.Run("when proxy mode is unrecognised should fail validation", func(t *testing.T) {
 		cfg := &Config{
 			Version: 1,
 			Isolation: IsolationConfig{
@@ -451,7 +451,7 @@ func TestValidateConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("empty base image fails validation", func(t *testing.T) {
+	t.Run("when base image is empty should fail validation", func(t *testing.T) {
 		cfg := &Config{
 			Version: 1,
 			Isolation: IsolationConfig{
@@ -478,7 +478,7 @@ func TestValidateConfig(t *testing.T) {
 }
 
 func TestConfigPathValidation(t *testing.T) {
-	t.Run("error message includes file path for global config", func(t *testing.T) {
+	t.Run("when global config has validation error should include file path in error message", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, "config.yaml")
 
@@ -502,7 +502,7 @@ func TestConfigPathValidation(t *testing.T) {
 		}
 	})
 
-	t.Run("error message includes file path for VM config", func(t *testing.T) {
+	t.Run("when vm config has validation error should include file path in error message", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		vmConfigPath := filepath.Join(tmpDir, "vm.yaml")
 

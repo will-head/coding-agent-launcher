@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestCacheManager_HomebrewSetup(t *testing.T) {
+func TestHomebrewCacheSetup(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
@@ -22,7 +22,7 @@ func TestCacheManager_HomebrewSetup(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("SetupHomebrewCache creates host cache directory", func(t *testing.T) {
+	t.Run("when home dir is available should create homebrew cache directory", func(t *testing.T) {
 		err := cm.SetupHomebrewCache()
 		if err != nil {
 			t.Fatalf("SetupHomebrewCache failed: %v", err)
@@ -49,7 +49,7 @@ func TestCacheManager_HomebrewSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupHomebrewCache is idempotent", func(t *testing.T) {
+	t.Run("when called twice should succeed both times", func(t *testing.T) {
 		// First setup
 		err := cm.SetupHomebrewCache()
 		if err != nil {
@@ -64,7 +64,7 @@ func TestCacheManager_HomebrewSetup(t *testing.T) {
 	})
 }
 
-func TestCacheManager_GetHomebrewCacheInfo(t *testing.T) {
+func TestGetHomebrewCacheInfo(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -76,7 +76,7 @@ func TestCacheManager_GetHomebrewCacheInfo(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("GetHomebrewCacheInfo returns zero size when cache doesn't exist", func(t *testing.T) {
+	t.Run("when cache does not exist should return zero size", func(t *testing.T) {
 		info, err := cm.GetHomebrewCacheInfo()
 		if err != nil {
 			t.Fatalf("GetHomebrewCacheInfo failed: %v", err)
@@ -91,7 +91,7 @@ func TestCacheManager_GetHomebrewCacheInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("GetHomebrewCacheInfo returns size when cache exists", func(t *testing.T) {
+	t.Run("when cache contains files should return non-zero size", func(t *testing.T) {
 		// Setup cache
 		err := cm.SetupHomebrewCache()
 		if err != nil {
@@ -120,7 +120,7 @@ func TestCacheManager_GetHomebrewCacheInfo(t *testing.T) {
 	})
 }
 
-func TestCacheManager_Status(t *testing.T) {
+func TestCacheStatus(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -132,7 +132,7 @@ func TestCacheManager_Status(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("Status displays Homebrew cache information", func(t *testing.T) {
+	t.Run("when homebrew cache is set up should include homebrew in output", func(t *testing.T) {
 		// Setup cache
 		err := cm.SetupHomebrewCache()
 		if err != nil {
@@ -140,6 +140,7 @@ func TestCacheManager_Status(t *testing.T) {
 		}
 
 		var buf bytes.Buffer
+
 		err = cm.Status(&buf)
 		if err != nil {
 			t.Fatalf("Status failed: %v", err)
@@ -157,8 +158,8 @@ func TestCacheManager_Status(t *testing.T) {
 	})
 }
 
-func TestCacheManager_NewCacheManager(t *testing.T) {
-	t.Run("NewCacheManager initializes with default paths", func(t *testing.T) {
+func TestNewCacheManagerInitialisesFields(t *testing.T) {
+	t.Run("when created should initialise home dir and cache base dir", func(t *testing.T) {
 		cm := NewCacheManager()
 
 		if cm == nil {
@@ -175,8 +176,8 @@ func TestCacheManager_NewCacheManager(t *testing.T) {
 	})
 }
 
-func TestCacheManager_gracefulDegradation(t *testing.T) {
-	t.Run("SetupHomebrewCache gracefully handles missing home directory", func(t *testing.T) {
+func TestHomebrewCacheSetupEdgeCases(t *testing.T) {
+	t.Run("when home dir is empty should return nil without error", func(t *testing.T) {
 		cm := &CacheManager{
 			homeDir:      "",
 			cacheBaseDir: "",
@@ -189,7 +190,7 @@ func TestCacheManager_gracefulDegradation(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupHomebrewCache handles permission errors gracefully", func(t *testing.T) {
+	t.Run("when cache base dir is read only should return permission error", func(t *testing.T) {
 		tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 		if err != nil {
 			t.Fatalf("failed to create temp dir: %v", err)
@@ -216,7 +217,7 @@ func TestCacheManager_gracefulDegradation(t *testing.T) {
 	})
 }
 
-func TestCacheManager_VMCacheSetup(t *testing.T) {
+func TestVMHomebrewCacheSetup(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -228,7 +229,7 @@ func TestCacheManager_VMCacheSetup(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("SetupVMHomebrewCache returns commands when host cache exists", func(t *testing.T) {
+	t.Run("when host cache exists should return setup commands", func(t *testing.T) {
 		// Setup host cache
 		err := cm.SetupHomebrewCache()
 		if err != nil {
@@ -260,7 +261,7 @@ func TestCacheManager_VMCacheSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupVMHomebrewCache returns nil when home directory unavailable", func(t *testing.T) {
+	t.Run("when home dir is unavailable should return nil", func(t *testing.T) {
 		cmNoHome := &CacheManager{
 			homeDir:      "",
 			cacheBaseDir: "",
@@ -272,7 +273,7 @@ func TestCacheManager_VMCacheSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupVMHomebrewCache returns nil when host cache doesn't exist", func(t *testing.T) {
+	t.Run("when host cache does not exist should return nil", func(t *testing.T) {
 		cmNoCache := &CacheManager{
 			homeDir:      tmpDir,
 			cacheBaseDir: filepath.Join(tmpDir, "nonexistent-cache"),
@@ -285,8 +286,8 @@ func TestCacheManager_VMCacheSetup(t *testing.T) {
 	})
 }
 
-func TestCacheManager_SharedCacheMount(t *testing.T) {
-	t.Run("GetSharedCacheMount returns correct mount specification", func(t *testing.T) {
+func TestSharedCacheMountAndHostPath(t *testing.T) {
+	t.Run("when called should return correct mount specification", func(t *testing.T) {
 		cm := NewCacheManager()
 		mount := cm.GetSharedCacheMount()
 
@@ -296,7 +297,7 @@ func TestCacheManager_SharedCacheMount(t *testing.T) {
 		}
 	})
 
-	t.Run("GetHomebrewCacheHostPath returns correct host path", func(t *testing.T) {
+	t.Run("when home dir is available should return path with calf-cache prefix", func(t *testing.T) {
 		tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 		if err != nil {
 			t.Fatalf("failed to create temp dir: %v", err)
@@ -329,15 +330,15 @@ func TestFormatBytes(t *testing.T) {
 		bytes    int64
 		expected string
 	}{
-		{"zero bytes", 0, "0 B"},
-		{"bytes only", 512, "512 B"},
-		{"exactly 1 KB", 1024, "1.0 KB"},
-		{"kilobytes", 1536, "1.5 KB"},
-		{"megabytes", 1048576, "1.0 MB"},
-		{"gigabytes", 1073741824, "1.0 GB"},
-		{"terabytes", 1099511627776, "1.0 TB"},
-		{"large size", 5368709120, "5.0 GB"},
-		{"fractional MB", 2621440, "2.5 MB"},
+		{"when bytes is zero should return 0 B", 0, "0 B"},
+		{"when bytes is under one KB should display raw bytes", 512, "512 B"},
+		{"when bytes is exactly one KB should display 1.0 KB", 1024, "1.0 KB"},
+		{"when bytes is fractional KB should display with one decimal", 1536, "1.5 KB"},
+		{"when bytes is exactly one MB should display 1.0 MB", 1048576, "1.0 MB"},
+		{"when bytes is exactly one GB should display 1.0 GB", 1073741824, "1.0 GB"},
+		{"when bytes is exactly one TB should display 1.0 TB", 1099511627776, "1.0 TB"},
+		{"when bytes is 5 GB should display 5.0 GB", 5368709120, "5.0 GB"},
+		{"when bytes is fractional MB should display with one decimal", 2621440, "2.5 MB"},
 	}
 
 	for _, tt := range tests {
@@ -350,7 +351,7 @@ func TestFormatBytes(t *testing.T) {
 	}
 }
 
-func TestCacheManager_NpmSetup(t *testing.T) {
+func TestNpmCacheSetup(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -362,7 +363,7 @@ func TestCacheManager_NpmSetup(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("SetupNpmCache creates host cache directory", func(t *testing.T) {
+	t.Run("when home dir is available should create npm cache directory", func(t *testing.T) {
 		err := cm.SetupNpmCache()
 		if err != nil {
 			t.Fatalf("SetupNpmCache failed: %v", err)
@@ -378,7 +379,7 @@ func TestCacheManager_NpmSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupNpmCache is idempotent", func(t *testing.T) {
+	t.Run("when called twice should succeed both times", func(t *testing.T) {
 		err := cm.SetupNpmCache()
 		if err != nil {
 			t.Fatalf("first SetupNpmCache failed: %v", err)
@@ -390,7 +391,7 @@ func TestCacheManager_NpmSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupNpmCache gracefully handles missing home directory", func(t *testing.T) {
+	t.Run("when home dir is empty should return nil without error", func(t *testing.T) {
 		cmNoHome := &CacheManager{
 			homeDir:      "",
 			cacheBaseDir: "",
@@ -403,7 +404,7 @@ func TestCacheManager_NpmSetup(t *testing.T) {
 	})
 }
 
-func TestCacheManager_GetNpmCacheInfo(t *testing.T) {
+func TestGetNpmCacheInfo(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -415,7 +416,7 @@ func TestCacheManager_GetNpmCacheInfo(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("GetNpmCacheInfo returns zero size when cache doesn't exist", func(t *testing.T) {
+	t.Run("when cache does not exist should return zero size", func(t *testing.T) {
 		info, err := cm.GetNpmCacheInfo()
 		if err != nil {
 			t.Fatalf("GetNpmCacheInfo failed: %v", err)
@@ -434,7 +435,7 @@ func TestCacheManager_GetNpmCacheInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("GetNpmCacheInfo returns size when cache exists", func(t *testing.T) {
+	t.Run("when cache contains files should return non-zero size", func(t *testing.T) {
 		err := cm.SetupNpmCache()
 		if err != nil {
 			t.Fatalf("SetupNpmCache failed: %v", err)
@@ -461,7 +462,7 @@ func TestCacheManager_GetNpmCacheInfo(t *testing.T) {
 	})
 }
 
-func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
+func TestVMNpmCacheSetup(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -473,7 +474,7 @@ func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("SetupVMNpmCache returns commands when host cache exists", func(t *testing.T) {
+	t.Run("when host cache exists should return setup commands", func(t *testing.T) {
 		err := cm.SetupNpmCache()
 		if err != nil {
 			t.Fatalf("SetupNpmCache failed: %v", err)
@@ -500,7 +501,7 @@ func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupVMNpmCache returns nil when home directory unavailable", func(t *testing.T) {
+	t.Run("when home dir is unavailable should return nil", func(t *testing.T) {
 		cmNoHome := &CacheManager{
 			homeDir:      "",
 			cacheBaseDir: "",
@@ -512,7 +513,7 @@ func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupVMNpmCache returns nil when host cache doesn't exist", func(t *testing.T) {
+	t.Run("when host cache does not exist should return nil", func(t *testing.T) {
 		cmNoCache := &CacheManager{
 			homeDir:      tmpDir,
 			cacheBaseDir: filepath.Join(tmpDir, "nonexistent-cache"),
@@ -525,7 +526,7 @@ func TestCacheManager_VMNpmCacheSetup(t *testing.T) {
 	})
 }
 
-func TestCacheManager_GoSetup(t *testing.T) {
+func TestGoCacheSetup(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -537,7 +538,7 @@ func TestCacheManager_GoSetup(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("SetupGoCache creates host cache directory", func(t *testing.T) {
+	t.Run("when home dir is available should create go cache directory with subdirs", func(t *testing.T) {
 		err := cm.SetupGoCache()
 		if err != nil {
 			t.Fatalf("SetupGoCache failed: %v", err)
@@ -563,7 +564,7 @@ func TestCacheManager_GoSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupGoCache is idempotent", func(t *testing.T) {
+	t.Run("when called twice should succeed both times", func(t *testing.T) {
 		err := cm.SetupGoCache()
 		if err != nil {
 			t.Fatalf("first SetupGoCache failed: %v", err)
@@ -575,7 +576,7 @@ func TestCacheManager_GoSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupGoCache gracefully handles missing home directory", func(t *testing.T) {
+	t.Run("when home dir is empty should return nil without error", func(t *testing.T) {
 		cmNoHome := &CacheManager{
 			homeDir:      "",
 			cacheBaseDir: "",
@@ -588,7 +589,7 @@ func TestCacheManager_GoSetup(t *testing.T) {
 	})
 }
 
-func TestCacheManager_GetGoCacheInfo(t *testing.T) {
+func TestGetGoCacheInfo(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -600,7 +601,7 @@ func TestCacheManager_GetGoCacheInfo(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("GetGoCacheInfo returns zero size when cache doesn't exist", func(t *testing.T) {
+	t.Run("when cache does not exist should return zero size", func(t *testing.T) {
 		info, err := cm.GetGoCacheInfo()
 		if err != nil {
 			t.Fatalf("GetGoCacheInfo failed: %v", err)
@@ -619,7 +620,7 @@ func TestCacheManager_GetGoCacheInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("GetGoCacheInfo returns size when cache exists", func(t *testing.T) {
+	t.Run("when cache contains files should return non-zero size", func(t *testing.T) {
 		err := cm.SetupGoCache()
 		if err != nil {
 			t.Fatalf("SetupGoCache failed: %v", err)
@@ -646,7 +647,7 @@ func TestCacheManager_GetGoCacheInfo(t *testing.T) {
 	})
 }
 
-func TestCacheManager_VMGoCacheSetup(t *testing.T) {
+func TestVMGoCacheSetup(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -658,7 +659,7 @@ func TestCacheManager_VMGoCacheSetup(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("SetupVMGoCache returns commands when host cache exists", func(t *testing.T) {
+	t.Run("when host cache exists should return setup commands", func(t *testing.T) {
 		err := cm.SetupGoCache()
 		if err != nil {
 			t.Fatalf("SetupGoCache failed: %v", err)
@@ -688,7 +689,7 @@ func TestCacheManager_VMGoCacheSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupVMGoCache returns nil when home directory unavailable", func(t *testing.T) {
+	t.Run("when home dir is unavailable should return nil", func(t *testing.T) {
 		cmNoHome := &CacheManager{
 			homeDir:      "",
 			cacheBaseDir: "",
@@ -700,7 +701,7 @@ func TestCacheManager_VMGoCacheSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupVMGoCache returns nil when host cache doesn't exist", func(t *testing.T) {
+	t.Run("when host cache does not exist should return nil", func(t *testing.T) {
 		cmNoCache := &CacheManager{
 			homeDir:      tmpDir,
 			cacheBaseDir: filepath.Join(tmpDir, "nonexistent-cache"),
@@ -713,7 +714,7 @@ func TestCacheManager_VMGoCacheSetup(t *testing.T) {
 	})
 }
 
-func TestCacheManager_GitSetup(t *testing.T) {
+func TestGitCacheSetup(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -725,7 +726,7 @@ func TestCacheManager_GitSetup(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("SetupGitCache creates host cache directory", func(t *testing.T) {
+	t.Run("when home dir is available should create git cache directory", func(t *testing.T) {
 		err := cm.SetupGitCache()
 		if err != nil {
 			t.Fatalf("SetupGitCache failed: %v", err)
@@ -741,7 +742,7 @@ func TestCacheManager_GitSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupGitCache is idempotent", func(t *testing.T) {
+	t.Run("when called twice should succeed both times", func(t *testing.T) {
 		err := cm.SetupGitCache()
 		if err != nil {
 			t.Fatalf("first SetupGitCache failed: %v", err)
@@ -753,7 +754,7 @@ func TestCacheManager_GitSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupGitCache gracefully handles missing home directory", func(t *testing.T) {
+	t.Run("when home dir is empty should return nil without error", func(t *testing.T) {
 		cmNoHome := &CacheManager{
 			homeDir:      "",
 			cacheBaseDir: "",
@@ -766,7 +767,7 @@ func TestCacheManager_GitSetup(t *testing.T) {
 	})
 }
 
-func TestCacheManager_GetGitCacheInfo(t *testing.T) {
+func TestGetGitCacheInfo(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -778,7 +779,7 @@ func TestCacheManager_GetGitCacheInfo(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("GetGitCacheInfo returns zero size when cache doesn't exist", func(t *testing.T) {
+	t.Run("when cache does not exist should return zero size", func(t *testing.T) {
 		info, err := cm.GetGitCacheInfo()
 		if err != nil {
 			t.Fatalf("GetGitCacheInfo failed: %v", err)
@@ -797,7 +798,7 @@ func TestCacheManager_GetGitCacheInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("GetGitCacheInfo returns size when cache exists", func(t *testing.T) {
+	t.Run("when cache contains files should return non-zero size", func(t *testing.T) {
 		err := cm.SetupGitCache()
 		if err != nil {
 			t.Fatalf("SetupGitCache failed: %v", err)
@@ -827,7 +828,7 @@ func TestCacheManager_GetGitCacheInfo(t *testing.T) {
 	})
 }
 
-func TestCacheManager_VMGitCacheSetup(t *testing.T) {
+func TestVMGitCacheSetup(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -839,7 +840,7 @@ func TestCacheManager_VMGitCacheSetup(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("SetupVMGitCache returns commands when host cache exists", func(t *testing.T) {
+	t.Run("when host cache exists should return setup commands", func(t *testing.T) {
 		err := cm.SetupGitCache()
 		if err != nil {
 			t.Fatalf("SetupGitCache failed: %v", err)
@@ -863,7 +864,7 @@ func TestCacheManager_VMGitCacheSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupVMGitCache returns nil when home directory unavailable", func(t *testing.T) {
+	t.Run("when home dir is unavailable should return nil", func(t *testing.T) {
 		cmNoHome := &CacheManager{
 			homeDir:      "",
 			cacheBaseDir: "",
@@ -875,7 +876,7 @@ func TestCacheManager_VMGitCacheSetup(t *testing.T) {
 		}
 	})
 
-	t.Run("SetupVMGitCache returns nil when host cache doesn't exist", func(t *testing.T) {
+	t.Run("when host cache does not exist should return nil", func(t *testing.T) {
 		cmNoCache := &CacheManager{
 			homeDir:      tmpDir,
 			cacheBaseDir: filepath.Join(tmpDir, "nonexistent-cache"),
@@ -888,7 +889,7 @@ func TestCacheManager_VMGitCacheSetup(t *testing.T) {
 	})
 }
 
-func TestCacheManager_GetCachedGitRepos(t *testing.T) {
+func TestGetCachedGitRepos(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -900,7 +901,7 @@ func TestCacheManager_GetCachedGitRepos(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("GetCachedGitRepos returns empty list when cache doesn't exist", func(t *testing.T) {
+	t.Run("when no repos are cached should return empty list", func(t *testing.T) {
 		repos, err := cm.GetCachedGitRepos()
 		if err != nil {
 			t.Fatalf("GetCachedGitRepos failed: %v", err)
@@ -911,7 +912,7 @@ func TestCacheManager_GetCachedGitRepos(t *testing.T) {
 		}
 	})
 
-	t.Run("GetCachedGitRepos returns list of cached repos", func(t *testing.T) {
+	t.Run("when repos are cached should return their names", func(t *testing.T) {
 		err := cm.SetupGitCache()
 		if err != nil {
 			t.Fatalf("SetupGitCache failed: %v", err)
@@ -952,7 +953,7 @@ func TestCacheManager_GetCachedGitRepos(t *testing.T) {
 	})
 }
 
-func TestCacheManager_CacheGitRepo(t *testing.T) {
+func TestCacheGitRepo(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -964,7 +965,7 @@ func TestCacheManager_CacheGitRepo(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("CacheGitRepo returns false when repo already cached", func(t *testing.T) {
+	t.Run("when repo already cached should return false", func(t *testing.T) {
 		err := cm.SetupGitCache()
 		if err != nil {
 			t.Fatalf("SetupGitCache failed: %v", err)
@@ -985,7 +986,7 @@ func TestCacheManager_CacheGitRepo(t *testing.T) {
 		}
 	})
 
-	t.Run("CacheGitRepo gracefully handles missing home directory", func(t *testing.T) {
+	t.Run("when home dir is unavailable should return error", func(t *testing.T) {
 		cmNoHome := &CacheManager{
 			homeDir:      "",
 			cacheBaseDir: "",
@@ -998,7 +999,7 @@ func TestCacheManager_CacheGitRepo(t *testing.T) {
 	})
 }
 
-func TestCacheManager_UpdateGitRepos(t *testing.T) {
+func TestUpdateGitRepos(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -1010,7 +1011,7 @@ func TestCacheManager_UpdateGitRepos(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("UpdateGitRepos returns 0 when no repos cached", func(t *testing.T) {
+	t.Run("when no repos are cached should return zero updates", func(t *testing.T) {
 		updated, err := cm.UpdateGitRepos()
 		if err != nil {
 			t.Fatalf("UpdateGitRepos failed: %v", err)
@@ -1021,7 +1022,7 @@ func TestCacheManager_UpdateGitRepos(t *testing.T) {
 		}
 	})
 
-	t.Run("UpdateGitRepos skips non-git directories gracefully", func(t *testing.T) {
+	t.Run("when directory is not a git repo should skip without error", func(t *testing.T) {
 		err := cm.SetupGitCache()
 		if err != nil {
 			t.Fatalf("SetupGitCache failed: %v", err)
@@ -1043,7 +1044,7 @@ func TestCacheManager_UpdateGitRepos(t *testing.T) {
 	})
 }
 
-func TestCacheManager_Clear(t *testing.T) {
+func TestClearCache(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "calf-cache-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -1055,7 +1056,7 @@ func TestCacheManager_Clear(t *testing.T) {
 		cacheBaseDir: filepath.Join(tmpDir, "cache"),
 	}
 
-	t.Run("Clear removes cache directory and recreates it", func(t *testing.T) {
+	t.Run("when cache has files should delete files and recreate directory", func(t *testing.T) {
 		err := cm.SetupHomebrewCache()
 		if err != nil {
 			t.Fatalf("SetupHomebrewCache failed: %v", err)
@@ -1089,7 +1090,7 @@ func TestCacheManager_Clear(t *testing.T) {
 		}
 	})
 
-	t.Run("Clear with dryRun does not delete cache", func(t *testing.T) {
+	t.Run("when dry run is true should not delete files", func(t *testing.T) {
 		err := cm.SetupHomebrewCache()
 		if err != nil {
 			t.Fatalf("SetupHomebrewCache failed: %v", err)
@@ -1115,7 +1116,7 @@ func TestCacheManager_Clear(t *testing.T) {
 		}
 	})
 
-	t.Run("Clear returns cleared=false when cache doesn't exist", func(t *testing.T) {
+	t.Run("when cache does not exist should return false", func(t *testing.T) {
 		freshTmpDir, err := os.MkdirTemp("", "calf-cache-clear-test-*")
 		if err != nil {
 			t.Fatalf("failed to create temp dir: %v", err)
@@ -1137,7 +1138,7 @@ func TestCacheManager_Clear(t *testing.T) {
 		}
 	})
 
-	t.Run("Clear handles all cache types", func(t *testing.T) {
+	t.Run("when cache type is valid should clear that cache type", func(t *testing.T) {
 		testCases := []string{"homebrew", "npm", "go", "git"}
 
 		for _, cacheType := range testCases {
@@ -1177,7 +1178,7 @@ func TestCacheManager_Clear(t *testing.T) {
 		}
 	})
 
-	t.Run("Clear recreates Go cache subdirectories", func(t *testing.T) {
+	t.Run("when go cache is cleared should recreate pkg mod subdirectory", func(t *testing.T) {
 		err := cm.SetupGoCache()
 		if err != nil {
 			t.Fatalf("SetupGoCache failed: %v", err)
@@ -1204,7 +1205,7 @@ func TestCacheManager_Clear(t *testing.T) {
 		}
 	})
 
-	t.Run("Clear handles read-only files in Go cache", func(t *testing.T) {
+	t.Run("when go cache has read only files should clear successfully", func(t *testing.T) {
 		err := cm.SetupGoCache()
 		if err != nil {
 			t.Fatalf("SetupGoCache failed: %v", err)
@@ -1261,7 +1262,7 @@ func TestCacheManager_Clear(t *testing.T) {
 		}
 	})
 
-	t.Run("Clear preserves symlinks and clears target contents", func(t *testing.T) {
+	t.Run("when cache is a symlink should preserve symlink and clear target contents", func(t *testing.T) {
 		// This simulates the VM scenario where ~/.calf-cache/{type} is a symlink
 		// to /Volumes/My Shared Files/calf-cache/{type}
 
