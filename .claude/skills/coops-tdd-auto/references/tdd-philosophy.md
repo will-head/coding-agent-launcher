@@ -56,14 +56,14 @@ LLMs also tend to write speculative code not supported by tests. Writing tests f
 
 ---
 
-## Human + Agent Collaboration Model (Interactive)
+## Human + Agent Collaboration Model (Automated)
 
-- Human writes or approves a failing test that describes the behaviour and API they want.
-- The test acts as a human-authored evaluation of the agent's code.
-- Human and agent co-discover a passing implementation. Sins acceptable — just pass the test.
-- Human drives refactoring; agent assists but does not modify tests.
+- The task list is the pre-approved specification; no approval gate is needed.
+- Tests are derived from task items, not invented by the agent.
+- Reward hacking protection is *more* critical, not less — no human is watching.
+- Richer prescriptive guidance compensates for the absent human supervisor.
 
-Without this workflow, no one validates that the code meets requirements. If the agent generates both code and tests unsupervised, the safety net is illusory.
+Without test-first discipline in an automated context, there is no mechanism to validate that the agent's code meets requirements. Speculative code and silent behaviour changes become invisible.
 
 ---
 

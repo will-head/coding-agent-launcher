@@ -358,15 +358,16 @@ EOF
 
 ### coops-tdd Skill Requirement
 
-**The `coops-tdd` skill MUST be invoked before writing any code in any workflow — no exceptions.**
+**A coops-tdd skill MUST be invoked before writing any code in any workflow — no exceptions.**
 
-This applies in every workflow that produces code:
-- **Interactive (1):** invoke at Step 1 (Implement)
-- **Bug Cleanup (3):** invoke at Step 2 (Implement)
-- **Implement (5):** invoke at Step 5 (Implement TDD)
-- **Review (6):** invoke at Step 5 (Fix Issues)
+Two variants exist — choose based on whether a human is in the loop:
 
-Code changes made without invoking this skill must not be committed. This rule is enforced in all pre-commit checklists and the Prohibitions section of AGENTS.md.
+| Skill | Workflows |
+|-------|-----------|
+| `coops-tdd` | Interactive (1) — Step 1 (Implement); Bug Cleanup (3) — Step 2 (Implement) |
+| `coops-tdd-auto` | Implement (5) — Step 5 (Implement TDD); Review (6) — Step 5 (Fix Issues) |
+
+Code changes made without invoking the appropriate skill must not be committed. This rule is enforced in all pre-commit checklists and the Prohibitions section of AGENTS.md.
 
 ### Command Execution Policy
 

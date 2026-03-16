@@ -102,9 +102,16 @@ See [WORKFLOWS.md](docs/WORKFLOWS.md) for complete index, quick reference table,
 **Never modify `docs/adr/*` or `docs/prd/*`** - ADRs and PRDs are immutable historical records.
 Create new ADR/PRD to supersede if needed.
 
-### coops-tdd Skill — Mandatory for All Code Changes
+### coops-tdd Skills — Mandatory for All Code Changes
 
-**The `coops-tdd` skill MUST be invoked before writing any code — no exceptions.**
+**A coops-tdd skill MUST be invoked before writing any code — no exceptions.**
+
+Two variants exist — choose based on whether a human is in the loop:
+
+| Skill | When to use |
+|-------|-------------|
+| `coops-tdd` | Human in the loop (Interactive, Bug Cleanup workflows) |
+| `coops-tdd-auto` | Automated agents from a task list (Implement, Review workflows) |
 
 This applies to:
 - New functions, methods, classes, or files
@@ -144,7 +151,7 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) for complete requirements and pat
 - Commit to main branch (Implement, Review workflows — all changes go via worktree branches)
 - Perform destructive remote git operations without approval (`push --force`, `push --delete` — even when `CALF_VM=true`)
 - Commit with failing tests or build
-- Write or modify code without first invoking the `coops-tdd` skill
+- Write or modify code without first invoking the appropriate coops-tdd skill (`coops-tdd` for interactive workflows, `coops-tdd-auto` for automated workflows)
 - Skip code review for code/script changes (Interactive workflow)
 - Modify ADR or PRD files
 - Mark TODOs as `[x]` in TODO files - always move completed items to DONE files

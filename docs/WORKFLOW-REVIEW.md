@@ -101,7 +101,7 @@ Document findings with:
 
 For all fixable issues, edit files directly in the worktree using full paths. Fix methodically, one at a time.
 
-**Invoke the `coops-tdd` skill before writing any new or modified code — no exceptions.** This applies to all fixes, including test additions and corrections.
+**Invoke the `coops-tdd-auto` skill before writing any new or modified code — no exceptions.** This applies to all fixes, including test additions and corrections.
 
 If a "fixable" issue turns out to require rethinking the design: reclassify as architectural, document it, and proceed to Step 7 (architectural path).
 
@@ -185,7 +185,7 @@ Read STATUS.md "Needs Review" again. If unclaimed items exist, loop back to Step
 - [ ] Coding standards reviewed
 - [ ] Comprehensive review completed (all 10 areas)
 - [ ] Findings documented with file path, severity, classification
-- [ ] `coops-tdd` skill invoked before writing any fixes
+- [ ] `coops-tdd-auto` skill invoked before writing any fixes
 - [ ] All fixable issues resolved directly in worktree
 - [ ] Tests pass after fixes (`go test ./...`)
 - [ ] Build succeeds after fixes (`go build -o calf ./cmd/calf`)

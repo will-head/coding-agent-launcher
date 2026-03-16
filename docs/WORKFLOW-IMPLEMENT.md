@@ -87,7 +87,7 @@ Do NOT call `EnterWorktree` — the worktree already exists. Work directly in `.
 
 ### Step 5: Implement (TDD)
 
-**Invoke the `coops-tdd` skill before writing any code — no exceptions.**
+**Invoke the `coops-tdd-auto` skill before writing any code — no exceptions.**
 
 The skill structures all implementation:
 1. Write failing test first (red)
@@ -208,7 +208,7 @@ git push
 - [ ] Item claimed in STATUS.md before starting work
 - [ ] Requirements read from phase TODO file
 - [ ] Coding standards reviewed
-- [ ] `coops-tdd` skill invoked before writing any code
+- [ ] `coops-tdd-auto` skill invoked before writing any code
 - [ ] Tests written first (TDD)
 - [ ] Tests pass (`go test ./...`)
 - [ ] Build succeeds (`go build -o calf ./cmd/calf`)
