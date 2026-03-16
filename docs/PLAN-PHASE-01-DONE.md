@@ -759,3 +759,32 @@ No production code changes. Error-path tests deferred — both functions call `o
 
 All 29 tests in `internal/config` pass.
 
+### Item 2: internal/isolation/tart.go — Run and RunWithCacheDirs (2026-03-16)
+
+Deleted 6 no-op and implementation-detail tests:
+- `TestTartClientConstants` — asserted value of unexported `cacheDirMount` constant
+- `TestTartClient_Run_Headless` — no-op; asserted nothing about command construction
+- `TestTartClient_Run_VNC_UsesExperimental` — no-op; signature check only
+- `TestRunCommandConstruction` — no-op; only checked `client != nil`
+- `TestCacheSharingAlwaysAdded` — redundantly asserted `cacheDirMount` constant value
+- `TestTartClient_RunWithCacheDirs_AcceptsCacheDirs` — no-op; nil check on initialised slice (SA4031)
+
+Added 9 behavioral sub-tests:
+
+**`TestRun`**
+- `"when called with headless true should pass --headless flag to tart run"`
+- `"when called with headless false should not pass --headless flag"`
+- `"when called with vnc true should pass --vnc-experimental flag"`
+- `"when called with vnc false should not pass --vnc-experimental flag"`
+- `"when called should pass vm name as argument"`
+
+**`TestRunWithCacheDirs`**
+- `"when called with cache dirs should include --dir flag for each directory"`
+- `"when called should always include the cache sharing directory"`
+- `"when called with empty cache dirs should still include cache sharing directory"`
+- `"when called should pass vm name as argument"`
+
+Production change: `RunWithCacheDirs` previously called `exec.Command` directly, bypassing the injectable `runCommand` field. Replaced with `c.runCommand(args...)` and removed the explicit `ensureInstalled()` call (production `runTartCommand` handles it). `Run` already delegated to `RunWithCacheDirs` — no change needed there. Added `sliceContains` helper for partial argument matching in tests.
+
+All 162 tests pass. `go vet` clean.
+

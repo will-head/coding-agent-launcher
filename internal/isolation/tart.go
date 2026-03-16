@@ -192,10 +192,6 @@ func (c *TartClient) Run(name string, headless, vnc bool, dirs []string) error {
 // RunWithCacheDirs starts a VM with cache directories shared.
 // cacheDirs specifies additional directories to share for caching (e.g., Homebrew cache).
 func (c *TartClient) RunWithCacheDirs(name string, headless, vnc bool, dirs []string, cacheDirs []string) error {
-	if err := c.ensureInstalled(); err != nil {
-		return err
-	}
-
 	args := []string{"run"}
 
 	if headless {
@@ -218,11 +214,7 @@ func (c *TartClient) RunWithCacheDirs(name string, headless, vnc bool, dirs []st
 
 	args = append(args, name)
 
-	cmd := exec.Command(c.tartPath, args...)
-	cmd.Stdout = c.outputWriter
-	cmd.Stderr = c.errorWriter
-
-	if err := cmd.Run(); err != nil {
+	if _, err := c.runCommand(args...); err != nil {
 		return fmt.Errorf("failed to start VM %s: %w", name, err)
 	}
 
