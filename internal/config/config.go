@@ -277,9 +277,9 @@ func (c *Config) Validate(path string) error {
 
 func (c *Config) validationError(field string, value interface{}, expected string, path string) error {
 	if path != "" {
-		return fmt.Errorf("Invalid %s '%v' in %s: must be %s", field, value, path, expected)
+		return fmt.Errorf("invalid %s '%v' in %s: must be %s", field, value, path, expected)
 	}
-	return fmt.Errorf("Invalid %s '%v': must be %s", field, value, expected)
+	return fmt.Errorf("invalid %s '%v': must be %s", field, value, expected)
 }
 
 // GetDefaultConfigPath returns the path to the global config file (~/.calf/config.yaml).

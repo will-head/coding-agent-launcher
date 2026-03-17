@@ -275,7 +275,7 @@ isolation:
 		if err == nil {
 			t.Error("Expected validation error for zero values in config, got nil")
 		}
-		expectedMsg := "Invalid CPU '0'"
+		expectedMsg := "invalid CPU '0'"
 		if err.Error()[:len(expectedMsg)] != expectedMsg {
 			t.Errorf("Expected error message to start with '%s', got '%s'", expectedMsg, err.Error())
 		}
@@ -300,7 +300,7 @@ isolation:
 		if err == nil {
 			t.Error("Expected validation error for empty base image in config, got nil")
 		}
-		expectedMsg := "Invalid base_image ''"
+		expectedMsg := "invalid base_image ''"
 		if err.Error()[:len(expectedMsg)] != expectedMsg {
 			t.Errorf("Expected error message to start with '%s', got '%s'", expectedMsg, err.Error())
 		}
@@ -347,7 +347,7 @@ func TestValidateConfig(t *testing.T) {
 		if err == nil {
 			t.Error("Expected validation error for invalid CPU, got nil")
 		}
-		expectedMsg := "Invalid CPU '0'"
+		expectedMsg := "invalid CPU '0'"
 		if err.Error()[:len(expectedMsg)] != expectedMsg {
 			t.Errorf("Expected error message to start with '%s', got '%s'", expectedMsg, err.Error())
 		}
@@ -370,7 +370,7 @@ func TestValidateConfig(t *testing.T) {
 		if err == nil {
 			t.Error("Expected validation error for invalid memory, got nil")
 		}
-		expectedMsg := "Invalid memory '100'"
+		expectedMsg := "invalid memory '100'"
 		if err.Error()[:len(expectedMsg)] != expectedMsg {
 			t.Errorf("Expected error message to start with '%s', got '%s'", expectedMsg, err.Error())
 		}
@@ -417,7 +417,7 @@ func TestValidateConfig(t *testing.T) {
 		if err == nil {
 			t.Error("Expected validation error for invalid disk size, got nil")
 		}
-		expectedMsg := "Invalid disk_size '0'"
+		expectedMsg := "invalid disk_size '0'"
 		if err.Error()[:len(expectedMsg)] != expectedMsg {
 			t.Errorf("Expected error message to start with '%s', got '%s'", expectedMsg, err.Error())
 		}
@@ -445,7 +445,7 @@ func TestValidateConfig(t *testing.T) {
 		if err == nil {
 			t.Error("Expected validation error for invalid proxy mode, got nil")
 		}
-		expectedMsg := "Invalid proxy mode 'invalid'"
+		expectedMsg := "invalid proxy mode 'invalid'"
 		if err.Error()[:len(expectedMsg)] != expectedMsg {
 			t.Errorf("Expected error message to start with '%s', got '%s'", expectedMsg, err.Error())
 		}
@@ -470,7 +470,7 @@ func TestValidateConfig(t *testing.T) {
 		if err == nil {
 			t.Error("Expected validation error for empty base image, got nil")
 		}
-		expectedMsg := "Invalid base_image ''"
+		expectedMsg := "invalid base_image ''"
 		if err.Error()[:len(expectedMsg)] != expectedMsg {
 			t.Errorf("Expected error message to start with '%s', got '%s'", expectedMsg, err.Error())
 		}
