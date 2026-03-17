@@ -13,7 +13,6 @@
 | # | File | Severity | Violation |
 |---|------|----------|-----------|
 | 2 | `internal/isolation/tart_test.go` | High | `TestEnsureInstalled` tests unexported method `ensureInstalled()` |
-| 6 | `internal/isolation/cache_test.go` | Medium | `SetupVM*Cache` tests assert on exact shell script text |
 
 ---
 
@@ -79,44 +78,6 @@ TestCloneWhenBrewIsNotAvailableAndTartNotFound
 
 ---
 
-## Item 6 — Remove shell script text assertions from `SetupVM*Cache` tests
-
-**File:** `internal/isolation/cache_test.go`
-
-**Affected test functions:**
-- `TestVMHomebrewCacheSetup` (lines 237–286)
-- `TestVMNpmCacheSetup` (lines 452–505)
-- `TestVMGoCacheSetup` (lines 619–675)
-- `TestVMGitCacheSetup` (lines 782–832)
-
-**Problem:** Each "when host cache exists should return setup commands" subtest joins all commands into a string and then asserts on specific shell fragments:
-```go
-commandsStr := strings.Join(commands, " ")
-if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.calf-cache \"") { ... }
-if !strings.Contains(commandsStr, "touch ~/.zshrc") { ... }
-if !strings.Contains(commandsStr, "HOMEBREW_CACHE") { ... }
-```
-
-These bind the test to the exact shell implementation. Any refactoring of the shell commands (even if the VM behaviour is identical) will break these tests.
-
-**Action:** Replace the specific string assertions with structural assertions only:
-```go
-// Before (remove all of these):
-commandsStr := strings.Join(commands, " ")
-if !strings.Contains(commandsStr, "mount | grep -q ...") { ... }
-if !strings.Contains(commandsStr, "test -d") { ... }
-if !strings.Contains(commandsStr, "HOMEBREW_CACHE") { ... }
-
-// After (keep only structural assertions):
-if len(commands) == 0 {
-    t.Fatalf("expected at least one setup command, got empty slice")
-}
-```
-
-The nil/non-nil and nil/empty-list tests ("when home dir is unavailable should return nil", "when host cache does not exist should return nil") are correct behaviour tests — keep them unchanged.
-
----
-
 ## Execution Order
 
 Work through items in this order to keep the test suite green throughout:
@@ -133,6 +94,6 @@ After all items complete, run `go test ./...` and `staticcheck ./...` to confirm
 ## Completion Criteria
 
 - [ ] `TestEnsureInstalled` replaced with 5 public-interface tests via `Clone`
-- [ ] All `SetupVM*Cache` shell script text assertions replaced with structural assertions
+- [x] All `SetupVM*Cache` shell script text assertions replaced with structural assertions (completed 2026-03-17)
 - [ ] `go test ./...` passes with no failures
 - [ ] `staticcheck ./...` passes with no warnings

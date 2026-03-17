@@ -240,21 +240,6 @@ func TestVMHomebrewCacheSetup(t *testing.T) {
 		if len(commands) == 0 {
 			t.Fatalf("expected at least one command")
 		}
-
-		// Verify commands contain expected operations (mount verification, not symlinks)
-		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.calf-cache \"") {
-			t.Fatalf("expected mount verification in VM setup")
-		}
-		if !strings.Contains(commandsStr, "test -d") {
-			t.Fatalf("expected cache directory verification in VM setup")
-		}
-		if !strings.Contains(commandsStr, "HOMEBREW_CACHE") {
-			t.Fatalf("expected HOMEBREW_CACHE environment variable setup")
-		}
-		if !strings.Contains(commandsStr, "touch ~/.zshrc") {
-			t.Fatalf("expected touch command to ensure .zshrc exists before grep")
-		}
 	})
 
 	t.Run("when home dir is unavailable should return nil", func(t *testing.T) {
@@ -469,17 +454,6 @@ func TestVMNpmCacheSetup(t *testing.T) {
 		if len(commands) == 0 {
 			t.Fatalf("expected at least one command")
 		}
-
-		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.calf-cache \"") {
-			t.Fatalf("expected mount verification in VM setup")
-		}
-		if !strings.Contains(commandsStr, "test -d") {
-			t.Fatalf("expected cache directory verification in VM setup")
-		}
-		if !strings.Contains(commandsStr, "npm config set cache") {
-			t.Fatalf("expected npm cache configuration")
-		}
 	})
 
 	t.Run("when home dir is unavailable should return nil", func(t *testing.T) {
@@ -630,20 +604,6 @@ func TestVMGoCacheSetup(t *testing.T) {
 
 		if len(commands) == 0 {
 			t.Fatalf("expected at least one command")
-		}
-
-		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.calf-cache \"") {
-			t.Fatalf("expected mount verification in VM setup")
-		}
-		if !strings.Contains(commandsStr, "test -d") {
-			t.Fatalf("expected cache directory verification in VM setup")
-		}
-		if !strings.Contains(commandsStr, "GOMODCACHE") {
-			t.Fatalf("expected GOMODCACHE environment variable setup")
-		}
-		if !strings.Contains(commandsStr, "touch ~/.zshrc") {
-			t.Fatalf("expected touch command to ensure .zshrc exists before grep")
 		}
 	})
 
@@ -800,14 +760,6 @@ func TestVMGitCacheSetup(t *testing.T) {
 
 		if len(commands) == 0 {
 			t.Fatalf("expected at least one command")
-		}
-
-		commandsStr := strings.Join(commands, " ")
-		if !strings.Contains(commandsStr, "mount | grep -q \" on $HOME/.calf-cache \"") {
-			t.Fatalf("expected mount verification in VM setup")
-		}
-		if !strings.Contains(commandsStr, "test -d") {
-			t.Fatalf("expected cache directory verification in VM setup")
 		}
 	})
 

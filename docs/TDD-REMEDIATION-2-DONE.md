@@ -74,6 +74,19 @@ Rewrote `TestNewCacheManagerWithDirs` to test observable behaviour instead of un
 
 ---
 
+## Item 6 — Remove shell script text assertions from `SetupVM*Cache` tests (2026-03-17)
+
+**File:** `internal/isolation/cache_test.go`
+
+Removed `commandsStr := strings.Join(commands, " ")` and all `strings.Contains(commandsStr, ...)` assertions from the "when host cache exists should return setup commands" subtest in `TestVMHomebrewCacheSetup`, `TestVMNpmCacheSetup`, `TestVMGoCacheSetup`, and `TestVMGitCacheSetup`. These were binding tests to exact shell command strings (e.g. `mount | grep -q`, `touch ~/.zshrc`, `HOMEBREW_CACHE`). Structural assertions (`commands != nil`, `len(commands) > 0`) retained. Nil-return subtests unchanged.
+
+**Completion criteria met:**
+- [x] All `SetupVM*Cache` shell script text assertions removed (13 lines deleted across 4 functions)
+- [x] `go test ./...` passes (204 tests)
+- [x] `staticcheck ./...` clean
+
+---
+
 ## Item 8 — Fix fragile string slicing in config_test.go (2026-03-17)
 
 **File:** `internal/config/config_test.go`
