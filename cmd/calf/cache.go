@@ -97,14 +97,15 @@ func (f cacheTypeFlags) anySet() bool {
 // runCacheClear executes the cache clear operation using the provided command I/O, cache manager, and flags.
 func runCacheClear(cmd *cobra.Command, stdin io.Reader, cm *isolation.CacheManager, clearAll, force, dryRun bool, types cacheTypeFlags) error {
 	allCacheTypes := []struct {
-		name    string
-		flag    bool
-		getInfo func() (*isolation.CacheInfo, error)
+		name     string
+		clearKey string // lowercase key accepted by CacheManager.Clear
+		flag     bool
+		getInfo  func() (*isolation.CacheInfo, error)
 	}{
-		{"Homebrew", types.homebrew, cm.GetHomebrewCacheInfo},
-		{"npm", types.npm, cm.GetNpmCacheInfo},
-		{"Go", types.goCache, cm.GetGoCacheInfo},
-		{"Git", types.git, cm.GetGitCacheInfo},
+		{"Homebrew", "homebrew", types.homebrew, cm.GetHomebrewCacheInfo},
+		{"npm", "npm", types.npm, cm.GetNpmCacheInfo},
+		{"Go", "go", types.goCache, cm.GetGoCacheInfo},
+		{"Git", "git", types.git, cm.GetGitCacheInfo},
 	}
 
 	// When per-type flags are used, limit to only those types (treat as --all --force for those).
@@ -127,7 +128,7 @@ func runCacheClear(cmd *cobra.Command, stdin io.Reader, cm *isolation.CacheManag
 				fmt.Fprintf(cmd.OutOrStdout(), "Would clear %s cache (%s)\n", ct.name, sizeStr)
 			} else {
 				fmt.Fprintf(cmd.OutOrStdout(), "Clearing %s cache (%s)...\n", ct.name, sizeStr)
-				if _, err := cm.Clear(strings.ToLower(ct.name), false); err != nil {
+				if _, err := cm.Clear(ct.clearKey, false); err != nil {
 					fmt.Fprintf(cmd.ErrOrStderr(), "Error clearing %s cache: %v\n", ct.name, err)
 				} else {
 					fmt.Fprintf(cmd.OutOrStdout(), "Cleared %s cache\n", ct.name)
@@ -141,13 +142,16 @@ func runCacheClear(cmd *cobra.Command, stdin io.Reader, cm *isolation.CacheManag
 	clearedCount := 0
 	totalCount := 0
 
+	// Create the reader once so the same buffer is used for both the global
+	// confirmation prompt (clearAll) and the per-cache prompts below.
+	reader := bufio.NewReader(stdin)
+
 	if clearAll && !dryRun && !force {
 		fmt.Fprintln(cmd.OutOrStdout(), "Warning: This will clear ALL caches!")
 		fmt.Fprintln(cmd.OutOrStdout(), "This will slow down your next VM bootstrap.")
 		fmt.Fprintln(cmd.OutOrStdout())
 		fmt.Fprint(cmd.OutOrStdout(), "Are you sure you want to continue? [y/N]: ")
 
-		reader := bufio.NewReader(stdin)
 		input, err := reader.ReadString('\n')
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -168,8 +172,6 @@ func runCacheClear(cmd *cobra.Command, stdin io.Reader, cm *isolation.CacheManag
 		fmt.Fprintln(cmd.OutOrStdout(), "Dry run: Showing what would be cleared")
 		fmt.Fprintln(cmd.OutOrStdout())
 	}
-
-	reader := bufio.NewReader(stdin)
 
 	for _, ct := range allCacheTypes {
 		info, err := ct.getInfo()
@@ -210,8 +212,7 @@ func runCacheClear(cmd *cobra.Command, stdin io.Reader, cm *isolation.CacheManag
 		}
 
 		if shouldClear {
-			cacheType := strings.ToLower(ct.name)
-			cleared, err := cm.Clear(cacheType, dryRun)
+			cleared, err := cm.Clear(ct.clearKey, dryRun)
 			if err != nil {
 				fmt.Fprintf(cmd.ErrOrStderr(), "Error clearing %s cache: %v\n", ct.name, err)
 				continue

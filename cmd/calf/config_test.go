@@ -8,6 +8,18 @@ import (
 	"testing"
 )
 
+// writeGlobalConfig creates ~/.calf/config.yaml in home with the given YAML content.
+func writeGlobalConfig(t *testing.T, home, yamlContent string) {
+	t.Helper()
+	configDir := filepath.Join(home, ".calf")
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(yamlContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // setupConfigShow wires rootCmd for "calf config show [extraArgs...]" in an
 // isolated temp HOME. Returns the home dir and captured stdout/stderr buffers.
 // All state is automatically restored via t.Cleanup.
@@ -49,14 +61,7 @@ func TestConfigShow(t *testing.T) {
 	t.Run("when valid config file exists should output base image field", func(t *testing.T) {
 		// Arrange
 		home, out, _ := setupConfigShow(t)
-		configDir := filepath.Join(home, ".calf")
-		if err := os.MkdirAll(configDir, 0755); err != nil {
-			t.Fatal(err)
-		}
-		configYAML := "version: 1\nisolation:\n  defaults:\n    vm:\n      base_image: ghcr.io/custom/image:v1\n"
-		if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(configYAML), 0644); err != nil {
-			t.Fatal(err)
-		}
+		writeGlobalConfig(t, home, "version: 1\nisolation:\n  defaults:\n    vm:\n      base_image: ghcr.io/custom/image:v1\n")
 
 		// Act
 		err := rootCmd.Execute()
@@ -73,14 +78,7 @@ func TestConfigShow(t *testing.T) {
 	t.Run("when valid config file exists should output cpu count field", func(t *testing.T) {
 		// Arrange
 		home, out, _ := setupConfigShow(t)
-		configDir := filepath.Join(home, ".calf")
-		if err := os.MkdirAll(configDir, 0755); err != nil {
-			t.Fatal(err)
-		}
-		configYAML := "version: 1\nisolation:\n  defaults:\n    vm:\n      cpu: 8\n"
-		if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(configYAML), 0644); err != nil {
-			t.Fatal(err)
-		}
+		writeGlobalConfig(t, home, "version: 1\nisolation:\n  defaults:\n    vm:\n      cpu: 8\n")
 
 		// Act
 		err := rootCmd.Execute()
@@ -97,14 +95,7 @@ func TestConfigShow(t *testing.T) {
 	t.Run("when valid config file exists should output memory size field", func(t *testing.T) {
 		// Arrange
 		home, out, _ := setupConfigShow(t)
-		configDir := filepath.Join(home, ".calf")
-		if err := os.MkdirAll(configDir, 0755); err != nil {
-			t.Fatal(err)
-		}
-		configYAML := "version: 1\nisolation:\n  defaults:\n    vm:\n      memory: 16384\n"
-		if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(configYAML), 0644); err != nil {
-			t.Fatal(err)
-		}
+		writeGlobalConfig(t, home, "version: 1\nisolation:\n  defaults:\n    vm:\n      memory: 16384\n")
 
 		// Act
 		err := rootCmd.Execute()
@@ -121,14 +112,7 @@ func TestConfigShow(t *testing.T) {
 	t.Run("when vm name flag provided and vm config exists should output vm-specific values", func(t *testing.T) {
 		// Arrange
 		home, out, _ := setupConfigShow(t, "--vm", "test-vm")
-		configDir := filepath.Join(home, ".calf")
-		if err := os.MkdirAll(configDir, 0755); err != nil {
-			t.Fatal(err)
-		}
-		globalYAML := "version: 1\nisolation:\n  defaults:\n    vm:\n      base_image: ghcr.io/global/image:v1\n"
-		if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(globalYAML), 0644); err != nil {
-			t.Fatal(err)
-		}
+		writeGlobalConfig(t, home, "version: 1\nisolation:\n  defaults:\n    vm:\n      base_image: ghcr.io/global/image:v1\n")
 		vmDir := filepath.Join(home, ".calf", "isolation", "vms", "test-vm")
 		if err := os.MkdirAll(vmDir, 0755); err != nil {
 			t.Fatal(err)
@@ -153,14 +137,7 @@ func TestConfigShow(t *testing.T) {
 	t.Run("when vm name flag provided and vm config missing should fall back to global config", func(t *testing.T) {
 		// Arrange
 		home, out, _ := setupConfigShow(t, "--vm", "nonexistent-vm")
-		configDir := filepath.Join(home, ".calf")
-		if err := os.MkdirAll(configDir, 0755); err != nil {
-			t.Fatal(err)
-		}
-		globalYAML := "version: 1\nisolation:\n  defaults:\n    vm:\n      base_image: ghcr.io/global/image:v1\n"
-		if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(globalYAML), 0644); err != nil {
-			t.Fatal(err)
-		}
+		writeGlobalConfig(t, home, "version: 1\nisolation:\n  defaults:\n    vm:\n      base_image: ghcr.io/global/image:v1\n")
 
 		// Act
 		err := rootCmd.Execute()
@@ -177,13 +154,7 @@ func TestConfigShow(t *testing.T) {
 	t.Run("when config file path is invalid should return error not exit process", func(t *testing.T) {
 		// Arrange
 		home, _, _ := setupConfigShow(t)
-		configDir := filepath.Join(home, ".calf")
-		if err := os.MkdirAll(configDir, 0755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte("[invalid yaml"), 0644); err != nil {
-			t.Fatal(err)
-		}
+		writeGlobalConfig(t, home, "[invalid yaml")
 
 		// Act
 		err := rootCmd.Execute()

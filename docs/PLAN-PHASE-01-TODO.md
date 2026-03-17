@@ -14,20 +14,6 @@
 
 ## Critical Issues - HIGHEST PRIORITY
 
-### 0. **BLOCKER:** TDD Remediation — Bring Codebase into coops-tdd Compliance
-
-**No new code may be written until this is complete.**
-
-The codebase was implemented before the `coops-tdd` skill was adopted. Existing code must be brought into full compliance as if it had been written test-first from the beginning.
-
-**Full plan:** [`docs/TDD-REMEDIATION-PLAN.md`](TDD-REMEDIATION-PLAN.md)
-
-**Summary of work (execute in order):**
-- Item 10: Add root command dispatch tests for `cmd/calf/main.go`
-
-**Done when:** `go test ./...` passes, `staticcheck ./...` passes, all tests satisfy Kent Beck's Test Desiderata (isolated, deterministic, fast, behavioral, structure-insensitive, readable).
-
----
 
 ### 4. **REFINED:** Bootstrap Init Logic - Update vs Full Recreate Behavior
 
@@ -206,6 +192,31 @@ lifetime using `kqueue EVFILT_PROC NOTE_EXIT` — the same pattern used by Docke
 **Problem:** `TestTartClient_RunWithCacheDirs_AcceptsCacheDirs` checks `if testCacheDirs == nil` after initialising `testCacheDirs` with a slice literal — the check is always false (staticcheck SA4031).
 
 **Resolution:** This test is deleted and replaced in TDD Remediation Item 2. The SA4031 warning will be resolved automatically at that point. No separate fix required.
+
+---
+
+### BUG-012: CacheManager Writes Directly to os.Stderr (Untestable Warnings)
+
+**File:** `internal/isolation/cache.go`
+
+**Problem:** `UpdateGitRepos` (line 489) and all four `SetupXxxCache` methods (lines 120, 214, 265, 374) write warning messages directly to `os.Stderr` via `fmt.Fprintf(os.Stderr, ...)`. This bypasses any injectable writer, making the warning output untestable and uncapturable by callers.
+
+**Specific issue in `UpdateGitRepos`:** After TDD Item 7 fixed the error return, the per-repo warning (`"Warning: failed to update git cache for %s: %v"`) is still written to `os.Stderr` directly. The warning provides more detail than the error return (names the specific repo), but callers cannot capture or suppress it.
+
+**Fix:** Add a `writer io.Writer` field to `CacheManager`, defaulting to `os.Stderr` in `NewCacheManager`. Inject it via `NewCacheManagerWithDirs` for tests. Replace all `fmt.Fprintf(os.Stderr, ...)` calls with `fmt.Fprintf(c.writer, ...)`.
+
+**Affected methods:**
+- `SetupHomebrewCache` (line 120)
+- `SetupNpmCache` (line 214)
+- `SetupGoCache` (line 265)
+- `SetupGitCache` (line 374)
+- `UpdateGitRepos` (line 489)
+
+**Acceptance Criteria:**
+- All warning output goes through `c.writer`
+- Tests can inject `&bytes.Buffer{}` to capture and assert on warning messages
+- `NewCacheManager()` defaults `writer` to `os.Stderr` (no behaviour change in production)
+- `NewCacheManagerWithDirs` accepts a writer parameter (or add `NewCacheManagerWithDirsAndWriter`)
 
 ---
 

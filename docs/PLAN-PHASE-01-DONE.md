@@ -864,6 +864,33 @@ Created `cmd/calf/config_test.go` with 7 sub-tests in `TestConfigShow`. Extracte
 
 Net change: +1 new test file (165 lines) / +8 lines production. All 179 tests pass.
 
+### Item 10: cmd/calf/main.go — Root Command Dispatch Tests (2026-03-17)
+
+- [x] Add root command dispatch tests for `cmd/calf/main.go` (completed 2026-03-17)
+
+Created `cmd/calf/main_test.go` with 5 sub-tests across 3 top-level functions covering the outermost public surface of the CLI:
+
+**`TestRootCommand`**
+- `"when no args provided should print usage information"`
+- `"when help flag provided should print help text"`
+- `"when unknown subcommand provided should return error"`
+
+**`TestConfigSubcommand`**
+- `"when config subcommand provided should be recognized"`
+
+**`TestCacheSubcommand`**
+- `"when cache subcommand provided should be recognized"`
+
+Extracted `setupRootCmd` helper following the same pattern as `setupConfigShow` in `config_test.go`. All tests went green immediately — dispatch was already correctly wired. No production code changes.
+
+Code review (run during session) also fixed two issues in `cache.go` (hoisted single `bufio.NewReader`; replaced repeated `strings.ToLower` with pre-computed `clearKey` field) and extracted `writeGlobalConfig` helper in `config_test.go` to remove 6× boilerplate.
+
+BUG-012 added to TODO: `CacheManager` writes warnings directly to `os.Stderr` — add injectable `writer io.Writer` field.
+
+**TDD Remediation is COMPLETE.** All items (Pre-work, 0–10) done. New code may now be written.
+
+Net change: +1 new test file (107 lines). All 200 tests pass.
+
 ### Item 9: cmd/calf/cache.go — runCacheClear stdin injectable (2026-03-17)
 
 - [x] Add tests for `cmd/calf/cache.go`; make stdin injectable (completed 2026-03-17)
