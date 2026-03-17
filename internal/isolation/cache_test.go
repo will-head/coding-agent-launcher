@@ -1064,6 +1064,85 @@ func TestUpdateGitRepos(t *testing.T) {
 	})
 }
 
+func TestCacheManagerWriterInjection(t *testing.T) {
+	t.Run("when home dir is empty should write warning to injected writer not stderr", func(t *testing.T) {
+		// Arrange
+		var buf bytes.Buffer
+		cm := NewCacheManagerWithWriter("", "", &buf)
+
+		// Act
+		err := cm.SetupHomebrewCache()
+
+		// Assert
+		if err != nil {
+			t.Fatalf("expected nil error, got: %v", err)
+		}
+		if !strings.Contains(buf.String(), "Warning") {
+			t.Fatalf("expected warning in injected writer, got: %q", buf.String())
+		}
+	})
+
+	t.Run("when home dir is empty should route npm warning to injected writer", func(t *testing.T) {
+		var buf bytes.Buffer
+		cm := NewCacheManagerWithWriter("", "", &buf)
+
+		_ = cm.SetupNpmCache()
+
+		if !strings.Contains(buf.String(), "Warning") {
+			t.Fatalf("expected warning in injected writer, got: %q", buf.String())
+		}
+	})
+
+	t.Run("when home dir is empty should route go warning to injected writer", func(t *testing.T) {
+		var buf bytes.Buffer
+		cm := NewCacheManagerWithWriter("", "", &buf)
+
+		_ = cm.SetupGoCache()
+
+		if !strings.Contains(buf.String(), "Warning") {
+			t.Fatalf("expected warning in injected writer, got: %q", buf.String())
+		}
+	})
+
+	t.Run("when home dir is empty should route git warning to injected writer", func(t *testing.T) {
+		var buf bytes.Buffer
+		cm := NewCacheManagerWithWriter("", "", &buf)
+
+		_ = cm.SetupGitCache()
+
+		if !strings.Contains(buf.String(), "Warning") {
+			t.Fatalf("expected warning in injected writer, got: %q", buf.String())
+		}
+	})
+
+	t.Run("when repo fetch fails should route warning to injected writer", func(t *testing.T) {
+		// Arrange — bad repo so UpdateGitRepos produces a per-repo warning
+		homeDir := t.TempDir()
+		var buf bytes.Buffer
+		localCm := NewCacheManagerWithWriter(homeDir, filepath.Join(homeDir, "cache"), &buf)
+		if err := localCm.SetupGitCache(); err != nil {
+			t.Fatalf("SetupGitCache failed: %v", err)
+		}
+		makeBadGitRepo(t, filepath.Join(localCm.cacheBaseDir, "git", "bad-repo"))
+
+		// Act
+		_, _ = localCm.UpdateGitRepos()
+
+		// Assert
+		if !strings.Contains(buf.String(), "Warning") {
+			t.Fatalf("expected warning in injected writer, got: %q", buf.String())
+		}
+	})
+
+	t.Run("when no writer injected should default to os.Stderr without panic", func(t *testing.T) {
+		// NewCacheManager() must not panic — it defaults writer to os.Stderr
+		cm := NewCacheManager()
+		if cm == nil {
+			t.Fatal("expected non-nil CacheManager")
+		}
+	})
+}
+
 func TestClearCache(t *testing.T) {
 	t.Run("when cache has files should delete files and recreate directory", func(t *testing.T) {
 		// Arrange

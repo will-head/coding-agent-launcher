@@ -911,3 +911,15 @@ Created `cmd/calf/cache_test.go` with 12 sub-tests in `TestCacheClear` covering:
 
 Net change: +1 new test file (270 lines) / +80 lines production. All 192 tests pass.
 
+---
+
+## BUG-012: CacheManager Injectable Writer — ✅ COMPLETED (2026-03-17)
+
+- [x] BUG-012: CacheManager writes directly to os.Stderr (untestable warnings) (completed 2026-03-17)
+
+Added `writer io.Writer` field to `CacheManager`. `NewCacheManager()` and `NewCacheManagerWithDirs()` both default to `os.Stderr` (no production behaviour change). New `NewCacheManagerWithWriter(homeDir, cacheBaseDir, w)` constructor enables tests to inject `&bytes.Buffer{}`. All five `fmt.Fprintf(os.Stderr, ...)` calls in `SetupHomebrewCache`, `SetupNpmCache`, `SetupGoCache`, `SetupGitCache`, and `UpdateGitRepos` replaced with `fmt.Fprintf(c.writer, ...)`. `NewCacheManagerWithDirs` now delegates to `NewCacheManagerWithWriter` (eliminates struct literal duplication).
+
+Added 6 new sub-tests in `TestCacheManagerWriterInjection` covering all four cache type warnings and the `UpdateGitRepos` per-repo warning.
+
+Net change: +79 lines test / +14 lines production. All 207 tests pass.
+

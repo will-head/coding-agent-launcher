@@ -16,6 +16,7 @@ import (
 type CacheManager struct {
 	homeDir      string
 	cacheBaseDir string
+	writer       io.Writer
 }
 
 // CacheInfo contains information about a cache.
@@ -76,15 +77,22 @@ func NewCacheManager() *CacheManager {
 	if err != nil {
 		homeDir = ""
 	}
-	return NewCacheManagerWithDirs(homeDir, filepath.Join(homeDir, ".calf-cache"))
+	return NewCacheManagerWithWriter(homeDir, filepath.Join(homeDir, ".calf-cache"), os.Stderr)
 }
 
 // NewCacheManagerWithDirs creates a CacheManager rooted at the given home and
 // cache base directories. Intended for use in tests.
 func NewCacheManagerWithDirs(homeDir, cacheBaseDir string) *CacheManager {
+	return NewCacheManagerWithWriter(homeDir, cacheBaseDir, os.Stderr)
+}
+
+// NewCacheManagerWithWriter creates a CacheManager rooted at the given home and
+// cache base directories, writing warnings to w.
+func NewCacheManagerWithWriter(homeDir, cacheBaseDir string, w io.Writer) *CacheManager {
 	return &CacheManager{
 		homeDir:      homeDir,
 		cacheBaseDir: cacheBaseDir,
+		writer:       w,
 	}
 }
 
@@ -117,7 +125,7 @@ func (c *CacheManager) getGoCachePath() string {
 // Creates the cache directory structure with graceful degradation on errors.
 func (c *CacheManager) SetupHomebrewCache() error {
 	if c.homeDir == "" {
-		fmt.Fprintf(os.Stderr, "Warning: home directory not available, continuing without Homebrew cache\n")
+		fmt.Fprintf(c.writer, "Warning: home directory not available, continuing without Homebrew cache\n")
 		return nil
 	}
 
@@ -211,7 +219,7 @@ func (c *CacheManager) GetHomebrewCacheInfo() (*CacheInfo, error) {
 // Creates the cache directory with graceful degradation on errors.
 func (c *CacheManager) SetupNpmCache() error {
 	if c.homeDir == "" {
-		fmt.Fprintf(os.Stderr, "Warning: home directory not available, continuing without npm cache\n")
+		fmt.Fprintf(c.writer, "Warning: home directory not available, continuing without npm cache\n")
 		return nil
 	}
 
@@ -262,7 +270,7 @@ func (c *CacheManager) GetNpmCacheInfo() (*CacheInfo, error) {
 // Creates the cache directory structure with graceful degradation on errors.
 func (c *CacheManager) SetupGoCache() error {
 	if c.homeDir == "" {
-		fmt.Fprintf(os.Stderr, "Warning: home directory not available, continuing without Go cache\n")
+		fmt.Fprintf(c.writer, "Warning: home directory not available, continuing without Go cache\n")
 		return nil
 	}
 
@@ -371,7 +379,7 @@ func (c *CacheManager) resolveRealCachePath(localPath string) (string, error) {
 // Creates the cache directory with graceful degradation on errors.
 func (c *CacheManager) SetupGitCache() error {
 	if c.homeDir == "" {
-		fmt.Fprintf(os.Stderr, "Warning: home directory not available, continuing without git cache\n")
+		fmt.Fprintf(c.writer, "Warning: home directory not available, continuing without git cache\n")
 		return nil
 	}
 
@@ -486,7 +494,7 @@ func (c *CacheManager) UpdateGitRepos() (int, error) {
 			continue
 		}
 		if err := exec.Command("git", "-C", repoPath, "fetch", "--all").Run(); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to update git cache for %s: %v\n", repo, err)
+			fmt.Fprintf(c.writer, "Warning: failed to update git cache for %s: %v\n", repo, err)
 			failed++
 			continue
 		}

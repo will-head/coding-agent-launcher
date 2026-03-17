@@ -185,31 +185,6 @@ lifetime using `kqueue EVFILT_PROC NOTE_EXIT` — the same pattern used by Docke
 
 ---
 
-### BUG-012: CacheManager Writes Directly to os.Stderr (Untestable Warnings)
-
-**File:** `internal/isolation/cache.go`
-
-**Problem:** `UpdateGitRepos` (line 489) and all four `SetupXxxCache` methods (lines 120, 214, 265, 374) write warning messages directly to `os.Stderr` via `fmt.Fprintf(os.Stderr, ...)`. This bypasses any injectable writer, making the warning output untestable and uncapturable by callers.
-
-**Specific issue in `UpdateGitRepos`:** After TDD Item 7 fixed the error return, the per-repo warning (`"Warning: failed to update git cache for %s: %v"`) is still written to `os.Stderr` directly. The warning provides more detail than the error return (names the specific repo), but callers cannot capture or suppress it.
-
-**Fix:** Add a `writer io.Writer` field to `CacheManager`, defaulting to `os.Stderr` in `NewCacheManager`. Inject it via `NewCacheManagerWithDirs` for tests. Replace all `fmt.Fprintf(os.Stderr, ...)` calls with `fmt.Fprintf(c.writer, ...)`.
-
-**Affected methods:**
-- `SetupHomebrewCache` (line 120)
-- `SetupNpmCache` (line 214)
-- `SetupGoCache` (line 265)
-- `SetupGitCache` (line 374)
-- `UpdateGitRepos` (line 489)
-
-**Acceptance Criteria:**
-- All warning output goes through `c.writer`
-- Tests can inject `&bytes.Buffer{}` to capture and assert on warning messages
-- `NewCacheManager()` defaults `writer` to `os.Stderr` (no behaviour change in production)
-- `NewCacheManagerWithDirs` accepts a writer parameter (or add `NewCacheManagerWithDirsAndWriter`)
-
----
-
 ## New Features - Normal Priority
 
 ### 4. CLI Proxy Utility for VM↔Host Command Transport
