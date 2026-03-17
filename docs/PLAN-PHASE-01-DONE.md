@@ -836,3 +836,11 @@ Changes (test-only — no production code):
 
 All 168 tests pass.
 
+### Item 6: internal/isolation/cache.go — Eliminate GetXxxCacheInfo Duplication (2026-03-17)
+
+- [x] Extract `getCacheInfo` helper to eliminate 4× duplication (completed 2026-03-17)
+
+Extracted private `getCacheInfo(cachePath string) (*CacheInfo, error)` helper encapsulating the shared pattern across `GetHomebrewCacheInfo`, `GetNpmCacheInfo`, `GetGoCacheInfo`, and `GetGitCacheInfo`. Each public method now delegates in a single line. Also removed orphaned GoDoc fragment from the previously deleted `getSharedVolumeCachePath` function.
+
+Net change: -113 lines / +12 lines. All 168 tests pass.
+
