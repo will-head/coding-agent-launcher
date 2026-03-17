@@ -23,7 +23,6 @@ The codebase was implemented before the `coops-tdd` skill was adopted. Existing 
 **Full plan:** [`docs/TDD-REMEDIATION-PLAN.md`](TDD-REMEDIATION-PLAN.md)
 
 **Summary of work (execute in order):**
-- Item 9: Add tests for `cmd/calf/cache.go`; make stdin injectable
 - Item 10: Add root command dispatch tests for `cmd/calf/main.go`
 
 **Done when:** `go test ./...` passes, `staticcheck ./...` passes, all tests satisfy Kent Beck's Test Desiderata (isolated, deterministic, fast, behavioral, structure-insensitive, readable).

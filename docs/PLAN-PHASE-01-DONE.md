@@ -864,3 +864,15 @@ Created `cmd/calf/config_test.go` with 7 sub-tests in `TestConfigShow`. Extracte
 
 Net change: +1 new test file (165 lines) / +8 lines production. All 179 tests pass.
 
+### Item 9: cmd/calf/cache.go — runCacheClear stdin injectable (2026-03-17)
+
+- [x] Add tests for `cmd/calf/cache.go`; make stdin injectable (completed 2026-03-17)
+
+Replaced package-level `var cacheCmd/cacheClearCmd/clearAll/force/dryRun` globals with a `newCacheCmd(stdin io.Reader, homeDir string) *cobra.Command` factory. Added `newCacheManager(homeDir string)` helper that delegates to `NewCacheManagerWithDirs` when a non-empty homeDir is provided, enabling tests to point the cache manager at `t.TempDir()` directories. All `fmt.Print*` calls replaced with `cmd.OutOrStdout()` / `cmd.ErrOrStderr()`.
+
+Added per-type flags `--homebrew`, `--npm`, `--go`, `--git` (new behavior) driven by test requirements. Added `cacheTypeFlags` struct with `anySet()` helper to cleanly encapsulate per-type flag state. Added `GoDoc` comment to `runCacheClear`.
+
+Created `cmd/calf/cache_test.go` with 12 sub-tests in `TestCacheClear` covering: force, dry-run (output and file preservation), all+confirm, all+decline, per-type flags (×4), per-type+dry-run, all+force, all+dry-run. Extracted `setupCacheCmd` and `setupCacheCmdWithDirs` helpers.
+
+Net change: +1 new test file (270 lines) / +80 lines production. All 192 tests pass.
+

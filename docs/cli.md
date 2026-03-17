@@ -63,6 +63,10 @@ cache clear                                # Interactive - prompts for each cach
 cache clear --all                          # Clear all caches (requires y/N confirmation)
 cache clear --all --force                  # Skip all confirmations (for automation)
 cache clear --dry-run                      # Preview what would be cleared
+cache clear --homebrew                     # Clear only Homebrew cache
+cache clear --npm                          # Clear only npm cache
+cache clear --go                           # Clear only Go cache
+cache clear --git                          # Clear only Git cache
 ```
 
 **Cache types:** Homebrew, npm, Go modules, Git repositories
