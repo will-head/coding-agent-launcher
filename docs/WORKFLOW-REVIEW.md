@@ -8,7 +8,7 @@
 - **No permission needed** — fully autonomous operation
 - **Work in existing worktree** — review and fix files directly at `.claude/worktrees/<name>`; never `git checkout`
 - **Claim before starting** — move item to "Reviewing" in STATUS.md on main before touching the worktree
-- **Fix directly** — resolve minor and moderate issues on the worktree branch; only send back architectural issues
+- **Fix directly** — resolve minor and major issues on the worktree branch; only send back architectural issues
 - **Automated tests gate handoff** — tests and build must pass before moving to Needs Testing
 - **Keep busy** — after completing an item, check for more before exiting
 
@@ -93,7 +93,7 @@ Review all changed files in the worktree comprehensively across 10 areas. Use Re
 
 Document findings with:
 - File path and line number (relative to worktree root)
-- Severity: critical / moderate / minor
+- Severity: critical / major / minor
 - Classification: fixable / architectural
 - Recommendation
 

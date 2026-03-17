@@ -111,19 +111,9 @@ Build must succeed to continue.
 
 ### Step 5: Code Review
 
-Review code changes for:
-- **Bug fix correctness** - Does the fix address the root cause documented in the bug report?
-- **Regression risk** - Could this fix break other functionality?
-- **Code quality** - Readability, maintainability, modularity
-- **Test coverage** - Bug reproduction test and edge cases
-- **Security** - Input validation, no injection risks, proper error handling
-- **Go conventions** - Idiomatic Go code
-- **Shell script best practices** - Proper quoting, error handling
-
-Document findings with:
-- File and line references
-- Severity ratings (critical, moderate, minor)
-- Specific recommendations
+**Invoke the `code-review` skill.** Also verify these bug-fix-specific criteria:
+- **Bug fix correctness** — Does the fix address the root cause documented in the bug report?
+- **Regression risk** — Could this fix break other functionality?
 
 ### Step 6: Present Review
 
@@ -156,11 +146,9 @@ Document findings with:
 
 ### Step 8: Present Final Code Review
 
-After user testing is complete, present a final code review summarizing:
-- Confirmation the bug is fixed (root cause addressed)
-- Any issues discovered during user testing and their resolutions
-- Confirmation that all tests still pass after any fixes
-- Final assessment of code quality and readiness for commit
+**Invoke the `code-review` skill** as a final check after user testing. Also confirm:
+- The bug is fixed (root cause addressed)
+- All tests still pass after any fixes made during user testing
 
 **STOP and wait for explicit user approval** before proceeding (auto-approved when `CALF_VM=true`).
 
