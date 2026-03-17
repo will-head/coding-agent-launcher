@@ -3,6 +3,7 @@ package isolation
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -61,22 +62,44 @@ func createTestClient(mock *mockCommandRunner) *TartClient {
 }
 
 func TestVMStateString(t *testing.T) {
-	tests := []struct {
-		name  string
-		state VMState
-	}{
-		{"running", StateRunning},
-		{"stopped", StateStopped},
-		{"not_found", StateNotFound},
-	}
+	t.Run("when state is running should return string running", func(t *testing.T) {
+		// Arrange
+		state := StateRunning
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if string(tt.state) != tt.name {
-				t.Errorf("VMState.String() = %v, want %v", string(tt.state), tt.name)
-			}
-		})
-	}
+		// Act
+		got := string(state)
+
+		// Assert
+		if got != "running" {
+			t.Errorf("VMState string = %q, want %q", got, "running")
+		}
+	})
+
+	t.Run("when state is stopped should return string stopped", func(t *testing.T) {
+		// Arrange
+		state := StateStopped
+
+		// Act
+		got := string(state)
+
+		// Assert
+		if got != "stopped" {
+			t.Errorf("VMState string = %q, want %q", got, "stopped")
+		}
+	})
+
+	t.Run("when state is not found should return string not_found", func(t *testing.T) {
+		// Arrange
+		state := StateNotFound
+
+		// Act
+		got := string(state)
+
+		// Assert
+		if got != "not_found" {
+			t.Errorf("VMState string = %q, want %q", got, "not_found")
+		}
+	})
 }
 
 func TestClone(t *testing.T) {
@@ -96,7 +119,7 @@ func TestClone(t *testing.T) {
 		}
 
 		expected := []string{"tart", "clone", "test-image", "test-vm"}
-		if !equalStringSlices(mock.commands[0], expected) {
+		if !slices.Equal(mock.commands[0], expected) {
 			t.Errorf("Clone() command = %v, want %v", mock.commands[0], expected)
 		}
 	})
@@ -131,7 +154,7 @@ func TestSet(t *testing.T) {
 		}
 
 		expected := []string{"tart", "set", "test-vm", "--cpu=4", "--memory=8192", "--disk-size=80"}
-		if !equalStringSlices(mock.commands[0], expected) {
+		if !slices.Equal(mock.commands[0], expected) {
 			t.Errorf("Set() command = %v, want %v", mock.commands[0], expected)
 		}
 	})
@@ -148,7 +171,7 @@ func TestSet(t *testing.T) {
 		}
 
 		expected := []string{"tart", "set", "test-vm", "--cpu=4"}
-		if !equalStringSlices(mock.commands[0], expected) {
+		if !slices.Equal(mock.commands[0], expected) {
 			t.Errorf("Set() command = %v, want %v", mock.commands[0], expected)
 		}
 	})
@@ -167,7 +190,7 @@ func TestStop(t *testing.T) {
 		}
 
 		expected := []string{"tart", "stop", "test-vm"}
-		if !equalStringSlices(mock.commands[0], expected) {
+		if !slices.Equal(mock.commands[0], expected) {
 			t.Errorf("Stop() command = %v, want %v", mock.commands[0], expected)
 		}
 	})
@@ -184,7 +207,7 @@ func TestStop(t *testing.T) {
 		}
 
 		expected := []string{"tart", "stop", "test-vm", "--timeout=0"}
-		if !equalStringSlices(mock.commands[0], expected) {
+		if !slices.Equal(mock.commands[0], expected) {
 			t.Errorf("Stop() command = %v, want %v", mock.commands[0], expected)
 		}
 	})
@@ -203,7 +226,7 @@ func TestDelete(t *testing.T) {
 		}
 
 		expected := []string{"tart", "delete", "test-vm"}
-		if !equalStringSlices(mock.commands[0], expected) {
+		if !slices.Equal(mock.commands[0], expected) {
 			t.Errorf("Delete() command = %v, want %v", mock.commands[0], expected)
 		}
 	})
@@ -450,19 +473,6 @@ func TestGetState(t *testing.T) {
 	}
 }
 
-// equalStringSlices compares two string slices for equality
-func equalStringSlices(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
 func TestRun(t *testing.T) {
 	t.Run("when called with headless true should pass --headless flag to tart run", func(t *testing.T) {
 		mock := newMockCommandRunner()
@@ -476,7 +486,7 @@ func TestRun(t *testing.T) {
 		if len(mock.commands) == 0 {
 			t.Fatal("Run() should have executed a command")
 		}
-		if !sliceContains(mock.commands[0], "--headless") {
+		if !slices.Contains(mock.commands[0], "--headless") {
 			t.Errorf("Run() command %v should contain --headless", mock.commands[0])
 		}
 	})
@@ -493,7 +503,7 @@ func TestRun(t *testing.T) {
 		if len(mock.commands) == 0 {
 			t.Fatal("Run() should have executed a command")
 		}
-		if sliceContains(mock.commands[0], "--headless") {
+		if slices.Contains(mock.commands[0], "--headless") {
 			t.Errorf("Run() command %v should not contain --headless", mock.commands[0])
 		}
 	})
@@ -510,7 +520,7 @@ func TestRun(t *testing.T) {
 		if len(mock.commands) == 0 {
 			t.Fatal("Run() should have executed a command")
 		}
-		if !sliceContains(mock.commands[0], "--vnc-experimental") {
+		if !slices.Contains(mock.commands[0], "--vnc-experimental") {
 			t.Errorf("Run() command %v should contain --vnc-experimental", mock.commands[0])
 		}
 	})
@@ -527,7 +537,7 @@ func TestRun(t *testing.T) {
 		if len(mock.commands) == 0 {
 			t.Fatal("Run() should have executed a command")
 		}
-		if sliceContains(mock.commands[0], "--vnc-experimental") {
+		if slices.Contains(mock.commands[0], "--vnc-experimental") {
 			t.Errorf("Run() command %v should not contain --vnc-experimental", mock.commands[0])
 		}
 	})
@@ -544,7 +554,7 @@ func TestRun(t *testing.T) {
 		if len(mock.commands) == 0 {
 			t.Fatal("Run() should have executed a command")
 		}
-		if !sliceContains(mock.commands[0], "my-vm") {
+		if !slices.Contains(mock.commands[0], "my-vm") {
 			t.Errorf("Run() command %v should contain vm name 'my-vm'", mock.commands[0])
 		}
 	})
@@ -565,10 +575,10 @@ func TestRunWithCacheDirs(t *testing.T) {
 		if len(mock.commands) == 0 {
 			t.Fatal("RunWithCacheDirs() should have executed a command")
 		}
-		if !sliceContains(mock.commands[0], "--dir=calf-cache:/path/to/cache") {
+		if !slices.Contains(mock.commands[0], "--dir=calf-cache:/path/to/cache") {
 			t.Errorf("RunWithCacheDirs() command %v should contain --dir=calf-cache:/path/to/cache", mock.commands[0])
 		}
-		if !sliceContains(mock.commands[0], "--dir=npm-cache:/path/to/npm") {
+		if !slices.Contains(mock.commands[0], "--dir=npm-cache:/path/to/npm") {
 			t.Errorf("RunWithCacheDirs() command %v should contain --dir=npm-cache:/path/to/npm", mock.commands[0])
 		}
 	})
@@ -586,7 +596,7 @@ func TestRunWithCacheDirs(t *testing.T) {
 			t.Fatal("RunWithCacheDirs() should have executed a command")
 		}
 		expectedDir := fmt.Sprintf("--dir=%s", cacheDirMount)
-		if !sliceContains(mock.commands[0], expectedDir) {
+		if !slices.Contains(mock.commands[0], expectedDir) {
 			t.Errorf("RunWithCacheDirs() command %v should contain %s", mock.commands[0], expectedDir)
 		}
 	})
@@ -604,7 +614,7 @@ func TestRunWithCacheDirs(t *testing.T) {
 			t.Fatal("RunWithCacheDirs() should have executed a command")
 		}
 		expectedDir := fmt.Sprintf("--dir=%s", cacheDirMount)
-		if !sliceContains(mock.commands[0], expectedDir) {
+		if !slices.Contains(mock.commands[0], expectedDir) {
 			t.Errorf("RunWithCacheDirs() command %v should contain %s", mock.commands[0], expectedDir)
 		}
 	})
@@ -621,7 +631,7 @@ func TestRunWithCacheDirs(t *testing.T) {
 		if len(mock.commands) == 0 {
 			t.Fatal("RunWithCacheDirs() should have executed a command")
 		}
-		if !sliceContains(mock.commands[0], "my-vm") {
+		if !slices.Contains(mock.commands[0], "my-vm") {
 			t.Errorf("RunWithCacheDirs() command %v should contain vm name 'my-vm'", mock.commands[0])
 		}
 	})
@@ -650,7 +660,7 @@ func TestCloneWhenTartIsInstalled(t *testing.T) {
 	if len(mock.commands) == 0 {
 		t.Fatal("Clone() should have dispatched a command")
 	}
-	if !sliceContains(mock.commands[0], "clone") {
+	if !slices.Contains(mock.commands[0], "clone") {
 		t.Errorf("Clone() command %v should contain 'clone'", mock.commands[0])
 	}
 }
@@ -763,14 +773,4 @@ func makeInstallingRunCommand(client *TartClient, mock *mockCommandRunner) func(
 		}
 		return mock.runCommand("tart", args...)
 	}
-}
-
-// sliceContains reports whether s is an element of slice.
-func sliceContains(slice []string, s string) bool {
-	for _, v := range slice {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }

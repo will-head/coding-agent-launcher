@@ -5,6 +5,10 @@
 > **Scope:** Fix all FAIL and WARN violations from the Remediation 3 audit. Items ordered smallest-to-largest: naming/style fixes first (no logic change), then test-only changes, then production+test changes requiring design work.
 >
 > **Reference assessment:** coops-tdd audit report, session history 2026-03-17
+>
+> **Workflow:** Always follow the `coops-tdd` skill throughout this remediation. Every item — even pure test restructuring — must go through the coops-tdd process before changes are made.
+>
+> **Style reference:** Use `cmd/calf/config_test.go` and `internal/isolation/tart_test.go` as style guides. Each scenario is an individual `t.Run("when...should...", ...)` block with explicit `// Arrange`, `// Act`, `// Assert` sections — not table-driven loops.
 
 ---
 
@@ -25,54 +29,6 @@
 
 Items 8 and 9 share the same root cause and fix (Item 10 below).
 Item 10 from the summary is assessed as a non-issue (see Item 11 below).
-
----
-
-## Item 1 — Rename `TestVMStateString` Subtests (WARN)
-
-**File:** `internal/isolation/tart_test.go` (lines 63–80)
-
-**Problem:** Subtests are named `"running"`, `"stopped"`, `"not_found"` — data values, not behaviour. The `name` field also doubles as the expected string, making the test logic implicit and hard to read.
-
-**Action:** Split `name` and `want` into separate fields; rename subtests to `when ... should ...` phrases.
-
-**Replace the entire `TestVMStateString` function with:**
-
-```go
-func TestVMStateString(t *testing.T) {
-    tests := []struct {
-        name  string
-        state VMState
-        want  string
-    }{
-        {
-            name:  "when state is running should return string running",
-            state: StateRunning,
-            want:  "running",
-        },
-        {
-            name:  "when state is stopped should return string stopped",
-            state: StateStopped,
-            want:  "stopped",
-        },
-        {
-            name:  "when state is not found should return string not_found",
-            state: StateNotFound,
-            want:  "not_found",
-        },
-    }
-
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            if string(tt.state) != tt.want {
-                t.Errorf("string(%v) = %q, want %q", tt.state, string(tt.state), tt.want)
-            }
-        })
-    }
-}
-```
-
-No production code changes. Run `go test ./internal/isolation/... -run TestVMStateString` — all subtests pass.
 
 ---
 
@@ -753,7 +709,7 @@ All must pass.
 
 Work through items strictly in this order to keep the test suite green throughout:
 
-1. **Item 1** — `TestVMStateString` rename. Pure test rewrite, no logic change. Run `go test ./internal/isolation/...`.
+1. ~~**Item 1** — `TestVMStateString` rename. DONE.~~
 2. **Item 2** — `TestCloneWhenTart*` `t.Run` wrapping. Pure restructure, no logic change. Run `go test ./internal/isolation/...`.
 3. **Item 3** — Export `CacheDirMount`. Pure rename. Run `go test ./...`.
 4. **Item 4** — Move `ensureInstalled` to public methods (production change). Run `go test ./...` after each method updated.
@@ -770,7 +726,6 @@ Final check: `go test ./...` and `staticcheck ./...` must both pass clean.
 
 ## Completion Criteria
 
-- [ ] `TestVMStateString` subtests renamed to `when...should...` with separate `want` field
 - [ ] `TestCloneWhenTart*` functions wrap bodies in `t.Run("when...should...", ...)`
 - [ ] `cacheDirMount` exported as `CacheDirMount`; all references updated
 - [ ] `ensureInstalled` removed from `runTartCommand`; added to `Clone`, `Set`, `RunWithCacheDirs`, `Stop`, `Delete`, `List`, `IP`
