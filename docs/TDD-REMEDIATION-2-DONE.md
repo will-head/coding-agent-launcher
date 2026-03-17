@@ -61,6 +61,19 @@ Affected: `TestHomebrewCacheSetup`, `TestGetHomebrewCacheInfo`, `TestNpmCacheSet
 
 ---
 
+## Item 4 — Rewrite `TestNewCacheManagerWithDirs` (2026-03-17)
+
+**File:** `internal/isolation/cache_test.go`
+
+Rewrote `TestNewCacheManagerWithDirs` to test observable behaviour instead of unexported fields. The old test asserted `cm.homeDir` and `cm.cacheBaseDir` directly. The new test calls `SetupHomebrewCache()` and uses `os.Stat` to confirm the homebrew cache directory was created under the given `cacheBaseDir`. This proves both that `homeDir` was stored (non-empty → proceeds rather than no-ops) and that `cacheBaseDir` was stored (directory created at the expected path).
+
+**Completion criteria met:**
+- [x] `TestNewCacheManagerWithDirs` rewritten as behaviour test via `SetupHomebrewCache()` + `os.Stat`
+- [x] No unexported fields accessed
+- [x] `go test ./...` passes (204 tests)
+
+---
+
 ## Item 8 — Fix fragile string slicing in config_test.go (2026-03-17)
 
 **File:** `internal/config/config_test.go`

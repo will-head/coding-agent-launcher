@@ -161,23 +161,22 @@ func TestCacheStatus(t *testing.T) {
 
 
 func TestNewCacheManagerWithDirs(t *testing.T) {
-	t.Run("when dirs provided should initialise with given home and cache base dirs", func(t *testing.T) {
+	t.Run("when dirs provided should create homebrew cache under cache base dir", func(t *testing.T) {
 		// Arrange
 		homeDir := t.TempDir()
 		cacheBaseDir := filepath.Join(homeDir, "cache")
 
 		// Act
 		cm := NewCacheManagerWithDirs(homeDir, cacheBaseDir)
+		err := cm.SetupHomebrewCache()
 
 		// Assert
-		if cm == nil {
-			t.Fatalf("expected non-nil CacheManager")
+		if err != nil {
+			t.Fatalf("expected no error setting up homebrew cache, got: %v", err)
 		}
-		if cm.homeDir != homeDir {
-			t.Fatalf("expected homeDir %q, got %q", homeDir, cm.homeDir)
-		}
-		if cm.cacheBaseDir != cacheBaseDir {
-			t.Fatalf("expected cacheBaseDir %q, got %q", cacheBaseDir, cm.cacheBaseDir)
+		expectedDir := filepath.Join(cacheBaseDir, "homebrew")
+		if _, statErr := os.Stat(expectedDir); os.IsNotExist(statErr) {
+			t.Fatalf("expected homebrew cache dir at %q, but it does not exist", expectedDir)
 		}
 	})
 }

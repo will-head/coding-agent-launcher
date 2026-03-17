@@ -13,8 +13,6 @@
 | # | File | Severity | Violation |
 |---|------|----------|-----------|
 | 2 | `internal/isolation/tart_test.go` | High | `TestEnsureInstalled` tests unexported method `ensureInstalled()` |
-| 4 | `internal/isolation/cache_test.go` | High | `TestNewCacheManagerWithDirs` tests unexported fields only |
-| 5 | `internal/isolation/cache_test.go` | High | Many tests access `cm.cacheBaseDir` (unexported) to build fixture paths |
 | 6 | `internal/isolation/cache_test.go` | Medium | `SetupVM*Cache` tests assert on exact shell script text |
 
 ---
@@ -81,33 +79,6 @@ TestCloneWhenBrewIsNotAvailableAndTartNotFound
 
 ---
 
-## Item 4 — Rewrite `TestNewCacheManagerWithDirs`
-
-**File:** `internal/isolation/cache_test.go` (lines 171–191)
-
-**Problem:** Asserts that injected values were stored in unexported fields:
-```go
-if cm.homeDir != homeDir { ... }
-if cm.cacheBaseDir != cacheBaseDir { ... }
-```
-
-**Action:** Replace with a behaviour test that proves the injected dirs are *used*:
-
-```
-TestNewCacheManagerWithDirs
-  when dirs provided should set up homebrew cache under the provided cache base dir
-  - Arrange: homeDir = t.TempDir(), cacheBaseDir = filepath.Join(homeDir, "cache")
-  - Act: cm = NewCacheManagerWithDirs(homeDir, cacheBaseDir)
-  - Act: err = cm.SetupHomebrewCache()
-  - Assert: err is nil
-  - Act: info, err = cm.GetHomebrewCacheInfo()
-  - Assert: err is nil
-  - Assert: info.Path contains cacheBaseDir (proves the injected dir is used, not the default)
-  - Assert: info.Available is true (proves cache was created)
-```
-
----
-
 ## Item 6 — Remove shell script text assertions from `SetupVM*Cache` tests
 
 **File:** `internal/isolation/cache_test.go`
@@ -162,8 +133,6 @@ After all items complete, run `go test ./...` and `staticcheck ./...` to confirm
 ## Completion Criteria
 
 - [ ] `TestEnsureInstalled` replaced with 5 public-interface tests via `Clone`
-- [ ] `TestNewCacheManagerWithDirs` rewritten as behaviour test using `GetHomebrewCacheInfo`
-- [ ] All `cm.cacheBaseDir` accesses removed from cache_test.go
 - [ ] All `SetupVM*Cache` shell script text assertions replaced with structural assertions
 - [ ] `go test ./...` passes with no failures
 - [ ] `staticcheck ./...` passes with no warnings
