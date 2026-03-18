@@ -10,6 +10,19 @@
 
 ---
 
+## Critical Issue #6: Repository Rename — launcher → loader — ✅ COMPLETED (2026-03-18)
+
+- [x] GitHub repo renamed: `coding-agent-launcher` → `coding-agent-loader`
+- [x] `go.mod` module path updated to `github.com/will-head/coding-agent-loader`
+- [x] Import paths updated in all Go files (5 files updated)
+- [x] `STATUS.md` PR links updated (10 URLs)
+- [x] Local working directory renamed: `coding-agent-launcher` → `coding-agent-loader`
+- [x] Git remote URL updated to new repo name
+
+Out of scope (immutable historical records): `docs/adr/ADR-005-*.md`, `docs/prd/prd-001-*.md`. (completed 2026-03-18)
+
+---
+
 ## Critical Issue #4c: Collapse `check_vm_git_changes` into Single SSH Call — ✅ COMPLETED (2026-03-18)
 
 - [x] Refactored `check_vm_git_changes` in `calf-bootstrap` — merged two separate SSH calls (uncommitted check + unpushed check) into a single SSH call outputting tagged lines (`U:/path`, `P:/path`). Caller parses with `grep | sed` into the existing `uncommitted_check`/`unpushed_check` variables; behaviour unchanged. Updated `scripts/test-git-worktree-safety.sh`: removed stale `detect_uncommitted`/`detect_unpushed` functions, rewrote all 4 tests around the new `detect_changes` function that mirrors the single-call logic. (completed 2026-03-18)
