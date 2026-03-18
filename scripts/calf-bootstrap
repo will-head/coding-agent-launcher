@@ -764,16 +764,21 @@ check_vm_git_changes() {
     echo "Checking for git changes in $vm_name..."
 
     # Check for uncommitted changes (search common dev directories + home with depth limit)
+    # Also checks linked git worktrees — find only discovers .git dirs (not worktree .git files)
+    # TODO: The worktree-listing scaffold below is structurally identical to the unpushed check.
+    #       Eliminate duplication by collapsing both checks into a single SSH call.
     uncommitted_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d 2>/dev/null; find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null | sort -u); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); done' 2>/dev/null || echo "")
+        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d 2>/dev/null; find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null | sort -u); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$dir"); git -C "$dir" worktree list --porcelain 2>/dev/null | awk "/^worktree /{print \$2}" | grep -v "^$(cd "$dir" 2>/dev/null && pwd -P 2>/dev/null)$" | while read -r wt_dir; do (cd "$wt_dir" 2>/dev/null && [ -n "$(git status --porcelain 2>/dev/null)" ] && echo "$wt_dir"); done; done' 2>/dev/null || echo "")
 
     if [ -n "$uncommitted_check" ]; then
         has_uncommitted=true
     fi
 
     # Check for unpushed commits (requires upstream tracking to be set)
+    # Also checks linked git worktrees — find only discovers .git dirs (not worktree .git files)
+    # TODO: Collapse with uncommitted check above into a single SSH call to remove duplication.
     unpushed_check=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d 2>/dev/null; find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null | sort -u); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); done' 2>/dev/null || echo "")
+        "${VM_USER}@${vm_ip}" 'for gitdir in $(find ~/workspace ~/projects ~/repos ~/code 2>/dev/null -name ".git" -type d 2>/dev/null; find ~ -maxdepth 2 -name ".git" -type d 2>/dev/null | sort -u); do dir=$(dirname "$gitdir"); (cd "$dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$dir"; fi); git -C "$dir" worktree list --porcelain 2>/dev/null | awk "/^worktree /{print \$2}" | grep -v "^$(cd "$dir" 2>/dev/null && pwd -P 2>/dev/null)$" | while read -r wt_dir; do (cd "$wt_dir" 2>/dev/null && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ "$branch" != "HEAD" ] && git rev-parse "$branch@{u}" >/dev/null 2>&1 && [ -n "$(git log "@{u}.." --oneline 2>/dev/null)" ]; then echo "$wt_dir"; fi); done; done' 2>/dev/null || echo "")
 
     if [ -n "$unpushed_check" ]; then
         has_unpushed=true

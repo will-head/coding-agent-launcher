@@ -10,6 +10,12 @@
 
 ---
 
+## Critical Issue #4b: Git Safety Check: Worktree Awareness (calf-bootstrap) — ✅ COMPLETED (2026-03-18)
+
+- [x] Extended `check_vm_git_changes` in `calf-bootstrap` to enumerate linked git worktrees via `git worktree list --porcelain` and run both uncommitted and unpushed checks in each linked worktree. Used `pwd -P` for symlink-safe path exclusion. Added TODO comments flagging the duplicate worktree scaffold between the two SSH calls as a candidate for future single-SSH-call refactor. Added `scripts/test-git-worktree-safety.sh` (4 tests: no-worktree repo, main checkout, linked worktree, ghost worktree). VM-tested: worktree uncommitted change detected; clean state has no false positives. (completed 2026-03-18)
+
+---
+
 ## Critical Issue #4: Bootstrap Init Logic - Update vs Full Recreate Behavior — ✅ COMPLETED (2026-03-18)
 
 - [x] `calf-bootstrap`: Removed erroneous `else` branch (echo "Aborted." + `exit 0`) so declining the "replace calf-init?" prompt falls through to the full-reinit flow. Added clarifying comment explaining the intentional fall-through. (completed 2026-03-18)
