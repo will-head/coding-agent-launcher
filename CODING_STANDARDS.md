@@ -73,6 +73,30 @@ fi
 
 ---
 
+## Shell `trap` Handlers
+
+Each new `trap ... EXIT` call **replaces** the previous one — it does not chain. When a script creates multiple temporary directories (or other resources) at different points, every subsequent `trap` must include all earlier resources.
+
+**Never** register a second `trap EXIT` that omits resources registered by the first.
+
+```bash
+# Bad — TMP leaks if the script exits after TMP2 is created
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+# ... later ...
+TMP2=$(mktemp -d)
+trap 'rm -rf "$TMP2"' EXIT   # silently drops TMP cleanup
+
+# Good — update the handler to cover all live resources
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+# ... later ...
+TMP2=$(mktemp -d)
+trap 'rm -rf "$TMP" "$TMP2"' EXIT
+```
+
+---
+
 ## Security Practices
 
 **Never** use `eval`. Quote all variables in shell scripts. Sanitize external input before use in commands.
@@ -229,6 +253,7 @@ Before submitting code for review, **must** verify:
 - [ ] Errors never silently suppressed
 - [ ] Preconditions validated before operations
 - [ ] No `eval`; all shell variables quoted
+- [ ] Each `trap EXIT` update covers all previously registered resources — no silent drops
 - [ ] All test scenarios executed; `go test ./...` and `staticcheck ./...` pass
 - [ ] `go build ./...` succeeds
 - [ ] Stdlib used over custom implementations

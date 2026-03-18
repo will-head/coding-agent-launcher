@@ -70,16 +70,6 @@ lifetime using `kqueue EVFILT_PROC NOTE_EXIT` — the same pattern used by Docke
 
 ---
 
-### 4c. Refactor: Collapse `check_vm_git_changes` into Single SSH Call
-
-**Context:** `check_vm_git_changes` in `calf-bootstrap` makes two separate SSH calls — one for uncommitted changes, one for unpushed commits. The worktree-listing scaffold (`git worktree list --porcelain | awk | grep -v | while read`) is duplicated verbatim in both calls.
-
-**Goal:** Merge both checks into a single SSH call that collects both outputs in one round-trip, eliminating the duplication.
-
-**Impact:** Low urgency — current behaviour is correct; this is cleanup only.
-
----
-
 ## Bugs
 
 ## New Features - Normal Priority
