@@ -86,6 +86,24 @@ func TestConfigSubcommand(t *testing.T) {
 	})
 }
 
+func TestIsolationSubcommand(t *testing.T) {
+	t.Run("when isolation subcommand provided should be recognized", func(t *testing.T) {
+		// Arrange
+		cmd, out, _ := setupRootCmd(t, "isolation")
+
+		// Act
+		err := cmd.Execute()
+
+		// Assert
+		if err != nil {
+			t.Fatalf("expected isolation subcommand to be recognized, got error: %v", err)
+		}
+		if !strings.Contains(out.String(), "isolation") {
+			t.Errorf("expected isolation in output, got: %s", out.String())
+		}
+	})
+}
+
 func TestCacheSubcommand(t *testing.T) {
 	t.Run("when cache subcommand provided should be recognized", func(t *testing.T) {
 		// Arrange

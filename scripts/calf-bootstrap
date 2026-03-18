@@ -1439,6 +1439,8 @@ do_init() {
             echo "Do you want to replace $VM_INIT with current $VM_DEV? (y/N)"
             read -r -k 1 reply
             echo ""
+            # If user says yes: update calf-init from calf-dev and exit.
+            # If user says no: fall through to the full-reinit flow below (step 2 prompt).
             if [[ $reply =~ ^[Yy]$ ]]; then
                 echo ""
                 echo "Replacing $VM_INIT with current $VM_DEV..."
@@ -1499,9 +1501,6 @@ do_init() {
                 echo ""
                 echo "  ✓ $VM_INIT replaced with current $VM_DEV"
                 echo ""
-                exit 0
-            else
-                echo "Aborted. Existing VMs not modified."
                 exit 0
             fi
         fi

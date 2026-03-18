@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/will-head/coding-agent-launcher/internal/isolation"
 )
 
 var (
@@ -25,6 +26,7 @@ with automated setup, snapshot management, and GitHub workflow integration.`,
 	}
 	cmd.AddCommand(newConfigCmd())
 	cmd.AddCommand(newCacheCmd(os.Stdin, ""))
+	cmd.AddCommand(newIsolationCmd(isolation.NewTartClient(), os.Stdin))
 	return cmd
 }
 

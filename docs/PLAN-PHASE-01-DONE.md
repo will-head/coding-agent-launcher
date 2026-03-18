@@ -10,6 +10,18 @@
 
 ---
 
+## Critical Issue #4: Bootstrap Init Logic - Update vs Full Recreate Behavior — ✅ COMPLETED (2026-03-18)
+
+- [x] `calf-bootstrap`: Removed erroneous `else` branch (echo "Aborted." + `exit 0`) so declining the "replace calf-init?" prompt falls through to the full-reinit flow. Added clarifying comment explaining the intentional fall-through. (completed 2026-03-18)
+- [x] `calf isolation init` (Go): Implemented two-step flow in `cmd/calf/isolation.go` — prompt 1 (replace calf-init from calf-dev?), prompt 2 (delete both and reinit?), `--yes` flag skips both prompts. Stops a running calf-dev before deleting. Registered `isolation` subcommand in `newRootCmd`. 9 tests added covering all acceptance criteria. (completed 2026-03-18)
+
+**Notes:**
+- Actual VM creation (clone from base image) is a stub pending TODO 1.6
+- Git safety check before delete is a stub pending TODO 1.7
+- Progress output (spinner, in-place status line) tracked as TODO 1.12
+
+---
+
 ## Critical Issue #5: No-Network SMB Bypass (Host Credentials) — ✅ COMPLETED (2026-02-10)
 
 **Problem:** `--no-network` mode blocks local network IPs via softnet but still allowed SMB access to the host gateway (`192.168.64.1`). A VM running in "isolated" mode could mount the host's filesystem if valid credentials were provided — a full security bypass.
