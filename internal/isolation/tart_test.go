@@ -46,19 +46,17 @@ func (m *mockCommandRunner) runCommand(name string, args ...string) (string, err
 	return "", nil
 }
 
-// createTestClient creates a TartClient configured for testing
-func createTestClient(mock *mockCommandRunner) *TartClient {
-	client := NewTartClient()
-	client.tartPath = "/usr/local/bin/tart"
-	client.pollInterval = 10 * time.Millisecond
-	client.pollTimeout = 100 * time.Millisecond
-
-	// Override runCommand to use mock
-	client.runCommand = func(args ...string) (string, error) {
-		return mock.runCommand("tart", args...)
-	}
-
-	return client
+// createTestClient creates a TartClient configured for testing.
+// Extra options override the defaults (e.g. WithPollTimeout for shorter timeouts).
+func createTestClient(mock *mockCommandRunner, extra ...TartClientOption) *TartClient {
+	return NewTartClient(append([]TartClientOption{
+		WithTartPath("/usr/local/bin/tart"),
+		WithPollInterval(10 * time.Millisecond),
+		WithPollTimeout(100 * time.Millisecond),
+		WithRunCommand(func(args ...string) (string, error) {
+			return mock.runCommand("tart", args...)
+		}),
+	}, extra...)...)
 }
 
 func TestVMStateString(t *testing.T) {
@@ -300,8 +298,7 @@ func TestIP(t *testing.T) {
 		// Always return error to simulate VM not ready
 		mock.addError("ip test-vm", fmt.Errorf("vm not ready"))
 
-		client := createTestClient(mock)
-		client.pollTimeout = 50 * time.Millisecond
+		client := createTestClient(mock, WithPollTimeout(50*time.Millisecond))
 
 		_, err := client.IP("test-vm", 0)
 		if err == nil {

@@ -576,8 +576,8 @@ Work through items strictly in this order to keep the test suite green throughou
 3. ~~**Item 3** — `cacheDirMount` coupling. DONE (no change — coupling resolved by Items 5–6).~~
 4. ~~**Item 4** — Move `ensureInstalled` to public methods (production change). DONE.~~
 5. ~~**Item 5** — Add functional options + update `NewTartClient` (production change). DONE.~~
-6. **Item 6** — Rewrite `createTestClient` using options. Run `go test ./...`.
-7. **Item 7** — Fix `client.pollTimeout` direct write. Run `go test ./internal/isolation/... -run TestIP`.
+6. ~~**Item 6** — Rewrite `createTestClient` using options. Run `go test ./...`. DONE.~~
+7. ~~**Item 7** — Fix `client.pollTimeout` direct write. Run `go test ./internal/isolation/... -run TestIP`. DONE.~~
 8. **Item 8** — Rewrite `TestCloneWhenTart*` using options. Run `go test ./internal/isolation/...`.
 9. **Item 9** — Delete `makeInstallingRunCommand`. Run `go test ./...`.
 10. **Item 10** — `newRootCmd()` and `newConfigCmd()` factories + fix `config_test.go` and `main_test.go`. Run `go test ./...`.
@@ -593,8 +593,8 @@ Final check: `go test ./...` and `staticcheck ./...` must both pass clean.
 - [x] `ensureInstalled` removed from `runTartCommand`; added to `Clone`, `Set`, `RunWithCacheDirs`, `Stop`, `Delete`, `List`, `IP`
 - [x] `TartClientOption` type exported; 7 option functions added: `WithRunCommand`, `WithPollInterval`, `WithPollTimeout`, `WithTartPath`, `WithLookPath`, `WithStdinReader`, `WithBrewRunner`
 - [x] `NewTartClient` accepts `...TartClientOption` (backwards-compatible)
-- [ ] `createTestClient` uses `WithTartPath`, `WithPollInterval`, `WithPollTimeout`, `WithRunCommand` — no unexported field writes
-- [ ] `client.pollTimeout = ...` at line 281 replaced with `NewTartClient(WithPollTimeout(...))`
+- [x] `createTestClient` uses `WithTartPath`, `WithPollInterval`, `WithPollTimeout`, `WithRunCommand` — no unexported field writes
+- [x] `client.pollTimeout = ...` at line 281 replaced with `WithPollTimeout` via `createTestClient` extra arg
 - [ ] `TestCloneWhenTart*` uses `WithLookPath`, `WithStdinReader`, `WithBrewRunner`, `WithRunCommand` — no unexported field writes
 - [ ] `makeInstallingRunCommand` deleted; no references remain
 - [ ] `newConfigCmd()` factory added to `config.go`; global `configCmd`, `configShowCmd`, `vmName` vars and `init()` removed

@@ -61,6 +61,31 @@ Added `TartClientOption` exported type and 7 option functions: `WithRunCommand`,
 
 ---
 
+## Item 6 — Rewrite `createTestClient` Using Options (2026-03-18)
+
+**File:** `internal/isolation/tart_test.go`
+
+Replaced direct unexported field assignments (`tartPath`, `pollInterval`, `pollTimeout`, `runCommand`) with a single `NewTartClient(...)` call using functional options. Added variadic `extra ...TartClientOption` parameter so callers can supply per-test overrides (e.g. `WithPollTimeout`) without post-construction field mutation. GoDoc comment updated to document the override semantics.
+
+**Completion criteria met:**
+- [x] `createTestClient` uses `WithTartPath`, `WithPollInterval`, `WithPollTimeout`, `WithRunCommand` — no unexported field writes
+- [x] `go test ./...` passes (208 tests)
+- [x] `staticcheck ./...` clean
+
+---
+
+## Item 7 — Fix `client.pollTimeout` Direct Write in `TestIP` (2026-03-18)
+
+**File:** `internal/isolation/tart_test.go`
+
+Replaced `client.pollTimeout = 50 * time.Millisecond` (direct unexported field write after `createTestClient`) with `createTestClient(mock, WithPollTimeout(50*time.Millisecond))`. The variadic `extra` parameter added in Item 6 enables this one-liner without duplicating the full `NewTartClient(...)` call.
+
+**Completion criteria met:**
+- [x] `client.pollTimeout = ...` at line 281 replaced with `WithPollTimeout` via `createTestClient` extra arg
+- [x] `go test ./internal/isolation/... -run TestIP` — both subtests pass
+
+---
+
 ## Item 4 — Move `ensureInstalled` to Public Methods (2026-03-18)
 
 **File:** `internal/isolation/tart.go`
