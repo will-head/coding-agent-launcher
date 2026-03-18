@@ -575,7 +575,7 @@ Work through items strictly in this order to keep the test suite green throughou
 2. ~~**Item 2** — `TestCloneWhenTart*` `t.Run` wrapping. DONE.~~
 3. ~~**Item 3** — `cacheDirMount` coupling. DONE (no change — coupling resolved by Items 5–6).~~
 4. ~~**Item 4** — Move `ensureInstalled` to public methods (production change). DONE.~~
-5. **Item 5** — Add functional options + update `NewTartClient` (production change). Run `go test ./...`.
+5. ~~**Item 5** — Add functional options + update `NewTartClient` (production change). DONE.~~
 6. **Item 6** — Rewrite `createTestClient` using options. Run `go test ./...`.
 7. **Item 7** — Fix `client.pollTimeout` direct write. Run `go test ./internal/isolation/... -run TestIP`.
 8. **Item 8** — Rewrite `TestCloneWhenTart*` using options. Run `go test ./internal/isolation/...`.
@@ -591,8 +591,8 @@ Final check: `go test ./...` and `staticcheck ./...` must both pass clean.
 - [x] `TestCloneWhenTart*` functions wrap bodies in `t.Run("when...should...", ...)`
 - [x] `cacheDirMount` coupling assessed; no export needed — addressed by Items 5–6
 - [x] `ensureInstalled` removed from `runTartCommand`; added to `Clone`, `Set`, `RunWithCacheDirs`, `Stop`, `Delete`, `List`, `IP`
-- [ ] `TartClientOption` type exported; 7 option functions added: `WithRunCommand`, `WithPollInterval`, `WithPollTimeout`, `WithTartPath`, `WithLookPath`, `WithStdinReader`, `WithBrewRunner`
-- [ ] `NewTartClient` accepts `...TartClientOption` (backwards-compatible)
+- [x] `TartClientOption` type exported; 7 option functions added: `WithRunCommand`, `WithPollInterval`, `WithPollTimeout`, `WithTartPath`, `WithLookPath`, `WithStdinReader`, `WithBrewRunner`
+- [x] `NewTartClient` accepts `...TartClientOption` (backwards-compatible)
 - [ ] `createTestClient` uses `WithTartPath`, `WithPollInterval`, `WithPollTimeout`, `WithRunCommand` — no unexported field writes
 - [ ] `client.pollTimeout = ...` at line 281 replaced with `NewTartClient(WithPollTimeout(...))`
 - [ ] `TestCloneWhenTart*` uses `WithLookPath`, `WithStdinReader`, `WithBrewRunner`, `WithRunCommand` — no unexported field writes

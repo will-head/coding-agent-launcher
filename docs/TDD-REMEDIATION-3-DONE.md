@@ -47,6 +47,20 @@ Wrapped each of the five `TestCloneWhenTart*` flat function bodies in a `t.Run("
 
 ---
 
+## Item 5 — Add Functional Options to `TartClient` (2026-03-18)
+
+**File:** `internal/isolation/tart.go`
+
+Added `TartClientOption` exported type and 7 option functions: `WithRunCommand`, `WithPollInterval`, `WithPollTimeout`, `WithTartPath`, `WithLookPath`, `WithStdinReader`, `WithBrewRunner`. Updated `NewTartClient` to accept `...TartClientOption` — variadic, fully backwards-compatible. Options are applied after defaults so they correctly override any default value.
+
+**Completion criteria met:**
+- [x] `TartClientOption` type exported; 7 option functions added
+- [x] `NewTartClient` accepts `...TartClientOption` (backwards-compatible)
+- [x] `go build ./...` and `go test ./...` pass (208 tests)
+- [x] `staticcheck ./...` clean
+
+---
+
 ## Item 4 — Move `ensureInstalled` to Public Methods (2026-03-18)
 
 **File:** `internal/isolation/tart.go`

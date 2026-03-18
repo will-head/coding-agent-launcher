@@ -59,6 +59,51 @@ type TartListOutput []VMInfo
 // commandRunner is a function type for executing commands (allows mocking in tests).
 type commandRunner func(args ...string) (string, error)
 
+// TartClientOption configures a TartClient.
+type TartClientOption func(*TartClient)
+
+// WithRunCommand overrides the command runner used to dispatch tart commands.
+// Intended for use in tests.
+func WithRunCommand(fn commandRunner) TartClientOption {
+	return func(c *TartClient) { c.runCommand = fn }
+}
+
+// WithPollInterval overrides the IP polling interval.
+// Intended for use in tests.
+func WithPollInterval(d time.Duration) TartClientOption {
+	return func(c *TartClient) { c.pollInterval = d }
+}
+
+// WithPollTimeout overrides the IP polling timeout.
+// Intended for use in tests.
+func WithPollTimeout(d time.Duration) TartClientOption {
+	return func(c *TartClient) { c.pollTimeout = d }
+}
+
+// WithTartPath sets the tart binary path, skipping ensureInstalled discovery.
+// Intended for use in tests.
+func WithTartPath(path string) TartClientOption {
+	return func(c *TartClient) { c.tartPath = path }
+}
+
+// WithLookPath overrides the exec.LookPath function used to locate binaries.
+// Intended for use in tests.
+func WithLookPath(fn func(string) (string, error)) TartClientOption {
+	return func(c *TartClient) { c.lookPath = fn }
+}
+
+// WithStdinReader overrides the stdin reader for install confirmation prompts.
+// Intended for use in tests.
+func WithStdinReader(r io.Reader) TartClientOption {
+	return func(c *TartClient) { c.stdinReader = r }
+}
+
+// WithBrewRunner overrides the brew command runner used during tart installation.
+// Intended for use in tests.
+func WithBrewRunner(fn commandRunner) TartClientOption {
+	return func(c *TartClient) { c.runBrewCommand = fn }
+}
+
 // TartClient wraps the Tart CLI for VM operations.
 type TartClient struct {
 	tartPath       string
@@ -73,8 +118,8 @@ type TartClient struct {
 	lookPath       func(string) (string, error)
 }
 
-// NewTartClient creates a new TartClient.
-func NewTartClient() *TartClient {
+// NewTartClient creates a new TartClient with optional configuration overrides.
+func NewTartClient(opts ...TartClientOption) *TartClient {
 	client := &TartClient{
 		installPrompt: TartInstallPrompt,
 		outputWriter:  os.Stdout,
@@ -98,6 +143,9 @@ func NewTartClient() *TartClient {
 			return "", err
 		}
 		return "", nil
+	}
+	for _, opt := range opts {
+		opt(client)
 	}
 	return client
 }
