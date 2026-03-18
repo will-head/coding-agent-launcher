@@ -1,4 +1,4 @@
-module github.com/will-head/coding-agent-launcher
+module github.com/will-head/coding-agent-loader
 
 go 1.25.6
 

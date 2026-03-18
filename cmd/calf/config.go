@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/will-head/coding-agent-launcher/internal/config"
+	"github.com/will-head/coding-agent-loader/internal/config"
 )
 
 // newConfigCmd constructs the config cobra command with all subcommands wired.

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/will-head/coding-agent-launcher/internal/isolation"
+	"github.com/will-head/coding-agent-loader/internal/isolation"
 )
 
 // mockTartRunner is a test helper that simulates tart command execution.

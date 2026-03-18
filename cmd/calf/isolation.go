@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/will-head/coding-agent-launcher/internal/isolation"
+	"github.com/will-head/coding-agent-loader/internal/isolation"
 )
 
 // newIsolationCmd creates the isolation command group with injectable tart client and stdin.

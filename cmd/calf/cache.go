@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/will-head/coding-agent-launcher/internal/isolation"
+	"github.com/will-head/coding-agent-loader/internal/isolation"
 )
 
 // newCacheCmd creates the cache command group with injectable stdin and homeDir.
