@@ -639,14 +639,7 @@ func TestCloneWhenTartIsInstalled(t *testing.T) {
 		// Arrange
 		mock := newMockCommandRunner()
 		mock.addOutput("clone test-image test-vm", "")
-		client := NewTartClient()
-		client.lookPath = func(file string) (string, error) {
-			if file == "tart" {
-				return "/usr/local/bin/tart", nil
-			}
-			return "", fmt.Errorf("not found")
-		}
-		client.runCommand = makeInstallingRunCommand(client, mock)
+		client := createTestClient(mock)
 
 		// Act
 		err := client.Clone("test-image", "test-vm")
@@ -667,14 +660,15 @@ func TestCloneWhenTartIsInstalled(t *testing.T) {
 func TestCloneWhenTartIsNotInstalledAndUserDeclines(t *testing.T) {
 	t.Run("when tart is not installed and user declines should return cancelled error", func(t *testing.T) {
 		// Arrange
-		client := NewTartClient()
-		client.lookPath = func(file string) (string, error) {
-			if file == "brew" {
-				return "/usr/local/bin/brew", nil
-			}
-			return "", fmt.Errorf("not found")
-		}
-		client.stdinReader = strings.NewReader("n\n")
+		client := NewTartClient(
+			WithLookPath(func(file string) (string, error) {
+				if file == "brew" {
+					return "/usr/local/bin/brew", nil
+				}
+				return "", fmt.Errorf("not found")
+			}),
+			WithStdinReader(strings.NewReader("n\n")),
+		)
 
 		// Act
 		err := client.Clone("test-image", "test-vm")
@@ -695,24 +689,27 @@ func TestCloneWhenTartIsNotInstalledAndUserConfirmsAndBrewSucceeds(t *testing.T)
 		lookPathCalls := 0
 		mock := newMockCommandRunner()
 		mock.addOutput("clone test-image test-vm", "")
-		client := NewTartClient()
-		client.lookPath = func(file string) (string, error) {
-			if file == "brew" {
-				return "/usr/local/bin/brew", nil
-			}
-			if file == "tart" {
-				lookPathCalls++
-				if lookPathCalls > 1 {
-					return "/usr/local/bin/tart", nil
+		client := NewTartClient(
+			WithLookPath(func(file string) (string, error) {
+				if file == "brew" {
+					return "/usr/local/bin/brew", nil
 				}
-			}
-			return "", fmt.Errorf("not found")
-		}
-		client.stdinReader = strings.NewReader("y\n")
-		client.runBrewCommand = func(args ...string) (string, error) {
-			return "", nil
-		}
-		client.runCommand = makeInstallingRunCommand(client, mock)
+				if file == "tart" {
+					lookPathCalls++
+					if lookPathCalls > 1 {
+						return "/usr/local/bin/tart", nil
+					}
+				}
+				return "", fmt.Errorf("not found")
+			}),
+			WithStdinReader(strings.NewReader("y\n")),
+			WithBrewRunner(func(args ...string) (string, error) {
+				return "", nil
+			}),
+			WithRunCommand(func(args ...string) (string, error) {
+				return mock.runCommand("tart", args...)
+			}),
+		)
 
 		// Act
 		err := client.Clone("test-image", "test-vm")
@@ -727,17 +724,18 @@ func TestCloneWhenTartIsNotInstalledAndUserConfirmsAndBrewSucceeds(t *testing.T)
 func TestCloneWhenTartIsNotInstalledAndBrewFails(t *testing.T) {
 	t.Run("when tart is not installed and brew fails should return install error", func(t *testing.T) {
 		// Arrange
-		client := NewTartClient()
-		client.lookPath = func(file string) (string, error) {
-			if file == "brew" {
-				return "/usr/local/bin/brew", nil
-			}
-			return "", fmt.Errorf("not found")
-		}
-		client.stdinReader = strings.NewReader("y\n")
-		client.runBrewCommand = func(args ...string) (string, error) {
-			return "", fmt.Errorf("brew install failed")
-		}
+		client := NewTartClient(
+			WithLookPath(func(file string) (string, error) {
+				if file == "brew" {
+					return "/usr/local/bin/brew", nil
+				}
+				return "", fmt.Errorf("not found")
+			}),
+			WithStdinReader(strings.NewReader("y\n")),
+			WithBrewRunner(func(args ...string) (string, error) {
+				return "", fmt.Errorf("brew install failed")
+			}),
+		)
 
 		// Act
 		err := client.Clone("test-image", "test-vm")
@@ -755,11 +753,12 @@ func TestCloneWhenTartIsNotInstalledAndBrewFails(t *testing.T) {
 func TestCloneWhenBrewIsNotAvailableAndTartNotFound(t *testing.T) {
 	t.Run("when neither tart nor brew is available should return error without prompting", func(t *testing.T) {
 		// Arrange
-		client := NewTartClient()
-		client.lookPath = func(file string) (string, error) {
-			return "", fmt.Errorf("not found")
-		}
-		client.stdinReader = strings.NewReader("")
+		client := NewTartClient(
+			WithLookPath(func(file string) (string, error) {
+				return "", fmt.Errorf("not found")
+			}),
+			WithStdinReader(strings.NewReader("")),
+		)
 
 		// Act
 		err := client.Clone("test-image", "test-vm")
@@ -771,13 +770,3 @@ func TestCloneWhenBrewIsNotAvailableAndTartNotFound(t *testing.T) {
 	})
 }
 
-// makeInstallingRunCommand returns a runCommand func that calls ensureInstalled
-// before delegating to the mock, enabling tests to exercise the installation path.
-func makeInstallingRunCommand(client *TartClient, mock *mockCommandRunner) func(args ...string) (string, error) {
-	return func(args ...string) (string, error) {
-		if err := client.ensureInstalled(); err != nil {
-			return "", err
-		}
-		return mock.runCommand("tart", args...)
-	}
-}
