@@ -1,36 +1,21 @@
 # Coding Standards
 
-This document establishes mandatory coding standards for CALF development. These standards are derived from common errors found in code reviews and must be followed to maintain code quality and prevent repeated mistakes.
+Mandatory standards for CALF development, derived from code review findings.
 
 ---
 
 ## Code Duplication
 
-### Never duplicate code blocks
-**Common Error:** Copy-pasting code sections and forgetting to remove duplicates, leaving identical blocks in the same file.
-
-**Standards:**
-- **Must** review all files for duplicate code before committing
-- **Must** extract repeated logic into functions rather than duplicating
-- **Never** leave copy-paste artifacts in code
-- **Must** use version control diff tools to catch unintended duplications
+**Never** leave copy-paste artifacts. Extract repeated logic into functions. Use `git diff` before committing to catch unintended duplications.
 
 ---
 
 ## Dependency Management
 
-### Always verify external tool availability
-**Common Error:** Using external tools (like `jq`, `gh`, `curl`) without checking if they're installed, leading to cryptic runtime failures.
+**Must** verify external tools exist before use and give clear error messages when missing.
 
-**Standards:**
-- **Must** check for all required external dependencies before use
-- **Must** provide clear error messages when dependencies are missing
-- **Must** document all external dependencies in scripts and code comments
-- **Must** use consistent dependency checking patterns across the codebase
-
-**Shell Script Pattern:**
+**Shell:**
 ```bash
-# Check for required tools
 for tool in jq gh curl; do
     if ! command -v "$tool" &>/dev/null; then
         echo "Error: Required tool '$tool' is not installed"
@@ -39,9 +24,8 @@ for tool in jq gh curl; do
 done
 ```
 
-**Go Pattern:**
+**Go:**
 ```go
-// Check external command availability in init() or early validation
 if _, err := exec.LookPath("tart"); err != nil {
     return fmt.Errorf("required command 'tart' not found in PATH")
 }
@@ -51,57 +35,22 @@ if _, err := exec.LookPath("tart"); err != nil {
 
 ## Documentation Accuracy
 
-### Ensure code matches documentation claims
-**Common Error:** Documentation claiming functionality that isn't actually implemented in the code.
-
-**Standards:**
-- **Must** verify that code implements what documentation describes
-- **Never** document intended behavior that isn't implemented
-- **Must** update documentation immediately when behavior changes
-- **Must** include implementation status for planned features (e.g., "TODO: Add sorting")
+- **Must** verify code implements what docs describe; update docs immediately when behaviour changes
+- **Must** include `TODO:` status for planned features not yet implemented
 - **Must** review PR descriptions against actual code changes
-
-### Documenting default credentials is acceptable
-**Accepted Practice:** Including default passwords or credentials in documentation for development/testing environments is explicitly allowed and not considered a documentation error.
-
-**Standards:**
-- **Allowed** to document default credentials for local development or testing VMs
-- **Should** label clearly as "default" or "initial" credentials when possible
-- **Should** include guidance on changing credentials for production use
-- **Never** flag this as a documentation issue requiring fixes
-
-**Example:**
-```bash
-# This is acceptable in documentation:
-open vnc://$(tart ip calf-dev)   # password: admin
-
-# Better (with production guidance):
-open vnc://$(tart ip calf-dev)   # password: admin (default, change for production)
-```
+- **Allowed** to document default dev credentials — label as "default" and note how to change
 
 ---
 
 ## Error Handling
 
-### Never suppress errors silently
-**Common Error:** Using `&>/dev/null` or similar constructs to hide all error output, making debugging impossible.
+**Never** redirect errors to `/dev/null`. Log errors even when not shown to users. Provide actionable messages.
 
-**Standards:**
-- **Never** redirect errors to `/dev/null` unless explicitly justified
-- **Must** log errors even if not displayed to users
-- **Must** provide actionable error messages that guide users to solutions
-- **Must** distinguish between expected failures and unexpected errors
-- **Must** preserve error context through function call chains
-
-**Shell Script Pattern:**
 ```bash
 # Bad
 git clone "$repo" &>/dev/null
 
-# Good - show errors
-git clone "$repo" 2>&1
-
-# Better - conditional error handling
+# Good
 if ! git clone "$repo" 2>&1; then
     echo "Error: Failed to clone $repo. Check network and SSH keys."
     return 1
@@ -112,19 +61,9 @@ fi
 
 ## Proactive Validation
 
-### Validate preconditions before attempting operations
-**Common Error:** Attempting operations (like git clone) without checking prerequisites (like SSH key configuration), leading to confusing failures.
+Validate preconditions before attempting operations: auth before network, permissions before filesystem, connectivity before remote.
 
-**Standards:**
-- **Must** validate all preconditions before attempting operations
-- **Must** check authentication before network operations
-- **Must** verify filesystem permissions before file operations
-- **Must** test connectivity before remote operations
-- **Must** provide clear guidance when preconditions fail
-
-**Shell Script Pattern:**
 ```bash
-# Check SSH access before attempting clone
 if ! ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
     echo "Error: GitHub SSH authentication failed"
     echo "Run: ssh-keygen && gh auth login"
@@ -136,25 +75,13 @@ fi
 
 ## Security Practices
 
-### Avoid dangerous language features
-**Common Error:** Using `eval` for simple operations like path expansion, creating code injection vulnerabilities.
+**Never** use `eval`. Quote all variables in shell scripts. Sanitize external input before use in commands.
 
-**Standards:**
-- **Never** use `eval` unless absolutely necessary
-- **Must** use language-native features for common operations
-- **Must** sanitize all external input before use in commands
-- **Must** quote all variables in shell scripts to prevent injection
-- **Must** avoid dynamic code execution patterns
-
-**Shell Script Pattern:**
 ```bash
-# Bad - uses eval
+# Bad
 eval echo "$some_path"
 
-# Good - use parameter expansion
-echo "${some_path/#\~/$HOME}"
-
-# Better - use built-in variable
+# Good
 target_dir="${HOME}/code"
 ```
 
@@ -162,93 +89,131 @@ target_dir="${HOME}/code"
 
 ## Testing Requirements
 
-### coops-tdd Skill — Mandatory Before Writing Any Code
+### Invoke `coops-tdd` skill before any code change
 
-**The `coops-tdd` skill MUST be invoked before writing any code, no exceptions.**
+The `coops-tdd` skill is mandatory before writing any code. It covers: `when...should...` naming, Arrange/Act/Assert structure, public-interface-only rule, mock rules, and Red/Green/Refactor cycle. Code written without invoking it must not be committed.
 
-This is not optional and applies to every code change regardless of size — new functions, bug fixes, refactoring that changes behaviour, script changes. The skill enforces test-first development: write a failing test, write minimum code to pass it, then refactor.
+### Mandatory scenarios — Go
 
-Failing to invoke this skill is a pre-commit checklist violation. Code written without it must not be committed.
+Every change must cover: success path · all error return paths · edge/boundary conditions · component interactions (where applicable).
 
-### Test all code paths and failure scenarios
-**Common Error:** Only testing the "happy path" without verifying error handling, edge cases, or failure modes.
+### Mandatory scenarios — shell scripts
 
-**Standards:**
-- **Must** test both success and failure scenarios
-- **Must** test with missing dependencies
-- **Must** test with invalid inputs
-- **Must** test with existing state (e.g., files already present)
-- **Must** test authentication failures
-- **Must** document test scenarios in PR descriptions
+Valid inputs · invalid inputs · missing dependencies · auth failures · existing state · network failures.
 
-### Mandatory Test Scenarios for Shell Scripts
-Every shell script change **must** be tested with:
-1. **Valid inputs** - expected success path
-2. **Invalid inputs** - malformed or incorrect data
-3. **Missing dependencies** - tools not installed
-4. **Authentication failures** - invalid credentials or keys
-5. **Existing state** - resources already present
-6. **Network failures** - offline or unreachable services
+---
 
-### Mandatory Test Scenarios for Go Code
-Every Go code change **must** include:
-1. **Unit tests** - test functions in isolation
-2. **Error cases** - test all error return paths
-3. **Edge cases** - boundary conditions and limits
-4. **Integration tests** - test component interactions (where applicable)
+## Go Test Style
+
+Naming, Arrange/Act/Assert, and public-interface-only rules come from the `coops-tdd` skill. These rules cover Go-specific patterns the skill does not address.
+
+### No table-driven loops
+
+**Never** use `for _, tt := range tests { t.Run(tt.name, ...) }`. Each scenario must be its own `t.Run` block with its own Arrange/Act/Assert.
+
+```go
+// Good
+t.Run("when vm is running should return true", func(t *testing.T) {
+    // Arrange
+    mock := newMockCommandRunner()
+    mock.addOutput("list --format json", `[{"name":"test-vm","state":"running"}]`)
+    client := createTestClient(mock)
+    // Act
+    got := client.IsRunning("test-vm")
+    // Assert
+    if !got {
+        t.Errorf("IsRunning() = false, want true")
+    }
+})
+
+// Bad
+for _, tt := range tests {
+    t.Run(tt.name, func(t *testing.T) { ... })
+}
+```
+
+### Fresh instance per test — no shared state
+
+Each subtest creates its own instance. Never share a constructed instance across subtests.
+
+**Commands (cobra):** wrap a factory function in a setup helper:
+
+```go
+func setupRootCmd(t *testing.T, args ...string) (*cobra.Command, *bytes.Buffer, *bytes.Buffer) {
+    t.Helper()
+    out, errOut := &bytes.Buffer{}, &bytes.Buffer{}
+    cmd := newRootCmd("test")
+    cmd.SetOut(out); cmd.SetErr(errOut); cmd.SetArgs(args)
+    return cmd, out, errOut
+}
+```
+
+**Structs with injectable deps:** use functional options — never write unexported fields directly:
+
+```go
+// Good
+client := NewTartClient(
+    WithLookPath(func(file string) (string, error) { ... }),
+    WithRunCommand(func(args ...string) (string, error) { return mock.runCommand("tart", args...) }),
+)
+
+// Bad
+client.lookPath = func(...) { ... }  // unexported field
+```
+
+### `t.TempDir()` over `os.MkdirTemp`
+
+```go
+homeDir := t.TempDir()                                            // Good — auto-cleanup
+tmpDir, _ := os.MkdirTemp("", "x"); defer os.RemoveAll(tmpDir)   // Bad
+```
+
+### `t.Helper()` in test helpers
+
+Call `t.Helper()` first in any function that calls `t.Fatal`/`t.Error` — failure output points to the calling test, not the helper.
+
+### Canonical reference files
+
+| File | Demonstrates |
+|------|-------------|
+| `cmd/calf/config_test.go` | Factory via `newRootCmd()`, `t.Setenv` for env isolation |
+| `cmd/calf/main_test.go` | Shared setup helper, fresh cmd per test |
+| `cmd/calf/cache_test.go` | File-system assertions, confirm/decline flows |
+| `internal/isolation/tart_test.go` (Clone tests) | Functional options, multi-option client construction |
+| `internal/isolation/cache_test.go` (`TestClearCache`) | Per-subtest `t.TempDir()` + factory |
 
 ---
 
 ## Go Language Standards
 
-### Use standard library over custom implementations
-**Common Error:** Implementing custom helper functions for operations already available in the standard library.
+### Stdlib over custom implementations
 
-**Standards:**
-- **Must** check standard library before writing custom helper functions
-- **Must** use `strings` package functions for string operations
-- **Must** use `filepath` package for path operations
-- **Must** prefer well-tested stdlib over custom implementations
+Use `strings`, `filepath`, `slices` etc. before writing custom helpers.
 
-**Example:**
 ```go
-// Bad - custom implementation
+// Bad
 func contains(s, substr string) bool {
     for i := 0; i <= len(s)-len(substr); i++ {
-        if s[i:i+len(substr)] == substr {
-            return true
-        }
+        if s[i:i+len(substr)] == substr { return true }
     }
     return false
 }
 
-// Good - use stdlib
-import "strings"
-if strings.Contains(s, substr) { ... }
+// Good
+strings.Contains(s, substr)
 ```
 
-### Document all exported identifiers
-**Common Error:** Missing GoDoc comments for exported types, functions, and constants.
+### GoDoc on all exported identifiers
 
-**Standards:**
-- **Must** add GoDoc comments for all exported types
-- **Must** add GoDoc comments for all exported functions
-- **Must** add GoDoc comments for all exported constants and variables
-- **Must** start comments with the identifier name
-- **Should** add package-level documentation
+All exported types, functions, constants, and variables must have GoDoc comments starting with the identifier name.
 
-**Example:**
 ```go
 // Config represents the top-level CAL configuration structure.
-type Config struct {
-    Version int `yaml:"version"`
-}
+type Config struct { ... }
 
 // LoadConfig loads configuration from global and per-VM paths.
-// Returns error if files exist but cannot be read/parsed.
-func LoadConfig(globalPath, vmPath string) (*Config, error) {
-    // ...
-}
+// Returns error if files exist but cannot be read or parsed.
+func LoadConfig(globalPath, vmPath string) (*Config, error) { ... }
 ```
 
 ---
@@ -257,27 +222,19 @@ func LoadConfig(globalPath, vmPath string) (*Config, error) {
 
 Before submitting code for review, **must** verify:
 
-- [ ] `coops-tdd` skill was invoked before writing any code
+- [ ] `coops-tdd` skill invoked before writing any code
 - [ ] No duplicate code blocks or copy-paste errors
-- [ ] All external dependencies are checked before use
-- [ ] Documentation accurately describes implementation
-- [ ] Errors are never silently suppressed
-- [ ] Preconditions are validated before operations
-- [ ] No `eval` or other dangerous constructs
-- [ ] All test scenarios have been executed
-- [ ] All tests pass (`go test ./...` for Go code)
-- [ ] Code builds successfully (`go build` for Go code)
-- [ ] Go code uses stdlib over custom implementations
+- [ ] All external dependencies checked before use
+- [ ] Documentation matches implementation; planned features marked `TODO:`
+- [ ] Errors never silently suppressed
+- [ ] Preconditions validated before operations
+- [ ] No `eval`; all shell variables quoted
+- [ ] All test scenarios executed; `go test ./...` and `staticcheck ./...` pass
+- [ ] `go build ./...` succeeds
+- [ ] Stdlib used over custom implementations
 - [ ] All exported Go identifiers have GoDoc comments
-
----
-
-## Enforcement
-
-These standards are **mandatory**. Code reviews will reject changes that violate these standards. When in doubt, refer to this document and ask questions before implementing.
-
-## References
-
-- See `docs/WORKFLOWS.md` for workflow procedures
-- See `CLAUDE.md` for agent-specific instructions
-- See `docs/SPEC.md` for technical specifications
+- [ ] No table-driven `for _, tt := range tests` loops — each scenario is its own `t.Run` block
+- [ ] Each subtest creates its own fresh instance — no shared state between subtests
+- [ ] Temporary directories use `t.TempDir()` not `os.MkdirTemp` + `defer os.RemoveAll`
+- [ ] Test helpers call `t.Helper()` as their first statement
+- [ ] Injectable deps use functional options or exported constructors — no unexported field writes
