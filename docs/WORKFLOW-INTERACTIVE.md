@@ -77,7 +77,7 @@ Build must succeed to continue.
 
 ### Step 4: Code Review
 
-- **Invoke the `code-review` skill** — reviews changed code for quality, reuse, and efficiency against `CODING-STANDARDS/`, records patterns found
+- **Invoke the `review-changes` skill** — reviews changed code for quality, reuse, and efficiency against `CODING-STANDARDS/`, records patterns found
 
 ### Step 5: Present Review
 
@@ -103,7 +103,7 @@ Present testing instructions to the user **one by one** (not as a batch list):
 
 ### Step 7: Present Final Code Review
 
-- **Invoke the `code-review` skill** again as a final check after user testing
+- **Invoke the `review-changes` skill** again as a final check after user testing
 - Confirm all tests still pass after any fixes made during user testing
 
 **STOP and wait for explicit user approval** before proceeding (auto-approved when `CALF_VM=true`).

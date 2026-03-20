@@ -1,0 +1,41 @@
+{
+  "skill_name": "coding-standards",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm adding a new exported Go function `IsValidVMName(name string) bool` to the isolation package. It should return true if the name contains only lowercase letters, digits, and hyphens, and is between 1 and 63 characters long. Write the function with proper documentation and at least 3 unit tests. The project is at /Users/Shared/code/github.com/will-head/coding-agent-loader. Save function code to outputs/function.go and tests to outputs/function_test.go. Also save a brief transcript of your process (what files you read, decisions made) to outputs/transcript.md.",
+      "expected_output": "function.go with GoDoc starting with 'IsValidVMName', function_test.go with individual t.Run blocks using when/should naming, no table-driven loops, transcript showing CODING-STANDARDS files were loaded",
+      "files": [],
+      "assertions": [
+        "function.go contains a GoDoc comment that starts with the word 'IsValidVMName' (e.g. '// IsValidVMName returns...')",
+        "function_test.go does not contain a table-driven loop pattern such as 'for _, tt := range' or 'for _, tc := range'",
+        "function_test.go uses t.Run with test names that include both 'when' and 'should' (e.g. 'when name is empty should return false')",
+        "transcript.md mentions reading one or more CODING-STANDARDS files before writing the code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Please review the Go code at /Users/Shared/code/github.com/will-head/skills/skills/coding-standards/evals/files/review-target.go for quality issues. The project coding standards are at /Users/Shared/code/github.com/will-head/coding-agent-loader/CODING-STANDARDS/. After your review, record any patterns you found to outputs/CODING-STANDARDS-GO-PATTERNS.md using the project's pattern tracking format. Save your review findings to outputs/review.md and a transcript to outputs/transcript.md.",
+      "expected_output": "review.md identifying GoDoc violation and table-driven loop; CODING-STANDARDS-GO-PATTERNS.md with at least one pattern entry using correct format (## slug, **Count:**, **Status:**, **Description:**, **Examples:**)",
+      "files": ["evals/files/review-target.go"],
+      "assertions": [
+        "review.md identifies that the GoDoc comment on Execute does not start with the function name 'Execute' (it starts with 'runs' instead)",
+        "review.md identifies the table-driven test loop ('for _, tt := range tests')",
+        "CODING-STANDARDS-GO-PATTERNS.md exists and is non-empty",
+        "CODING-STANDARDS-GO-PATTERNS.md contains at least one entry with all required fields: a ## heading slug, **Count:**, **Status:**, **Description:**, and **Examples:** sections"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We have a Go patterns file at /Users/Shared/code/github.com/will-head/skills/skills/coding-standards/evals/files/sample-patterns.md that tracks recurring code issues. Please review it and promote any patterns that have reached the promotion threshold to permanent standards. Save the updated patterns file (with promoted entries marked) to outputs/CODING-STANDARDS-GO-PATTERNS.md and the resulting standards additions to outputs/CODING-STANDARDS-GO-additions.md. Save a transcript to outputs/transcript.md.",
+      "expected_output": "CODING-STANDARDS-GO-additions.md with a properly formatted standards entry for error-messages-without-context; CODING-STANDARDS-GO-PATTERNS.md with that pattern marked [PROMOTED]; fmt-println-in-library-code NOT promoted (count 1)",
+      "files": ["evals/files/sample-patterns.md"],
+      "assertions": [
+        "CODING-STANDARDS-GO-additions.md contains an entry for the 'error-messages-without-context' pattern (count 3)",
+        "CODING-STANDARDS-GO-PATTERNS.md marks 'error-messages-without-context' as promoted (contains the word 'promoted' near that entry, case-insensitive)",
+        "CODING-STANDARDS-GO-additions.md does NOT contain an entry for 'fmt-println-in-library-code' (its count of 1 is below the promotion threshold)",
+        "The standards entry in CODING-STANDARDS-GO-additions.md includes both a **Rule:** field and a **Why:** field"
+      ]
+    }
+  ]
+}

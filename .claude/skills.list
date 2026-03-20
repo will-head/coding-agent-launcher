@@ -1,0 +1,7 @@
+# Skills synced from the authoritative skills repo.
+# To add a skill: add the skill name here, then run scripts/sync-skills.sh.
+# DO NOT edit synced skill files directly — edit in the skills repo and re-sync.
+coding-standards
+coops-tdd
+coops-tdd-auto
+review-changes

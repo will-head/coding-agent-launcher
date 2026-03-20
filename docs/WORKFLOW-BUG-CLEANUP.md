@@ -112,7 +112,7 @@ Build must succeed to continue.
 
 ### Step 5: Code Review
 
-**Invoke the `code-review` skill.** Also verify these bug-fix-specific criteria:
+**Invoke the `review-changes` skill.** Also verify these bug-fix-specific criteria:
 - **Bug fix correctness** — Does the fix address the root cause documented in the bug report?
 - **Regression risk** — Could this fix break other functionality?
 
@@ -147,7 +147,7 @@ Build must succeed to continue.
 
 ### Step 8: Present Final Code Review
 
-**Invoke the `code-review` skill** as a final check after user testing. Also confirm:
+**Invoke the `review-changes` skill** as a final check after user testing. Also confirm:
 - The bug is fixed (root cause addressed)
 - All tests still pass after any fixes made during user testing
 

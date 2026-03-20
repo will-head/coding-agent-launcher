@@ -22,7 +22,7 @@ Detect the project's test runner from config files (`package.json`, `pom.xml`, `
 1. **Red** — Write a failing test that describes the desired behaviour from the caller's perspective. Test at the public interface only. Run it. Confirm it fails for the right reason.
 2. **Approval Gate** — STOP. Show the test to the user. Do NOT proceed without explicit user approval.
 3. **Green** — Write the minimum code to make the test pass. Speed over design. No speculative code.
-4. **Refactor** — Improve the implementation. Do NOT modify or add tests. Do NOT change behaviour. Run all tests after each change.
+4. **Refactor** — Improve the implementation. Do NOT modify or add tests. Do NOT change behaviour. Run all tests after each change. Apply coding standards (loaded at session start via `coding-standards`) during this phase — standards compliance belongs here, not in Green. Green stays minimal.
 
 ## Modifying Existing Code
 

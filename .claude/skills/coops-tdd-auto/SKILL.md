@@ -63,6 +63,7 @@ With tests green, improve structure without changing behaviour:
 - Rename, extract, reorganise — do not change what the code does.
 - Run all tests after each change.
 - Do NOT modify or add tests during refactoring.
+- Apply coding standards (loaded at session start via `coding-standards`) during this phase — standards compliance belongs here, not in Green. Green stays minimal.
 
 Repeat the cycle for the next behaviour.
 
